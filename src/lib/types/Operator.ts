@@ -3,6 +3,9 @@ import type { DataColumn } from './dataColumn';
 
 export class Operator {
   id: string;
+  salon_id: string;
+  user_id: string | null;
+  must_change_password: boolean;
   firstName: string;
   lastName: string;
   email: string;
@@ -11,6 +14,9 @@ export class Operator {
 
   constructor(operator: Operator) {
     this.id = operator.id;
+    this.salon_id = operator.salon_id;
+    this.user_id = operator.user_id ?? null;
+    this.must_change_password = operator.must_change_password ?? false;
     this.firstName = operator.firstName;
     this.lastName = operator.lastName;
     this.email = operator.email;

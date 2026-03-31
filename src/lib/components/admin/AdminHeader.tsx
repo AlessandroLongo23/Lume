@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Menu, Calendar, Clock } from 'lucide-react';
-import Image from 'next/image';
-import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { LogoutButton } from '@/lib/components/shared/ui/buttons/LogoutButton';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
+import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { SubscriptionCTA } from '@/lib/components/admin/SubscriptionCTA';
 import type { User } from '@supabase/supabase-js';
 
 interface AdminHeaderProps {
@@ -15,7 +15,6 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
-  const { theme } = useTheme();
   const operators = useOperatorsStore((s) => s.operators);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -39,15 +38,10 @@ export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const logo =
-    theme === 'dark'
-      ? '/brand/raster/2000w/wide-white.png'
-      : '/brand/raster/2000w/wide-black.png';
-
   return (
     <header className="fixed flex flex-row top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 md:py-4 bg-white dark:bg-[#18181B] border-b border-[#E4E4E7] dark:border-[#27272A] shadow-sm dark:shadow-md">
       <div className="flex flex-row flex-1 justify-start items-center">
-        <Image src={logo} alt="logo" width={120} height={32} className="h-8 w-auto hidden sm:block" />
+        <span className="hidden sm:inline-flex"><LumeLogo size="md" /></span>
         <button
           className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-[#E4E4E7] dark:border-[#27272A] bg-white dark:bg-[#18181B] text-zinc-900 dark:text-white"
           onClick={onMobileMenuOpen}
@@ -83,6 +77,7 @@ export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Operatore</p>
           </div>
         )}
+        <SubscriptionCTA />
         <ThemeToggle />
         <LogoutButton />
       </div>

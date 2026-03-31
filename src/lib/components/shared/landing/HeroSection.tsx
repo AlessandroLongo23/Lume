@@ -1,4 +1,7 @@
+'use client';
+
 import { ArrowRight, Check, Calendar, Users, Package, BarChart3 } from 'lucide-react';
+import { motion } from './motion';
 
 const bullets = [
   'Calendario appuntamenti',
@@ -189,6 +192,8 @@ function DashboardMockup() {
   );
 }
 
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
 interface HeroSectionProps {
   onAuthClick: () => void;
 }
@@ -202,25 +207,45 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left — text */}
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E4E4E7] bg-white text-xs text-zinc-500 mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease, delay: 0.1 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E4E4E7] bg-white text-xs text-zinc-500 mb-8"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
               Gestionale per parrucchieri e barbieri
-            </div>
+            </motion.div>
 
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-[#09090B] leading-[1.05] mb-6">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease, delay: 0.2 }}
+              className="text-5xl sm:text-6xl font-bold tracking-tight text-[#09090B] leading-[1.05] mb-6"
+            >
               Il gestionale che
               <br />
               <span className="text-[#6366F1]">il tuo salone</span>
               <br />
-              meritava.
-            </h1>
+              merita.
+            </motion.h1>
 
-            <p className="text-lg text-zinc-500 max-w-md mb-10 leading-relaxed">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease, delay: 0.3 }}
+              className="text-lg text-zinc-500 max-w-md mb-10 leading-relaxed"
+            >
               Lume elimina il caos da appuntamenti, clienti e magazzino — tutto in
               un&apos;unica app chiara e veloce. Meno clic, più tempo per i tuoi clienti.
-            </p>
+            </motion.p>
 
-            <div className="flex flex-col sm:flex-row items-start gap-3 mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease, delay: 0.4 }}
+              className="flex flex-col sm:flex-row items-start gap-3 mb-10"
+            >
               <button
                 onClick={onAuthClick}
                 className="btn-primary px-6 py-3 text-base flex items-center gap-2 w-full sm:w-auto justify-center"
@@ -233,28 +258,43 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
               >
                 Scopri le funzionalità
               </a>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-wrap items-center gap-x-5 gap-y-2"
+            >
               {bullets.map((b) => (
                 <div key={b} className="flex items-center gap-1.5 text-sm text-zinc-500">
                   <Check className="w-3.5 h-3.5 text-[#6366F1] shrink-0" />
                   {b}
                 </div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Right — dashboard mockup */}
-          <div className="hidden lg:flex justify-end items-center">
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease, delay: 0.4 }}
+            className="hidden lg:flex justify-end items-center"
+          >
             <DashboardMockup />
-          </div>
+          </motion.div>
         </div>
 
         {/* Mobile mockup — shown below text on small screens */}
-        <div className="lg:hidden mt-10 scale-75 origin-top">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease, delay: 0.5 }}
+          className="lg:hidden mt-10 scale-75 origin-top"
+        >
           <DashboardMockup />
-        </div>
+        </motion.div>
       </div>
     </section>
   );

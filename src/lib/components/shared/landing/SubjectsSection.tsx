@@ -1,4 +1,7 @@
-// Repurposed as ComparisonSection — SubjectsSection name kept for import compatibility
+'use client';
+
+import { motion, sectionVariants, itemVariants, viewportConfig } from './motion';
+
 const points = [
   { them: '€60 / mese', us: '€49 / mese' },
   { them: 'Interfaccia anni 2000', us: 'Design moderno e intuitivo' },
@@ -9,9 +12,15 @@ const points = [
 
 export function SubjectsSection() {
   return (
-    <section className="py-24 px-4 bg-[#FAFAFA] section-enter">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-16 fade-up">
+    <section className="py-24 px-4 bg-[#FAFAFA]">
+      <motion.div
+        className="max-w-3xl mx-auto"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportConfig}
+        variants={sectionVariants}
+      >
+        <motion.div className="text-center mb-16" variants={itemVariants}>
           <div className="flex justify-center mb-4">
             <div className="accent-line" />
           </div>
@@ -22,9 +31,9 @@ export function SubjectsSection() {
             Il tuo attuale software è costoso, difficile da usare e fermo agli anni 2000. Lume è
             diverso.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="fade-up">
+        <motion.div variants={itemVariants}>
           <div className="grid grid-cols-3 text-sm font-medium mb-3 px-4">
             <span className="text-zinc-400">Quello che usi ora</span>
             <span className="text-center text-zinc-300">→</span>
@@ -33,20 +42,28 @@ export function SubjectsSection() {
 
           <div className="rounded-xl border border-[#E4E4E7] bg-white overflow-hidden">
             {points.map(({ them, us }, i) => (
-              <div
+              <motion.div
                 key={i}
                 className={`grid grid-cols-3 items-center px-4 py-4 text-sm ${
                   i < points.length - 1 ? 'border-b border-[#E4E4E7]' : ''
                 }`}
+                variants={{
+                  hidden: { opacity: 0, x: -12 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.4, delay: i * 0.08 },
+                  },
+                }}
               >
                 <span className="text-zinc-400 line-through">{them}</span>
                 <span className="text-center text-zinc-300">→</span>
                 <span className="text-right font-medium text-[#09090B]">{us}</span>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

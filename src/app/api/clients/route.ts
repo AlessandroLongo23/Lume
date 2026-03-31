@@ -9,60 +9,66 @@ function getAdminClient() {
   );
 }
 
+async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const supabaseAdmin = getAdminClient();
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('salon_id, role')
+    .eq('id', user.id)
+    .single();
+
+  return profile;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.user_metadata?.role !== 'operator') {
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     const { client } = await request.json();
     const supabaseAdmin = getAdminClient();
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: client.email,
-      password: client.password,
-      phone: `${client.phonePrefix}${client.phoneNumber}`,
-      email_confirm: true,
-      user_metadata: { role: 'client' },
-    });
-
-    if (authError) throw authError;
-
-    const { error: dbError } = await supabaseAdmin
+    // Clients are data-only records (no auth user)
+    const { data, error: dbError } = await supabaseAdmin
       .from('clients')
       .insert({
-        id: authData.user.id,
+        salon_id: profile.salon_id,
         firstName: client.firstName,
         lastName: client.lastName,
-        email: client.email,
-        phonePrefix: client.phonePrefix,
-        phoneNumber: client.phoneNumber,
-        gender: client.gender,
-        isTourist: client.isTourist,
+        email: client.email || null,
+        phonePrefix: client.phonePrefix || null,
+        phoneNumber: client.phoneNumber || null,
+        gender: client.gender || null,
+        isTourist: client.isTourist || false,
         birthDate: client.birthDate || null,
-        note: client.note,
-      });
+        note: client.note || null,
+      })
+      .select()
+      .single();
 
     if (dbError) throw dbError;
 
-    return NextResponse.json({ success: true, user: authData.user });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
+    return NextResponse.json({ success: true, client: data });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error creating client:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
-    if (session.user.user_metadata?.role !== 'operator') {
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || profile.role !== 'owner') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -73,18 +79,17 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getAdminClient();
 
-    const { error: dbError } = await supabaseAdmin.from('clients').delete().eq('id', id);
+    const { error: dbError } = await supabaseAdmin
+      .from('clients')
+      .delete()
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    if (authError) {
-      return NextResponse.json({ success: false, error: authError.message }, { status: 500 });
-    }
-
     return NextResponse.json({ success: true });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    console.error('Error deleting client:', error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error deleting client:', msg);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

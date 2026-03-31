@@ -1,10 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { Mail, Lock } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, delay: i * 0.1, ease },
+  }),
+};
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -25,33 +37,39 @@ export function StepOne() {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-4">
-      <FormInput
-        label="Email"
-        type="email"
-        placeholder="nome@salone.it"
-        value={email}
-        onChange={(e) => setField('email', e.target.value)}
-        error={errors.email}
-        icon={<Mail className="w-4 h-4 text-zinc-400" />}
-        required
-        autoComplete="email"
-      />
+      <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
+        <FormInput
+          label="Email"
+          type="email"
+          placeholder="nome@salone.it"
+          value={email}
+          onChange={(e) => setField('email', e.target.value)}
+          error={errors.email}
+          icon={<Mail className="w-4 h-4 text-zinc-400" />}
+          required
+          autoComplete="email"
+        />
+      </motion.div>
 
-      <FormInput
-        label="Password"
-        type="password"
-        placeholder="Minimo 8 caratteri"
-        value={password}
-        onChange={(e) => setField('password', e.target.value)}
-        error={errors.password}
-        icon={<Lock className="w-4 h-4 text-zinc-400" />}
-        required
-        autoComplete="new-password"
-      />
+      <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
+        <FormInput
+          label="Password"
+          type="password"
+          placeholder="Minimo 8 caratteri"
+          value={password}
+          onChange={(e) => setField('password', e.target.value)}
+          error={errors.password}
+          icon={<Lock className="w-4 h-4 text-zinc-400" />}
+          required
+          autoComplete="new-password"
+        />
+      </motion.div>
 
-      <FormButton type="submit" fullWidth className="mt-2">
-        Avanti →
-      </FormButton>
+      <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+        <FormButton type="submit" fullWidth className="mt-2">
+          Avanti →
+        </FormButton>
+      </motion.div>
     </form>
   );
 }

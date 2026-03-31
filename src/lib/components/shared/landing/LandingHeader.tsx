@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
+import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 
 interface LandingHeaderProps {
   session: Session | null;
@@ -28,7 +29,7 @@ export function LandingHeader({ session, onLoginClick, onRegisterClick }: Landin
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <span className="text-xl font-semibold tracking-tight text-[#09090B]">Lume</span>
+        <LumeLogo size="md" />
 
         <nav className="hidden md:flex items-center gap-8">
           <a href="#funzionalita" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">

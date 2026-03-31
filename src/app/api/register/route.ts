@@ -75,6 +75,36 @@ export async function POST(request: NextRequest) {
 
     salonId = salonData.id;
 
+    // 2b. Handle referral code
+    if (inviteCode) {
+      const { data: referrerSalon } = await supabaseAdmin
+        .from('salons')
+        .select('id')
+        .eq('referral_code', inviteCode.toUpperCase().trim())
+        .single();
+
+      if (referrerSalon) {
+        // Extend trial to 45 days and link referral
+        await supabaseAdmin
+          .from('salons')
+          .update({
+            referred_by_salon_id: referrerSalon.id,
+            trial_ends_at: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .eq('id', salonId);
+
+        // Create pending referral credit (referrer always gets the row,
+        // cap is checked only when applying the monetary credit)
+        await supabaseAdmin
+          .from('referral_credits')
+          .insert({
+            referrer_salon_id: referrerSalon.id,
+            referred_salon_id: salonId,
+            status: 'pending',
+          });
+      }
+    }
+
     // 3. Insert profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')

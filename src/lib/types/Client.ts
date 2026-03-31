@@ -6,6 +6,8 @@ import { TouristTd } from '@/lib/components/admin/table/TouristTd';
 
 export class Client {
   id: string;
+  salon_id: string;
+  user_id: string | null;
   firstName: string;
   lastName: string;
   email: string;
@@ -19,6 +21,8 @@ export class Client {
 
   constructor(client: Client) {
     this.id = client.id;
+    this.salon_id = client.salon_id;
+    this.user_id = client.user_id ?? null;
     this.firstName = client.firstName;
     this.lastName = client.lastName;
     this.email = client.email;

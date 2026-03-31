@@ -5,6 +5,7 @@ import type { ServiceCategory } from './ServiceCategory';
 
 export class Service {
   id: string;
+  salon_id: string;
   name: string;
   duration: number;
   price: number;
@@ -13,6 +14,7 @@ export class Service {
 
   constructor(service: Service) {
     this.id = service.id;
+    this.salon_id = service.salon_id;
     this.name = service.name;
     this.duration = service.duration;
     this.price = service.price;

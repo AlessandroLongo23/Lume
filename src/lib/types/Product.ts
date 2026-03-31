@@ -3,6 +3,7 @@ import type { DataColumn } from './dataColumn';
 
 export class Product {
   id: string;
+  salon_id: string;
   name: string;
   product_category_id: string;
   manufacturer_id: string;
@@ -11,6 +12,7 @@ export class Product {
 
   constructor(product: Product) {
     this.id = product.id;
+    this.salon_id = product.salon_id;
     this.name = product.name;
     this.product_category_id = product.product_category_id;
     this.manufacturer_id = product.manufacturer_id;

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'motion/react';
 import { Mail, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
@@ -19,6 +20,17 @@ function mapError(message: string): string {
   }
   return 'Accesso non riuscito. Riprova.';
 }
+
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, delay: i * 0.1, ease },
+  }),
+};
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
@@ -44,51 +56,75 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="mb-6">
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease }}
+      >
         <h1 className="text-xl font-semibold text-zinc-900">Bentornato</h1>
         <p className="text-sm text-zinc-500 mt-1">Accedi al tuo gestionale</p>
-      </div>
+      </motion.div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormInput
-          label="Email"
-          type="email"
-          placeholder="nome@salone.it"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          icon={<Mail className="w-4 h-4 text-zinc-400" />}
-          required
-          autoComplete="email"
-        />
+        <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
+          <FormInput
+            label="Email"
+            type="email"
+            placeholder="nome@salone.it"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail className="w-4 h-4 text-zinc-400" />}
+            required
+            autoComplete="email"
+          />
+        </motion.div>
 
-        <FormInput
-          label="Password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          icon={<Lock className="w-4 h-4 text-zinc-400" />}
-          required
-          autoComplete="current-password"
-        />
+        <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
+          <FormInput
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock className="w-4 h-4 text-zinc-400" />}
+            required
+            autoComplete="current-password"
+          />
+        </motion.div>
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            {error}
-          </p>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.p
+              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {error}
+            </motion.p>
+          )}
+        </AnimatePresence>
 
-        <FormButton type="submit" fullWidth loading={isLoading} className="mt-2">
-          Accedi
-        </FormButton>
+        <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+          <FormButton type="submit" fullWidth loading={isLoading} className="mt-2">
+            Accedi
+          </FormButton>
+        </motion.div>
       </form>
 
-      <p className="text-center text-sm text-zinc-500 mt-6">
+      <motion.p
+        className="text-center text-sm text-zinc-500 mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+      >
         Non hai un account?{' '}
         <Link href="/register" className="text-indigo-600 hover:text-indigo-700 transition-colors font-medium">
           Inizia la prova gratuita
         </Link>
-      </p>
+      </motion.p>
     </>
   );
 }

@@ -1,9 +1,20 @@
+'use client';
+
+import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { motion, viewportConfig } from './motion';
+
 export function FooterSection() {
   return (
     <footer className="bg-white border-t border-[#E4E4E7] py-12 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <motion.div
+        className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={viewportConfig}
+        transition={{ duration: 0.6 }}
+      >
         <div>
-          <span className="text-lg font-semibold text-[#09090B]">Lume</span>
+          <LumeLogo size="sm" />
           <p className="text-xs text-zinc-400 mt-1">Il gestionale che illumina il tuo salone.</p>
         </div>
 
@@ -22,8 +33,8 @@ export function FooterSection() {
           </a>
         </div>
 
-        <p className="text-xs text-zinc-400">© 2025 Lume</p>
-      </div>
+        <p className="text-xs text-zinc-400">© 2026 Lume</p>
+      </motion.div>
     </footer>
   );
 }

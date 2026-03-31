@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
+import { motion, sectionVariants, itemVariants, viewportConfig } from './motion';
 
 const included = [
   'Calendario appuntamenti',
@@ -22,9 +23,15 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
   const [yearly, setYearly] = useState(false);
 
   return (
-    <section id="prezzi" className="py-24 px-4 bg-white section-enter">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12 fade-up">
+    <section id="prezzi" className="py-24 px-4 bg-white">
+      <motion.div
+        className="max-w-6xl mx-auto"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportConfig}
+        variants={sectionVariants}
+      >
+        <motion.div className="text-center max-w-2xl mx-auto mb-12" variants={itemVariants}>
           <div className="flex justify-center mb-4">
             <div className="accent-line" />
           </div>
@@ -34,10 +41,10 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
           <p className="text-zinc-500 text-lg">
             Meno di quello che paghi adesso, con molto di più.
           </p>
-        </div>
+        </motion.div>
 
         {/* Toggle */}
-        <div className="flex items-center justify-center gap-4 mb-10 fade-up">
+        <motion.div className="flex items-center justify-center gap-4 mb-10" variants={itemVariants}>
           <span className={`text-sm font-medium ${!yearly ? 'text-[#09090B]' : 'text-zinc-400'}`}>
             Mensile
           </span>
@@ -48,10 +55,10 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
             }`}
             aria-label="Passa a fatturazione annuale"
           >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                yearly ? 'translate-x-6' : 'translate-x-0'
-              }`}
+            <motion.span
+              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm"
+              animate={{ x: yearly ? 24 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>
           <span className={`text-sm font-medium ${yearly ? 'text-[#09090B]' : 'text-zinc-400'}`}>
@@ -60,10 +67,16 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
               2 mesi gratis
             </span>
           </span>
-        </div>
+        </motion.div>
 
         {/* Card */}
-        <div className="max-w-sm mx-auto fade-up">
+        <motion.div
+          className="max-w-sm mx-auto"
+          variants={{
+            hidden: { opacity: 0, y: 24, scale: 0.97 },
+            visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6 } },
+          }}
+        >
           <div className="pricing-card featured">
             <div className="mb-6">
               <p className="text-sm font-medium text-zinc-500 mb-1">Piano unico — tutto incluso</p>
@@ -97,8 +110,8 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
             </button>
             <p className="text-center text-xs text-zinc-400 mt-3">Nessuna carta richiesta</p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

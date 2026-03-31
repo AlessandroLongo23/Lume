@@ -9,31 +9,75 @@ function getAdminClient() {
   );
 }
 
+async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const supabaseAdmin = getAdminClient();
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('salon_id, role')
+    .eq('id', user.id)
+    .single();
+
+  return profile;
+}
+
 export async function POST(request: NextRequest) {
+  let newUserId: string | null = null;
+
   try {
     const supabase = await createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.user_metadata?.role !== 'operator') {
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || profile.role !== 'owner') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     const { operator } = await request.json();
     const supabaseAdmin = getAdminClient();
 
+    // 1. Create auth user for the operator
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: operator.email,
       password: operator.password,
       phone: `${operator.phonePrefix}${operator.phoneNumber}`,
       email_confirm: true,
-      user_metadata: { role: 'operator' },
+      user_metadata: {
+        role: 'operator',
+        firstName: operator.firstName,
+        lastName: operator.lastName,
+        must_change_password: true,
+      },
     });
 
     if (authError) throw authError;
+    newUserId = authData.user.id;
 
+    // 2. Insert profile row (links auth user to salon)
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: newUserId,
+        salon_id: profile.salon_id,
+        first_name: operator.firstName,
+        last_name: operator.lastName,
+        email: operator.email,
+        role: 'operator',
+      });
+
+    if (profileError) {
+      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      throw profileError;
+    }
+
+    // 3. Insert operator row with salon_id and user_id
     const { error: dbError } = await supabaseAdmin
       .from('operators')
       .insert({
-        id: authData.user.id,
+        salon_id: profile.salon_id,
+        user_id: newUserId,
+        must_change_password: true,
         firstName: operator.firstName,
         lastName: operator.lastName,
         email: operator.email,
@@ -41,7 +85,11 @@ export async function POST(request: NextRequest) {
         phoneNumber: operator.phoneNumber,
       });
 
-    if (dbError) throw dbError;
+    if (dbError) {
+      await supabaseAdmin.from('profiles').delete().eq('id', newUserId);
+      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      throw dbError;
+    }
 
     return NextResponse.json({ success: true, user: authData.user });
   } catch (error) {
@@ -54,11 +102,9 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
-    if (session.user.user_metadata?.role !== 'operator') {
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || profile.role !== 'owner') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -69,12 +115,30 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getAdminClient();
 
-    const { error: dbError } = await supabaseAdmin.from('operators').delete().eq('id', id);
+    // Look up the operator's user_id before deleting
+    const { data: operatorData } = await supabaseAdmin
+      .from('operators')
+      .select('user_id')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
+
+    if (!operatorData) {
+      return NextResponse.json({ success: false, error: 'Operator not found' }, { status: 404 });
+    }
+
+    // Delete operator row
+    const { error: dbError } = await supabaseAdmin
+      .from('operators')
+      .delete()
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    if (authError) {
-      return NextResponse.json({ success: false, error: authError.message }, { status: 500 });
+    // Delete profile and auth user if linked
+    if (operatorData.user_id) {
+      await supabaseAdmin.from('profiles').delete().eq('id', operatorData.user_id);
+      await supabaseAdmin.auth.admin.deleteUser(operatorData.user_id);
     }
 
     return NextResponse.json({ success: true });

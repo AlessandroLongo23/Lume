@@ -15,6 +15,7 @@ import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { useCouponsStore } from '@/lib/stores/coupons';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
 
 export function StoreInitializer() {
   const fetchClients = useClientsStore((s) => s.fetchClients);
@@ -31,6 +32,7 @@ export function StoreInitializer() {
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const fetchReviews = useReviewsStore((s) => s.fetchReviews);
   const fetchCoupons = useCouponsStore((s) => s.fetchCoupons);
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
 
   useEffect(() => {
     Promise.all([
@@ -48,6 +50,7 @@ export function StoreInitializer() {
       fetchSuppliers(),
       fetchReviews(),
       fetchCoupons(),
+      fetchSubscription(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

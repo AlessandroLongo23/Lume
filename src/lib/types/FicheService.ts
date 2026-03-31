@@ -1,5 +1,6 @@
 export class FicheService {
   id: string;
+  salon_id: string;
   fiche_id: string;
   service_id: string;
   operator_id: string;
@@ -9,6 +10,7 @@ export class FicheService {
 
   constructor(ficheService: FicheService) {
     this.id = ficheService.id;
+    this.salon_id = ficheService.salon_id;
     this.fiche_id = ficheService.fiche_id;
     this.service_id = ficheService.service_id;
     this.operator_id = ficheService.operator_id;

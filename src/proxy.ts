@@ -32,6 +32,23 @@ export default async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Force operators to change their temporary password before accessing anything else
+  if (
+    user &&
+    user.user_metadata?.must_change_password &&
+    pathname !== '/auth/change-password' &&
+    pathname !== '/auth/logout' &&
+    !pathname.startsWith('/api/')
+  ) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/auth/change-password';
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
+
   // Redirect authenticated users away from auth pages
   if (
     user &&

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { adminRoutes } from '@/lib/const/data';
 import { AdminHeader } from '@/lib/components/admin/AdminHeader';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
+import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
 const routeNameMap: Record<string, string> = Object.fromEntries(
   adminRoutes.flatMap((group) => group.routes.map((r) => [r.url, r.name]))
 );
@@ -26,6 +28,16 @@ function getTitle(pathname: string): string {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const isExpired = useSubscriptionStore((s) => s.isExpired);
+  const isLoading = useSubscriptionStore((s) => s.isLoading);
+
+  // Redirect expired users to subscribe page
+  useEffect(() => {
+    if (!isLoading && isExpired && pathname !== '/admin/subscribe') {
+      router.replace('/admin/subscribe');
+    }
+  }, [isLoading, isExpired, pathname, router]);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-[#09090B] dark:text-white p-0 font-sans">
@@ -110,7 +122,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="ml-0 md:ml-[72px] lg:ml-[240px] min-h-screen w-full bg-[#FAFAFA] dark:bg-[#09090B]">
             <div className="px-4 md:p-6 pt-20 md:pt-24 min-h-screen">
               <StoreInitializer />
-              {children}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-24">
+                  <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+                </div>
+              ) : (
+                <>
+                  <TrialWarningBanner />
+                  {children}
+                </>
+              )}
             </div>
           </div>
         </div>

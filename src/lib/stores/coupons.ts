@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/client';
 
 export interface Coupon {
   id: string;
+  salon_id: string;
   code: string;
   discount: number;
   expires_at: string;

@@ -14,6 +14,7 @@ interface OnboardingData {
 
 interface OnboardingState extends OnboardingData {
   step:      1 | 2 | 3 | 4;
+  direction: 1 | -1;
   isLoading: boolean;
   error:     string | null;
 
@@ -38,13 +39,14 @@ const initialData: OnboardingData = {
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ...initialData,
   step:      1,
+  direction: 1,
   isLoading: false,
   error:     null,
 
-  nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 4) as 1 | 2 | 3 | 4 })),
-  prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) as 1 | 2 | 3 | 4 })),
+  nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 4) as 1 | 2 | 3 | 4, direction: 1 })),
+  prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) as 1 | 2 | 3 | 4, direction: -1 })),
   setField: (key, value) => set({ [key]: value } as Partial<OnboardingState>),
-  reset:    () => set({ ...initialData, step: 1, isLoading: false, error: null }),
+  reset:    () => set({ ...initialData, step: 1, direction: 1, isLoading: false, error: null }),
 
   submitRegistration: async () => {
     const { email, password, firstName, lastName, salonName, businessType, origin, inviteCode } = get();

@@ -6,6 +6,7 @@ import type { Client } from './Client';
 
 export class Fiche {
   id: string;
+  salon_id: string;
   client_id: string;
   datetime: Date;
   status: FicheStatus;
@@ -13,6 +14,7 @@ export class Fiche {
 
   constructor(fiche: Fiche) {
     this.id = fiche.id;
+    this.salon_id = fiche.salon_id;
     this.client_id = fiche.client_id;
     this.datetime = fiche.datetime;
     this.status = fiche.status;
