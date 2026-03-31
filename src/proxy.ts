@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -32,14 +32,33 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Redirect authenticated users away from auth pages
+  if (
+    user &&
+    (pathname === '/login' || pathname === '/register')
+  ) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/admin/bilancio';
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    // Carry over any session cookies that getUser() may have refreshed
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
+
   // Redirect unauthenticated users away from protected routes
   if (
     !user &&
     (pathname.startsWith('/admin') || pathname.startsWith('/client'))
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/';
-    return NextResponse.redirect(redirectUrl);
+    redirectUrl.pathname = '/login';
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

@@ -120,7 +120,7 @@ export function EarningsGraph() {
     g.append('path')
       .datum(earningsByMonth)
       .attr('fill', 'none')
-      .attr('stroke', designSystem.colors.primary.green)
+      .attr('stroke', designSystem.colors.primary.indigo)
       .attr('stroke-width', 2)
       .attr('d', line);
 
@@ -132,7 +132,7 @@ export function EarningsGraph() {
       .attr('cx', (d) => xScale(d.month) ?? 0)
       .attr('cy', (d) => yScale(d.earnings))
       .attr('r', 4)
-      .attr('fill', designSystem.colors.primary.green)
+      .attr('fill', designSystem.colors.primary.indigo)
       .attr('stroke', '#FFFFFF')
       .attr('stroke-width', 1.5)
       .on('mouseover', function (event, d) {
@@ -181,10 +181,10 @@ export function EarningsGraph() {
   return (
     <div className="relative flex flex-col h-full items-center">
       {/* Average badge */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/90 dark:bg-[#121212] border border-[#E5E7EB] dark:border-[#374151] shadow-sm">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/90 dark:bg-[#18181B] border border-[#E4E4E7] dark:border-[#27272A] shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-0.5" style={{ backgroundImage: 'linear-gradient(to right, #D1D5DB 50%, transparent 50%)', backgroundSize: '6px 100%', backgroundRepeat: 'repeat-x' }} />
-          <span className="text-xs font-thin text-[#6B7280]">Average</span>
+          <span className="text-xs font-thin text-zinc-500">Average</span>
         </div>
         <span className="text-sm font-semibold text-[#111827] dark:text-white">
           {formatCurrency(averageMonthlyEarnings)}
@@ -210,7 +210,7 @@ export function EarningsGraph() {
             {useStackedArea ? stackedTooltipData.month : tooltipData.title}
           </p>
         </div>
-        <hr className="w-full border-[#E5E7EB] dark:border-[#374151]" />
+        <hr className="w-full border-[#E4E4E7] dark:border-[#27272A]" />
         <div className="flex flex-col gap-2 p-3">
           {useStackedArea && stackedTooltipData.details.length > 0 ? (
             <>
@@ -218,16 +218,16 @@ export function EarningsGraph() {
                 <div key={detail.product} className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: detail.color }} />
-                    <span className={`text-xs ${detail.isHighlighted ? 'font-semibold text-[#111827] dark:text-white' : 'text-[#6B7280]'}`}>{detail.product}</span>
+                    <span className={`text-xs ${detail.isHighlighted ? 'font-semibold text-[#111827] dark:text-white' : 'text-zinc-500'}`}>{detail.product}</span>
                   </div>
                   <span className={`text-sm font-thin ${detail.isHighlighted ? 'font-semibold' : ''} text-[#111827] dark:text-white`}>{formatCurrency(detail.earnings)}</span>
                 </div>
               ))}
-              <hr className="w-full border-[#E5E7EB] dark:border-[#374151]" />
+              <hr className="w-full border-[#E4E4E7] dark:border-[#27272A]" />
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Equal className="w-3 h-3 text-[#111827] dark:text-white" />
-                  <span className="text-xs text-[#6B7280]">Total</span>
+                  <span className="text-xs text-zinc-500">Total</span>
                 </div>
                 <span className="text-sm font-thin text-[#111827] dark:text-white">{formatCurrency(stackedTooltipData.totalEarnings)}</span>
               </div>
@@ -237,7 +237,7 @@ export function EarningsGraph() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Equal className="w-3 h-3 text-[#111827] dark:text-white" />
-                  <span className="text-xs text-[#6B7280]">Total</span>
+                  <span className="text-xs text-zinc-500">Total</span>
                 </div>
                 <span className="text-sm font-thin text-[#111827] dark:text-white">{formatCurrency(tooltipData.value)}</span>
               </div>
@@ -248,7 +248,7 @@ export function EarningsGraph() {
                   ) : (
                     <ArrowDown className="w-3 h-3 text-[#EF4444]" />
                   )}
-                  <span className="text-xs text-[#6B7280]">{tooltipData.change >= 0 ? 'Increase' : 'Decrease'}</span>
+                  <span className="text-xs text-zinc-500">{tooltipData.change >= 0 ? 'Increase' : 'Decrease'}</span>
                 </div>
                 <span className={`text-sm font-thin ${tooltipData.change >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
                   {formatCurrency(Math.abs(tooltipData.change))}

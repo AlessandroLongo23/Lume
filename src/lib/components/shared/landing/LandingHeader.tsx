@@ -1,49 +1,65 @@
 'use client';
 
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { DoorOpen, LogIn } from 'lucide-react';
-import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
-import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
 
 interface LandingHeaderProps {
   session: Session | null;
-  onAuthClick: () => void;
+  onLoginClick: () => void;
+  onRegisterClick: () => void;
 }
 
-export function LandingHeader({ session, onAuthClick }: LandingHeaderProps) {
-  const router = useRouter();
-  const { theme } = useTheme();
+export function LandingHeader({ session, onLoginClick, onRegisterClick }: LandingHeaderProps) {
+  const [scrolled, setScrolled] = useState(false);
 
-  const logo = theme === 'dark'
-    ? '/brand/raster/2000w/wide-white.png'
-    : '/brand/raster/2000w/wide-black.png';
-
-  const handleAccessClick = () => {
-    if (session) {
-      const role = (session.user?.user_metadata as { role?: string })?.role;
-      router.push(role === 'operator' ? '/admin/bilancio' : '/client/prodotti');
-    } else {
-      onAuthClick();
-    }
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 bg-white dark:bg-zinc-900 border-b border-zinc-500/25 transition-transform duration-300">
-      <div className="w-full mx-auto flex items-center sm:justify-between justify-center p-4">
-        <Image src={logo} alt="logo" height={48} width={200} className="h-12 w-auto" />
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <button
-            onClick={handleAccessClick}
-            className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 text-zinc-700 dark:text-zinc-200 px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-          >
-            <span className="flex items-center justify-center gap-2 text-black dark:text-white">
-              <span>{session ? 'Entra' : 'Accedi'}</span>
-              {session ? <DoorOpen strokeWidth={1.5} className="w-4 h-4" /> : <LogIn strokeWidth={1.5} className="w-4 h-4" />}
-            </span>
-          </button>
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+        scrolled
+          ? 'bg-white/95 backdrop-blur-sm border-b border-[#E4E4E7] shadow-sm'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <span className="text-xl font-semibold tracking-tight text-[#09090B]">Lume</span>
+
+        <nav className="hidden md:flex items-center gap-8">
+          <a href="#funzionalita" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+            Funzionalità
+          </a>
+          <a href="#come-funziona" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+            Come funziona
+          </a>
+          <a href="#prezzi" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+            Prezzi
+          </a>
+        </nav>
+
+        <div className="flex items-center gap-3">
+          {session ? (
+            <Link href="/admin/calendario" className="btn-primary text-sm px-4 py-2">
+              Dashboard →
+            </Link>
+          ) : (
+            <>
+              <button
+                onClick={onLoginClick}
+                className="hidden sm:block text-sm text-zinc-500 hover:text-[#09090B] transition-colors"
+              >
+                Accedi
+              </button>
+              <button onClick={onRegisterClick} className="btn-primary text-sm px-4 py-2">
+                Inizia gratis
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

@@ -45,11 +45,11 @@ export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
       : '/brand/raster/2000w/wide-black.png';
 
   return (
-    <header className="fixed flex flex-row top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 md:py-4 bg-white dark:bg-[#121212] border-b border-[#E5E7EB] dark:border-[#2A2A2A] shadow-sm dark:shadow-md">
+    <header className="fixed flex flex-row top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 md:py-4 bg-white dark:bg-[#18181B] border-b border-[#E4E4E7] dark:border-[#27272A] shadow-sm dark:shadow-md">
       <div className="flex flex-row flex-1 justify-start items-center">
         <Image src={logo} alt="logo" width={120} height={32} className="h-8 w-auto hidden sm:block" />
         <button
-          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-[#E5E7EB] dark:border-[#2A2A2A] bg-white dark:bg-[#1A1A1A] text-zinc-900 dark:text-white"
+          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-[#E4E4E7] dark:border-[#27272A] bg-white dark:bg-[#18181B] text-zinc-900 dark:text-white"
           onClick={onMobileMenuOpen}
           aria-label="Apri menu"
         >
@@ -80,7 +80,7 @@ export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
             <p className="text-sm font-thin text-zinc-900 dark:text-white">
               {operator.firstName} {operator.lastName}
             </p>
-            <p className="text-xs text-[#6B7280] dark:text-[#A0A0A0]">Operatore</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Operatore</p>
           </div>
         )}
         <ThemeToggle />

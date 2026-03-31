@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
     }
 
     const role = data?.user?.user_metadata?.role;
-    return NextResponse.redirect(`${origin}${role === 'operator' ? '/admin/bilancio' : '/client/prodotti'}`);
+    const isAdmin = role === 'owner' || role === 'operator';
+    return NextResponse.redirect(`${origin}${isAdmin ? '/admin/bilancio' : '/client/prodotti'}`);
   }
 
-  return NextResponse.redirect(`${origin}/`);
+  return NextResponse.redirect(`${origin}/login`);
 }

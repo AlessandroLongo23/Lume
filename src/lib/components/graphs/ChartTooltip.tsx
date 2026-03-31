@@ -38,12 +38,12 @@ export function ChartTooltip({ visible, x, y, position = 'top', children }: Char
 
   return (
     <div
-      className={`${translate} absolute flex flex-col z-50 bg-white dark:bg-[#121212] min-w-52 border border-[#E5E7EB] dark:border-[#2A2A2A] rounded-lg shadow-md pointer-events-none transform transition-all duration-100`}
+      className={`${translate} absolute flex flex-col z-50 bg-white dark:bg-[#18181B] min-w-52 border border-[#E4E4E7] dark:border-[#27272A] rounded-lg shadow-md pointer-events-none transform transition-all duration-100`}
       style={style as React.CSSProperties}
     >
       {children}
       <div
-        className={`${indicator} absolute size-3 bg-white dark:bg-[#121212] border-b border-r border-[#E5E7EB] dark:border-[#2A2A2A] transform`}
+        className={`${indicator} absolute size-3 bg-white dark:bg-[#18181B] border-b border-r border-[#E4E4E7] dark:border-[#27272A] transform`}
       />
     </div>
   );

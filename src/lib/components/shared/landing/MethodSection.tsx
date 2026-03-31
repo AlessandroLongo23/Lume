@@ -1,64 +1,57 @@
-'use client';
+import { Calendar, Users, Package, BarChart3 } from 'lucide-react';
 
-import Image from 'next/image';
-import { philosophyCards } from '@/lib/const/salonData';
+const features = [
+  {
+    icon: Calendar,
+    title: 'Calendario visivo',
+    description:
+      'Visualizza e gestisci tutti gli appuntamenti in un calendario chiaro. Aggiungi, modifica o cancella in pochi secondi.',
+  },
+  {
+    icon: Users,
+    title: 'Schede clienti',
+    description:
+      'Ogni cliente ha la sua scheda completa: storico appuntamenti, note, preferenze e molto altro.',
+  },
+  {
+    icon: Package,
+    title: 'Magazzino e ordini',
+    description:
+      'Tieni traccia di prodotti, fornitori e ordini. Sai sempre cosa hai in stock e cosa devi ordinare.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Bilancio e report',
+    description:
+      'Report chiari su guadagni, ore lavorate e andamento del salone. Prendi decisioni basate sui dati.',
+  },
+];
 
 export function MethodSection() {
   return (
-    <section
-      id="filosofia"
-      className="section-enter relative overflow-hidden scroll-mt-24"
-      style={{ backgroundColor: 'var(--salon-dark)', padding: 'clamp(5rem, 10vw, 8rem) 1.5rem' }}
-    >
-      <div className="grain-overlay" aria-hidden="true" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
-        <div className="flex items-center justify-between mb-20">
-          <p className="salon-label fade-up">02 / La Nostra Filosofia</p>
-          <div className="section-number hidden lg:block fade-in" style={{ transitionDelay: '0.2s', fontSize: 'clamp(5rem, 12vw, 10rem)' }} aria-hidden="true">02</div>
+    <section id="funzionalita" className="py-24 px-4 bg-[#FAFAFA] section-enter">
+      <div className="max-w-6xl mx-auto">
+        <div className="max-w-2xl mb-16 fade-up">
+          <div className="accent-line mb-4" />
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#09090B] mb-4">
+            Tutto quello che serve, niente di superfluo.
+          </h2>
+          <p className="text-zinc-500 text-lg leading-relaxed">
+            Progettato per chi lavora tutto il giorno in piedi e non ha tempo da perdere con
+            software complicati.
+          </p>
         </div>
 
-        <div className="text-center mb-24 fade-up" style={{ transitionDelay: '0.1s' }}>
-          <blockquote className="display-serif italic font-light mx-auto" style={{ fontSize: 'clamp(2rem, 4.5vw, 4rem)', color: 'var(--salon-cream)', lineHeight: 1.25, maxWidth: '820px' }}>
-            &ldquo;Bellezza autentica, cura artigianale<br className="hidden sm:block" />
-            e rispetto per ogni cliente.&rdquo;
-          </blockquote>
-          <div className="gold-line-centered mt-8 mx-auto" style={{ maxWidth: '120px' }} />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
-          {philosophyCards.map((card, i) => (
-            <div
-              key={i}
-              className="fade-up"
-              style={{
-                transitionDelay: `${0.15 + i * 0.12}s`,
-                padding: '2.5rem',
-                borderTop: '1px solid var(--salon-gold)',
-                borderRight: i < philosophyCards.length - 1 ? '1px solid var(--salon-dark-border)' : undefined,
-              }}
-            >
-              <div className="w-1.5 h-1.5 rounded-full mb-8" style={{ background: 'var(--salon-gold)', opacity: 0.8 }} />
-              <h3 className="display-serif font-light mb-5" style={{ fontSize: '1.6rem', color: 'var(--salon-cream)' }}>{card.title}</h3>
-              <p className="text-sm leading-relaxed font-light" style={{ color: 'var(--salon-text-muted-on-dark)', lineHeight: 1.85 }}>{card.description}</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 fade-up">
+          {features.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="feature-card">
+              <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] dark:bg-[#1E1B4B]/30 flex items-center justify-center mb-4">
+                <Icon className="w-5 h-5 text-[#6366F1]" />
+              </div>
+              <h3 className="font-semibold text-[#09090B] mb-2">{title}</h3>
+              <p className="text-sm text-zinc-500 leading-relaxed">{description}</p>
             </div>
           ))}
-        </div>
-
-        <div className="hidden lg:grid grid-cols-2 gap-16 items-center mt-24 pt-16 fade-up" style={{ borderTop: '1px solid var(--salon-dark-border)', transitionDelay: '0.5s' }}>
-          <div>
-            <p className="text-base leading-relaxed font-light" style={{ color: 'var(--salon-text-muted-on-dark)', lineHeight: 1.9 }}>
-              Crediamo che la vera bellezza nasca dall&apos;ascolto, dalla cura dei dettagli e dalla scelta consapevole dei prodotti giusti.
-            </p>
-          </div>
-          <div className="relative">
-            <div className="w-full h-[260px] overflow-hidden" style={{ border: '1px solid var(--salon-dark-border)' }}>
-              <Image src="/placeholder.jpg" alt="Il nostro approccio" fill className="object-cover opacity-60"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-            </div>
-            <span className="absolute top-0 right-0 w-6 h-6 pointer-events-none" style={{ borderTop: '1px solid var(--salon-gold)', borderRight: '1px solid var(--salon-gold)' }} />
-            <span className="absolute bottom-0 left-0 w-6 h-6 pointer-events-none" style={{ borderBottom: '1px solid var(--salon-gold)', borderLeft: '1px solid var(--salon-gold)' }} />
-          </div>
         </div>
       </div>
     </section>

@@ -1,32 +1,33 @@
 export const designSystem = {
   colors: {
     primary: {
-      green: '#22C55E',
-      greenLight: '#16A34A',
-      greenDark: '#15803D',
+      indigo: '#6366F1',
+      indigoLight: '#818CF8',
+      indigoDark: '#4F46E5',
     },
     neutral: {
       white: '#FFFFFF',
-      gray50: '#F9FAFB',
-      gray100: '#F3F4F6',
-      gray200: '#E5E7EB',
-      gray300: '#D1D5DB',
-      gray400: '#9CA3AF',
-      gray500: '#6B7280',
-      gray600: '#4B5563',
-      gray700: '#374151',
-      gray800: '#1F2937',
-      gray900: '#111827',
+      zinc50: '#FAFAFA',
+      zinc100: '#F4F4F5',
+      zinc200: '#E4E4E7',
+      zinc300: '#D4D4D8',
+      zinc400: '#A1A1AA',
+      zinc500: '#71717A',
+      zinc600: '#52525B',
+      zinc700: '#3F3F46',
+      zinc800: '#27272A',
+      zinc900: '#18181B',
+      zinc950: '#09090B',
     },
     dark: {
-      background: '#0A0A0A',
-      surface: '#121212',
-      surfaceLight: '#1E1E1E',
-      border: '#2A2A2A',
-      borderLight: '#333333',
-      textPrimary: '#FFFFFF',
-      textSecondary: '#A0A0A0',
-      highlight: '#2B2B2B',
+      background: '#09090B',
+      surface: '#18181B',
+      surfaceLight: '#1C1C1F',
+      border: '#27272A',
+      borderLight: '#3F3F46',
+      textPrimary: '#FAFAFA',
+      textSecondary: '#A1A1AA',
+      highlight: '#27272A',
     },
     accent: {
       blue: '#3B82F6',
@@ -40,20 +41,20 @@ export const designSystem = {
       info: '#06B6D4',
     },
     chart: {
-      primary: '#22C55E',
-      secondary: '#555555',
-      grid: { light: '#E5E7EB', dark: '#272727' },
-      text: '#A0A0A0',
-      avgLine: { light: '#9CA3AF', dark: '#555555' },
+      primary: '#6366F1',
+      secondary: '#A1A1AA',
+      grid: { light: '#E4E4E7', dark: '#27272A' },
+      text: '#71717A',
+      avgLine: { light: '#A1A1AA', dark: '#52525B' },
     },
   },
   shadows: {
-    sm: '0 1px 2px rgba(0, 0, 0, 0.2)',
-    base: '0 2px 4px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.15)',
-    md: '0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)',
-    lg: '0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3)',
-    xl: '0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.4)',
-    glow: '0 0 10px rgba(34, 197, 94, 0.2)',
+    sm: '0 1px 2px rgba(0, 0, 0, 0.08)',
+    base: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+    md: '0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05)',
+    lg: '0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
+    xl: '0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04)',
+    glow: '0 0 12px rgba(99, 102, 241, 0.2)',
   },
 };
 
@@ -97,8 +98,8 @@ export const colors = [
 ];
 
 export const cardStyle =
-  'bg-white border border-[#E5E7EB] dark:bg-[#121212] dark:border-[#2A2A2A] rounded-xl shadow-base transition-all hover:shadow-md dark:shadow-glow';
+  'bg-white border border-[#E4E4E7] dark:bg-[#18181B] dark:border-[#27272A] rounded-xl shadow-base transition-all hover:shadow-md dark:shadow-glow';
 export const widgetStyle = cardStyle;
-export const widgetTitleStyle = 'text-[#111827] dark:text-white text-base font-semibold';
+export const widgetTitleStyle = 'text-[#09090B] dark:text-white text-base font-semibold';
 export const section_style =
   'section-enter scroll-mt-24 md:scroll-mt-28 pt-20 sm:pt-24 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 px-4 sm:px-6 lg:px-8';
