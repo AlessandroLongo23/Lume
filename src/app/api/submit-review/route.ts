@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     `;
 
     const { error } = await resend.emails.send({
-      from: 'Sinergia della Bellezza <onboarding@resend.dev>',
+      from: 'Lume <onboarding@resend.dev>',
       to: ['longoa02@gmail.com'],
       subject: `${isEdit ? 'Recensione Aggiornata' : 'Nuova Recensione'} da ${client_name}`,
       html: emailHtml,

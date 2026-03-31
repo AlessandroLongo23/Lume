@@ -90,7 +90,7 @@ export function FooterSection({ onContactClick }: FooterSectionProps) {
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-10">
           <p className="salon-label" style={{ opacity: 0.35 }}>
-            © 2024 Sinergia della Bellezza — Tutti i diritti riservati
+            © 2024 Lume — Tutti i diritti riservati
           </p>
           <p className="display-serif italic" style={{ fontSize: '0.9rem', color: 'var(--salon-gold)', opacity: 0.5 }}>
             Dove la cura incontra la bellezza

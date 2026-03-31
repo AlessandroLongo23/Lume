@@ -48,7 +48,7 @@ export function HeroSection({ onContactClick }: HeroSectionProps) {
               <div className="luxury-image-frame relative w-[320px] h-[420px]">
                 <Image
                   src="/placeholder.jpg"
-                  alt="Sinergia della Bellezza"
+                  alt="Lume"
                   fill
                   className="object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
