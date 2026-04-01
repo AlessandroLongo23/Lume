@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, MessageSquare, Settings } from 'lucide-react';
 import { adminRoutes } from '@/lib/const/data';
 import { AdminHeader } from '@/lib/components/admin/AdminHeader';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { FeedbackModal } from '@/lib/components/shared/ui/FeedbackModal';
 const routeNameMap: Record<string, string> = Object.fromEntries(
   adminRoutes.flatMap((group) => group.routes.map((r) => [r.url, r.name]))
 );
@@ -27,6 +28,7 @@ function getTitle(pathname: string): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const isExpired = useSubscriptionStore((s) => s.isExpired);
@@ -80,6 +82,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       })}
                     </div>
                   ))}
+                  <hr className="border-zinc-500/25 my-2" />
+                  <button
+                    type="button"
+                    onClick={() => { setIsMobileSidebarOpen(false); setIsFeedbackOpen(true); }}
+                    className="flex items-center gap-3 font-medium transition-all duration-200 ease-in-out px-4 py-3 text-sm rounded-md text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A] w-full"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                    <span>Invia Feedback</span>
+                  </button>
                 </div>
               </div>
               <button
@@ -93,11 +104,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Desktop Sidebar */}
           <div className="hidden md:flex fixed top-16 bottom-0 left-0 bg-white dark:bg-[#18181B] border-r border-[#E4E4E7] dark:border-[#27272A] w-[72px] lg:w-[240px] shadow-sm flex-col overflow-y-auto">
-            <div className="p-6 space-y-1">
-              {adminRoutes.map((section, i) => (
-                <div key={section.title} className="flex flex-col gap-4">
+            <div className="px-4 pt-6 pb-4 flex flex-col flex-1 gap-1">
+              {adminRoutes.map((section) => (
+                <div key={section.title} className="flex flex-col gap-2 mb-4">
                   <p className="text-xs font-regular uppercase text-zinc-500">{section.title}</p>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0.5">
                     {section.routes.map((route) => {
                       const isActive = pathname.includes(route.url);
                       const Icon = route.icon;
@@ -105,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <Link
                           key={route.url}
                           href={`/admin/${route.url}`}
-                          className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-4 py-3 text-sm rounded-md ${isActive ? 'text-[#4F46E5] bg-[#EEF2FF] dark:text-[#818CF8] dark:bg-[#1E1B4B]/30' : 'text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]'}`}
+                          className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md ${isActive ? 'text-[#4F46E5] bg-[#EEF2FF] dark:text-[#818CF8] dark:bg-[#1E1B4B]/30' : 'text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]'}`}
                         >
                           <Icon className="w-5 h-5" strokeWidth={1.5} />
                           <span className="hidden lg:inline">{route.name}</span>
@@ -113,11 +124,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       );
                     })}
                   </div>
-                  {i < adminRoutes.length - 1 && <hr className="border-zinc-500/25 my-4" />}
                 </div>
               ))}
+              <div className="mt-auto pt-2 flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsFeedbackOpen(true)}
+                  className="flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A] w-full"
+                >
+                  <MessageSquare className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                  <span className="hidden lg:inline">Invia Feedback</span>
+                </button>
+                <Link
+                  href="/admin/impostazioni"
+                  className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md ${pathname.includes('impostazioni') ? 'text-[#4F46E5] bg-[#EEF2FF] dark:text-[#818CF8] dark:bg-[#1E1B4B]/30' : 'text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]'}`}
+                >
+                  <Settings className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                  <span className="hidden lg:inline">Impostazioni</span>
+                </Link>
+              </div>
             </div>
           </div>
+
+          <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
 
           <div className="ml-0 md:ml-[72px] lg:ml-[240px] min-h-screen w-full bg-[#FAFAFA] dark:bg-[#09090B]">
             <div className="px-4 md:p-6 pt-20 md:pt-24 min-h-screen">

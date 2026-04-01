@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { FlaskConical, Download, Tags, TableProperties } from 'lucide-react';
+import { FlaskConical, Download, Tags, TableProperties, ArrowDownToLine } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useViewsStore } from '@/lib/stores/views';
 import { AddProductModal } from '@/lib/components/admin/products/AddProductModal';
 import { ProductsTable } from '@/lib/components/admin/products/ProductsTable';
@@ -11,13 +13,16 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 
 export default function ProdottiPage() {
   const products = useProductsStore((s) => s.products);
+  const isLoading = useProductsStore((s) => s.isLoading);
   const view = useViewsStore((s) => s.products);
   const setView = useViewsStore((s) => s.setView);
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   return (
     <>
       <AddProductModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
@@ -44,7 +49,19 @@ export default function ProdottiPage() {
           </div>
         </div>
 
-        {view === 'categories' ? <ProductsCategories /> : <ProductsTable products={products} />}
+        {!isLoading && products.length === 0 ? (
+          <EmptyState
+            icon={FlaskConical}
+            title="Nessun prodotto trovato"
+            description="Aggiungi il tuo primo prodotto per iniziare a gestire il magazzino."
+            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+            action={{ label: 'Nuovo Prodotto', icon: FlaskConical, onClick: () => setShowAdd(true) }}
+          />
+        ) : view === 'categories' ? (
+          <ProductsCategories />
+        ) : (
+          <ProductsTable products={products} />
+        )}
       </div>
     </>
   );

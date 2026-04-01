@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
 
 function getAdminClient() {
   return createClient(
@@ -28,10 +29,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
     }
 
+    // Prefer the cookie-selected salon (multi-salon owners), fall back to profile default
+    const salonId = await getActiveSalonId(profile.salon_id);
+
     const { data: salon } = await supabaseAdmin
       .from('salons')
       .select('trial_ends_at, subscription_status, subscription_plan, subscription_ends_at, referral_code')
-      .eq('id', profile.salon_id)
+      .eq('id', salonId)
       .single();
 
     if (!salon) {
@@ -42,13 +46,13 @@ export async function GET() {
     const { count: pendingCredits } = await supabaseAdmin
       .from('referral_credits')
       .select('id', { count: 'exact', head: true })
-      .eq('referrer_salon_id', profile.salon_id)
+      .eq('referrer_salon_id', salonId)
       .eq('status', 'pending');
 
     const { count: earnedCredits } = await supabaseAdmin
       .from('referral_credits')
       .select('id', { count: 'exact', head: true })
-      .eq('referrer_salon_id', profile.salon_id)
+      .eq('referrer_salon_id', salonId)
       .in('status', ['earned', 'applied']);
 
     const now = new Date();

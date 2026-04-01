@@ -14,13 +14,15 @@ interface DayViewSlotProps {
   fiches: Fiche[];
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
+  /** True when this slot falls outside the salon's configured operating hours */
+  isDisabled?: boolean;
 }
 
 function getTimeAsMinutes(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected }: DayViewSlotProps) {
+export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected, isDisabled = false }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
   const clients = useClientsStore((s) => s.clients);
 
@@ -55,15 +57,26 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
 
   const isOccupied = slotFiches.length > 0;
   const isPast = datetime < new Date();
+  // A slot is non-interactive when it is in the past OR outside operating hours
+  const isBlocked = isPast || isDisabled;
 
   function handleClick() {
-    if (isPast) return;
+    if (isBlocked) return;
     if (isOccupied) {
       onFicheSelected(slotFiches[0]);
     } else {
       onSlotSelected({ operator, datetime });
     }
   }
+
+  // Diagonal stripe pattern for closed-hours slots (light mode only;
+  // dark mode uses the bg colour alone for subtlety)
+  const closedHoursStyle = isDisabled && !isPast
+    ? {
+        backgroundImage:
+          'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 5px)',
+      }
+    : undefined;
 
   return (
     <div
@@ -72,21 +85,24 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
       } ${
         isPast
           ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
-          : isOccupied && !isStartOfFiche
-            ? 'bg-zinc-50 dark:bg-zinc-800/50'
-            : 'bg-white dark:bg-zinc-900'
+          : isDisabled
+            ? 'bg-zinc-50 dark:bg-zinc-800/40 cursor-default'
+            : isOccupied && !isStartOfFiche
+              ? 'bg-zinc-50 dark:bg-zinc-800/50'
+              : 'bg-white dark:bg-zinc-900'
       }`}
-      onMouseEnter={() => !isPast && setIsHovered(true)}
+      style={closedHoursStyle}
+      onMouseEnter={() => !isBlocked && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      {...(!isPast && { role: 'button', tabIndex: 0 })}
-      {...(isPast && { title: 'Questo orario è passato' })}
+      {...(!isBlocked && { role: 'button', tabIndex: 0 })}
+      title={isPast ? 'Questo orario è passato' : isDisabled ? 'Il salone è chiuso in questo orario' : undefined}
     >
       <button
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
-          isPast ? 'cursor-default' : 'cursor-pointer'
+          isBlocked ? 'cursor-default' : 'cursor-pointer'
         }`}
         onClick={handleClick}
-        disabled={isPast}
+        disabled={isBlocked}
         type="button"
       >
         {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
@@ -111,7 +127,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
           );
         })}
         {isOccupied && !isStartOfFiche && <div className="w-full h-full" />}
-        {!isOccupied && isHovered && !isPast && <Plus size={16} className="text-zinc-400" />}
+        {!isOccupied && isHovered && !isBlocked && <Plus size={16} className="text-zinc-400" />}
       </button>
     </div>
   );

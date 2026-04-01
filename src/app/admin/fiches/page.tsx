@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Ticket, Download, TableProperties, LayoutGrid } from 'lucide-react';
+import { Ticket, Download, TableProperties, LayoutGrid, Calendar } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { AddFicheModal } from '@/lib/components/admin/fiches/AddFicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
 import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
@@ -10,6 +11,7 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 
 export default function FichesPage() {
   const fiches = useFichesStore((s) => s.fiches);
+  const isLoading = useFichesStore((s) => s.isLoading);
   const [view, setView] = useState<'table' | 'grid'>('table');
   const [showAdd, setShowAdd] = useState(false);
 
@@ -41,7 +43,18 @@ export default function FichesPage() {
           </div>
         </div>
 
-        {view === 'table' ? <FichesTable fiches={fiches} /> : <FichesGrid fiches={fiches} />}
+        {!isLoading && fiches.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="Nessuna fiche trovata"
+            description="Crea la tua prima fiche per iniziare a registrare gli appuntamenti."
+            action={{ label: 'Nuova fiche', icon: Ticket, onClick: () => setShowAdd(true) }}
+          />
+        ) : view === 'table' ? (
+          <FichesTable fiches={fiches} />
+        ) : (
+          <FichesGrid fiches={fiches} />
+        )}
       </div>
     </>
   );

@@ -1,21 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Scissors, Tags } from 'lucide-react';
+import { Scissors, Tags, ArrowDownToLine } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
 import { ManageCategoriesModal } from '@/lib/components/admin/services/ManageCategoriesModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 
 export default function ServiziPage() {
   const services = useServicesStore((s) => s.services);
+  const isLoading = useServicesStore((s) => s.isLoading);
   const [showAdd, setShowAdd] = useState(false);
   const [showManageCategories, setShowManageCategories] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   return (
     <>
       <AddServiceModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
       <ManageCategoriesModal isOpen={showManageCategories} onClose={() => setShowManageCategories(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
@@ -38,7 +43,17 @@ export default function ServiziPage() {
           </div>
         </div>
 
-        <ServicesTable services={services} />
+        {!isLoading && services.length === 0 ? (
+          <EmptyState
+            icon={Scissors}
+            title="Nessun servizio trovato"
+            description="Aggiungi il tuo primo servizio per iniziare a gestire il listino."
+            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+            action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
+          />
+        ) : (
+          <ServicesTable services={services} />
+        )}
       </div>
     </>
   );

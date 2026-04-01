@@ -25,7 +25,9 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
   useEffect(() => {
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOp({ ...emptyOp(), password: String(operators.length + 1).padStart(4, '0') });
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      const randomPassword = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      setOp({ ...emptyOp(), password: randomPassword });
       setErrors(emptyErrors());
     }
   }, [isOpen, operators.length]);
@@ -38,7 +40,7 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
     if (!op.firstName) e.firstName = 'Inserisci un nome';
     if (!op.lastName) e.lastName = 'Inserisci un cognome';
     if (!op.email) e.email = 'Inserisci un email';
-    if (!op.password) e.password = 'Inserisci una password';
+    if (op.password.length < 8) e.password = 'La password deve contenere almeno 8 caratteri.';
     if (!op.phonePrefix || !op.phoneNumber) e.phone = 'Inserisci un numero di telefono';
     setErrors(e);
     if (Object.values(e).some(Boolean)) return;

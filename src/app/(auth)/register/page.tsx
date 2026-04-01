@@ -2,14 +2,17 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { StepRouter } from '@/lib/components/auth/StepRouter';
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const { email, password, submitRegistration, reset } = useOnboardingStore();
 
   // Reset store if the user navigates back to this page after completing it
@@ -27,12 +30,13 @@ export default function RegisterPage() {
     if (signInError) {
       // Account was created but sign-in failed — send them to login
       useOnboardingStore.getState().reset();
-      window.location.href = '/login?registered=1';
+      router.push('/login?registered=1');
       return;
     }
 
     reset();
-    window.location.href = '/admin/bilancio';
+    const result = await useWorkspaceStore.getState().resolve();
+    router.push(result.redirect);
   }
 
   return (

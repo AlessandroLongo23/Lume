@@ -11,10 +11,13 @@ interface TimeGridProps {
   columns: TimeGridColumn[];
   date: Date;
   renderSlot: (columnKey: string, timeSlot: Date) => React.ReactNode;
+  startHour?: number;
+  endHour?: number;
 }
 
-export function TimeGrid({ columns, date, renderSlot }: TimeGridProps) {
-  const timeSlots = generateTimeSlots(new Date(date));
+export function TimeGrid({ columns, date, renderSlot, startHour, endHour }: TimeGridProps) {
+  const bounds = startHour !== undefined && endHour !== undefined ? { startHour, endHour } : undefined;
+  const timeSlots = generateTimeSlots(new Date(date), bounds);
 
   return (
     <div className="flex flex-col border border-zinc-500/25 rounded-lg overflow-hidden">

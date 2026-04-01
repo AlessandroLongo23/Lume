@@ -163,7 +163,34 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Client not found' }, { status: 404 });
     }
 
-    // Delete client row
+    // 1. Collect all fiche IDs for this client so we can cascade manually
+    const { data: clientFiches, error: fichesLookupError } = await supabaseAdmin
+      .from('fiches')
+      .select('id')
+      .eq('client_id', id)
+      .eq('salon_id', profile.salon_id);
+    if (fichesLookupError) throw fichesLookupError;
+
+    const ficheIds = (clientFiches ?? []).map((f: { id: string }) => f.id);
+
+    // 2. Delete fiche_services for those fiches (FK → fiches)
+    if (ficheIds.length > 0) {
+      const { error: ficheServicesError } = await supabaseAdmin
+        .from('fiche_services')
+        .delete()
+        .in('fiche_id', ficheIds);
+      if (ficheServicesError) throw ficheServicesError;
+    }
+
+    // 3. Delete fiches (FK → clients)
+    const { error: fichesError } = await supabaseAdmin
+      .from('fiches')
+      .delete()
+      .eq('client_id', id)
+      .eq('salon_id', profile.salon_id);
+    if (fichesError) throw fichesError;
+
+    // 5. Delete client row
     const { error: dbError } = await supabaseAdmin
       .from('clients')
       .delete()
@@ -171,25 +198,40 @@ export async function DELETE(request: NextRequest) {
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 
-    // Only delete the auth user if this was their sole identity association.
-    // The same person may be a client of another salon or an owner/operator
-    // elsewhere — deleting their auth account would lock them out of everything.
+    // Smart Garbage Collection: only delete the auth.users identity if it is
+    // completely orphaned — i.e. no longer referenced anywhere in the system.
+    // The same person could be:
+    //   • an owner of a salon (salons.owner_id)
+    //   • an operator at a salon (operators.user_id)
+    //   • a client of a different salon (clients.user_id)
+    // Any of these still being present means the identity must be preserved.
     if (clientData.user_id) {
-      const [{ count: otherClientCount }, { data: ownerProfile }] = await Promise.all([
+      const userId = clientData.user_id;
+
+      const [
+        { count: salonOwnerCount },
+        { count: operatorCount },
+        { count: otherClientCount },
+      ] = await Promise.all([
+        supabaseAdmin
+          .from('salons')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', userId),
+        supabaseAdmin
+          .from('operators')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId),
         supabaseAdmin
           .from('clients')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', clientData.user_id),
-        supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('id', clientData.user_id)
-          .maybeSingle(),
+          .eq('user_id', userId),
       ]);
 
-      const isLastAssociation = (otherClientCount ?? 0) === 0 && !ownerProfile;
-      if (isLastAssociation) {
-        await supabaseAdmin.auth.admin.deleteUser(clientData.user_id);
+      const totalAssociations =
+        (salonOwnerCount ?? 0) + (operatorCount ?? 0) + (otherClientCount ?? 0);
+
+      if (totalAssociations === 0) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
       }
     }
 

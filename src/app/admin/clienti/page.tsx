@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { UserPlus, EllipsisVertical, FileDown, FileSpreadsheet, TableProperties, LayoutGrid } from 'lucide-react';
+import { UserPlus, EllipsisVertical, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine } from 'lucide-react';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useViewsStore } from '@/lib/stores/views';
 import { AddClientModal } from '@/lib/components/admin/clients/AddClientModal';
@@ -12,9 +14,11 @@ import { useRef, useEffect } from 'react';
 
 export default function ClientiPage() {
   const clients = useClientsStore((s) => s.clients);
+  const isLoading = useClientsStore((s) => s.isLoading);
   const view = useViewsStore((s) => s.clients);
   const setView = useViewsStore((s) => s.setView);
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +34,7 @@ export default function ClientiPage() {
   return (
     <>
       <AddClientModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
@@ -78,7 +83,15 @@ export default function ClientiPage() {
           </div>
         </div>
 
-        {view === 'table' ? (
+        {!isLoading && clients.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Nessun cliente trovato"
+            description="Aggiungi il tuo primo cliente per iniziare a gestire la tua lista."
+            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+            action={{ label: 'Nuovo cliente', icon: UserPlus, onClick: () => setShowAdd(true) }}
+          />
+        ) : view === 'table' ? (
           <ClientsTable clients={clients} />
         ) : (
           <ClientsGrid clients={clients} />

@@ -9,14 +9,18 @@ import { DayViewSlot } from './DayViewSlot';
 import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { DaySchedule } from '@/lib/utils/operating-hours';
+import { isSlotActive } from '@/lib/utils/operating-hours';
 
 interface DayViewProps {
   selectedDate: Date;
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
+  operatingHours: DaySchedule[];
+  gridBounds: { startHour: number; endHour: number };
 }
 
-export function DayView({ selectedDate, onSlotSelected, onFicheSelected }: DayViewProps) {
+export function DayView({ selectedDate, onSlotSelected, onFicheSelected, operatingHours, gridBounds }: DayViewProps) {
   const operators = useOperatorsStore((s) => s.operators);
   const fiches = useFichesStore((s) => s.fiches);
 
@@ -41,6 +45,8 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected }: DayVi
   function renderSlot(columnKey: string, timeSlot: Date) {
     const operator = operatorMap.get(columnKey);
     if (!operator) return null;
+    const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
+    const disabled = !isSlotActive(operatingHours, timeSlot.getDay(), slotMinutes);
     return (
       <DayViewSlot
         operator={operator}
@@ -48,9 +54,18 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected }: DayVi
         fiches={dateFiches}
         onSlotSelected={onSlotSelected}
         onFicheSelected={onFicheSelected}
+        isDisabled={disabled}
       />
     );
   }
 
-  return <TimeGrid columns={columns} date={selectedDate} renderSlot={renderSlot} />;
+  return (
+    <TimeGrid
+      columns={columns}
+      date={selectedDate}
+      renderSlot={renderSlot}
+      startHour={gridBounds.startHour}
+      endHour={gridBounds.endHour}
+    />
+  );
 }

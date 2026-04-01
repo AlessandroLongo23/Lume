@@ -11,15 +11,19 @@ import { DayViewSlot } from './DayViewSlot';
 import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { DaySchedule } from '@/lib/utils/operating-hours';
+import { isSlotActive } from '@/lib/utils/operating-hours';
 
 interface WeekViewProps {
   selectedDate: Date;
   selectedOperatorId: string;
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
+  operatingHours: DaySchedule[];
+  gridBounds: { startHour: number; endHour: number };
 }
 
-export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onFicheSelected }: WeekViewProps) {
+export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onFicheSelected, operatingHours, gridBounds }: WeekViewProps) {
   const operators = useOperatorsStore((s) => s.operators);
   const fiches = useFichesStore((s) => s.fiches);
 
@@ -67,6 +71,9 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
     const adjustedSlot = new Date(columnDate);
     adjustedSlot.setHours(timeSlot.getHours(), timeSlot.getMinutes(), 0, 0);
 
+    const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
+    const disabled = !isSlotActive(operatingHours, columnDate.getDay(), slotMinutes);
+
     return (
       <DayViewSlot
         operator={operator}
@@ -74,9 +81,18 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
         fiches={dayFiches}
         onSlotSelected={onSlotSelected}
         onFicheSelected={onFicheSelected}
+        isDisabled={disabled}
       />
     );
   }
 
-  return <TimeGrid columns={columns} date={selectedDate} renderSlot={renderSlot} />;
+  return (
+    <TimeGrid
+      columns={columns}
+      date={selectedDate}
+      renderSlot={renderSlot}
+      startHour={gridBounds.startHour}
+      endHour={gridBounds.endHour}
+    />
+  );
 }

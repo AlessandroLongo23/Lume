@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ShoppingCart, Download, TableProperties, CalendarDays } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { useViewsStore } from '@/lib/stores/views';
 import { useSearchStore } from '@/lib/stores/search';
 import { AddOrderModal } from '@/lib/components/admin/orders/AddOrderModal';
@@ -12,6 +13,7 @@ import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 
 export default function OrdiniPage() {
   const orders = useOrdersStore((s) => s.orders);
+  const isLoading = useOrdersStore((s) => s.isLoading);
   const view = useViewsStore((s) => s.orders);
   const setView = useViewsStore((s) => s.setView);
   const query = useSearchStore((s) => s.query);
@@ -63,7 +65,16 @@ export default function OrdiniPage() {
           </div>
         </div>
 
-        <OrdersTable orders={filtered} />
+        {!isLoading && orders.length === 0 ? (
+          <EmptyState
+            icon={ShoppingCart}
+            title="Nessun ordine trovato"
+            description="Crea il tuo primo ordine per iniziare a gestire le forniture."
+            action={{ label: 'Nuovo Ordine', icon: ShoppingCart, onClick: () => setShowAdd(true) }}
+          />
+        ) : (
+          <OrdersTable orders={filtered} />
+        )}
       </div>
     </>
   );

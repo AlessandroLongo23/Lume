@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
+
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -15,13 +18,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/?error=${encodeURIComponent(error.message)}`);
     }
 
+    // Honour explicit ?next= param (e.g., deep-links into admin)
     if (next) {
       return NextResponse.redirect(`${origin}${next}`);
     }
 
-    const role = data?.user?.user_metadata?.role;
-    const isAdmin = role === 'owner' || role === 'operator';
-    return NextResponse.redirect(`${origin}${isAdmin ? '/admin/bilancio' : '/client/prodotti'}`);
+    const result = await resolveWorkspace(data.user.id);
+    const response = NextResponse.redirect(`${origin}${result.redirect}`);
+
+    // Write the active salon cookie directly on the redirect response
+    if (result.activeSalonId) {
+      response.cookies.set('lume-active-salon-id', result.activeSalonId, {
+        httpOnly: true,
+        secure:   process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path:     '/',
+        maxAge:   COOKIE_MAX_AGE,
+      });
+    }
+
+    return response;
   }
 
   return NextResponse.redirect(`${origin}/login`);

@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { UserPlus, EllipsisVertical, Archive } from 'lucide-react';
+import { UserPlus, EllipsisVertical, Archive, Users, ArrowDownToLine } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddOperatorModal } from '@/lib/components/admin/operators/AddOperatorModal';
 import { OperatorsTable } from '@/lib/components/admin/operators/OperatorsTable';
 
 export default function OperatoriPage() {
   const operators = useOperatorsStore((s) => s.operators);
+  const isLoading = useOperatorsStore((s) => s.isLoading);
   const showArchived = useOperatorsStore((s) => s.showArchived);
   const setShowArchived = useOperatorsStore((s) => s.setShowArchived);
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +42,7 @@ export default function OperatoriPage() {
   return (
     <>
       <AddOperatorModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
@@ -77,7 +82,17 @@ export default function OperatoriPage() {
           </div>
         </div>
 
-        <OperatorsTable operators={visibleOperators} showArchived={showArchived} />
+        {!isLoading && operators.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Nessun operatore trovato"
+            description="Aggiungi il tuo primo operatore per iniziare a gestire il team."
+            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+            action={{ label: 'Nuovo operatore', icon: UserPlus, onClick: () => setShowAdd(true) }}
+          />
+        ) : (
+          <OperatorsTable operators={visibleOperators} showArchived={showArchived} />
+        )}
       </div>
     </>
   );

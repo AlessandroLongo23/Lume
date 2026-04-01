@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { Tag } from 'lucide-react';
-import Link from 'next/link';
 import type { OriginType } from '@/lib/types/Salon';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
@@ -71,7 +70,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
       </motion.div>
 
       <AnimatePresence>
-        {error && errorCode === 'EMAIL_EXISTS' && (
+        {error && errorCode === 'EMAIL_EXISTS_WRONG_PASSWORD' && (
           <motion.div
             className="text-sm bg-amber-50 border border-amber-200 rounded-lg px-4 py-3"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -81,14 +80,11 @@ export function StepFour({ onSubmit }: StepFourProps) {
           >
             <p className="text-amber-800 font-medium">Hai già un account con questa email.</p>
             <p className="text-amber-700 mt-1">
-              Accedi con le tue credenziali esistenti per creare una nuova attività.{' '}
-              <Link href="/login" className="underline font-medium hover:text-amber-900 transition-colors">
-                Vai al login →
-              </Link>
+              Torna al passaggio precedente e inserisci la password del tuo account esistente per collegare una nuova attività.
             </p>
           </motion.div>
         )}
-        {error && errorCode !== 'EMAIL_EXISTS' && (
+        {error && !errorCode && (
           <motion.p
             className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}

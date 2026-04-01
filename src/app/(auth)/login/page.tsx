@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { Mail, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
 
@@ -33,10 +35,11 @@ const fieldVariants = {
 };
 
 export default function LoginPage() {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
+  const router = useRouter();
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [error, setError]         = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +54,8 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = '/admin/bilancio';
+    const result = await useWorkspaceStore.getState().resolve();
+    router.push(result.redirect);
   }
 
   return (

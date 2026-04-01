@@ -10,15 +10,19 @@ export const CALENDAR_CONFIG: CalendarConfig = {
   },
 };
 
-export function generateTimeSlots(date: Date): Date[] {
-  const { startHour, endHour, timeStep } = CALENDAR_CONFIG.daily;
+export function generateTimeSlots(
+  date: Date,
+  bounds?: { startHour: number; endHour: number },
+): Date[] {
+  const { timeStep } = CALENDAR_CONFIG.daily;
+  const startHour = bounds?.startHour ?? CALENDAR_CONFIG.daily.startHour;
+  const endHour = bounds?.endHour ?? CALENDAR_CONFIG.daily.endHour;
   const slots: Date[] = [];
 
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += timeStep) {
-      if (hour === endHour && minute > 0) break;
       const slot: Date = new Date(date);
-      slot.setHours(hour, minute);
+      slot.setHours(hour, minute, 0, 0);
       slots.push(slot);
     }
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { CalendarToolbar } from './CalendarToolbar';
 import { DayView } from './DayView';
@@ -10,10 +10,30 @@ import { AddFicheModal } from './AddFicheModal';
 import { EditFicheModal } from './EditFicheModal';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { DaySchedule } from '@/lib/utils/operating-hours';
+import { getGridBounds } from '@/lib/utils/operating-hours';
 
 export function Calendar() {
   const { currentView, selectedDate, currentMonth, selectedOperatorId } = useCalendarStore();
   const { setSelectedDate, setView } = useCalendarStore();
+
+  // Operating hours — fetched once, drives grid bounds and disabled slots
+  const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.operating_hours)) {
+          setOperatingHours(data.operating_hours as DaySchedule[]);
+        }
+      })
+      .catch(() => {
+        // leave empty → isSlotActive returns true for all slots (safe fallback)
+      });
+  }, []);
+
+  const gridBounds = useMemo(() => getGridBounds(operatingHours), [operatingHours]);
 
   // Modal state is transient UI — stays in local state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,6 +80,8 @@ export function Calendar() {
             selectedDate={selectedDate}
             onSlotSelected={handleSlotSelected}
             onFicheSelected={handleFicheSelected}
+            operatingHours={operatingHours}
+            gridBounds={gridBounds}
           />
         )}
 
@@ -69,6 +91,8 @@ export function Calendar() {
             selectedOperatorId={selectedOperatorId}
             onSlotSelected={handleSlotSelected}
             onFicheSelected={handleFicheSelected}
+            operatingHours={operatingHours}
+            gridBounds={gridBounds}
           />
         )}
 
