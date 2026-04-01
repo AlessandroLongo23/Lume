@@ -2,26 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { Menu, Calendar, Clock } from 'lucide-react';
-import { useOperatorsStore } from '@/lib/stores/operators';
-import { LogoutButton } from '@/lib/components/shared/ui/buttons/LogoutButton';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { SubscriptionCTA } from '@/lib/components/admin/SubscriptionCTA';
-import type { User } from '@supabase/supabase-js';
+import { UserAvatar } from '@/lib/components/admin/UserAvatar';
 
 interface AdminHeaderProps {
-  user: User | null;
   onMobileMenuOpen?: () => void;
 }
 
-export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
-  const operators = useOperatorsStore((s) => s.operators);
+export function AdminHeader({ onMobileMenuOpen }: AdminHeaderProps) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [seconds, setSeconds] = useState('');
   const [loaded, setLoaded] = useState(false);
-
-  const operator = operators.find((o) => o.id === user?.id);
 
   useEffect(() => {
     const tick = () => {
@@ -69,17 +63,9 @@ export function AdminHeader({ user, onMobileMenuOpen }: AdminHeaderProps) {
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-4 md:gap-5">
-        {operator && (
-          <div className="hidden md:block">
-            <p className="text-sm font-thin text-zinc-900 dark:text-white">
-              {operator.firstName} {operator.lastName}
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Operatore</p>
-          </div>
-        )}
         <SubscriptionCTA />
         <ThemeToggle />
-        <LogoutButton />
+        <UserAvatar />
       </div>
     </header>
   );

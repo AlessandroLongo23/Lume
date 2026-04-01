@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { stripe } from '@/lib/stripe/client';
+import { getStripe } from '@/lib/stripe/client';
 
 function getAdminClient() {
   return createClient(
@@ -41,7 +41,7 @@ export async function POST() {
 
     const origin = process.env.NEXT_PUBLIC_APP_URL || '';
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: salon.stripe_customer_id,
       return_url: `${origin}/admin/subscribe`,
     });

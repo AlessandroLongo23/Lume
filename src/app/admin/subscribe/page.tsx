@@ -307,13 +307,17 @@ export default function SubscribePage() {
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollCountRef = useRef(0);
+  const hasStartedPolling = useRef(false);
 
   // Poll for subscription activation after successful checkout
   useEffect(() => {
-    if (!success || isActive || isPolling || pollTimedOut) return;
+    if (!success || isActive || hasStartedPolling.current || pollTimedOut) return;
 
-    setIsPolling(true);
+    hasStartedPolling.current = true;
     pollCountRef.current = 0;
+
+    // Defer state update to avoid synchronous setState in effect body
+    queueMicrotask(() => setIsPolling(true));
 
     pollRef.current = setInterval(async () => {
       pollCountRef.current += 1;
@@ -333,7 +337,7 @@ export default function SubscribePage() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [success, isActive, isPolling, pollTimedOut, fetchSubscription]);
+  }, [success, isActive, pollTimedOut, fetchSubscription]);
 
   if (isLoading) {
     return (

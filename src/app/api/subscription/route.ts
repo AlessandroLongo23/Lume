@@ -20,7 +20,7 @@ export async function GET() {
     const supabaseAdmin = getAdminClient();
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('salon_id, role')
+      .select('salon_id, role, first_name, last_name, email')
       .eq('id', user.id)
       .single();
 
@@ -73,6 +73,9 @@ export async function GET() {
       pendingCredits: pendingCredits ?? 0,
       earnedCredits: earnedCredits ?? 0,
       role: profile.role,
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      email: profile.email,
     });
   } catch (error) {
     console.error('Subscription status error:', error);

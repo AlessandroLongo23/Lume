@@ -15,6 +15,9 @@ interface SubscriptionState {
   pendingCredits:     number;
   earnedCredits:      number;
   role:               string;
+  firstName:          string;
+  lastName:           string;
+  email:              string;
   fetchSubscription:  () => Promise<void>;
 }
 
@@ -32,6 +35,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
   pendingCredits:     0,
   earnedCredits:      0,
   role:               '',
+  firstName:          '',
+  lastName:           '',
+  email:              '',
 
   fetchSubscription: async () => {
     try {
@@ -55,6 +61,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
         pendingCredits:     data.pendingCredits,
         earnedCredits:      data.earnedCredits,
         role:               data.role,
+        firstName:          data.firstName ?? '',
+        lastName:           data.lastName ?? '',
+        email:              data.email ?? '',
       });
     } catch {
       set({ isLoading: false, isExpired: true });

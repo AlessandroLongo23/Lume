@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-[#09090B] dark:text-white p-0 font-sans">
       <div className="h-full">
-        <AdminHeader user={null} onMobileMenuOpen={() => setIsMobileSidebarOpen(true)} />
+        <AdminHeader onMobileMenuOpen={() => setIsMobileSidebarOpen(true)} />
 
         <div className="flex">
           {/* Mobile Sidebar */}

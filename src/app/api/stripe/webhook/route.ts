@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { stripe } from '@/lib/stripe/client';
+import { getStripe } from '@/lib/stripe/client';
 import Stripe from 'stripe';
 
 function getAdminClient() {
@@ -32,7 +32,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     : session.customer.id;
 
   // Retrieve full subscription to get status and period end
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
   const plan = derivePlan(subscription);
   const periodEnd = subscription.items.data[0]?.current_period_end;
 
@@ -146,7 +146,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
   if (referrerSalon?.stripe_customer_id) {
     // Apply credit immediately via Stripe Customer Balance
-    await stripe.customers.createBalanceTransaction(referrerSalon.stripe_customer_id, {
+    await getStripe().customers.createBalanceTransaction(referrerSalon.stripe_customer_id, {
       amount: -4990, // -€49.90 credit
       currency: 'eur',
       description: 'Credito referral Lume - 1 mese gratuito',
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
