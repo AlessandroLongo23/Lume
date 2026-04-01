@@ -6,9 +6,15 @@ import { addMonths, subMonths, formatDateString, getWeekDays } from '@/lib/utils
 import { capitalize } from '@/lib/utils/string';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { useOperatorsStore } from '@/lib/stores/operators';
-import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
-import { CalendarIcon } from '@/lib/components/shared/ui/CalendarIcon';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+
+const VIEW_OPTIONS = [
+  { value: 'day', label: 'Giorno' },
+  { value: 'week', label: 'Settimana' },
+  { value: 'month', label: 'Mese' },
+] as const;
+
+type CalendarView = 'day' | 'week' | 'month';
 
 export function CalendarToolbar() {
   const { currentView, selectedDate, currentMonth, selectedOperatorId } = useCalendarStore();
@@ -16,6 +22,7 @@ export function CalendarToolbar() {
   const operators = useOperatorsStore((s) => s.operators);
 
   const activeOperators = operators.filter((op) => !op.isArchived);
+  const weekDisabled = !selectedOperatorId;
 
   function navigatePrev() {
     if (currentView === 'day') setSelectedDate(subDays(selectedDate, 1));
@@ -35,89 +42,32 @@ export function CalendarToolbar() {
     setCurrentMonth(today);
   }
 
-  function handleViewChange(view: 'day' | 'week' | 'month') {
-    setView(view);
+  function getDateLabel(): string {
+    if (currentView === 'day') {
+      return capitalize(formatDateString(selectedDate, 'EEEE, d MMMM yyyy'));
+    }
+    if (currentView === 'week') {
+      const days = getWeekDays(selectedDate);
+      const start = days[0];
+      const end = days[6];
+      return `${capitalize(formatDateString(start, 'd MMM'))} — ${capitalize(formatDateString(end, 'd MMM yyyy'))}`;
+    }
+    return capitalize(formatDateString(currentMonth, 'MMMM yyyy'));
   }
 
-  function handleOperatorChange(id: string | null) {
-    setSelectedOperatorId(id);
+  function handleViewChange(view: CalendarView) {
+    if (view === 'week' && weekDisabled) return;
+    setView(view);
   }
 
   return (
     <div className="flex w-full justify-between items-center py-4 mb-4 pb-4 border-b border-zinc-500/25">
-      {/* Left: date context */}
-      <div className="flex items-center gap-3">
-        {currentView === 'day' && <CalendarIcon date={selectedDate} />}
 
-        {currentView === 'week' && (() => {
-          const weekDays = getWeekDays(selectedDate);
-          const start = weekDays[0];
-          const end = weekDays[6];
-          return (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center border border-zinc-500/25 rounded-md">
-                <button
-                  onClick={navigatePrev}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-l-md"
-                  aria-label="Settimana precedente"
-                  type="button"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  onClick={goToToday}
-                  className="px-3 py-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  type="button"
-                >
-                  {capitalize(formatDateString(start, 'd MMM'))} — {capitalize(formatDateString(end, 'd MMM yyyy'))}
-                </button>
-                <button
-                  onClick={navigateNext}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-r-md"
-                  aria-label="Settimana successiva"
-                  type="button"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-          );
-        })()}
-
-        {currentView === 'month' && (
-          <div className="flex items-center border border-zinc-500/25 rounded-md">
-            <button
-              onClick={navigatePrev}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-l-md"
-              aria-label="Mese precedente"
-              type="button"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={goToToday}
-              className="px-3 py-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              type="button"
-            >
-              {capitalize(formatDateString(currentMonth, 'MMMM yyyy'))}
-            </button>
-            <button
-              onClick={navigateNext}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-r-md"
-              aria-label="Mese successivo"
-              type="button"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Right: operator filter + view toggle */}
-      <div className="flex items-center gap-3">
+      {/* Left: operator filter */}
+      <div className="flex items-center">
         <CustomSelect
           value={selectedOperatorId}
-          onChange={handleOperatorChange}
+          onChange={setSelectedOperatorId}
           options={activeOperators}
           labelKey={(op) => op.getFullName()}
           valueKey="id"
@@ -126,13 +76,114 @@ export function CalendarToolbar() {
           searchable={false}
           width="w-52"
         />
+      </div>
 
-        <ToggleButton
-          value={currentView}
-          onChange={handleViewChange}
-          options={['day', 'week', 'month']}
-          labels={['Giorno', 'Settimana', 'Mese']}
-        />
+      {/* Center: prev / date (click = today) / next */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={navigatePrev}
+          aria-label="Precedente"
+          className="p-2 rounded-md text-zinc-500 dark:text-zinc-400
+            hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        {/* Clickable date label — triggers goToToday */}
+        <span className="relative group">
+          <button
+            type="button"
+            onClick={goToToday}
+            className="px-3 py-1 rounded-md text-lg font-medium
+              text-zinc-800 dark:text-zinc-100 select-none
+              hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            {getDateLabel()}
+          </button>
+          <span
+            role="tooltip"
+            className={[
+              'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
+              'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-white',
+              'bg-zinc-800 dark:bg-zinc-700 shadow-lg',
+              'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+            ].join(' ')}
+          >
+            Torna a oggi
+            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700" />
+          </span>
+        </span>
+
+        <button
+          type="button"
+          onClick={navigateNext}
+          aria-label="Successivo"
+          className="p-2 rounded-md text-zinc-500 dark:text-zinc-400
+            hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {/* Right: view toggle */}
+      <div className="flex items-center gap-3">
+
+        {/* View toggle — Settimana is disabled without a selected operator */}
+        <div
+          role="radiogroup"
+          className="flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25"
+        >
+          {VIEW_OPTIONS.map(({ value, label }, i) => {
+            const isActive = currentView === value;
+            const isDisabled = value === 'week' && weekDisabled;
+
+            const button = (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                disabled={isDisabled}
+                onClick={() => handleViewChange(value)}
+                className={[
+                  'flex items-center justify-center px-3 py-2 text-sm transition-all',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:z-10',
+                  i > 0 ? 'border-l border-zinc-500/25' : '',
+                  isDisabled
+                    ? 'cursor-not-allowed opacity-40 bg-white dark:bg-zinc-800 text-zinc-400'
+                    : isActive
+                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            );
+
+            if (!isDisabled) return button;
+
+            // Wrap disabled Settimana in a Tailwind tooltip
+            return (
+              <span key={value} className="relative group">
+                {button}
+                <span
+                  role="tooltip"
+                  className={[
+                    'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
+                    'w-64 rounded-md px-3 py-2 text-xs text-white bg-zinc-800 dark:bg-zinc-700 shadow-lg',
+                    'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+                    'whitespace-normal text-center',
+                  ].join(' ')}
+                >
+                  Seleziona un singolo operatore per attivare la vista settimanale
+                  {/* arrow */}
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700" />
+                </span>
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

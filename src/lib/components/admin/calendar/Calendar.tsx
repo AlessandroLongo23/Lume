@@ -7,6 +7,7 @@ import { DayView } from './DayView';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
 import { AddFicheModal } from './AddFicheModal';
+import { EditFicheModal } from './EditFicheModal';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
 
@@ -18,6 +19,8 @@ export function Calendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalOperator, setModalOperator] = useState<Operator | null>(null);
   const [modalDatetime, setModalDatetime] = useState<Date | undefined>(undefined);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFiche, setEditFiche] = useState<Fiche | null>(null);
 
   function handleDayClick(day: Date) {
     setSelectedDate(day);
@@ -30,8 +33,9 @@ export function Calendar() {
     setIsModalOpen(true);
   }
 
-  function handleFicheSelected(_fiche: Fiche) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    // TODO: open edit fiche modal
+  function handleFicheSelected(fiche: Fiche) {
+    setEditFiche(fiche);
+    setIsEditModalOpen(true);
   }
 
   return (
@@ -41,6 +45,11 @@ export function Calendar() {
         onClose={() => setIsModalOpen(false)}
         datetime={modalDatetime}
         operator={modalOperator}
+      />
+      <EditFicheModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        fiche={editFiche}
       />
 
       <div className="relative h-full flex flex-col">

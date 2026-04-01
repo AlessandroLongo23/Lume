@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar } from 'lucide-react';
+import { Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar, Check } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useFichesStore } from '@/lib/stores/fiches';
@@ -13,10 +13,11 @@ import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import type { Operator } from '@/lib/types/Operator';
+import type { Fiche } from '@/lib/types/Fiche';
 import type { Service } from '@/lib/types/Service';
 
 interface FicheServiceState {
+  id?: string;
   service_id: string;
   name: string;
   operator_id: string;
@@ -24,11 +25,10 @@ interface FicheServiceState {
   price: number;
 }
 
-interface AddFicheModalProps {
+interface EditFicheModalProps {
   isOpen: boolean;
   onClose: () => void;
-  datetime?: Date;
-  operator?: Operator | null;
+  fiche: Fiche | null;
 }
 
 function toDatetimeLocal(date: Date | null | undefined): string {
@@ -38,20 +38,20 @@ function toDatetimeLocal(date: Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// Column layout for the services table (must match header + row)
 const TABLE_COLS = '1fr 1.5fr 80px 60px 60px 76px 32px';
 
-export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheModalProps) {
-  const addFiche = useFichesStore((s) => s.addFiche);
+export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) {
+  const updateFiche = useFichesStore((s) => s.updateFiche);
   const clients = useClientsStore((s) => s.clients);
   const operators = useOperatorsStore((s) => s.operators);
   const services = useServicesStore((s) => s.services);
   const serviceCategories = useServiceCategoriesStore((s) => s.service_categories);
-  const addFicheService = useFicheServicesStore((s) => s.addFicheService);
+  const { addFicheService, updateFicheService, deleteFicheService } = useFicheServicesStore();
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
   const [note, setNote] = useState('');
+  const [status, setStatus] = useState<FicheStatus>(FicheStatus.CREATED);
   const [ficheServices, setFicheServices] = useState<FicheServiceState[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState('');
@@ -61,24 +61,34 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
   const svcInputRef = useRef<HTMLInputElement>(null);
   const svcDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Pre-populate from fiche when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setClientId('');
-      setDatetimeStr(toDatetimeLocal(datetime));
-      setNote('');
-      setFicheServices([]);
+    if (isOpen && fiche) {
+      setClientId(fiche.client_id);
+      setDatetimeStr(toDatetimeLocal(new Date(fiche.datetime)));
+      setNote(fiche.note ?? '');
+      setStatus(fiche.status);
+      const existingServices = fiche.getFicheServices();
+      setFicheServices(
+        existingServices.map((fs) => {
+          const svc = services.find((s) => s.id === fs.service_id);
+          return {
+            id: fs.id,
+            service_id: fs.service_id,
+            name: svc?.name ?? 'Servizio',
+            operator_id: fs.operator_id ?? '',
+            duration: fs.duration,
+            price: svc?.price ?? 0,
+          };
+        }),
+      );
       setErrors({});
       setErrorMessage('');
       setSvcQuery('');
       setSvcOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  // Sync datetime when slot changes while modal is open
-  useEffect(() => {
-    setDatetimeStr(toDatetimeLocal(datetime));
-  }, [datetime]);
+  }, [isOpen, fiche]);
 
   // Close service dropdown on outside click
   useEffect(() => {
@@ -91,15 +101,12 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── Derived values ─────────────────────────────────────────────────────────
-
   const baseTime = useMemo(() => {
-    if (!datetimeStr) return datetime ?? new Date();
+    if (!datetimeStr) return new Date();
     const d = new Date(datetimeStr);
-    return isNaN(d.getTime()) ? (datetime ?? new Date()) : d;
-  }, [datetimeStr, datetime]);
+    return isNaN(d.getTime()) ? new Date() : d;
+  }, [datetimeStr]);
 
-  // Compute chained start/end times from current durations — reactive to any duration edit
   const servicesWithTimes = useMemo(() => {
     let cursor = baseTime;
     return ficheServices.map((s) => {
@@ -132,12 +139,10 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
     return Array.from(groups.values());
   }, [services, serviceCategories, svcQuery]);
 
-  // ── Mutations ──────────────────────────────────────────────────────────────
-
   function addServiceToList(svc: Service) {
     setFicheServices((prev) => [
       ...prev,
-      { service_id: svc.id, name: svc.name, operator_id: operator?.id ?? '', duration: svc.duration, price: svc.price },
+      { service_id: svc.id, name: svc.name, operator_id: '', duration: svc.duration, price: svc.price },
     ]);
     setSvcQuery('');
     setSvcOpen(false);
@@ -157,6 +162,7 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
   }
 
   async function handleSubmit() {
+    if (!fiche) return;
     const newErrors: Record<string, string> = {};
     if (!clientId) newErrors.client_id = 'Seleziona un cliente';
     if (!datetimeStr) newErrors.datetime = 'Inserisci data e ora';
@@ -166,11 +172,32 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status: FicheStatus.CREATED, note });
-      await Promise.all(
-        servicesWithTimes.map((svc) =>
-          addFicheService({
-            fiche_id: newFiche.id,
+      await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note });
+
+      // IDs currently in the local list (existing services only)
+      const currentIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
+
+      // Delete services that were removed
+      for (const fs of fiche.getFicheServices()) {
+        if (!currentIds.has(fs.id)) {
+          await deleteFicheService(fs.id);
+        }
+      }
+
+      // Update existing or insert new services
+      for (const svc of servicesWithTimes) {
+        if (svc.id) {
+          await updateFicheService(svc.id, {
+            operator_id: svc.operator_id || undefined,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            start_time: svc.start_time as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            end_time: svc.end_time as any,
+            duration: svc.duration,
+          });
+        } else {
+          await addFicheService({
+            fiche_id: fiche.id,
             service_id: svc.service_id,
             operator_id: svc.operator_id || undefined,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,16 +205,15 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             end_time: svc.end_time as any,
             duration: svc.duration,
-          }),
-        ),
-      );
+          });
+        }
+      }
+
       onClose();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     }
   }
-
-  // ── Styles ─────────────────────────────────────────────────────────────────
 
   const inputClass =
     'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
@@ -199,9 +225,10 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={handleSubmit}
-      title="Nuova fiche"
-      subtitle="Crea un nuovo appuntamento"
+      title="Modifica fiche"
+      subtitle="Aggiorna i dettagli dell'appuntamento"
       classes="max-w-6xl h-[90vh]"
+      confirmText="Salva"
       footerContent={
         <div className="flex flex-col gap-0.5">
           <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -261,6 +288,19 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
               onChange={(e) => setNote(e.target.value)}
               placeholder="Note per questo appuntamento…"
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass}><Check className="size-3.5" />Stato</label>
+            <select
+              className={inputClass}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as FicheStatus)}
+            >
+              <option value={FicheStatus.CREATED}>Creata</option>
+              <option value={FicheStatus.PENDING}>In attesa</option>
+              <option value={FicheStatus.COMPLETED}>Completata</option>
+            </select>
           </div>
 
         </div>
@@ -348,7 +388,7 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
                 <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
                   {servicesWithTimes.map((svc, i) => (
                     <div
-                      key={i}
+                      key={svc.id ?? i}
                       className="grid items-center px-3 py-2.5 group"
                       style={{ gridTemplateColumns: TABLE_COLS }}
                     >

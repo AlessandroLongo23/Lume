@@ -1,38 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { FlaskConical, Download, Tags, TableProperties } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useViewsStore } from '@/lib/stores/views';
-import { useSearchStore } from '@/lib/stores/search';
 import { AddProductModal } from '@/lib/components/admin/products/AddProductModal';
 import { ProductsTable } from '@/lib/components/admin/products/ProductsTable';
 import { ProductsCategories } from '@/lib/components/admin/products/ProductsCategories';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
-import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 
 export default function ProdottiPage() {
   const products = useProductsStore((s) => s.products);
   const view = useViewsStore((s) => s.products);
   const setView = useViewsStore((s) => s.setView);
-  const query = useSearchStore((s) => s.query);
   const [showAdd, setShowAdd] = useState(false);
-
-  const filtered = useMemo(() => {
-    if (!query) return products;
-    const q = query.toLowerCase();
-    return products.filter((p) =>
-      ['name', 'price'].some((k) =>
-        String(p[k as keyof typeof p])?.toLowerCase().includes(q)
-      )
-    );
-  }, [products, query]);
-
-  const title = !query
-    ? `Tutti i prodotti (${filtered.length})`
-    : filtered.length === 0 ? 'Nessun prodotto trovato'
-    : filtered.length === 1 ? '1 prodotto trovato'
-    : `${filtered.length} prodotti trovati`;
 
   return (
     <>
@@ -40,9 +21,8 @@ export default function ProdottiPage() {
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Prodotti</h1>
           <div className="flex flex-row items-center gap-4">
-            <Searchbar placeholder="Cerca prodotto" className="w-80" />
             <ToggleButton
               value={view}
               onChange={(v) => setView('products', v)}
@@ -64,7 +44,7 @@ export default function ProdottiPage() {
           </div>
         </div>
 
-        {view === 'categories' ? <ProductsCategories /> : <ProductsTable products={filtered} />}
+        {view === 'categories' ? <ProductsCategories /> : <ProductsTable products={products} />}
       </div>
     </>
   );

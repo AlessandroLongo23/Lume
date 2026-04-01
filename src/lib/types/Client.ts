@@ -17,7 +17,7 @@ export class Client {
   isTourist: boolean;
   birthDate: string;
   note: string;
-  category_id: string;
+  categoryId: string;
 
   constructor(client: Client) {
     this.id = client.id;
@@ -32,7 +32,7 @@ export class Client {
     this.isTourist = client.isTourist;
     this.birthDate = client.birthDate;
     this.note = client.note;
-    this.category_id = client.category_id;
+    this.categoryId = client.categoryId;
   }
 
   getFullName(): string {
@@ -56,14 +56,14 @@ export class Client {
   static dataColumns: DataColumn[] = [
     {
       label: '',
-      key: 'category_id',
+      key: 'categoryId',
       sortable: true,
       icon: Tag,
       display: (client: Client) => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { useClientCategoriesStore } = require('@/lib/stores/client_categories');
         const { client_categories } = useClientCategoriesStore.getState();
-        const category = client_categories.find((cat: { id: string; name: string }) => cat.id === client.category_id);
+        const category = client_categories.find((cat: { id: string; name: string }) => cat.id === client.categoryId);
         return category ? category.name : 'N/A';
       },
     },

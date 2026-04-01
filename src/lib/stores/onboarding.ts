@@ -17,6 +17,7 @@ interface OnboardingState extends OnboardingData {
   direction: 1 | -1;
   isLoading: boolean;
   error:     string | null;
+  errorCode: string | null;
 
   nextStep:           () => void;
   prevStep:           () => void;
@@ -42,11 +43,12 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   direction: 1,
   isLoading: false,
   error:     null,
+  errorCode: null,
 
   nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 4) as 1 | 2 | 3 | 4, direction: 1 })),
   prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) as 1 | 2 | 3 | 4, direction: -1 })),
   setField: (key, value) => set({ [key]: value } as Partial<OnboardingState>),
-  reset:    () => set({ ...initialData, step: 1, direction: 1, isLoading: false, error: null }),
+  reset:    () => set({ ...initialData, step: 1, direction: 1, isLoading: false, error: null, errorCode: null }),
 
   submitRegistration: async () => {
     const { email, password, firstName, lastName, salonName, businessType, origin, inviteCode } = get();
@@ -61,14 +63,14 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       const result = await res.json();
 
       if (!result.success) {
-        set({ isLoading: false, error: result.error ?? 'Registrazione fallita. Riprova.' });
+        set({ isLoading: false, error: result.error ?? 'Registrazione fallita. Riprova.', errorCode: result.code ?? null });
         return { success: false };
       }
 
-      set({ isLoading: false });
+      set({ isLoading: false, errorCode: null });
       return { success: true };
     } catch {
-      set({ isLoading: false, error: 'Errore di rete. Controlla la connessione e riprova.' });
+      set({ isLoading: false, error: 'Errore di rete. Controlla la connessione e riprova.', errorCode: null });
       return { success: false };
     }
   },

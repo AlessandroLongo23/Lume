@@ -1,18 +1,15 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { UserPlus, Users, EllipsisVertical, Archive } from 'lucide-react';
+import { UserPlus, EllipsisVertical, Archive } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
-import { useSearchStore } from '@/lib/stores/search';
 import { AddOperatorModal } from '@/lib/components/admin/operators/AddOperatorModal';
 import { OperatorsTable } from '@/lib/components/admin/operators/OperatorsTable';
-import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 
 export default function OperatoriPage() {
   const operators = useOperatorsStore((s) => s.operators);
   const showArchived = useOperatorsStore((s) => s.showArchived);
   const setShowArchived = useOperatorsStore((s) => s.setShowArchived);
-  const query = useSearchStore((s) => s.query);
   const [showAdd, setShowAdd] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -26,29 +23,17 @@ export default function OperatoriPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const filtered = useMemo(() => {
-    let list = operators;
-    if (!showArchived) list = list.filter((o) => !o.isArchived);
-    else list = list.filter((o) => o.isArchived);
-    if (!query) return list;
-    const q = query.toLowerCase();
-    return list.filter((o) =>
-      ['firstName', 'lastName', 'email'].some((k) =>
-        String(o[k as keyof typeof o])?.toLowerCase().includes(q)
-      )
-    );
-  }, [operators, query, showArchived]);
-
   const activeCount = operators.filter((o) => !o.isArchived).length;
   const archivedCount = operators.filter((o) => o.isArchived).length;
 
+  const visibleOperators = useMemo(
+    () => operators.filter((o) => (showArchived ? o.isArchived : !o.isArchived)),
+    [operators, showArchived]
+  );
+
   const title = showArchived
     ? `Operatori archiviati (${archivedCount})`
-    : !query
-      ? `Tutti gli operatori (${activeCount})`
-      : filtered.length === 0 ? 'Nessun operatore trovato'
-      : filtered.length === 1 ? '1 operatore trovato'
-      : `${filtered.length} operatori trovati`;
+    : `Tutti gli operatori (${activeCount})`;
 
   return (
     <>
@@ -58,7 +43,6 @@ export default function OperatoriPage() {
         <div className="flex flex-row items-center justify-between gap-4 w-full">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h1>
           <div className="flex flex-row items-center gap-4">
-            <Searchbar placeholder="Cerca operatore" className="w-80" />
             <button
               className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
               onClick={() => setShowAdd(true)}
@@ -93,19 +77,7 @@ export default function OperatoriPage() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="min-h-[300px] flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-            <Users className="w-16 h-16 text-zinc-300 dark:text-zinc-600 mb-3" />
-            <h3 className="text-lg font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-              {showArchived ? 'Nessun operatore archiviato' : 'Nessun operatore trovato'}
-            </h3>
-            <p className="text-sm text-zinc-500 text-center max-w-md">
-              {showArchived ? 'Non ci sono operatori archiviati.' : 'Non ci sono operatori registrati.'}
-            </p>
-          </div>
-        ) : (
-          <OperatorsTable operators={filtered} showArchived={showArchived} />
-        )}
+        <OperatorsTable operators={visibleOperators} showArchived={showArchived} />
       </div>
     </>
   );

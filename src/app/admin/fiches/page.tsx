@@ -1,36 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Ticket, Download, TableProperties, LayoutGrid } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
-import { useSearchStore } from '@/lib/stores/search';
 import { AddFicheModal } from '@/lib/components/admin/fiches/AddFicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
 import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
-import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 
 export default function FichesPage() {
   const fiches = useFichesStore((s) => s.fiches);
-  const query = useSearchStore((s) => s.query);
   const [view, setView] = useState<'table' | 'grid'>('table');
   const [showAdd, setShowAdd] = useState(false);
-
-  const filtered = useMemo(() => {
-    if (!query) return fiches;
-    const q = query.toLowerCase();
-    return fiches.filter((f) =>
-      ['status', 'note'].some((k) =>
-        String(f[k as keyof typeof f])?.toLowerCase().includes(q)
-      )
-    );
-  }, [fiches, query]);
-
-  const title = !query
-    ? `Tutte le fiches (${filtered.length})`
-    : filtered.length === 0 ? 'Nessuna fiche trovata'
-    : filtered.length === 1 ? '1 fiche trovata'
-    : `${filtered.length} fiches trovate`;
 
   return (
     <>
@@ -38,9 +19,8 @@ export default function FichesPage() {
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Fiches</h1>
           <div className="flex flex-row items-center gap-4">
-            <Searchbar placeholder="Cerca fiche" className="w-80" />
             <ToggleButton
               value={view}
               onChange={setView}
@@ -61,7 +41,7 @@ export default function FichesPage() {
           </div>
         </div>
 
-        {view === 'table' ? <FichesTable fiches={filtered} /> : <FichesGrid fiches={filtered} />}
+        {view === 'table' ? <FichesTable fiches={fiches} /> : <FichesGrid fiches={fiches} />}
       </div>
     </>
   );

@@ -212,26 +212,13 @@ export function Table({
               )}
               {columns.map((column) => (
                 <th key={column.key} scope="col" className={`px-4 py-3 border-r border-zinc-500/25 ${column?.width ?? ''}`}>
-                  <button
-                    className={`${column.sortable ? 'cursor-pointer' : 'pointer-events-none'} flex items-center justify-between w-full hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors`}
-                    onClick={() => column.sortable && handleSort(column.key)}
-                  >
-                    <div className="flex flex-row items-center gap-2">
+                  <div className="flex items-center justify-between w-full">
+                    <div
+                      className={`${column.sortable ? 'cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-200' : ''} flex items-center gap-2 transition-colors`}
+                      onClick={() => column.sortable && handleSort(column.key)}
+                    >
                       {column.icon && <column.icon className="size-4" />}
                       <span className="text-xs">{column.label.toUpperCase()}</span>
-                    </div>
-                    <div className="flex flex-row gap-4 justify-between items-center">
-                      {column.filter && (
-                        <FilterDropdown
-                          type={column.filter}
-                          options={filterOptions[column.key]}
-                          value={filters[column.key]}
-                          onChange={(v) => setFilter(column.key, v)}
-                          active={isFilterActive(column.key)}
-                          open={openFilterDropdown === column.key}
-                          onOpenChange={(isOpen) => handleFilterDropdownToggle(column.key, isOpen)}
-                        />
-                      )}
                       {column.sortable && (
                         <div className="flex flex-col">
                           <ChevronUp className={`size-3 ${sortColumn === column.key && sortDirection === 'asc' ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
@@ -239,7 +226,18 @@ export function Table({
                         </div>
                       )}
                     </div>
-                  </button>
+                    {column.filter && (
+                      <FilterDropdown
+                        type={column.filter}
+                        options={filterOptions[column.key]}
+                        value={filters[column.key]}
+                        onChange={(v) => setFilter(column.key, v)}
+                        active={isFilterActive(column.key)}
+                        open={openFilterDropdown === column.key}
+                        onOpenChange={(isOpen) => handleFilterDropdownToggle(column.key, isOpen)}
+                      />
+                    )}
+                  </div>
                 </th>
               ))}
               <th scope="col" className="px-4 py-3 border-r border-zinc-500/25 pointer-events-none w-24">

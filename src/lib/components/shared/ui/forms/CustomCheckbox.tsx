@@ -32,15 +32,20 @@ export function CustomCheckbox({
       <div
         role="checkbox"
         aria-checked={checked}
-        tabIndex={0}
+        aria-label={label}
+        tabIndex={disabled ? -1 : 0}
         onClick={toggle}
-        onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') toggle(); }}
-        className={`size-6 flex items-center justify-center rounded border transition-all duration-200
-          border-gray-300 dark:border-gray-600
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } }}
+        className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
+          ${checked
+            ? 'border-indigo-500/50 bg-indigo-500/10'
+            : 'border-zinc-500/25 bg-white dark:bg-zinc-800'
+          }
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-indigo-500/30'}
           ${className}`}
       >
-        {checked && <Check className="size-4 text-black dark:text-white" strokeWidth={1.5} />}
+        {checked && <Check className="size-4 text-indigo-500" strokeWidth={2} />}
       </div>
     </div>
   );

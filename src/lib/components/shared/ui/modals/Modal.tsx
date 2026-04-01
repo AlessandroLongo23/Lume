@@ -39,6 +39,12 @@ export function Modal({
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (closeOnOutsideClick && e.target === e.currentTarget) onClose();
   };
@@ -55,6 +61,8 @@ export function Modal({
           transition={{ duration: 0.15 }}
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
             className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full ${classes}`}
             onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.95, y: 8 }}

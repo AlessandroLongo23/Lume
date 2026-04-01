@@ -38,7 +38,9 @@ export const useClientsStore = create<ClientsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
-    return new Client(result.user);
+    const newClient = new Client(result.client);
+    set((s) => ({ clients: [...s.clients, newClient] }));
+    return newClient;
   },
 
   updateClient: async (clientId, updatedClient) => {

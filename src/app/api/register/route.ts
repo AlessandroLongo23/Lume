@@ -46,7 +46,14 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       if (authError.message.toLowerCase().includes('already') || authError.message.toLowerCase().includes('exists')) {
-        return NextResponse.json({ success: false, error: 'Un account con questa email esiste già.' }, { status: 409 });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'EMAIL_EXISTS',
+            error: 'Esiste già un account con questa email.',
+          },
+          { status: 409 },
+        );
       }
       console.error('Auth user creation failed:', authError);
       return NextResponse.json({ success: false, error: 'Impossibile creare l\'account. Riprova.' }, { status: 500 });

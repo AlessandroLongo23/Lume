@@ -67,15 +67,26 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
 
   return (
     <div
-      className={`flex items-center relative w-full h-8 bg-white dark:bg-zinc-900 border-t ${datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'} ${isOccupied && !isStartOfFiche ? 'bg-zinc-50 dark:bg-zinc-800/50' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
+      className={`flex items-center relative w-full h-8 border-t ${
+        datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'
+      } ${
+        isPast
+          ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
+          : isOccupied && !isStartOfFiche
+            ? 'bg-zinc-50 dark:bg-zinc-800/50'
+            : 'bg-white dark:bg-zinc-900'
+      }`}
+      onMouseEnter={() => !isPast && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      role="button"
-      tabIndex={0}
+      {...(!isPast && { role: 'button', tabIndex: 0 })}
+      {...(isPast && { title: 'Questo orario è passato' })}
     >
       <button
-        className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${isPast ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
+          isPast ? 'cursor-default' : 'cursor-pointer'
+        }`}
         onClick={handleClick}
+        disabled={isPast}
         type="button"
       >
         {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
@@ -87,7 +98,9 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
           return (
             <div
               key={fiche.id}
-              className={`absolute top-0 left-0 w-full p-1 text-xs rounded-sm z-10 ${isCreated ? 'bg-green-500/20 border-l-2 border-green-500' : 'bg-amber-500/20 border-l-2 border-amber-500'}`}
+              className={`absolute top-0 left-0 w-full p-1 text-xs rounded-sm z-10 ${
+                isPast ? 'opacity-50' : ''
+              } ${isCreated ? 'bg-green-500/20 border-l-2 border-green-500' : 'bg-amber-500/20 border-l-2 border-amber-500'}`}
               style={{ height: `calc(${ficheRowSpan * 2}rem)` }}
             >
               <div className="font-medium truncate">{client?.getFullName() ?? 'Cliente'}</div>
