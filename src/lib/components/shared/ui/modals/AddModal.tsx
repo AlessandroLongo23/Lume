@@ -35,8 +35,8 @@ export function AddModal({
       <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
           <div className="flex flex-row items-center gap-3 truncate">
-            <div className="flex flex-shrink-0 items-center justify-center size-10 rounded-lg bg-emerald-500/10">
-              <Plus className="size-5 text-emerald-500" />
+            <div className="flex flex-shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
+              <Plus className="size-5 text-indigo-500" />
             </div>
             <div className="flex flex-col truncate">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
@@ -66,7 +66,7 @@ export function AddModal({
             </button>
             <button
               type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors"
               onClick={onSubmit}
             >
               <Check className="size-4" />

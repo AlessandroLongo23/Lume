@@ -14,16 +14,18 @@ interface TableProps {
   columns: DataColumn[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any[];
-  detailPageUrl: string;
+  detailPageUrl?: string;
   isLoading: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleEditClick: (e: React.MouseEvent, item: any) => void;
+  handleEditClick?: (e: React.MouseEvent, item: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleDeleteClick: (e: React.MouseEvent, item: any) => void;
+  handleDeleteClick?: (e: React.MouseEvent, item: any) => void;
   labelPlural: string;
   labelSingular: string;
   elementsPerPage?: number;
   showNumbers?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  extraActions?: (item: any) => React.ReactNode;
 }
 
 export function Table({
@@ -37,6 +39,7 @@ export function Table({
   labelSingular,
   elementsPerPage = 25,
   showNumbers = false,
+  extraActions,
 }: TableProps) {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -293,24 +296,31 @@ export function Table({
                       'transition-all duration-200 ease-in-out',
                     ].join(' ')}
                   >
-                    <button
-                      onClick={() => router.push(`/admin/${detailPageUrl}/${item.id}`)}
-                      className="font-thin p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-700 text-blue-600 hover:text-blue-900 dark:text-blue-500 hover:underline"
-                    >
-                      <Info className="size-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleEditClick(e, item)}
-                      className="font-thin p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 hover:text-zinc-900 dark:text-zinc-500 hover:underline"
-                    >
-                      <Pencil className="size-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteClick(e, item)}
-                      className="font-thin p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-700 text-red-600 hover:text-red-900 dark:text-red-500 hover:underline"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                    {detailPageUrl && (
+                      <button
+                        onClick={() => router.push(`/admin/${detailPageUrl}/${item.id}`)}
+                        className="font-thin p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-700 text-blue-600 hover:text-blue-900 dark:text-blue-500 hover:underline"
+                      >
+                        <Info className="size-4" />
+                      </button>
+                    )}
+                    {handleEditClick && (
+                      <button
+                        onClick={(e) => handleEditClick(e, item)}
+                        className="font-thin p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 hover:text-zinc-900 dark:text-zinc-500 hover:underline"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                    )}
+                    {extraActions?.(item)}
+                    {handleDeleteClick && (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, item)}
+                        className="font-thin p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-700 text-red-600 hover:text-red-900 dark:text-red-500 hover:underline"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

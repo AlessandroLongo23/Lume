@@ -124,6 +124,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
     }
 
+    // 4. Auto-insert Owner as an Operator (bookable resource on the calendar)
+    const { error: operatorError } = await supabaseAdmin
+      .from('operators')
+      .insert({
+        salon_id:  salonId,
+        user_id:   userId,
+        firstName,
+        lastName,
+        email,
+      });
+
+    if (operatorError) {
+      console.error('Operator auto-insert failed (non-fatal):', operatorError);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';

@@ -4,18 +4,23 @@ import { Operator } from '@/lib/types/Operator';
 
 interface OperatorsState {
   operators: Operator[];
+  showArchived: boolean;
   isLoading: boolean;
   error: string | null;
   selectedOperator: Operator | null;
   fetchOperators: () => Promise<void>;
   addOperator: (operatorData: Partial<Operator>) => Promise<Operator>;
   updateOperator: (operatorId: string, updatedOperator: Partial<Operator>) => Promise<Operator>;
+  archiveOperator: (operatorId: string) => Promise<void>;
+  restoreOperator: (operatorId: string) => Promise<void>;
   deleteOperator: (operatorId: string) => Promise<void>;
   setSelectedOperator: (operator: Operator | null) => void;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useOperatorsStore = create<OperatorsState>((set) => ({
   operators: [],
+  showArchived: false,
   isLoading: true,
   error: null,
   selectedOperator: null,
@@ -52,6 +57,26 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
     return new Operator(data);
   },
 
+  archiveOperator: async (operatorId) => {
+    const response = await fetch('/api/operators', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: operatorId, action: 'archive' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
+  restoreOperator: async (operatorId) => {
+    const response = await fetch('/api/operators', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: operatorId, action: 'restore' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
   deleteOperator: async (operatorId) => {
     const response = await fetch('/api/operators', {
       method: 'DELETE',
@@ -63,4 +88,5 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
   },
 
   setSelectedOperator: (operator) => set({ selectedOperator: operator }),
+  setShowArchived: (show) => set({ showArchived: show }),
 }));

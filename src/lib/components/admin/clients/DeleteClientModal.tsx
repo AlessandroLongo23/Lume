@@ -26,9 +26,8 @@ export function DeleteClientModal({ isOpen, onClose, selectedClient }: DeleteCli
   };
 
   return (
-    <DeleteModal isOpen={isOpen} onConfirm={handleDelete} onCancel={onClose} onClose={onClose}>
+    <DeleteModal isOpen={isOpen} onConfirm={handleDelete} onClose={onClose}>
       <p>Sei sicuro di voler eliminare il cliente <strong>{selectedClient?.firstName} {selectedClient?.lastName}</strong>?</p>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Questa azione è irreversibile.</p>
     </DeleteModal>
   );
 }

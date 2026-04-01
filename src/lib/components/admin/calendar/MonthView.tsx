@@ -1,17 +1,32 @@
 'use client';
 
 import { useMemo } from 'react';
+import { isSameDay } from 'date-fns';
 import { getMonthDays, weekDays } from '@/lib/utils/date';
-import { MonthlyCalendarDay } from './MonthlyCalendarDay';
+import { useFichesStore } from '@/lib/stores/fiches';
+import { MonthViewDay } from './MonthViewDay';
 
-interface MonthlyCalendarProps {
+interface MonthViewProps {
   currentMonth: Date;
   selectedDate: Date;
   onDayClick: (day: Date) => void;
 }
 
-export function MonthlyCalendar({ currentMonth, selectedDate, onDayClick }: MonthlyCalendarProps) {
+export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewProps) {
+  const fiches = useFichesStore((s) => s.fiches);
   const monthDays = useMemo(() => getMonthDays(currentMonth), [currentMonth]);
+
+  // Pre-compute fiche counts per day in a single pass
+  const ficheCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const { date } of monthDays) {
+      const key = date.toDateString();
+      if (!counts.has(key)) {
+        counts.set(key, fiches.filter((f) => isSameDay(new Date(f.datetime), date)).length);
+      }
+    }
+    return counts;
+  }, [fiches, monthDays]);
 
   return (
     <>
@@ -24,11 +39,12 @@ export function MonthlyCalendar({ currentMonth, selectedDate, onDayClick }: Mont
       </div>
       <div className="grid grid-cols-7 gap-0 border border-zinc-500/25 rounded-lg overflow-hidden">
         {monthDays.map((day, i) => (
-          <MonthlyCalendarDay
+          <MonthViewDay
             key={i}
             day={day.date}
             isCurrentMonth={day.isCurrentMonth}
             selectedDate={selectedDate}
+            ficheCount={ficheCounts.get(day.date.toDateString()) ?? 0}
             onClick={onDayClick}
           />
         ))}

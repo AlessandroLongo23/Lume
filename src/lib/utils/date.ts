@@ -2,6 +2,7 @@ import {
   format,
   startOfMonth,
   endOfMonth,
+  startOfWeek,
   eachDayOfInterval,
   addMonths,
   subMonths,
@@ -39,6 +40,11 @@ export function getMonthDays(currentMonth: Date): { date: Date; isCurrentMonth: 
     date,
     isCurrentMonth: date.getMonth() === currentMonth.getMonth(),
   }));
+}
+
+export function getWeekDays(date: Date): Date[] {
+  const start = startOfWeek(date, { weekStartsOn: 1 });
+  return eachDayOfInterval({ start, end: addDays(start, 6) });
 }
 
 export { addMonths, subMonths };

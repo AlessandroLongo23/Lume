@@ -16,6 +16,7 @@ import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
   const fetchClients = useClientsStore((s) => s.fetchClients);
@@ -53,6 +54,22 @@ export function StoreInitializer() {
       fetchSubscription(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime subscriptions — re-fetch store when any row changes
+  useRealtimeStore('clients', fetchClients);
+  useRealtimeStore('operators', fetchOperators);
+  useRealtimeStore('fiches', fetchFiches);
+  useRealtimeStore('fiche_services', fetchFicheServices);
+  useRealtimeStore('orders', fetchOrders);
+  useRealtimeStore('products', fetchProducts);
+  useRealtimeStore('product_categories', fetchProductCategories);
+  useRealtimeStore('services', fetchServices);
+  useRealtimeStore('service_categories', fetchServiceCategories);
+  useRealtimeStore('client_categories', fetchClientCategories);
+  useRealtimeStore('manufacturers', fetchManufacturers);
+  useRealtimeStore('suppliers', fetchSuppliers);
+  useRealtimeStore('reviews', fetchReviews);
+  useRealtimeStore('coupons', fetchCoupons);
 
   return null;
 }

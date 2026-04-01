@@ -11,6 +11,7 @@ export class Operator {
   email: string;
   phonePrefix: string;
   phoneNumber: string;
+  archived_at: string | null;
 
   constructor(operator: Operator) {
     this.id = operator.id;
@@ -22,6 +23,11 @@ export class Operator {
     this.email = operator.email;
     this.phonePrefix = operator.phonePrefix;
     this.phoneNumber = operator.phoneNumber;
+    this.archived_at = operator.archived_at ?? null;
+  }
+
+  get isArchived(): boolean {
+    return this.archived_at !== null;
   }
 
   getFullName(): string {

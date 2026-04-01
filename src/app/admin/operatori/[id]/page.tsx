@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, UserX } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Mail, Phone, UserX, Archive, ArchiveRestore } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import type { Operator } from '@/lib/types/Operator';
@@ -13,6 +14,8 @@ export default function OperatorDetailPage() {
   const router = useRouter();
   const operators = useOperatorsStore((s) => s.operators);
   const isLoading = useOperatorsStore((s) => s.isLoading);
+  const archiveOperator = useOperatorsStore((s) => s.archiveOperator);
+  const restoreOperator = useOperatorsStore((s) => s.restoreOperator);
 
   const [operator, setOperator] = useState<Operator | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +24,22 @@ export default function OperatorDetailPage() {
   const [editedOperator, setEditedOperator] = useState<Partial<Operator>>({});
 
   const operatorId = params.id as string;
+
+  const handleToggleArchive = async () => {
+    if (!operator) return;
+    try {
+      if (operator.isArchived) {
+        await restoreOperator(operator.id);
+        messagePopup.getState().success('Operatore ripristinato.');
+      } else {
+        await archiveOperator(operator.id);
+        messagePopup.getState().success('Operatore archiviato.');
+        router.push('/admin/operatori');
+      }
+    } catch {
+      messagePopup.getState().error('Errore durante l\'operazione.');
+    }
+  };
 
   useEffect(() => {
     if (!isLoading) {
@@ -76,11 +95,25 @@ export default function OperatorDetailPage() {
               </span>
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{operator.firstName} {operator.lastName}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{operator.firstName} {operator.lastName}</h2>
+                {operator.isArchived && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Archiviato</span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setEditedOperator(operator); setShowEdit(true); }} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md transition-colors">
-                <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
+              {!operator.isArchived && (
+                <button onClick={() => { setEditedOperator(operator); setShowEdit(true); }} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md transition-colors">
+                  <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
+                </button>
+              )}
+              <button
+                onClick={handleToggleArchive}
+                className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
+                title={operator.isArchived ? 'Ripristina operatore' : 'Archivia operatore'}
+              >
+                {operator.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
               </button>
               <button onClick={() => setShowDelete(true)} className="p-2 bg-zinc-100 hover:bg-red-100 dark:bg-zinc-800 dark:hover:bg-red-900/30 rounded-md transition-colors">
                 <Trash2 className="size-5 text-zinc-600 dark:text-zinc-300" />

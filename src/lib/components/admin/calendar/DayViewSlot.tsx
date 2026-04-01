@@ -8,7 +8,7 @@ import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
 
-interface DailyCalendarSlotProps {
+interface DayViewSlotProps {
   operator: Operator;
   datetime: Date;
   fiches: Fiche[];
@@ -20,7 +20,7 @@ function getTimeAsMinutes(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-export function DailyCalendarSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected }: DailyCalendarSlotProps) {
+export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
   const clients = useClientsStore((s) => s.clients);
 
@@ -66,42 +66,40 @@ export function DailyCalendarSlot({ operator, datetime, fiches, onSlotSelected, 
   }
 
   return (
-    <div className="border-r border-zinc-500/25">
-      <div
-        className={`flex items-center relative w-full h-8 bg-white dark:bg-zinc-900 border-t ${datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'} ${isOccupied && !isStartOfFiche ? 'bg-zinc-50 dark:bg-zinc-800/50' : ''}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        role="button"
-        tabIndex={0}
+    <div
+      className={`flex items-center relative w-full h-8 bg-white dark:bg-zinc-900 border-t ${datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'} ${isOccupied && !isStartOfFiche ? 'bg-zinc-50 dark:bg-zinc-800/50' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      role="button"
+      tabIndex={0}
+    >
+      <button
+        className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${isPast ? 'opacity-60 cursor-not-allowed' : ''}`}
+        onClick={handleClick}
+        type="button"
       >
-        <button
-          className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${isPast ? 'opacity-60 cursor-not-allowed' : ''}`}
-          onClick={handleClick}
-          type="button"
-        >
-          {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
-            const client = clients.find((c) => c.id === fiche.client_id);
-            const isCreated = fiche.status === FicheStatus.CREATED;
-            const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
-            const startTime = ficheServices[0] ? format(new Date(ficheServices[0].start_time), 'HH:mm') : format(new Date(fiche.datetime), 'HH:mm');
-            const endTime = ficheServices[0] ? format(new Date(ficheServices[0].end_time), 'HH:mm') : format(addMinutes(new Date(fiche.datetime), fiche.getDuration()), 'HH:mm');
-            return (
-              <div
-                key={fiche.id}
-                className={`absolute top-0 left-0 w-full p-1 text-xs rounded-sm z-10 ${isCreated ? 'bg-green-500/20 border-l-2 border-green-500' : 'bg-amber-500/20 border-l-2 border-amber-500'}`}
-                style={{ height: `calc(${ficheRowSpan * 3}rem)` }}
-              >
-                <div className="font-medium truncate">{client?.getFullName() ?? 'Cliente'}</div>
-                <div className="text-xs">
-                  <span>{startTime} - {endTime}</span>
-                </div>
+        {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
+          const client = clients.find((c) => c.id === fiche.client_id);
+          const isCreated = fiche.status === FicheStatus.CREATED;
+          const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
+          const startTime = ficheServices[0] ? format(new Date(ficheServices[0].start_time), 'HH:mm') : format(new Date(fiche.datetime), 'HH:mm');
+          const endTime = ficheServices[0] ? format(new Date(ficheServices[0].end_time), 'HH:mm') : format(addMinutes(new Date(fiche.datetime), fiche.getDuration()), 'HH:mm');
+          return (
+            <div
+              key={fiche.id}
+              className={`absolute top-0 left-0 w-full p-1 text-xs rounded-sm z-10 ${isCreated ? 'bg-green-500/20 border-l-2 border-green-500' : 'bg-amber-500/20 border-l-2 border-amber-500'}`}
+              style={{ height: `calc(${ficheRowSpan * 2}rem)` }}
+            >
+              <div className="font-medium truncate">{client?.getFullName() ?? 'Cliente'}</div>
+              <div className="text-xs">
+                <span>{startTime} - {endTime}</span>
               </div>
-            );
-          })}
-          {isOccupied && !isStartOfFiche && <div className="w-full h-full" />}
-          {!isOccupied && isHovered && !isPast && <Plus size={16} className="text-zinc-400" />}
-        </button>
-      </div>
+            </div>
+          );
+        })}
+        {isOccupied && !isStartOfFiche && <div className="w-full h-full" />}
+        {!isOccupied && isHovered && !isPast && <Plus size={16} className="text-zinc-400" />}
+      </button>
     </div>
   );
 }

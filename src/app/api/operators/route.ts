@@ -99,6 +99,39 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createServerClient();
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || profile.role !== 'owner') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { id, action } = await request.json();
+    if (!id || !['archive', 'restore'].includes(action)) {
+      return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+    }
+
+    const supabaseAdmin = getAdminClient();
+    const archived_at = action === 'archive' ? new Date().toISOString() : null;
+
+    const { error: dbError } = await supabaseAdmin
+      .from('operators')
+      .update({ archived_at })
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id);
+
+    if (dbError) throw dbError;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error archiving operator:', msg);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerClient();

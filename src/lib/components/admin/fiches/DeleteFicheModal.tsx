@@ -26,9 +26,8 @@ export function DeleteFicheModal({ isOpen, onClose, selectedFiche }: DeleteFiche
   };
 
   return (
-    <DeleteModal isOpen={isOpen} onConfirm={handleDelete} onCancel={onClose} onClose={onClose}>
+    <DeleteModal isOpen={isOpen} onConfirm={handleDelete} onClose={onClose}>
       <p>Sei sicuro di voler eliminare la fiche <strong>{selectedFiche?.id}</strong>?</p>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Questa azione è irreversibile.</p>
     </DeleteModal>
   );
 }
