@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { subMonths, subWeeks, startOfWeek, startOfMonth, addDays, differenceInDays, parseISO, isSameDay, isSameWeek } from 'date-fns';
+import { subMonths, subWeeks, startOfWeek, startOfMonth, endOfMonth, addDays, differenceInDays, parseISO, isSameDay, isSameWeek } from 'date-fns';
 
 interface EarningsMonth {
   month: string;
@@ -91,7 +91,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
 
     // ── Daily buckets (current calendar month, day 1 → today) ───────────────
     const monthStart = startOfMonth(now);
-    const daysInPeriod = differenceInDays(now, monthStart) + 1;
+    const daysInPeriod = differenceInDays(endOfMonth(now), monthStart) + 1;
     const earningsByDay: EarningsPoint[] = [];
     for (let i = 0; i < daysInPeriod; i++) {
       const day = addDays(monthStart, i);

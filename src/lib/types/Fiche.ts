@@ -35,8 +35,27 @@ export class Fiche {
       .fiche_services.filter((fs: FicheService) => fs.fiche_id === this.id);
   }
 
+  getFicheProducts() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useFicheProductsStore } = require('@/lib/stores/fiche_products');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return useFicheProductsStore.getState().fiche_products.filter((fp: any) => fp.fiche_id === this.id);
+  }
+
   getDuration(): number {
     return this.getFicheServices().reduce((sum, fs) => sum + fs.duration, 0);
+  }
+
+  getTotal(): number {
+    const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + (fs.price ?? 0), 0);
+    const productsTotal = this.getFicheProducts().reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sum: number, fp: any) => sum + ((fp.price ?? 0) * (fp.quantity ?? 1)),
+      0
+    );
+    // NOTE: Fiche has no discount/coupon fields as of this implementation.
+    // When discounts are added to the schema, subtract them here.
+    return servicesTotal + productsTotal;
   }
 
   static dataColumns: DataColumn[] = [

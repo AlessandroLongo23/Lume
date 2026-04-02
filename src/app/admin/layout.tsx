@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { X, Loader2, MessageSquare, Settings } from 'lucide-react';
 import { adminRoutes } from '@/lib/const/data';
 import { AdminHeader } from '@/lib/components/admin/AdminHeader';
@@ -12,6 +13,13 @@ import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FeedbackModal } from '@/lib/components/shared/ui/FeedbackModal';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+function getInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
 const routeNameMap: Record<string, string> = Object.fromEntries(
   adminRoutes.flatMap((group) => group.routes.map((r) => [r.url, r.name]))
 );
@@ -36,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isExpired = useSubscriptionStore((s) => s.isExpired);
   const isLoading = useSubscriptionStore((s) => s.isLoading);
   const salonName = useSubscriptionStore((s) => s.salonName);
+  const logoUrl = useSubscriptionStore((s) => s.logoUrl);
 
   // Redirect expired users to subscribe page
   useEffect(() => {
@@ -126,9 +135,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="hidden md:flex fixed top-16 bottom-0 left-0 bg-white dark:bg-[#18181B] border-r border-[#E4E4E7] dark:border-[#27272A] w-[72px] lg:w-[240px] shadow-sm flex-col overflow-y-auto">
             <div className="px-4 pt-6 pb-4 flex flex-col flex-1 gap-1">
               {salonName && (
-                <p className="hidden lg:block text-xl font-semibold tracking-tight text-zinc-900 dark:text-white truncate mb-4">
-                  {salonName}
-                </p>
+                <div className="hidden lg:flex items-center gap-3 mb-4 min-w-0">
+                  {logoUrl ? (
+                    <Image
+                      src={logoUrl}
+                      alt={salonName}
+                      width={32}
+                      height={32}
+                      className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-md bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 leading-none">
+                        {getInitials(salonName)}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
+                    {salonName}
+                  </p>
+                </div>
               )}
               {adminRoutes.map((section) => (
                 <div key={section.title} className="flex flex-col gap-2 mb-4">

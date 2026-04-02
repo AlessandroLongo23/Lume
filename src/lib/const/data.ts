@@ -8,11 +8,9 @@ import {
   Scissors,
   ShoppingCart,
   UserCog,
+  Warehouse,
   type LucideIcon,
 } from 'lucide-react';
-
-// SoapDispenserDroplet is not available in lucide-react, use a similar icon
-import { FlaskConical } from 'lucide-react';
 
 export const adminRoutes: {
   title: string;
@@ -38,7 +36,7 @@ export const adminRoutes: {
     title: 'Gestione e magazzino',
     routes: [
       { name: 'Servizi', icon: Scissors, url: 'servizi' },
-      { name: 'Prodotti', icon: FlaskConical, url: 'prodotti' },
+      { name: 'Magazzino', icon: Warehouse, url: 'magazzino' },
       { name: 'Ordini', icon: ShoppingCart, url: 'ordini' },
       { name: 'Operatori', icon: UserCog, url: 'operatori' },
     ],

@@ -23,6 +23,7 @@ export function DeleteOperatorModal({ isOpen, onClose, selectedOperator }: Delet
   const isArchived = selectedOperator?.archived_at !== null;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setConfirmInput('');
   }, [isOpen]);
 

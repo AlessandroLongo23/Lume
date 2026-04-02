@@ -7,21 +7,33 @@ interface MonthViewDayProps {
   day: Date;
   isCurrentMonth?: boolean;
   selectedDate: Date;
-  ficheCount: number;
+  totalMinutes: number;
+  totalEarnings: number;
   onClick: (day: Date) => void;
 }
 
-function getHeatmapClass(count: number): string {
-  if (count === 0) return '';
-  if (count <= 2) return 'bg-indigo-500/5 dark:bg-indigo-400/10';
-  if (count <= 5) return 'bg-indigo-500/10 dark:bg-indigo-400/20';
-  return 'bg-indigo-500/20 dark:bg-indigo-400/30';
+// Scale: 0 min = no color, 480 min (8 h full day) = max intensity
+const MAX_MINUTES = 480;
+const MAX_OPACITY = 0.28;
+
+function getHeatmapOpacity(totalMinutes: number): number {
+  if (totalMinutes <= 0) return 0;
+  return Math.min(totalMinutes / MAX_MINUTES, 1) * MAX_OPACITY;
 }
 
-export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, ficheCount, onClick }: MonthViewDayProps) {
+function formatEarnings(amount: number): string {
+  return new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMinutes, totalEarnings, onClick }: MonthViewDayProps) {
   const isDayToday = isToday(day);
   const isSelected = isSameDay(day, selectedDate);
   const isDayPast = isPast(day) && !isDayToday;
+  const opacity = isCurrentMonth ? getHeatmapOpacity(totalMinutes) : 0;
 
   let textClasses = '';
   if (!isCurrentMonth) {
@@ -34,14 +46,20 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, ficheCo
     textClasses = 'text-zinc-900 dark:text-zinc-100';
   }
 
-  const heatmap = isCurrentMonth ? getHeatmapClass(ficheCount) : '';
-
   return (
     <div
-      className={`flex flex-col items-center relative w-full h-28 bg-white dark:bg-zinc-900 border-r border-b border-zinc-500/25 ${!isCurrentMonth ? 'opacity-40' : ''} ${heatmap}`}
+      className={`flex flex-col items-center relative w-full h-28 bg-white dark:bg-zinc-900 border-r border-b border-zinc-500/25 ${!isCurrentMonth ? 'opacity-40' : ''}`}
       role="button"
       tabIndex={0}
     >
+      {/* Heatmap overlay — sits behind content, smoothly interpolates to indigo */}
+      {opacity > 0 && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: `rgba(99, 102, 241, ${opacity})` }}
+        />
+      )}
+
       <button
         className={`w-full h-full flex flex-col items-start justify-start p-2 relative ${textClasses}`}
         onClick={() => isCurrentMonth && onClick(day)}
@@ -59,6 +77,13 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, ficheCo
         >
           {format(day, 'd', { locale: it })}
         </span>
+
+        {/* Daily earnings total — bottom-right corner */}
+        {isCurrentMonth && totalEarnings > 0 && (
+          <span className="absolute bottom-1.5 right-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
+            {formatEarnings(totalEarnings)}
+          </span>
+        )}
       </button>
     </div>
   );

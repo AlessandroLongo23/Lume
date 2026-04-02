@@ -9,6 +9,10 @@ export class Product {
   manufacturer_id: string;
   supplier_id: string;
   price: number;
+  sell_price: number | null;
+  is_for_retail: boolean;
+  stock_quantity: number;
+  min_threshold: number;
 
   constructor(product: Product) {
     this.id = product.id;
@@ -18,6 +22,10 @@ export class Product {
     this.manufacturer_id = product.manufacturer_id;
     this.supplier_id = product.supplier_id;
     this.price = product.price;
+    this.sell_price = product.sell_price ?? null;
+    this.is_for_retail = product.is_for_retail ?? false;
+    this.stock_quantity = product.stock_quantity ?? 0;
+    this.min_threshold = product.min_threshold ?? 0;
   }
 
   static dataColumns: DataColumn[] = [

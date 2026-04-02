@@ -14,6 +14,7 @@ import {
   CreditCard,
   ChevronRight,
   TriangleAlert,
+  Warehouse,
 } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -78,6 +79,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 function SalonePanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [trackInventory, setTrackInventory] = useState(false);
+  const [trackInventoryDirty, setTrackInventoryDirty] = useState(false);
 
   const {
     control,
@@ -104,6 +107,9 @@ function SalonePanel() {
           );
           reset({ operating_hours: sorted });
         }
+        if (typeof data.track_inventory === 'boolean') {
+          setTrackInventory(data.track_inventory);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -115,11 +121,12 @@ function SalonePanel() {
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, track_inventory: trackInventory }),
       });
       if (!res.ok) throw new Error();
       messagePopup.getState().success('Impostazioni salvate con successo');
       reset(data);
+      setTrackInventoryDirty(false);
     } catch {
       messagePopup.getState().error('Errore durante il salvataggio');
     } finally {
@@ -246,11 +253,38 @@ function SalonePanel() {
         </div>
       </div>
 
+      {/* Gestione Magazzino */}
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Warehouse className="size-4 text-indigo-500" />
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Gestione Magazzino</h2>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Attiva il tracciamento avanzato delle scorte nel modulo Magazzino.
+          </p>
+        </div>
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Abilita Gestione Scorte Avanzata</p>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Mostra colonne di giacenza e soglia minima nel magazzino prodotti.
+              </p>
+            </div>
+            <Switch
+              checked={trackInventory}
+              onChange={() => { setTrackInventory((v) => !v); setTrackInventoryDirty(true); }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Save */}
       <div className="flex justify-end">
         <button
           type="submit"
-          disabled={saving || !isDirty}
+          disabled={saving || (!isDirty && !trackInventoryDirty)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="size-4" />
@@ -289,7 +323,7 @@ function AccountPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Email</p>
-                <p className="text-xs text-zinc-500 mt-0.5">L'indirizzo email associato al tuo account.</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{"L'indirizzo email associato al tuo account."}</p>
               </div>
               <button
                 type="button"
@@ -339,7 +373,7 @@ function AccountPanel() {
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Elimina Salone</p>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Cancella definitivamente il salone, tutti i suoi dati e disconnette l'account.
+                {"Cancella definitivamente il salone, tutti i suoi dati e disconnette l'account."}
               </p>
             </div>
             <button

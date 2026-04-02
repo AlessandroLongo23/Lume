@@ -20,7 +20,7 @@ export default function RegisterPage() {
   }, []);
 
   async function handleSubmit() {
-    const { success } = await submitRegistration();
+    const { success, salonId } = await submitRegistration();
     if (!success) return;
 
     // Sign the new user in immediately (account was created with email_confirm: true)
@@ -31,6 +31,30 @@ export default function RegisterPage() {
       useOnboardingStore.getState().reset();
       router.push('/login?registered=1');
       return;
+    }
+
+    // Logo upload — non-blocking: failure does not interrupt the registration flow
+    const { logoFile } = useOnboardingStore.getState();
+    if (logoFile && salonId) {
+      try {
+        const ext = logoFile.type === 'image/svg+xml' ? 'svg' : logoFile.type.split('/')[1];
+        const path = `${salonId}/logo.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('salon-logos')
+          .upload(path, logoFile, { upsert: true, contentType: logoFile.type });
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('salon-logos')
+            .getPublicUrl(path);
+          await fetch('/api/salon/logo', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logoUrl: publicUrl }),
+          });
+        }
+      } catch (e) {
+        console.error('Logo upload failed (non-fatal):', e);
+      }
     }
 
     const { firstName, salonName } = useOnboardingStore.getState();

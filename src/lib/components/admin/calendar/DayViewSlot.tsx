@@ -73,8 +73,8 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
 
   const isOccupied = slotFiches.length > 0;
   const isPast = datetime < new Date();
-  // A slot is non-interactive when it is in the past OR outside operating hours
-  const isBlocked = isPast || isDisabled;
+  // Only past slots are non-interactive; out-of-hours slots remain clickable
+  const isBlocked = isPast;
 
   function handleClick() {
     if (isBlocked) return;
@@ -102,7 +102,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
         isPast
           ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
           : isDisabled
-            ? 'bg-zinc-50 dark:bg-zinc-800/40 cursor-default'
+            ? 'bg-zinc-50 dark:bg-zinc-800/40'
             : isOccupied && !isStartOfFiche
               ? 'bg-zinc-50 dark:bg-zinc-800/50'
               : 'bg-white dark:bg-zinc-900'
@@ -111,7 +111,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
       onMouseEnter={() => !isBlocked && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...(!isBlocked && { role: 'button', tabIndex: 0 })}
-      title={isPast ? 'Questo orario è passato' : isDisabled ? 'Il salone è chiuso in questo orario' : undefined}
+      title={isPast ? 'Questo orario è passato' : undefined}
     >
       <button
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${

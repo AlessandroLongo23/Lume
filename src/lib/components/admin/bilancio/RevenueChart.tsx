@@ -78,7 +78,7 @@ export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
           /* min-w-0 + overflow-hidden prevents ResponsiveContainer from expanding infinitely in flex/grid */
           <div className="min-w-0 overflow-hidden">
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+              <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                 <defs>
                   <linearGradient id="lumeGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#6366F1" stopOpacity={0.25} />
@@ -87,14 +87,14 @@ export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
                 </defs>
                 <XAxis
                   dataKey="label"
-                  axisLine={false}
+                  axisLine={{ stroke: '#E4E4E7' }}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: '#A1A1AA' }}
                   dy={4}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  axisLine={false}
+                  axisLine={{ stroke: '#E4E4E7' }}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: '#A1A1AA' }}
                   tickFormatter={yTickFormatter}

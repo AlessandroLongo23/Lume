@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Search, X } from 'lucide-react';
 import { FicheCard } from './FicheCard';
-import { EditFicheModal } from '@/lib/components/admin/calendar/EditFicheModal';
+import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
+import { CheckoutFicheModal } from './CheckoutFicheModal';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { useClientsStore } from '@/lib/stores/clients';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -18,6 +19,7 @@ export function FichesGrid({ fiches }: FichesGridProps) {
 
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
@@ -116,12 +118,14 @@ export function FichesGrid({ fiches }: FichesGridProps) {
               fiche={fiche}
               onEdit={(f) => { setSelectedFiche(f); setShowEdit(true); }}
               onDelete={(f) => { setSelectedFiche(f); setShowDelete(true); }}
+              onCheckout={(f) => { setSelectedFiche(f); setShowCheckout(true); }}
             />
           ))}
         </div>
       )}
 
-      <EditFicheModal
+      <FicheModal
+        mode="edit"
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         fiche={selectedFiche}
@@ -130,6 +134,11 @@ export function FichesGrid({ fiches }: FichesGridProps) {
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         selectedFiche={selectedFiche}
+      />
+      <CheckoutFicheModal
+        isOpen={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        fiche={selectedFiche}
       />
     </div>
   );

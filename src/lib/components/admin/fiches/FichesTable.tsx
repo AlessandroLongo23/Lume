@@ -10,16 +10,16 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Info, Pencil, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Search, X, ChevronUp, ChevronDown, Trash2, ReceiptText } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
-import { EditFicheModal } from '@/lib/components/admin/calendar/EditFicheModal';
+import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
+import { CheckoutFicheModal } from './CheckoutFicheModal';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface FichesTableProps {
@@ -47,12 +47,12 @@ const STATUS_OPTIONS: FacetedFilterOption[] = [
 ];
 
 export function FichesTable({ fiches }: FichesTableProps) {
-  const router = useRouter();
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
 
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
 
   const [globalFilter, setGlobalFilter] = useState('');
@@ -225,7 +225,11 @@ export function FichesTable({ fiches }: FichesTableProps) {
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <tr
+                    key={row.id}
+                    onClick={() => { setSelectedFiche(row.original); setShowEdit(true); }}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -233,20 +237,15 @@ export function FichesTable({ fiches }: FichesTableProps) {
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={() => router.push(`/admin/fiches/${row.original.id}`)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                          title="Dettaglio"
-                        >
-                          <Info className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowEdit(true); }}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {row.original.status !== FicheStatus.COMPLETED && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowCheckout(true); }}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                            title="Chiudi Fiche"
+                          >
+                            <ReceiptText className="size-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowDelete(true); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -272,7 +271,8 @@ export function FichesTable({ fiches }: FichesTableProps) {
         />
       </div>
 
-      <EditFicheModal
+      <FicheModal
+        mode="edit"
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         fiche={selectedFiche}
@@ -281,6 +281,11 @@ export function FichesTable({ fiches }: FichesTableProps) {
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         selectedFiche={selectedFiche}
+      />
+      <CheckoutFicheModal
+        isOpen={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        fiche={selectedFiche}
       />
     </>
   );

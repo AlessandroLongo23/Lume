@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Fiche } from '@/lib/types/Fiche';
+import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
+
+export interface PaymentSplit {
+  method: FichePaymentMethod;
+  amount: number;
+}
 
 interface FichesState {
   fiches: Fiche[];
@@ -12,6 +18,7 @@ interface FichesState {
   updateFiche: (ficheId: string, updatedFiche: Partial<Fiche>) => Promise<Fiche>;
   deleteFiche: (ficheId: string) => Promise<void>;
   setSelectedFiche: (fiche: Fiche | null) => void;
+  closeFiche: (ficheId: string, salonId: string, payments: PaymentSplit[]) => Promise<void>;
 }
 
 export const useFichesStore = create<FichesState>((set) => ({
@@ -60,4 +67,42 @@ export const useFichesStore = create<FichesState>((set) => ({
   },
 
   setSelectedFiche: (fiche) => set({ selectedFiche: fiche }),
+
+  closeFiche: async (ficheId, salonId, payments) => {
+    const previousStatus = useFichesStore.getState().fiches.find((f) => f.id === ficheId)?.status;
+
+    // Step 1: mark fiche as completed
+    const { error: ficheErr } = await supabase
+      .from('fiches')
+      .update({ status: 'completed' })
+      .eq('id', ficheId);
+    if (ficheErr) throw new Error('Impossibile aggiornare lo stato della fiche.');
+
+    // Step 2: insert payment rows — rollback if this fails
+    const rows = payments.map((p) => ({
+      fiche_id: ficheId,
+      salon_id: salonId,
+      method: p.method,
+      amount: p.amount,
+    }));
+    const { error: payErr } = await supabase.from('fiche_payments').insert(rows);
+    if (payErr) {
+      // Rollback: restore previous status
+      if (previousStatus) {
+        await supabase.from('fiches').update({ status: previousStatus }).eq('id', ficheId);
+      }
+      throw new Error('Impossibile registrare il pagamento. Stato della fiche ripristinato.');
+    }
+
+    // Update local fiches state
+    set((s) => ({
+      fiches: s.fiches.map((f) =>
+        f.id === ficheId ? new Fiche({ ...f, status: 'completed' as typeof f.status }) : f
+      ),
+    }));
+
+    // Sync fiche_payments store
+    const { useFichePaymentsStore } = await import('@/lib/stores/fiche_payments');
+    await useFichePaymentsStore.getState().fetchFichePayments();
+  },
 }));

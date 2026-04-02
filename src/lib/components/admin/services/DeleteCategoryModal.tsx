@@ -22,6 +22,7 @@ export function DeleteCategoryModal({ isOpen, onClose, category }: DeleteCategor
   const serviceCount = category?.service_count ?? 0;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setConfirmInput('');
   }, [isOpen]);
 

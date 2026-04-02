@@ -6,8 +6,7 @@ import { CalendarToolbar } from './CalendarToolbar';
 import { DayView } from './DayView';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
-import { AddFicheModal } from './AddFicheModal';
-import { EditFicheModal } from './EditFicheModal';
+import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
@@ -60,13 +59,15 @@ export function Calendar() {
 
   return (
     <>
-      <AddFicheModal
+      <FicheModal
+        mode="add"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         datetime={modalDatetime}
         operator={modalOperator}
       />
-      <EditFicheModal
+      <FicheModal
+        mode="edit"
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         fiche={editFiche}

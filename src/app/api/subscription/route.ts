@@ -34,7 +34,7 @@ export async function GET() {
 
     const { data: salon } = await supabaseAdmin
       .from('salons')
-      .select('name, trial_ends_at, subscription_status, subscription_plan, subscription_ends_at, referral_code')
+      .select('name, trial_ends_at, subscription_status, subscription_plan, subscription_ends_at, referral_code, logo_url')
       .eq('id', salonId)
       .single();
 
@@ -77,6 +77,7 @@ export async function GET() {
       pendingCredits: pendingCredits ?? 0,
       earnedCredits: earnedCredits ?? 0,
       salonName: salon.name,
+      logoUrl: salon.logo_url ?? null,
       role: profile.role,
       firstName: profile.first_name,
       lastName: profile.last_name,

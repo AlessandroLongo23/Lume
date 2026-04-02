@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, X, Check } from 'lucide-react';
+import { Plus, X, Check, type LucideIcon } from 'lucide-react';
 import { Modal } from './Modal';
 
 interface AddModalProps {
@@ -9,6 +9,7 @@ interface AddModalProps {
   onSubmit: () => void;
   title?: string;
   subtitle?: string;
+  icon?: LucideIcon;
   children: React.ReactNode;
   footerContent?: React.ReactNode;
   dangerAction?: React.ReactNode;
@@ -24,6 +25,7 @@ export function AddModal({
   onSubmit,
   title = 'Aggiungi',
   subtitle = 'Aggiungi un nuovo elemento',
+  icon: Icon = Plus,
   children,
   footerContent,
   dangerAction,
@@ -38,7 +40,7 @@ export function AddModal({
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
-              <Plus className="size-5 text-indigo-500" />
+              <Icon className="size-5 text-indigo-500" />
             </div>
             <div className="flex flex-col truncate">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>

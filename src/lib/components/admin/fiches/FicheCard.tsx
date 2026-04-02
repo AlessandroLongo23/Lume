@@ -4,7 +4,6 @@ import { Scissors, User, Pencil, Trash2 } from 'lucide-react';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { useServicesStore } from '@/lib/stores/services';
 import { useOperatorsStore } from '@/lib/stores/operators';
-import { useFichesStore } from '@/lib/stores/fiches';
 import type { Fiche } from '@/lib/types/Fiche';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -23,12 +22,12 @@ interface FicheCardProps {
   fiche: Fiche;
   onEdit: (fiche: Fiche) => void;
   onDelete: (fiche: Fiche) => void;
+  onCheckout: (fiche: Fiche) => void;
 }
 
-export function FicheCard({ fiche, onEdit, onDelete }: FicheCardProps) {
+export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProps) {
   const services = useServicesStore((s) => s.services);
   const operators = useOperatorsStore((s) => s.operators);
-  const updateFiche = useFichesStore((s) => s.updateFiche);
 
   const client = fiche.getClient();
   const ficheServices = fiche.getFicheServices();
@@ -95,7 +94,7 @@ export function FicheCard({ fiche, onEdit, onDelete }: FicheCardProps) {
           </div>
         ) : (
           <button
-            onClick={() => updateFiche(fiche.id, { status: FicheStatus.COMPLETED })}
+            onClick={() => onCheckout(fiche)}
             className="flex-1 py-1.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-md transition-colors"
           >
             Chiudi Fiche

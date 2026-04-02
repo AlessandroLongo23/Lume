@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
-import { AddFicheModal } from '@/lib/components/admin/fiches/AddFicheModal';
+import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
 import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
@@ -18,7 +18,7 @@ export default function FichesPage() {
 
   return (
     <>
-      <AddFicheModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <FicheModal mode="add" isOpen={showAdd} onClose={() => setShowAdd(false)} />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-row items-center justify-between gap-4 w-full">

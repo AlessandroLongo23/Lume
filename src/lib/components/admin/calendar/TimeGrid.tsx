@@ -65,7 +65,7 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour }: Time
       <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-14rem)]">
         {/* Header — sticky so operator names stay visible while scrolling */}
         <div
-          className="grid sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
+          className="grid sticky top-0 z-20 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
           style={gridCols}
         >
           <div className="p-2 font-medium border-r border-zinc-500/25 text-center text-sm">

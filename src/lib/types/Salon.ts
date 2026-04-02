@@ -17,4 +17,6 @@ export interface Salon {
   subscription_ends_at:    string | null;
   referral_code:           string;
   referred_by_salon_id:    string | null;
+  logo_url:                string | null;
+  track_inventory:         boolean;
 }

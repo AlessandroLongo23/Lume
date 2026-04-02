@@ -10,6 +10,8 @@ interface OnboardingData {
   businessType: BusinessType | null;
   origin:       OriginType | null;
   inviteCode:   string;
+  logoFile:     File | null;
+  logoPreview:  string | null;
 }
 
 interface OnboardingState extends OnboardingData {
@@ -23,7 +25,7 @@ interface OnboardingState extends OnboardingData {
   prevStep:           () => void;
   setField:           <K extends keyof OnboardingData>(key: K, value: OnboardingData[K]) => void;
   reset:              () => void;
-  submitRegistration: () => Promise<{ success: boolean }>;
+  submitRegistration: () => Promise<{ success: boolean; salonId?: string }>;
 }
 
 const initialData: OnboardingData = {
@@ -35,6 +37,8 @@ const initialData: OnboardingData = {
   businessType: null,
   origin:       null,
   inviteCode:   '',
+  logoFile:     null,
+  logoPreview:  null,
 };
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -68,7 +72,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       }
 
       set({ isLoading: false, errorCode: null });
-      return { success: true };
+      return { success: true, salonId: result.salonId };
     } catch {
       set({ isLoading: false, error: 'Errore di rete. Controlla la connessione e riprova.', errorCode: null });
       return { success: false };

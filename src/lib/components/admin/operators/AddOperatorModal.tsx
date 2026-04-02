@@ -24,9 +24,9 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
       const randomPassword = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOp({ ...emptyOp(), password: randomPassword });
       setErrors(emptyErrors());
     }

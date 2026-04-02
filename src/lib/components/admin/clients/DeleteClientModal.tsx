@@ -21,6 +21,7 @@ export function DeleteClientModal({ isOpen, onClose, selectedClient }: DeleteCli
   const isConfirmed = confirmInput.trim().toLowerCase() === fullName.toLowerCase();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setConfirmInput('');
   }, [isOpen]);
 

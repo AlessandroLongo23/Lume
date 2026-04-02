@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       console.error('Operator auto-insert failed (non-fatal):', operatorError);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, salonId });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Unexpected registration error:', msg);

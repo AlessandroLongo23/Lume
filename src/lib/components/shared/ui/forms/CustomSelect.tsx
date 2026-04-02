@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, X, Check } from 'lucide-react';
 
 interface CustomSelectProps {
@@ -36,10 +37,12 @@ export function CustomSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const getLabel = useCallback((option: any): string => {
     if (typeof labelKey === 'function') return labelKey(option);
@@ -58,9 +61,14 @@ export function CustomSelect({
     return options;
   }, [options, searchQuery, searchable, getLabel]);
 
+  // Close on outside click — must check both the trigger and the portal dropdown
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        ref.current && !ref.current.contains(target) &&
+        (!portalRef.current || !portalRef.current.contains(target))
+      ) {
         setIsOpen(false);
         setSearchQuery('');
         setHighlightedIndex(-1);
@@ -69,6 +77,18 @@ export function CustomSelect({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Close on any scroll so the fixed dropdown doesn't drift from its trigger
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => {
+      setIsOpen(false);
+      setSearchQuery('');
+      setHighlightedIndex(-1);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [isOpen]);
 
   // Scroll highlighted option into view
   useEffect(() => {
@@ -92,6 +112,18 @@ export function CustomSelect({
 
   const openDropdown = () => {
     if (!disabled) {
+      if (isOpen) {
+        closeDropdown();
+        return;
+      }
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDropdownPos({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
       setIsOpen(true);
       setHighlightedIndex(-1);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -177,8 +209,18 @@ export function CustomSelect({
         </div>
       </div>
 
-      {isOpen && (
-        <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-100 overflow-hidden">
+      {isOpen && dropdownPos && createPortal(
+        <div
+          ref={portalRef}
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            zIndex: 9999,
+          }}
+          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden"
+        >
           {searchable && (
             <div className="p-2 border-b border-zinc-500/25">
               <input
@@ -222,7 +264,8 @@ export function CustomSelect({
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
