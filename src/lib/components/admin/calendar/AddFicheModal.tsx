@@ -11,6 +11,8 @@ import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import type { Operator } from '@/lib/types/Operator';
@@ -165,6 +167,20 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
     if (Object.values(newErrors).some(Boolean)) return;
 
     try {
+      const validation = await validateFicheConflicts(
+        clientId,
+        servicesWithTimes.map((svc) => ({
+          operator_id: svc.operator_id,
+          operator_name: operators.find((op) => op.id === svc.operator_id)?.getFullName() ?? svc.operator_id,
+          start_time: svc.start_time.toISOString(),
+          end_time: svc.end_time.toISOString(),
+        })),
+      );
+      if (validation.error) {
+        messagePopup.getState().error(validation.error);
+        return;
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status: FicheStatus.CREATED, note });
       await Promise.all(
@@ -182,6 +198,7 @@ export function AddFicheModal({ isOpen, onClose, datetime, operator }: AddFicheM
         ),
       );
       onClose();
+      messagePopup.getState().success('Appuntamento creato con successo');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     }

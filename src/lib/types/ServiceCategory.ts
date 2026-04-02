@@ -3,6 +3,7 @@ export type RawServiceCategory = {
   salon_id: string;
   name: string;
   description: string;
+  color: string;
   service_count?: number;
   services?: { count: number }[];
 };
@@ -12,6 +13,7 @@ export class ServiceCategory {
   salon_id: string;
   name: string;
   description: string;
+  color: string;
   service_count: number;
 
   constructor(data: RawServiceCategory) {
@@ -19,6 +21,7 @@ export class ServiceCategory {
     this.salon_id = data.salon_id;
     this.name = data.name;
     this.description = data.description;
+    this.color = data.color ?? '#6366F1';
     this.service_count = data.service_count ?? data.services?.[0]?.count ?? 0;
   }
 }

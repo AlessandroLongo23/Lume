@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Scissors, Tags, ArrowDownToLine } from 'lucide-react';
+import { Scissors, Tags, ArrowDownToLine, FileDown } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
 import { ManageCategoriesModal } from '@/lib/components/admin/services/ManageCategoriesModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
+import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 
 export default function ServiziPage() {
   const services = useServicesStore((s) => s.services);
@@ -40,6 +41,9 @@ export default function ServiziPage() {
               <Scissors className="size-5" strokeWidth={1.5} />
               <span className="font-thin">Nuovo Servizio</span>
             </button>
+            <DropdownMenu items={[
+              { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+            ]} />
           </div>
         </div>
 

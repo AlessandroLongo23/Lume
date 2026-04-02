@@ -35,6 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const isExpired = useSubscriptionStore((s) => s.isExpired);
   const isLoading = useSubscriptionStore((s) => s.isLoading);
+  const salonName = useSubscriptionStore((s) => s.salonName);
 
   // Redirect expired users to subscribe page
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="md:hidden fixed top-16 bottom-0 left-0 bg-white dark:bg-[#18181B] border-r border-[#E4E4E7] dark:border-[#27272A] z-50 shadow-sm w-64">
                 <div className="p-6 space-y-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-base font-semibold">Menu</h2>
+                    <h2 className="text-base font-semibold tracking-tight truncate">{salonName || 'Menu'}</h2>
                     <button
                       className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-[#F4F4F5] dark:hover:bg-[#27272A]"
                       onClick={() => setIsMobileSidebarOpen(false)}
@@ -124,6 +125,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Desktop Sidebar */}
           <div className="hidden md:flex fixed top-16 bottom-0 left-0 bg-white dark:bg-[#18181B] border-r border-[#E4E4E7] dark:border-[#27272A] w-[72px] lg:w-[240px] shadow-sm flex-col overflow-y-auto">
             <div className="px-4 pt-6 pb-4 flex flex-col flex-1 gap-1">
+              {salonName && (
+                <p className="hidden lg:block text-xl font-semibold tracking-tight text-zinc-900 dark:text-white truncate mb-4">
+                  {salonName}
+                </p>
+              )}
               {adminRoutes.map((section) => (
                 <div key={section.title} className="flex flex-col gap-2 mb-4">
                   <p className="text-xs font-regular uppercase text-zinc-500">{section.title}</p>

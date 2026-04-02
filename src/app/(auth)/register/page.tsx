@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
-import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { StepRouter } from '@/lib/components/auth/StepRouter';
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
@@ -34,9 +33,10 @@ export default function RegisterPage() {
       return;
     }
 
+    const { firstName, salonName } = useOnboardingStore.getState();
     reset();
-    const result = await useWorkspaceStore.getState().resolve();
-    router.push(result.redirect);
+    const params = new URLSearchParams({ name: firstName, salon: salonName });
+    router.push(`/welcome?${params.toString()}`);
   }
 
   return (

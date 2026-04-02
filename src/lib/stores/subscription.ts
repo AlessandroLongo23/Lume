@@ -14,6 +14,7 @@ interface SubscriptionState {
   referralCode:       string;
   pendingCredits:     number;
   earnedCredits:      number;
+  salonName:          string;
   role:               string;
   firstName:          string;
   lastName:           string;
@@ -34,6 +35,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
   referralCode:       '',
   pendingCredits:     0,
   earnedCredits:      0,
+  salonName:          '',
   role:               '',
   firstName:          '',
   lastName:           '',
@@ -60,6 +62,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
         referralCode:       data.referralCode,
         pendingCredits:     data.pendingCredits,
         earnedCredits:      data.earnedCredits,
+        salonName:          data.salonName ?? '',
         role:               data.role,
         firstName:          data.firstName ?? '',
         lastName:           data.lastName ?? '',

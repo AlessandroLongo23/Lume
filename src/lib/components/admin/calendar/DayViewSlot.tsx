@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, addMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
+import { useServicesStore } from '@/lib/stores/services';
+import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
@@ -22,9 +24,17 @@ function getTimeAsMinutes(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
+/** Append a 2-digit hex opacity suffix to a hex color string */
+function withOpacity(hex: string, opacity: number): string {
+  const clamped = Math.round(Math.max(0, Math.min(1, opacity)) * 255);
+  return `${hex}${clamped.toString(16).padStart(2, '0')}`;
+}
+
 export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected, isDisabled = false }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
   const clients = useClientsStore((s) => s.clients);
+  const services = useServicesStore((s) => s.services);
+  const categories = useServiceCategoriesStore((s) => s.service_categories);
 
   // Fiches that involve this operator AND overlap this time slot
   const slotFiches = useMemo(() => {
@@ -46,14 +56,20 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
     const slotMinutes = getTimeAsMinutes(datetime);
     return slotFiches.some((fiche) => {
       const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
-      return ficheServices.some((fs) => getTimeAsMinutes(new Date(fs.start_time)) === slotMinutes);
+      if (ficheServices.length === 0) return false;
+      const minStart = Math.min(...ficheServices.map((fs) => getTimeAsMinutes(new Date(fs.start_time))));
+      return minStart === slotMinutes;
     });
   }, [slotFiches, operator.id, datetime]);
 
   const ficheRowSpan = useMemo(() => {
     if (!isStartOfFiche || slotFiches.length === 0) return 1;
-    return Math.ceil(slotFiches[0].getDuration() / 15);
-  }, [isStartOfFiche, slotFiches]);
+    const operatorServices = slotFiches[0].getFicheServices().filter((fs) => fs.operator_id === operator.id);
+    if (operatorServices.length === 0) return 1;
+    const minStart = Math.min(...operatorServices.map((fs) => getTimeAsMinutes(new Date(fs.start_time))));
+    const maxEnd = Math.max(...operatorServices.map((fs) => getTimeAsMinutes(new Date(fs.end_time))));
+    return Math.ceil((maxEnd - minStart) / 15);
+  }, [isStartOfFiche, slotFiches, operator.id]);
 
   const isOccupied = slotFiches.length > 0;
   const isPast = datetime < new Date();
@@ -107,22 +123,58 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
       >
         {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
           const client = clients.find((c) => c.id === fiche.client_id);
-          const isCreated = fiche.status === FicheStatus.CREATED;
           const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
-          const startTime = ficheServices[0] ? format(new Date(ficheServices[0].start_time), 'HH:mm') : format(new Date(fiche.datetime), 'HH:mm');
-          const endTime = ficheServices[0] ? format(new Date(ficheServices[0].end_time), 'HH:mm') : format(addMinutes(new Date(fiche.datetime), fiche.getDuration()), 'HH:mm');
+
+          // Derive the accent color from the first service's category
+          const firstSvcObj = ficheServices[0] ? services.find((s) => s.id === ficheServices[0].service_id) : null;
+          const firstCat = firstSvcObj ? categories.find((c) => c.id === firstSvcObj.category_id) : null;
+          const accentColor = firstCat?.color ?? '#6366F1';
+
           return (
             <div
               key={fiche.id}
-              className={`absolute top-0 left-0 w-full p-1 text-xs rounded-sm z-10 ${
-                isPast ? 'opacity-50' : ''
-              } ${isCreated ? 'bg-green-500/20 border-l-2 border-green-500' : 'bg-amber-500/20 border-l-2 border-amber-500'}`}
-              style={{ height: `calc(${ficheRowSpan * 2}rem)` }}
+              className={`absolute top-0 left-0 w-full flex flex-col rounded-md z-10 overflow-hidden shadow-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 ${
+                isPast ? 'opacity-60' : ''
+              }`}
+              style={{
+                height: `calc(${ficheRowSpan * 2}rem)`,
+                borderLeft: `3px solid ${accentColor}`,
+              }}
             >
-              <div className="font-medium truncate">{client?.getFullName() ?? 'Cliente'}</div>
-              <div className="text-xs">
-                <span>{startTime} - {endTime}</span>
-              </div>
+              {ficheServices.map((fs, index) => {
+                const service = services.find((s) => s.id === fs.service_id);
+                const category = service
+                  ? categories.find((c) => c.id === service.category_id)
+                  : null;
+                const color = category?.color ?? '#6366F1';
+                const blockHeightRem = (fs.duration / 15) * 2;
+                const startTime = format(new Date(fs.start_time), 'HH:mm');
+                const endTime = format(new Date(fs.end_time), 'HH:mm');
+
+                return (
+                  <div
+                    key={fs.id}
+                    className="overflow-hidden px-2 py-1 shrink-0 text-left"
+                    style={{
+                      height: `${blockHeightRem}rem`,
+                      backgroundColor: withOpacity(color, 0.13),
+                      borderTop: index > 0 ? '1px solid rgba(0,0,0,0.06)' : undefined,
+                    }}
+                  >
+                    {index === 0 && (
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight mb-0.5">
+                        {client?.getFullName() ?? 'Cliente'}
+                      </p>
+                    )}
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight">
+                      {service?.name ?? 'Servizio'}
+                      {blockHeightRem >= 2 && (
+                        <span className="text-zinc-500 dark:text-zinc-400"> • {startTime}–{endTime}</span>
+                      )}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

@@ -18,7 +18,7 @@ import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
-import { EditFicheModal } from './EditFicheModal';
+import { EditFicheModal } from '@/lib/components/admin/calendar/EditFicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
 import { cardStyle } from '@/lib/const/appearance';
 
@@ -54,10 +54,9 @@ export function FichesTable({ fiches }: FichesTableProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
-  const [editedFiche, setEditedFiche] = useState<Partial<Fiche>>({});
 
   const [globalFilter, setGlobalFilter] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([FicheStatus.CREATED, FicheStatus.PENDING]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
@@ -97,6 +96,14 @@ export function FichesTable({ fiches }: FichesTableProps) {
           const nb = cb ? `${cb.firstName} ${cb.lastName}` : '';
           return na.localeCompare(nb, 'it');
         },
+      },
+      {
+        id: 'date',
+        header: 'Data',
+        cell: ({ row }) => new Date(row.original.datetime).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        enableSorting: true,
+        sortingFn: (a, b) =>
+          new Date(a.original.datetime).getTime() - new Date(b.original.datetime).getTime(),
       },
       {
         id: 'time',
@@ -234,7 +241,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
                           <Info className="size-3.5" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setEditedFiche({ ...row.original }); setShowEdit(true); }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowEdit(true); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                           title="Modifica"
                         >
@@ -268,9 +275,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
       <EditFicheModal
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
-        editedFiche={editedFiche}
-        onEditedFicheChange={setEditedFiche}
-        selectedFiche={selectedFiche}
+        fiche={selectedFiche}
       />
       <DeleteFicheModal
         isOpen={showDelete}

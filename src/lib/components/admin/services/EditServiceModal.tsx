@@ -38,7 +38,7 @@ export function EditServiceModal({ isOpen, onClose, editedService, onEditedServi
   const labelClass = 'flex flex-row items-center gap-2';
 
   return (
-    <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica Servizio" subtitle="Aggiorna i dati del servizio" classes="max-w-3xl">
+    <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica Servizio" subtitle="Aggiorna i dati del servizio" classes="max-w-2xl">
       <div className="flex flex-col gap-4">
         {/* Row 1: Name + Category */}
         <div className="flex flex-row gap-4">
@@ -54,15 +54,15 @@ export function EditServiceModal({ isOpen, onClose, editedService, onEditedServi
 
         {/* Row 2: Duration + Price + Product cost */}
         <div className="flex flex-row gap-4">
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 min-w-0 flex-col gap-2">
             <label className={labelClass}><Clock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Durata (min)</span></label>
             <CustomNumberInput value={editedService.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
           </div>
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 min-w-0 flex-col gap-2">
             <label className={labelClass}><Euro className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Prezzo</span></label>
             <CustomNumberInput value={editedService.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
           </div>
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 min-w-0 flex-col gap-2">
             <label className={labelClass}><ShoppingCart className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Costo prodotti</span></label>
             <CustomNumberInput value={editedService.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
           </div>

@@ -13,6 +13,33 @@ interface ManageCategoriesModalProps {
   onClose: () => void;
 }
 
+const COLOR_PALETTE = [
+  '#EF4444', '#F97316', '#EAB308', '#22C55E',
+  '#10B981', '#14B8A6', '#06B6D4', '#3B82F6',
+  '#6366F1', '#8B5CF6', '#EC4899', '#6B7280',
+];
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {COLOR_PALETTE.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className="size-6 rounded-md border-2 transition-transform hover:scale-110"
+          style={{
+            backgroundColor: c,
+            borderColor: value === c ? 'white' : 'transparent',
+            outline: value === c ? `2px solid ${c}` : 'none',
+          }}
+          aria-label={c}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModalProps) {
   const categories = useServiceCategoriesStore((s) => s.service_categories);
   const addCategory = useServiceCategoriesStore((s) => s.addServiceCategory);
@@ -20,16 +47,18 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
   const fetchCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
 
   const [newName, setNewName] = useState('');
-  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [newColor, setNewColor] = useState('#6366F1');
+  const [editing, setEditing] = useState<{ id: string; name: string; color: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<ServiceCategory | null>(null);
 
   const handleAdd = async () => {
     const name = newName.trim();
     if (!name) return;
     try {
-      await addCategory({ name });
+      await addCategory({ name, color: newColor });
       await fetchCategories();
       setNewName('');
+      setNewColor('#6366F1');
       messagePopup.getState().success('Categoria aggiunta.');
     } catch {
       messagePopup.getState().error('Errore durante la creazione della categoria.');
@@ -39,7 +68,7 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
   const handleSaveEdit = async () => {
     if (!editing || !editing.name.trim()) return;
     try {
-      await updateCategory(editing.id, { name: editing.name.trim() });
+      await updateCategory(editing.id, { name: editing.name.trim(), color: editing.color });
       await fetchCategories();
       setEditing(null);
       messagePopup.getState().success('Categoria aggiornata.');
@@ -87,6 +116,11 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
                   return (
                     <div key={cat.id} className="flex flex-col gap-2">
                       <div className="flex flex-row items-center gap-2 px-3 py-2 rounded-xl border border-indigo-400/60 bg-white dark:bg-zinc-900 shadow-sm ring-2 ring-indigo-500/15">
+                        {/* Color dot */}
+                        <div
+                          className="size-4 rounded-full shrink-0"
+                          style={{ backgroundColor: editing.color }}
+                        />
                         <input
                           className="flex-1 bg-transparent text-sm text-zinc-900 dark:text-zinc-100 outline-none"
                           value={editing.name}
@@ -114,6 +148,11 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
                           </button>
                         </div>
                       </div>
+                      {/* Color picker for edit */}
+                      <div className="px-3 py-2 rounded-lg border border-zinc-500/20 bg-white dark:bg-zinc-900">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Colore categoria</p>
+                        <ColorPicker value={editing.color} onChange={(c) => setEditing({ ...editing, color: c })} />
+                      </div>
                       <p className="text-xs text-zinc-400 dark:text-zinc-500 px-1">
                         Rinominare la categoria aggiornerà il nome anche nello storico passato.
                       </p>
@@ -127,6 +166,11 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
                     className="group flex flex-row items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-zinc-500/20 bg-white dark:bg-zinc-900 hover:border-zinc-500/40 dark:hover:bg-zinc-800/60 transition-colors"
                   >
                     <div className="flex flex-row items-center gap-2.5 min-w-0">
+                      {/* Color swatch */}
+                      <div
+                        className="size-3.5 rounded-full shrink-0"
+                        style={{ backgroundColor: cat.color }}
+                      />
                       <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{cat.name}</span>
                       <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md">
                         {cat.service_count} {cat.service_count === 1 ? 'servizio' : 'servizi'}
@@ -134,7 +178,7 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
                     </div>
                     <div className="flex flex-row gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => setEditing({ id: cat.id, name: cat.name })}
+                        onClick={() => setEditing({ id: cat.id, name: cat.name, color: cat.color })}
                         className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                         aria-label="Modifica"
                       >
@@ -155,22 +199,28 @@ export function ManageCategoriesModal({ isOpen, onClose }: ManageCategoriesModal
           </div>
 
           {/* Footer / Add */}
-          <div className="flex flex-row items-center gap-3 p-6 border-t border-zinc-500/25 shrink-0">
-            <input
-              className="flex-1 p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              placeholder="Nuova categoria..."
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-            />
-            <button
-              onClick={handleAdd}
-              disabled={!newName.trim()}
-              className="flex flex-row items-center gap-2 px-4 py-2 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:pointer-events-none transition-all shrink-0"
-            >
-              <Plus className="size-4" />
-              Aggiungi
-            </button>
+          <div className="flex flex-col gap-3 p-6 border-t border-zinc-500/25 shrink-0">
+            <div className="flex flex-row items-center gap-3">
+              {/* Preview dot */}
+              <div className="size-4 rounded-full shrink-0" style={{ backgroundColor: newColor }} />
+              <input
+                className="flex-1 p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                placeholder="Nuova categoria..."
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+              />
+              <button
+                onClick={handleAdd}
+                disabled={!newName.trim()}
+                className="flex flex-row items-center gap-2 px-4 py-2 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:pointer-events-none transition-all shrink-0"
+              >
+                <Plus className="size-4" />
+                Aggiungi
+              </button>
+            </div>
+            {/* Color palette for new category */}
+            <ColorPicker value={newColor} onChange={setNewColor} />
           </div>
 
         </div>

@@ -34,7 +34,9 @@ export const useFicheServicesStore = create<FicheServicesState>((set) => ({
       .select()
       .single();
     if (error) throw new Error('Impossibile aggiungere il servizio alla fiche.');
-    return new FicheService(data);
+    const newFicheService = new FicheService(data);
+    set((s) => ({ fiche_services: [...s.fiche_services, newFicheService] }));
+    return newFicheService;
   },
 
   updateFicheService: async (id, updated) => {
@@ -45,11 +47,14 @@ export const useFicheServicesStore = create<FicheServicesState>((set) => ({
       .select()
       .single();
     if (error) throw new Error('Impossibile aggiornare il servizio della fiche.');
-    return new FicheService(data);
+    const updatedFs = new FicheService(data);
+    set((s) => ({ fiche_services: s.fiche_services.map((fs) => (fs.id === id ? updatedFs : fs)) }));
+    return updatedFs;
   },
 
   deleteFicheService: async (id) => {
     const { error } = await supabase.from('fiche_services').delete().eq('id', id);
     if (error) throw new Error('Impossibile eliminare il servizio dalla fiche.');
+    set((s) => ({ fiche_services: s.fiche_services.filter((fs) => fs.id !== id) }));
   },
 }));

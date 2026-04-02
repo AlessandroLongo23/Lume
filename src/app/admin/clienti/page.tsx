@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserPlus, EllipsisVertical, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine } from 'lucide-react';
+import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine } from 'lucide-react';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -10,7 +10,7 @@ import { AddClientModal } from '@/lib/components/admin/clients/AddClientModal';
 import { ClientsTable } from '@/lib/components/admin/clients/ClientsTable';
 import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
-import { useRef, useEffect } from 'react';
+import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 
 export default function ClientiPage() {
   const clients = useClientsStore((s) => s.clients);
@@ -19,17 +19,6 @@ export default function ClientiPage() {
   const setView = useViewsStore((s) => s.setView);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
 
   return (
     <>
@@ -54,32 +43,13 @@ export default function ClientiPage() {
               <UserPlus className="size-5" />
               <span>Nuovo cliente</span>
             </button>
-            <div className="relative" ref={menuRef}>
-              <button
-                className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                onClick={() => setMenuOpen((v) => !v)}
-              >
-                <EllipsisVertical className="size-4 text-zinc-500" />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-20 py-1">
-                  <button
-                    className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
-                    onClick={() => { /* TODO: export PDF */ setMenuOpen(false); }}
-                  >
-                    <FileDown className="size-4 text-zinc-400" />
-                    Esporta PDF
-                  </button>
-                  <button
-                    className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
-                    onClick={() => { /* TODO: export CSV */ setMenuOpen(false); }}
-                  >
-                    <FileSpreadsheet className="size-4 text-zinc-400" />
-                    Esporta CSV
-                  </button>
-                </div>
-              )}
-            </div>
+            <DropdownMenu
+              width="w-48"
+              items={[
+                { label: 'Esporta PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                { label: 'Esporta CSV', icon: FileSpreadsheet, onClick: () => { /* TODO: export CSV */ } },
+              ]}
+            />
           </div>
         </div>
 

@@ -34,13 +34,13 @@ export async function GET() {
 
   const { data: salon } = await ctx.admin
     .from('salons')
-    .select('operating_hours')
+    .select('name, operating_hours')
     .eq('id', ctx.salonId)
     .single();
 
   if (!salon) return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
 
-  return NextResponse.json({ operating_hours: salon.operating_hours });
+  return NextResponse.json({ name: salon.name, operating_hours: salon.operating_hours });
 }
 
 export async function PATCH(req: NextRequest) {

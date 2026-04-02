@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar, Check } from 'lucide-react';
+import { Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar, Check, AlertTriangle } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useFichesStore } from '@/lib/stores/fiches';
@@ -11,7 +11,10 @@ import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Service } from '@/lib/types/Service';
@@ -42,6 +45,7 @@ const TABLE_COLS = '1fr 1.5fr 80px 60px 60px 76px 32px';
 
 export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) {
   const updateFiche = useFichesStore((s) => s.updateFiche);
+  const deleteFiche = useFichesStore((s) => s.deleteFiche);
   const clients = useClientsStore((s) => s.clients);
   const operators = useOperatorsStore((s) => s.operators);
   const services = useServicesStore((s) => s.services);
@@ -55,6 +59,7 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
   const [ficheServices, setFicheServices] = useState<FicheServiceState[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [svcQuery, setSvcQuery] = useState('');
   const [svcOpen, setSvcOpen] = useState(false);
 
@@ -161,6 +166,18 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
     setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, duration } : s)));
   }
 
+  async function handleDelete() {
+    if (!fiche) return;
+    try {
+      await deleteFiche(fiche.id);
+      setShowDeleteConfirm(false);
+      onClose();
+      messagePopup.getState().success('Fiche eliminata con successo.');
+    } catch {
+      messagePopup.getState().error("Errore durante l'eliminazione.");
+    }
+  }
+
   async function handleSubmit() {
     if (!fiche) return;
     const newErrors: Record<string, string> = {};
@@ -171,6 +188,21 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
     if (Object.values(newErrors).some(Boolean)) return;
 
     try {
+      const validation = await validateFicheConflicts(
+        clientId,
+        servicesWithTimes.map((svc) => ({
+          operator_id: svc.operator_id,
+          operator_name: operators.find((op) => op.id === svc.operator_id)?.getFullName() ?? svc.operator_id,
+          start_time: svc.start_time.toISOString(),
+          end_time: svc.end_time.toISOString(),
+        })),
+        fiche.id,
+      );
+      if (validation.error) {
+        messagePopup.getState().error(validation.error);
+        return;
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note });
 
@@ -210,6 +242,7 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
       }
 
       onClose();
+      messagePopup.getState().success('Appuntamento aggiornato con successo');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     }
@@ -221,6 +254,7 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   return (
+    <>
     <AddModal
       isOpen={isOpen}
       onClose={onClose}
@@ -236,6 +270,16 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
           </span>
           <span className="text-xs text-zinc-500">Durata: {totalDuration} min</span>
         </div>
+      }
+      dangerAction={
+        <button
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+        >
+          <Trash2 className="size-4" />
+          Elimina
+        </button>
       }
     >
       <div className="grid gap-8 h-full" style={{ gridTemplateColumns: '2fr 3fr' }}>
@@ -450,5 +494,17 @@ export function EditFicheModal({ isOpen, onClose, fiche }: EditFicheModalProps) 
 
       </div>
     </AddModal>
+
+    <DeleteModal
+      isOpen={showDeleteConfirm}
+      onClose={() => setShowDeleteConfirm(false)}
+      onConfirm={handleDelete}
+      mainIcon={AlertTriangle}
+    >
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Sei sicuro di voler eliminare questa fiche? L&apos;azione è irreversibile.
+      </p>
+    </DeleteModal>
+    </>
   );
 }
