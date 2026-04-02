@@ -12,7 +12,7 @@ export class Fiche {
   status: FicheStatus;
   note: string;
 
-  constructor(fiche: Fiche) {
+  constructor(fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'>) {
     this.id = fiche.id;
     this.salon_id = fiche.salon_id;
     this.client_id = fiche.client_id;
