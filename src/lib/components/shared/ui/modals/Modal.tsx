@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -30,6 +30,9 @@ export function Modal({
   closeOnOutsideClick = true,
   backgroundBlur = 'none',
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
@@ -48,6 +51,8 @@ export function Modal({
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (closeOnOutsideClick && e.target === e.currentTarget) onClose();
   };
+
+  if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>

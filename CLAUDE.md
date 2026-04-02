@@ -124,3 +124,5 @@ src/
 | `KIE_API_KEY` | Server only |
 
 Path alias `@/*` maps to `./src/*`.
+
+Start implementing only if you have 95% confidence in the code you're writing. Ask questions to reach that confidence.

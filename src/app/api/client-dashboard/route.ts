@@ -42,7 +42,8 @@ export async function GET() {
     // Build a map from client_id → salon info for enriching fiche results
     const clientSalonMap = new Map<string, { id: string; name: string }>(
       clientRows.map((c) => {
-        const salon = c.salons as { id: string; name: string } | null;
+        const salonRaw = c.salons as { id: string; name: string }[] | { id: string; name: string } | null;
+        const salon = Array.isArray(salonRaw) ? salonRaw[0] ?? null : salonRaw;
         return [c.id, salon ?? { id: c.salon_id, name: 'Salone' }];
       }),
     );

@@ -50,7 +50,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   }
 
   for (const row of operatorResult.data ?? []) {
-    const salon = row.salons as { id: string; name: string } | null;
+    const salon = row.salons as unknown as { id: string; name: string } | null;
     if (!salon || seenSalonIds.has(salon.id)) continue;
     businessContexts.push({ type: 'business', salonId: salon.id, salonName: salon.name, role: 'operator' });
     seenSalonIds.add(salon.id);
@@ -60,7 +60,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const clientContexts: WorkspaceContext[] = [];
 
   for (const row of clientResult.data ?? []) {
-    const salon = row.salons as { id: string; name: string } | null;
+    const salon = row.salons as unknown as { id: string; name: string } | null;
     if (!salon) continue;
     clientContexts.push({ type: 'client', salonId: salon.id, salonName: salon.name, role: 'client' });
   }
