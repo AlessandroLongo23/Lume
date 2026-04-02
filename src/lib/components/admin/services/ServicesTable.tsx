@@ -111,6 +111,13 @@ export function ServicesTable({ services }: ServicesTableProps) {
           <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
         ),
       },
+      {
+        accessorKey: 'product_cost',
+        header: () => <span className="block w-full text-right">Costo prodotti</span>,
+        cell: ({ getValue }) => (
+          <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
+        ),
+      },
     ],
     [categories]
   );
@@ -259,7 +266,7 @@ export function ServicesTable({ services }: ServicesTableProps) {
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
-                    const isNumeric = header.column.id === 'duration' || header.column.id === 'price';
+                    const isNumeric = header.column.id === 'duration' || header.column.id === 'price' || header.column.id === 'product_cost';
                     return (
                       <th
                         key={header.id}
@@ -318,7 +325,7 @@ export function ServicesTable({ services }: ServicesTableProps) {
                     className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => {
-                      const isNumeric = cell.column.id === 'duration' || cell.column.id === 'price';
+                      const isNumeric = cell.column.id === 'duration' || cell.column.id === 'price' || cell.column.id === 'product_cost';
                       return (
                         <td
                           key={cell.id}

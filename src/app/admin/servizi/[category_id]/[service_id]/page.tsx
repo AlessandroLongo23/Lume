@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { EditServiceModal } from '@/lib/components/admin/services/EditServiceModal';
@@ -50,7 +50,7 @@ export default function ServiceDetailPage() {
   return (
     <>
       <EditServiceModal isOpen={showEdit} onClose={() => setShowEdit(false)} selectedService={service} editedService={editedService} onEditedServiceChange={setEditedService} />
-      <DeleteServiceModal isOpen={showDelete} onClose={() => setShowDelete(false)} selectedService={service} />
+      <DeleteServiceModal isOpen={showDelete} onClose={() => setShowDelete(false)} selectedService={service} onDeleted={() => router.push(`/admin/servizi/${categoryId}`)} />
 
       <div className="flex flex-col gap-4 max-w-2xl">
         <div className="flex items-center gap-4">
@@ -84,6 +84,13 @@ export default function ServiceDetailPage() {
             <div>
               <p className="text-xs text-zinc-500">Prezzo</p>
               <p className="font-medium text-zinc-900 dark:text-zinc-100">€ {service.price?.toFixed(2) ?? '0.00'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="size-4 text-zinc-500" />
+            <div>
+              <p className="text-xs text-zinc-500">Costo prodotti</p>
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">€ {service.product_cost?.toFixed(2) ?? '0.00'}</p>
             </div>
           </div>
           {service.description && (

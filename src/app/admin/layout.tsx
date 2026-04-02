@@ -10,6 +10,8 @@ import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FeedbackModal } from '@/lib/components/shared/ui/FeedbackModal';
+import { supabase } from '@/lib/supabase/client';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 const routeNameMap: Record<string, string> = Object.fromEntries(
   adminRoutes.flatMap((group) => group.routes.map((r) => [r.url, r.name]))
 );
@@ -40,6 +42,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.replace('/admin/subscribe');
     }
   }, [isLoading, isExpired, pathname, router]);
+
+  // Soft session-expiry handler: silently redirect to /login with a friendly toast
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        messagePopup.getState().show(
+          'Per proteggere i tuoi dati, la sessione è scaduta. Effettua di nuovo l\'accesso.',
+          'info',
+          8000,
+          'top-right',
+          'Bentornato!'
+        );
+        router.replace('/login');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-[#09090B] dark:text-white p-0 font-sans">

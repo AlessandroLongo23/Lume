@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export interface ToastMessage {
   id: string;
+  title?: string;
   message: string;
   type: 'success' | 'error' | 'info';
   position: string;
@@ -9,7 +10,7 @@ export interface ToastMessage {
 
 interface MessagePopupState {
   messages: ToastMessage[];
-  show: (message: string, type?: ToastMessage['type'], duration?: number, position?: string) => void;
+  show: (message: string, type?: ToastMessage['type'], duration?: number, position?: string, title?: string) => void;
   dismiss: (id: string) => void;
   success: (message: string, duration?: number) => void;
   error: (message: string, duration?: number) => void;
@@ -19,9 +20,9 @@ interface MessagePopupState {
 export const messagePopup = create<MessagePopupState>((set, get) => ({
   messages: [],
 
-  show: (message, type = 'info', duration = 3000, position = 'top-right') => {
+  show: (message, type = 'info', duration = 3000, position = 'top-right', title) => {
     const id = Math.random().toString(36).slice(2);
-    set((s) => ({ messages: [...s.messages, { id, message, type, position }] }));
+    set((s) => ({ messages: [...s.messages, { id, title, message, type, position }] }));
     if (duration > 0) {
       setTimeout(() => get().dismiss(id), duration);
     }

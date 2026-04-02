@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
-import { ServiceCategory } from '@/lib/types/ServiceCategory';
+import { ServiceCategory, type RawServiceCategory } from '@/lib/types/ServiceCategory';
 
 interface ServiceCategoriesState {
   service_categories: ServiceCategory[];
@@ -19,9 +19,9 @@ export const useServiceCategoriesStore = create<ServiceCategoriesState>((set) =>
 
   fetchServiceCategories: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('service_categories').select('*');
+    const { data, error } = await supabase.from('service_categories').select('*, services(count)');
     if (error) { set({ isLoading: false, error: error.message }); return; }
-    set({ service_categories: data.map((c) => new ServiceCategory(c)), isLoading: false, error: null });
+    set({ service_categories: data.map((c) => new ServiceCategory(c as RawServiceCategory)), isLoading: false, error: null });
   },
 
   addServiceCategory: async (category) => {

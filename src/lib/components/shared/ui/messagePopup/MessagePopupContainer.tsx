@@ -8,33 +8,32 @@ export function MessagePopupContainer() {
   const dismiss = messagePopup((s) => s.dismiss);
 
   const icons = {
-    success: <CheckCircle className="size-5 text-emerald-500" />,
-    error: <XCircle className="size-5 text-red-500" />,
-    info: <Info className="size-5 text-blue-500" />,
-  };
-
-  const bgClasses = {
-    success: 'border-l-4 border-emerald-500 bg-white dark:bg-zinc-800',
-    error: 'border-l-4 border-red-500 bg-white dark:bg-zinc-800',
-    info: 'border-l-4 border-blue-500 bg-white dark:bg-zinc-800',
+    success: <CheckCircle className="size-4.5 text-emerald-500 shrink-0" />,
+    error: <XCircle className="size-4.5 text-red-500 shrink-0" />,
+    info: <Info className="size-4.5 text-indigo-500 shrink-0" />,
   };
 
   if (messages.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full">
+    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-72">
       {messages.map((msg) => (
         <div
           key={msg.id}
-          className={`flex items-center gap-3 p-4 rounded-lg shadow-lg ${bgClasses[msg.type]}`}
+          className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/60 shadow-lg shadow-black/6"
         >
           {icons[msg.type]}
-          <p className="flex-1 text-sm text-zinc-800 dark:text-zinc-200">{msg.message}</p>
+          <div className="flex-1 min-w-0">
+            {msg.title && (
+              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{msg.title}</p>
+            )}
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{msg.message}</p>
+          </div>
           <button
             onClick={() => dismiss(msg.id)}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+            className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </button>
         </div>
       ))}

@@ -126,3 +126,5 @@ src/
 Path alias `@/*` maps to `./src/*`.
 
 Start implementing only if you have 95% confidence in the code you're writing. Ask questions to reach that confidence.
+When you're done, always check for lint errors by running the command.
+Whenever I express architectural choices or styling choices, you should, if it's important, put it in this file for future reference, but ask me before editing it.

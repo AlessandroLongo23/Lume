@@ -3,26 +3,25 @@
 import { useState, useEffect } from 'react';
 import { TriangleAlert, Trash2, X } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
-import { useServicesStore } from '@/lib/stores/services';
+import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import type { Service } from '@/lib/types/Service';
+import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
-interface DeleteServiceModalProps {
+interface DeleteCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedService: Service | null;
-  onDeleted?: () => void;
+  category: ServiceCategory | null;
 }
 
-export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted }: DeleteServiceModalProps) {
-  const deleteService = useServicesStore((s) => s.deleteService);
-  const fetchServices = useServicesStore((s) => s.fetchServices);
+export function DeleteCategoryModal({ isOpen, onClose, category }: DeleteCategoryModalProps) {
+  const deleteCategory = useServiceCategoriesStore((s) => s.deleteServiceCategory);
+  const fetchCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
   const [confirmInput, setConfirmInput] = useState('');
 
-  const isConfirmed = confirmInput === selectedService?.name;
+  const isConfirmed = confirmInput === category?.name;
+  const serviceCount = category?.service_count ?? 0;
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setConfirmInput('');
   }, [isOpen]);
 
@@ -32,13 +31,12 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
   };
 
   const handleDelete = async () => {
-    if (!selectedService || !isConfirmed) return;
+    if (!category || !isConfirmed) return;
     try {
-      await deleteService(selectedService.id);
-      await fetchServices();
-      messagePopup.getState().success('Servizio eliminato.');
+      await deleteCategory(category.id);
+      await fetchCategories();
+      messagePopup.getState().success('Categoria eliminata.');
       handleClose();
-      onDeleted?.();
     } catch {
       messagePopup.getState().error("Errore durante l'eliminazione.");
     }
@@ -55,7 +53,7 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
               <TriangleAlert className="size-5 text-red-500" />
             </div>
             <div className="flex flex-col min-w-0">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Elimina servizio</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Elimina categoria</h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Azione irreversibile — leggi attentamente</p>
             </div>
           </div>
@@ -72,9 +70,20 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
         <div className="p-6 flex flex-col gap-5">
           <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
             <p className="text-sm text-red-800 dark:text-red-300 leading-relaxed">
-              <strong>Attenzione:</strong> eliminando il servizio{' '}
-              <strong>{selectedService?.name}</strong> verranno cancellati permanentemente{' '}
-              <strong>tutte le schede e gli appuntamenti storici</strong> che lo contengono.{' '}
+              <strong>Attenzione:</strong> eliminando la categoria{' '}
+              <strong>{category?.name}</strong> verranno cancellati permanentemente{' '}
+              {serviceCount > 0 ? (
+                <>
+                  tutti i{' '}
+                  <strong>
+                    {serviceCount} {serviceCount === 1 ? 'servizio collegato' : 'servizi collegati'}
+                  </strong>{' '}
+                  e, a cascata,{' '}
+                  <strong>tutte le schede e gli appuntamenti storici</strong> che li contengono.
+                </>
+              ) : (
+                <>la categoria e tutti i dati ad essa associati.</>
+              )}{' '}
               Questa operazione <strong>non potrà essere annullata</strong>.
             </p>
           </div>
@@ -83,7 +92,7 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
             <label className="text-sm text-zinc-600 dark:text-zinc-400">
               Digita{' '}
               <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
-                {selectedService?.name}
+                {category?.name}
               </strong>{' '}
               per confermare
             </label>
@@ -92,7 +101,7 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && isConfirmed) handleDelete(); }}
-              placeholder={selectedService?.name ?? ''}
+              placeholder={category?.name ?? ''}
               autoComplete="off"
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors"
             />
@@ -116,7 +125,7 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
             className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-600"
           >
             <Trash2 className="size-4" />
-            Elimina servizio
+            Elimina categoria
           </button>
         </div>
 
