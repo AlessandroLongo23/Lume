@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2 } from 'lucide-react';
+import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2, Scissors, Package, Lightbulb } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { useServicesStore } from '@/lib/stores/services';
+import { useProductsStore } from '@/lib/stores/products';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { FicheProduct } from '@/lib/types/FicheProduct';
 
 type PaymentView = FichePaymentMethod | 'mixed' | null;
 
@@ -39,8 +43,9 @@ function fmt(value: number) {
 // Stateful inner component — keyed by fiche.id so React resets all state on each open
 function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void }) {
   const closeFiche = useFichesStore((s) => s.closeFiche);
+  const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
 
-  const [view, setView] = useState<PaymentView>(null);
+  const [view, setView] = useState<PaymentView>(FichePaymentMethod.CASH);
   const [cashGiven, setCashGiven] = useState('');
   const [splits, setSplits] = useState<Split[]>(INITIAL_SPLITS.map((s) => ({ ...s })));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +53,11 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
   const total = fiche.getTotal();
   const client = fiche.getClient();
   const clientName = client?.getFullName() ?? 'Cliente sconosciuto';
+
+  const ficheServices = fiche.getFicheServices();
+  const ficheProducts: FicheProduct[] = fiche.getFicheProducts();
+  const services = useServicesStore((s) => s.services);
+  const products = useProductsStore((s) => s.products);
 
   // Cash view
   const cashGivenNum = parseFloat(cashGiven) || 0;
@@ -140,12 +150,107 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
         </button>
       </div>
 
-      {/* Total */}
-      <div className="px-6 py-4 border-b border-zinc-500/25 bg-white dark:bg-zinc-900/50">
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
-          Totale spesa
-        </p>
-        <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">€ {fmt(total)}</p>
+      {/* Receipt */}
+      <div className="mx-6 my-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-[#FAFAF8] dark:bg-zinc-950 overflow-hidden font-mono text-sm shadow-sm">
+
+        {/* Salon name */}
+        <div className="px-5 pt-5 pb-4 text-center">
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest leading-tight">
+            {salonName}
+          </p>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5">
+            {new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+            {' · '}
+            {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+
+        {/* Client + receipt ID row */}
+        <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans grid grid-cols-2 gap-x-2">
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 truncate">{clientName}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 font-mono">{fiche.id.slice(-8).toUpperCase()}</p>
+          </div>
+        </div>
+
+        {/* Services */}
+        {ficheServices.length > 0 && (
+          <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Scissors className="size-3 text-zinc-400 dark:text-zinc-500" />
+              <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
+            </div>
+            {ficheServices.map((fs) => {
+              const service = services.find((s) => s.id === fs.service_id);
+              const isDiscounted = fs.final_price < fs.list_price;
+              return (
+                <div key={fs.id} className="flex items-baseline justify-between gap-2 py-0.5">
+                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{service?.name ?? 'Servizio'}</span>
+                  <span className="flex items-baseline gap-1.5 shrink-0">
+                    {isDiscounted && (
+                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
+                    )}
+                    <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      € {fmt(fs.final_price)}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Products */}
+        {ficheProducts.length > 0 && (
+          <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Package className="size-3 text-zinc-400 dark:text-zinc-500" />
+              <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
+            </div>
+            {ficheProducts.map((fp) => {
+              const product = products.find((p) => p.id === fp.product_id);
+              const listTotal = fp.list_price * fp.quantity;
+              const finalTotal = fp.final_price * fp.quantity;
+              const isDiscounted = fp.final_price < fp.list_price;
+              return (
+                <div key={fp.id} className="flex items-baseline justify-between gap-2 py-0.5">
+                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">
+                    {product?.name ?? 'Prodotto'}
+                    {fp.quantity > 1 && (
+                      <span className="text-zinc-400 dark:text-zinc-500 ml-1">×{fp.quantity}</span>
+                    )}
+                  </span>
+                  <span className="flex items-baseline gap-1.5 shrink-0">
+                    {isDiscounted && (
+                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
+                    )}
+                    <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      € {fmt(finalTotal)}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Total */}
+        <div className="mx-4 border-t border-zinc-200 dark:border-zinc-700 pt-3 pb-3 flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-sans">Totale</span>
+          <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">€ {fmt(total)}</span>
+        </div>
+
+        {/* Lume branding footer */}
+        <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 py-3 flex items-center justify-center gap-1.5 font-sans">
+          <Lightbulb className="size-3 text-indigo-500" strokeWidth={2.25} />
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+            Gestito con <span className="text-indigo-500 font-semibold">Lume.</span>
+          </span>
+        </div>
       </div>
 
       {/* Method selector */}
@@ -202,18 +307,16 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   placeholder:text-zinc-400 outline-none transition-colors"
               />
             </div>
-            {cashGiven !== '' && (
-              <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-100 dark:bg-zinc-900/60">
-                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Resto</span>
-                <span
-                  className={`text-lg font-bold ${
-                    change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-                  }`}
-                >
-                  € {fmt(change)}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-100 dark:bg-zinc-900/60">
+              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Resto</span>
+              <span
+                className={`text-lg font-bold ${
+                  change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                }`}
+              >
+                € {fmt(change)}
+              </span>
+            </div>
           </div>
         )}
 
@@ -336,7 +439,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
 
 export function CheckoutFicheModal({ isOpen, onClose, fiche }: CheckoutFicheModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} classes="max-w-md w-full">
+    <Modal isOpen={isOpen} onClose={onClose} classes="max-w-lg w-full">
       {fiche && <CheckoutContent key={fiche.id} fiche={fiche} onClose={onClose} />}
     </Modal>
   );

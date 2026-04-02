@@ -8,6 +8,7 @@ interface FicheProductsState {
   error: string | null;
   fetchFicheProducts: () => Promise<void>;
   addFicheProduct: (ficheProduct: Partial<FicheProduct>) => Promise<FicheProduct>;
+  updateFicheProduct: (id: string, updated: Partial<FicheProduct>) => Promise<FicheProduct>;
   deleteFicheProduct: (id: string) => Promise<void>;
 }
 
@@ -36,6 +37,19 @@ export const useFicheProductsStore = create<FicheProductsState>((set) => ({
     const newFicheProduct = new FicheProduct(data);
     set((s) => ({ fiche_products: [...s.fiche_products, newFicheProduct] }));
     return newFicheProduct;
+  },
+
+  updateFicheProduct: async (id, updated) => {
+    const { data, error } = await supabase
+      .from('fiche_products')
+      .update(updated)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error('Impossibile aggiornare il prodotto della fiche.');
+    const updatedFp = new FicheProduct(data);
+    set((s) => ({ fiche_products: s.fiche_products.map((fp) => (fp.id === id ? updatedFp : fp)) }));
+    return updatedFp;
   },
 
   deleteFicheProduct: async (id) => {

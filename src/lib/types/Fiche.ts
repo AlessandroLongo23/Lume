@@ -47,14 +47,12 @@ export class Fiche {
   }
 
   getTotal(): number {
-    const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + (fs.price ?? 0), 0);
+    const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + fs.final_price, 0);
     const productsTotal = this.getFicheProducts().reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sum: number, fp: any) => sum + ((fp.price ?? 0) * (fp.quantity ?? 1)),
+      (sum: number, fp: any) => sum + (fp.final_price * (fp.quantity ?? 1)),
       0
     );
-    // NOTE: Fiche has no discount/coupon fields as of this implementation.
-    // When discounts are added to the schema, subtract them here.
     return servicesTotal + productsTotal;
   }
 

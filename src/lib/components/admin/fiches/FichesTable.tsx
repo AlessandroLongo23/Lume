@@ -13,6 +13,8 @@ import {
 import { Search, X, ChevronUp, ChevronDown, Trash2, ReceiptText } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
+import { useFicheServicesStore } from '@/lib/stores/fiche_services';
+import { useServicesStore } from '@/lib/stores/services';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
@@ -49,6 +51,8 @@ const STATUS_OPTIONS: FacetedFilterOption[] = [
 export function FichesTable({ fiches }: FichesTableProps) {
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
+  const ficheServices = useFicheServicesStore((s) => s.fiche_services);
+  const services = useServicesStore((s) => s.services);
 
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -114,6 +118,44 @@ export function FichesTable({ fiches }: FichesTableProps) {
           new Date(a.original.datetime).getTime() - new Date(b.original.datetime).getTime(),
       },
       {
+        id: 'services',
+        header: 'Servizi',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const names = ficheServices
+            .filter((fs) => fs.fiche_id === row.original.id)
+            .map((fs) => services.find((s) => s.id === fs.service_id)?.name)
+            .filter(Boolean) as string[];
+          if (names.length === 0) return <span className="text-zinc-400">—</span>;
+          return (
+            <div className="flex flex-wrap gap-1">
+              {names.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'total',
+        header: 'Totale',
+        enableSorting: true,
+        sortingFn: (a, b) => a.original.getTotal() - b.original.getTotal(),
+        cell: ({ row }) => {
+          const total = row.original.getTotal();
+          return (
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              {total.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+            </span>
+          );
+        },
+      },
+      {
         accessorKey: 'status',
         header: 'Stato',
         cell: ({ getValue }) => {
@@ -126,7 +168,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
         },
       },
     ],
-    [clients]
+    [clients, ficheServices, services]
   );
 
   const table = useReactTable({

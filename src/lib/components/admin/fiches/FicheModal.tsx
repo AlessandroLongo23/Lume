@@ -34,14 +34,16 @@ interface FicheServiceState {
   name: string;
   operator_id: string;
   duration: number;
-  price: number;
+  list_price: number;
+  final_price: number;
 }
 
 interface FicheProductState {
   id?: string;
   product_id: string;
   name: string;
-  price: number;
+  list_price: number;
+  final_price: number;
 }
 
 interface FicheModalProps {
@@ -76,7 +78,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   const { addFicheService, updateFicheService, deleteFicheService } = useFicheServicesStore();
   const products = useProductsStore((s) => s.products);
   const productCategories = useProductCategoriesStore((s) => s.product_categories);
-  const { addFicheProduct, deleteFicheProduct } = useFicheProductsStore();
+  const { addFicheProduct, updateFicheProduct, deleteFicheProduct } = useFicheProductsStore();
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
@@ -112,7 +114,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
             name: svc?.name ?? 'Servizio',
             operator_id: fs.operator_id ?? '',
             duration: fs.duration,
-            price: fs.price || svc?.price || 0,
+            list_price: fs.list_price,
+            final_price: fs.final_price,
           };
         }),
       );
@@ -123,7 +126,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
             id: fp.id,
             product_id: fp.product_id,
             name: prod?.name ?? 'Prodotto',
-            price: fp.price || prod?.price || 0,
+            list_price: fp.list_price,
+            final_price: fp.final_price,
           };
         }),
       );
@@ -179,8 +183,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   }, [ficheServices, baseTime]);
 
   const totalDuration = useMemo(() => ficheServices.reduce((acc, s) => acc + s.duration, 0), [ficheServices]);
-  const totalServicesPrice = useMemo(() => ficheServices.reduce((acc, s) => acc + s.price, 0), [ficheServices]);
-  const totalProductsPrice = useMemo(() => ficheProducts.reduce((acc, p) => acc + p.price, 0), [ficheProducts]);
+  const totalServicesPrice = useMemo(() => ficheServices.reduce((acc, s) => acc + s.final_price, 0), [ficheServices]);
+  const totalProductsPrice = useMemo(() => ficheProducts.reduce((acc, p) => acc + p.final_price, 0), [ficheProducts]);
 
   const selectedClient = useMemo(() => clients.find((c) => c.id === clientId) ?? null, [clients, clientId]);
   const lastNote = useMemo(() => selectedClient?.getLastNote() ?? '', [selectedClient]);
@@ -221,11 +225,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     const operatorId = mode === 'add' ? (operator?.id ?? '') : '';
     setFicheServices((prev) => [
       ...prev,
-      { service_id: svc.id, name: svc.name, operator_id: operatorId, duration: svc.duration, price: svc.price },
+      { service_id: svc.id, name: svc.name, operator_id: operatorId, duration: svc.duration, list_price: svc.price, final_price: svc.price },
     ]);
     setSvcQuery('');
     setSvcOpen(false);
-    setTimeout(() => svcInputRef.current?.focus(), 50);
   }
 
   function removeService(index: number) {
@@ -242,15 +245,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   }
 
   function updateServicePrice(index: number, raw: number) {
-    const price = Math.max(0, isNaN(raw) ? 0 : raw);
-    setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, price } : s)));
+    const final_price = Math.max(0, isNaN(raw) ? 0 : raw);
+    setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, final_price } : s)));
   }
 
   function toggleProduct(prod: Product) {
     setFicheProducts((prev) => {
       const existing = prev.find((p) => p.product_id === prod.id);
       if (existing) return prev.filter((p) => p.product_id !== prod.id);
-      return [...prev, { product_id: prod.id, name: prod.name, price: prod.price }];
+      const snapPrice = prod.sell_price ?? prod.price;
+      return [...prev, { product_id: prod.id, name: prod.name, list_price: snapPrice, final_price: snapPrice }];
     });
   }
 
@@ -308,14 +312,15 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               end_time: svc.end_time as any,
               duration: svc.duration,
-              price: svc.price,
+              list_price: svc.list_price,
+              final_price: svc.final_price,
             }),
           ),
         );
         if (ficheProducts.length > 0) {
           await Promise.all(
             ficheProducts.map((prod) =>
-              addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: 1, price: prod.price }),
+              addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: 1, list_price: prod.list_price, final_price: prod.final_price }),
             ),
           );
         }
@@ -340,7 +345,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               end_time: svc.end_time as any,
               duration: svc.duration,
-              price: svc.price,
+              list_price: svc.list_price,
+              final_price: svc.final_price,
             });
           } else {
             await addFicheService({
@@ -352,19 +358,22 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               end_time: svc.end_time as any,
               duration: svc.duration,
-              price: svc.price,
+              list_price: svc.list_price,
+              final_price: svc.final_price,
             });
           }
         }
 
-        // Sync products: delete removed, insert new
+        // Sync products: delete removed, update existing final_price, insert new
         const currentProductIds = new Set(ficheProducts.filter((p) => p.id).map((p) => p.id!));
         for (const fp of fiche.getFicheProducts()) {
           if (!currentProductIds.has(fp.id)) await deleteFicheProduct(fp.id);
         }
         for (const prod of ficheProducts) {
-          if (!prod.id) {
-            await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: 1, price: prod.price });
+          if (prod.id) {
+            await updateFicheProduct(prod.id, { final_price: prod.final_price });
+          } else {
+            await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: 1, list_price: prod.list_price, final_price: prod.final_price });
           }
         }
 
@@ -650,7 +659,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                             <div className="flex justify-end">
                               <input
                                 type="number"
-                                value={svc.price}
+                                value={svc.final_price}
                                 onChange={(e) => updateServicePrice(i, parseFloat(e.target.value))}
                                 min={0}
                                 step={0.5}
@@ -732,7 +741,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                                   </div>
                                   <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
                                     <Euro className="size-3" />
-                                    {prod.price.toFixed(2)}
+                                    {(prod.sell_price ?? prod.price).toFixed(2)}
                                   </span>
                                 </button>
                               );
@@ -750,7 +759,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                   <span className="text-xs text-zinc-400 flex items-center gap-1">
                                     <Euro className="size-3" />
-                                    {prod.price.toFixed(2)}
+                                    {prod.final_price.toFixed(2)}
                                   </span>
                                   <button
                                     type="button"

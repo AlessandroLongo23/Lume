@@ -7,7 +7,8 @@ export class FicheService {
   start_time: Date;
   end_time: Date;
   duration: number;
-  price: number;
+  list_price: number;
+  final_price: number;
 
   constructor(ficheService: FicheService) {
     this.id = ficheService.id;
@@ -18,7 +19,8 @@ export class FicheService {
     this.start_time = ficheService.start_time;
     this.end_time = ficheService.end_time;
     this.duration = ficheService.duration;
-    this.price = ficheService.price ?? 0;
+    this.list_price = ficheService.list_price ?? 0;
+    this.final_price = ficheService.final_price ?? 0;
   }
 
   getDuration(): number {

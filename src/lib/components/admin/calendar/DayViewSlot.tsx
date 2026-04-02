@@ -123,7 +123,9 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
       >
         {isOccupied && isStartOfFiche && slotFiches.map((fiche) => {
           const client = clients.find((c) => c.id === fiche.client_id);
-          const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
+          const ficheServices = fiche.getFicheServices()
+            .filter((fs) => fs.operator_id === operator.id)
+            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
           // Derive the accent color from the first service's category
           const firstSvcObj = ficheServices[0] ? services.find((s) => s.id === ficheServices[0].service_id) : null;
