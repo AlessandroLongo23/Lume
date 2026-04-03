@@ -1,6 +1,10 @@
 import { User, Calendar, Check } from 'lucide-react';
+import { useClientsStore } from '@/lib/stores/clients';
+import { useFicheServicesStore } from '@/lib/stores/fiche_services';
+import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import type { FicheStatus } from './ficheStatus';
 import type { FicheService } from './FicheService';
+import type { FicheProduct } from './FicheProduct';
 import type { DataColumn } from './dataColumn';
 import type { Client } from './Client';
 
@@ -22,24 +26,17 @@ export class Fiche {
   }
 
   getClient(): Client | null {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useClientsStore } = require('@/lib/stores/clients');
     return useClientsStore.getState().clients.find((c: Client) => c.id === this.client_id) ?? null;
   }
 
   getFicheServices(): FicheService[] {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useFicheServicesStore } = require('@/lib/stores/fiche_services');
     return useFicheServicesStore
       .getState()
       .fiche_services.filter((fs: FicheService) => fs.fiche_id === this.id);
   }
 
-  getFicheProducts() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useFicheProductsStore } = require('@/lib/stores/fiche_products');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return useFicheProductsStore.getState().fiche_products.filter((fp: any) => fp.fiche_id === this.id);
+  getFicheProducts(): FicheProduct[] {
+    return useFicheProductsStore.getState().fiche_products.filter((fp: FicheProduct) => fp.fiche_id === this.id);
   }
 
   getDuration(): number {
@@ -49,8 +46,7 @@ export class Fiche {
   getTotal(): number {
     const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + fs.final_price, 0);
     const productsTotal = this.getFicheProducts().reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sum: number, fp: any) => sum + (fp.final_price * (fp.quantity ?? 1)),
+      (sum: number, fp: FicheProduct) => sum + (fp.final_price * (fp.quantity ?? 1)),
       0
     );
     return servicesTotal + productsTotal;

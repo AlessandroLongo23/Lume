@@ -19,7 +19,12 @@ export const useFicheServicesStore = create<FicheServicesState>((set) => ({
 
   fetchFicheServices: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('fiche_services').select('*');
+    const since = new Date();
+    since.setDate(since.getDate() - 90);
+    const { data, error } = await supabase
+      .from('fiche_services')
+      .select('*')
+      .gte('start_time', since.toISOString());
     if (error) {
       set({ isLoading: false, error: error.message });
       return;

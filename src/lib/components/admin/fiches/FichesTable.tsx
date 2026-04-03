@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,14 +10,13 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, ReceiptText } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, ReceiptText } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
-import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
@@ -42,43 +41,30 @@ const STATUS_LABELS: Record<string, string> = {
   [FicheStatus.COMPLETED]: 'Completata',
 };
 
-const STATUS_OPTIONS: FacetedFilterOption[] = [
-  { value: FicheStatus.CREATED, label: 'Creata' },
-  { value: FicheStatus.PENDING, label: 'In corso' },
-  { value: FicheStatus.COMPLETED, label: 'Completata' },
-];
-
 export function FichesTable({ fiches }: FichesTableProps) {
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
   const services = useServicesStore((s) => s.services);
 
+  const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
+  const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
+  const ficheServicesByFiche = useMemo(() => {
+    const map = new Map<string, typeof ficheServices>();
+    for (const fs of ficheServices) {
+      const arr = map.get(fs.fiche_id);
+      if (arr) arr.push(fs);
+      else map.set(fs.fiche_id, [fs]);
+    }
+    return map;
+  }, [ficheServices]);
+
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
-
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([FicheStatus.CREATED, FicheStatus.PENDING]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
-
-  useEffect(() => { setPageIndex(0); }, [globalFilter, selectedStatuses]);
-
-  const filteredData = useMemo(() => {
-    let data = fiches;
-    if (selectedStatuses.length > 0) data = data.filter((f) => selectedStatuses.includes(f.status));
-    if (globalFilter.trim()) {
-      const q = globalFilter.toLowerCase();
-      data = data.filter((f) => {
-        const client = clients.find((c) => c.id === f.client_id);
-        const fullName = client ? `${client.firstName} ${client.lastName}`.toLowerCase() : '';
-        return fullName.includes(q) || f.status.toLowerCase().includes(q);
-      });
-    }
-    return data;
-  }, [fiches, selectedStatuses, globalFilter, clients]);
 
   const columns = useMemo<ColumnDef<Fiche>[]>(
     () => [
@@ -86,7 +72,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
         accessorKey: 'client_id',
         header: 'Cliente',
         cell: ({ row }) => {
-          const client = clients.find((c) => c.id === row.original.client_id);
+          const client = clientMap.get(row.original.client_id);
           return (
             <span className="font-medium text-zinc-900 dark:text-zinc-100">
               {client ? `${client.firstName} ${client.lastName}` : <span className="text-zinc-400">—</span>}
@@ -94,8 +80,8 @@ export function FichesTable({ fiches }: FichesTableProps) {
           );
         },
         sortingFn: (a, b) => {
-          const ca = clients.find((c) => c.id === a.original.client_id);
-          const cb = clients.find((c) => c.id === b.original.client_id);
+          const ca = clientMap.get(a.original.client_id);
+          const cb = clientMap.get(b.original.client_id);
           const na = ca ? `${ca.firstName} ${ca.lastName}` : '';
           const nb = cb ? `${cb.firstName} ${cb.lastName}` : '';
           return na.localeCompare(nb, 'it');
@@ -122,9 +108,9 @@ export function FichesTable({ fiches }: FichesTableProps) {
         header: 'Servizi',
         enableSorting: false,
         cell: ({ row }) => {
-          const names = ficheServices
-            .filter((fs) => fs.fiche_id === row.original.id)
-            .map((fs) => services.find((s) => s.id === fs.service_id)?.name)
+          const fServices = ficheServicesByFiche.get(row.original.id) ?? [];
+          const names = fServices
+            .map((fs) => serviceMap.get(fs.service_id)?.name)
             .filter(Boolean) as string[];
           if (names.length === 0) return <span className="text-zinc-400">—</span>;
           return (
@@ -168,11 +154,11 @@ export function FichesTable({ fiches }: FichesTableProps) {
         },
       },
     ],
-    [clients, ficheServices, services]
+    [clientMap, ficheServicesByFiche, serviceMap]
   );
 
   const table = useReactTable({
-    data: filteredData,
+    data: fiches,
     columns,
     state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
     onSortingChange: setSorting,
@@ -189,33 +175,6 @@ export function FichesTable({ fiches }: FichesTableProps) {
   return (
     <>
       <div className="flex flex-col gap-4 w-full">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center flex-1 max-w-sm">
-            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Cerca fiche..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                border-zinc-200 dark:border-zinc-800
-                focus:border-zinc-300 dark:focus:border-zinc-700
-                text-zinc-900 dark:text-zinc-100
-                placeholder:text-zinc-400 outline-none transition-colors"
-            />
-            {globalFilter && (
-              <button
-                onClick={() => setGlobalFilter('')}
-                className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-          <FacetedFilter label="Stato" options={STATUS_OPTIONS} selected={selectedStatuses} onChange={setSelectedStatuses} />
-        </div>
-
         {/* Table */}
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">
@@ -307,7 +266,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
-          totalItems={filteredData.length}
+          totalItems={fiches.length}
           itemsPerPage={PAGE_SIZE}
           labelPlural="fiches"
         />

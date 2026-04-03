@@ -29,7 +29,12 @@ export const useFichesStore = create<FichesState>((set) => ({
 
   fetchFiches: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('fiches').select('*');
+    const since = new Date();
+    since.setDate(since.getDate() - 90);
+    const { data, error } = await supabase
+      .from('fiches')
+      .select('*')
+      .gte('datetime', since.toISOString());
     if (error) {
       set({ isLoading: false, error: error.message });
       return;
@@ -101,8 +106,6 @@ export const useFichesStore = create<FichesState>((set) => ({
       ),
     }));
 
-    // Sync fiche_payments store
-    const { useFichePaymentsStore } = await import('@/lib/stores/fiche_payments');
-    await useFichePaymentsStore.getState().fetchFichePayments();
+    // fiche_payments store will be synced via realtime subscription in StoreInitializer
   },
 }));

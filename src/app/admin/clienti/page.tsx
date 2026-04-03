@@ -11,6 +11,7 @@ import { ClientsTable } from '@/lib/components/admin/clients/ClientsTable';
 import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 
 export default function ClientiPage() {
   const clients = useClientsStore((s) => s.clients);
@@ -26,32 +27,35 @@ export default function ClientiPage() {
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
-        <div className="flex flex-row items-center justify-between gap-4 w-full">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Clienti</h1>
-          <div className="flex flex-row items-center gap-4">
-            <ToggleButton
-              value={view}
-              onChange={(v) => setView('clients', v)}
-              options={['table', 'grid']}
-              labels={['Tabella', 'Griglia']}
-              icons={[TableProperties, LayoutGrid]}
-            />
-            <button
-              className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
-              onClick={() => setShowAdd(true)}
-            >
-              <UserPlus className="size-5" />
-              <span>Nuovo cliente</span>
-            </button>
-            <DropdownMenu
-              width="w-48"
-              items={[
-                { label: 'Esporta PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
-                { label: 'Esporta CSV', icon: FileSpreadsheet, onClick: () => { /* TODO: export CSV */ } },
-              ]}
-            />
-          </div>
-        </div>
+        <PageHeader
+          title="Clienti"
+          icon={Users}
+          actions={
+            <>
+              <ToggleButton
+                value={view}
+                onChange={(v) => setView('clients', v)}
+                options={['table', 'grid']}
+                labels={['Tabella', 'Griglia']}
+                icons={[TableProperties, LayoutGrid]}
+              />
+              <button
+                className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
+                onClick={() => setShowAdd(true)}
+              >
+                <UserPlus className="size-5" />
+                <span>Nuovo cliente</span>
+              </button>
+              <DropdownMenu
+                width="w-48"
+                items={[
+                  { label: 'Esporta PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                  { label: 'Esporta CSV', icon: FileSpreadsheet, onClick: () => { /* TODO: export CSV */ } },
+                ]}
+              />
+            </>
+          }
+        />
 
         {!isLoading && clients.length === 0 ? (
           <EmptyState

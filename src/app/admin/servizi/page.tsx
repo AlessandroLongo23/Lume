@@ -1,62 +1,125 @@
 'use client';
 
-import { useState } from 'react';
-import { Scissors, Tags, ArrowDownToLine, FileDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Scissors, Tags, Plus, ArrowDownToLine, FileDown } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
+import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
-import { ManageCategoriesModal } from '@/lib/components/admin/services/ManageCategoriesModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
+import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+
+type Tab = 'servizi' | 'categorie';
+
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: 'servizi', label: 'Servizi', icon: Scissors },
+  { id: 'categorie', label: 'Categorie', icon: Tags },
+];
 
 export default function ServiziPage() {
   const services = useServicesStore((s) => s.services);
   const isLoading = useServicesStore((s) => s.isLoading);
+  const fetchServices = useServicesStore((s) => s.fetchServices);
+  const categories = useServiceCategoriesStore((s) => s.service_categories);
+  const isCategoriesLoading = useServiceCategoriesStore((s) => s.isLoading);
+  const fetchServiceCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
+
+  const [activeTab, setActiveTab] = useState<Tab>('servizi');
   const [showAdd, setShowAdd] = useState(false);
-  const [showManageCategories, setShowManageCategories] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
+
+  useEffect(() => {
+    fetchServices();
+    fetchServiceCategories();
+  }, [fetchServices, fetchServiceCategories]);
 
   return (
     <>
       <AddServiceModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
-      <ManageCategoriesModal isOpen={showManageCategories} onClose={() => setShowManageCategories(false)} />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-row items-center justify-between gap-4 w-full">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Servizi</h1>
-          <div className="flex flex-row items-center gap-4">
-            <button
-              className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 rounded-lg border border-zinc-500/25"
-              onClick={() => setShowManageCategories(true)}
-            >
-              <Tags className="size-5" strokeWidth={1.5} />
-              <span className="font-thin">Gestisci Categorie</span>
-            </button>
-            <button
-              className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
-              onClick={() => setShowAdd(true)}
-            >
-              <Scissors className="size-5" strokeWidth={1.5} />
-              <span className="font-thin">Nuovo Servizio</span>
-            </button>
-            <DropdownMenu items={[
-              { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
-            ]} />
-          </div>
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="Servizi"
+          icon={Scissors}
+          actions={
+            activeTab === 'servizi' ? (
+              <>
+                <button
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                  onClick={() => setShowAdd(true)}
+                >
+                  <Plus className="size-4" />
+                  Nuovo Servizio
+                </button>
+                <DropdownMenu items={[
+                  { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                ]} />
+              </>
+            ) : (
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                onClick={() => setCategorieAddTrigger((n) => n + 1)}
+              >
+                <Plus className="size-4" />
+                Nuova Categoria
+              </button>
+            )
+          }
+        />
+
+        {/* Tab nav */}
+        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+          {TABS.map(({ id, label, icon: Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  isActive
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
+                }`}
+              >
+                <Icon className="size-4" />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        {!isLoading && services.length === 0 ? (
-          <EmptyState
-            icon={Scissors}
-            title="Nessun servizio trovato"
-            description="Aggiungi il tuo primo servizio per iniziare a gestire il listino."
-            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
-            action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
-          />
-        ) : (
-          <ServicesTable services={services} />
+        {/* Tab content */}
+        {activeTab === 'servizi' && (
+          !isLoading && services.length === 0 ? (
+            <EmptyState
+              icon={Scissors}
+              title="Nessun servizio trovato"
+              description="Aggiungi il tuo primo servizio per iniziare a gestire il listino."
+              secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+              action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
+            />
+          ) : (
+            <ServicesTable services={services} />
+          )
+        )}
+        {activeTab === 'categorie' && (
+          !isCategoriesLoading && categories.length === 0 ? (
+            <EmptyState
+              icon={Tags}
+              title="Nessuna categoria trovata"
+              description="Crea la tua prima categoria per organizzare i servizi del listino."
+              secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+              action={{ label: 'Nuova Categoria', icon: Tags, onClick: () => setCategorieAddTrigger((n) => n + 1) }}
+            />
+          ) : (
+            <CategorieServiziTab addTrigger={categorieAddTrigger} />
+          )
         )}
       </div>
     </>

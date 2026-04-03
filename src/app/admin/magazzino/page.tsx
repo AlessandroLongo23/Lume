@@ -10,6 +10,7 @@ import { ProductsTab } from '@/lib/components/admin/magazzino/ProductsTab';
 import { CategorieTab } from '@/lib/components/admin/magazzino/CategorieTab';
 import { FornitoriTab } from '@/lib/components/admin/magazzino/FornitoriTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import type { Product } from '@/lib/types/Product';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori';
@@ -25,6 +26,8 @@ export default function MagazzinoPage() {
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
+  const [fornitoriAddTrigger, setFornitoriAddTrigger] = useState(0);
 
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
   const fetchProductCategories = useProductCategoriesStore((s) => s.fetchProductCategories);
@@ -59,27 +62,37 @@ export default function MagazzinoPage() {
       />
 
       <div className="flex flex-col gap-6">
-        {/* Page header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-9 rounded-lg bg-indigo-500/10">
-              <Warehouse className="size-5 text-indigo-500" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Magazzino</h1>
-              <p className="text-sm text-zinc-500">Gestisci prodotti, categorie e fornitori.</p>
-            </div>
-          </div>
-          {activeTab === 'prodotti' && (
-            <button
-              onClick={openAddSheet}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-            >
-              <Plus className="size-4" />
-              Nuovo Prodotto
-            </button>
-          )}
-        </div>
+        <PageHeader
+          title="Magazzino"
+          icon={Warehouse}
+          actions={
+            activeTab === 'prodotti' ? (
+              <button
+                onClick={openAddSheet}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              >
+                <Plus className="size-4" />
+                Nuovo Prodotto
+              </button>
+            ) : activeTab === 'categorie' ? (
+              <button
+                onClick={() => setCategorieAddTrigger((n) => n + 1)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              >
+                <Plus className="size-4" />
+                Nuova Categoria
+              </button>
+            ) : (
+              <button
+                onClick={() => setFornitoriAddTrigger((n) => n + 1)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              >
+                <Plus className="size-4" />
+                Nuovo Fornitore
+              </button>
+            )
+          }
+        />
 
         {/* Tab nav */}
         <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
@@ -109,10 +122,11 @@ export default function MagazzinoPage() {
             products={products}
             trackInventory={trackInventory}
             onEdit={openEditSheet}
+            onAdd={openAddSheet}
           />
         )}
-        {activeTab === 'categorie' && <CategorieTab />}
-        {activeTab === 'fornitori' && <FornitoriTab />}
+        {activeTab === 'categorie' && <CategorieTab addTrigger={categorieAddTrigger} />}
+        {activeTab === 'fornitori' && <FornitoriTab addTrigger={fornitoriAddTrigger} />}
       </div>
     </>
   );

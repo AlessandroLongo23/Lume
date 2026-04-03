@@ -37,6 +37,41 @@ export const useServiceCategoriesStore = create<ServiceCategoriesState>((set) =>
   },
 
   deleteServiceCategory: async (id) => {
+    // 1. Find all services in this category
+    const { data: services, error: sErr } = await supabase
+      .from('services')
+      .select('id')
+      .eq('category_id', id);
+    if (sErr) throw new Error('Impossibile eliminare la categoria.');
+
+    const serviceIds = (services ?? []).map((s) => s.id);
+
+    if (serviceIds.length > 0) {
+      // 2. Find all fiches that reference these services
+      const { data: ficheServices, error: fsErr } = await supabase
+        .from('fiche_services')
+        .select('fiche_id')
+        .in('service_id', serviceIds);
+      if (fsErr) throw new Error('Impossibile eliminare la categoria.');
+
+      const ficheIds = [...new Set((ficheServices ?? []).map((fs) => fs.fiche_id))];
+
+      if (ficheIds.length > 0) {
+        // 3. Delete fiche_services rows first
+        const { error: fsDelErr } = await supabase.from('fiche_services').delete().in('fiche_id', ficheIds);
+        if (fsDelErr) throw new Error('Impossibile eliminare la categoria.');
+
+        // 4. Delete the fiches
+        const { error: fDelErr } = await supabase.from('fiches').delete().in('id', ficheIds);
+        if (fDelErr) throw new Error('Impossibile eliminare la categoria.');
+      }
+
+      // 5. Delete the services
+      const { error: svDelErr } = await supabase.from('services').delete().in('id', serviceIds);
+      if (svDelErr) throw new Error('Impossibile eliminare la categoria.');
+    }
+
+    // 6. Finally delete the category
     const { error } = await supabase.from('service_categories').delete().eq('id', id);
     if (error) throw new Error('Impossibile eliminare la categoria.');
   },

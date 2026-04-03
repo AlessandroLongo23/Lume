@@ -1,22 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trash2, Truck, Plus, ArrowDownToLine } from 'lucide-react';
 import { Table } from '@/lib/components/admin/table/Table';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { Supplier } from '@/lib/types/Supplier';
 import { AddFornitoreModal } from './AddFornitoreModal';
 
-export function FornitoriTab() {
+interface FornitoriTabProps {
+  addTrigger?: number;
+}
+
+export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
   const suppliers = useSuppliersStore((s) => s.suppliers);
   const isLoading = useSuppliersStore((s) => s.isLoading);
   const deleteSupplier = useSuppliersStore((s) => s.deleteSupplier);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selected, setSelected] = useState<Supplier | null>(null);
+
+  useEffect(() => {
+    if (!addTrigger) return;
+    setSelected(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowAdd(true);
+  }, [addTrigger]);
 
   const handleEditClick = (e: React.MouseEvent, item: Supplier) => {
     e.stopPropagation();
@@ -49,6 +63,7 @@ export function FornitoriTab() {
         onClose={() => { setShowAdd(false); setSelected(null); }}
         selectedSupplier={selected}
       />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
       <AddModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
@@ -70,29 +85,27 @@ export function FornitoriTab() {
         </p>
       </AddModal>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
-            {suppliers.length} {suppliers.length === 1 ? 'fornitore' : 'fornitori'}
-          </p>
-          <button
-            onClick={() => { setSelected(null); setShowAdd(true); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-          >
-            <Plus className="size-4" />
-            Nuovo Fornitore
-          </button>
-        </div>
-        <Table
-          columns={Supplier.dataColumns}
-          data={suppliers}
-          isLoading={isLoading}
-          handleEditClick={handleEditClick}
-          handleDeleteClick={handleDeleteClick}
-          labelPlural="fornitori"
-          labelSingular="fornitore"
+      {!isLoading && suppliers.length === 0 ? (
+        <EmptyState
+          icon={Truck}
+          title="Nessun fornitore trovato"
+          description="Aggiungi il tuo primo fornitore per gestire gli approvvigionamenti."
+          secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+          action={{ label: 'Nuovo fornitore', icon: Plus, onClick: () => { setSelected(null); setShowAdd(true); } }}
         />
-      </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Table
+            columns={Supplier.dataColumns}
+            data={suppliers}
+            isLoading={isLoading}
+            handleEditClick={handleEditClick}
+            handleDeleteClick={handleDeleteClick}
+            labelPlural="fornitori"
+            labelSingular="fornitore"
+          />
+        </div>
+      )}
     </>
   );
 }

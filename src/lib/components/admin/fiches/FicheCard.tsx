@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Scissors, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { useServicesStore } from '@/lib/stores/services';
@@ -29,6 +30,8 @@ interface FicheCardProps {
 export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProps) {
   const services = useServicesStore((s) => s.services);
   const operators = useOperatorsStore((s) => s.operators);
+  const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
+  const operatorMap = useMemo(() => new Map(operators.map((o) => [o.id, o])), [operators]);
 
   const client = fiche.getClient();
   const ficheServices = fiche.getFicheServices();
@@ -78,8 +81,8 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
           <p className="text-xs text-zinc-400 italic">Nessun servizio aggiunto</p>
         ) : (
           ficheServices.map((fs) => {
-            const service = services.find((s) => s.id === fs.service_id);
-            const operator = operators.find((o) => o.id === fs.operator_id);
+            const service = serviceMap.get(fs.service_id);
+            const operator = operatorMap.get(fs.operator_id);
             return (
               <div key={fs.id} className="flex items-center gap-2 min-w-0">
                 <Scissors className="size-3 text-zinc-400 shrink-0" />

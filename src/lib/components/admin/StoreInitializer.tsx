@@ -15,6 +15,8 @@ import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { useCouponsStore } from '@/lib/stores/coupons';
+import { useFicheProductsStore } from '@/lib/stores/fiche_products';
+import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
@@ -33,6 +35,8 @@ export function StoreInitializer() {
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const fetchReviews = useReviewsStore((s) => s.fetchReviews);
   const fetchCoupons = useCouponsStore((s) => s.fetchCoupons);
+  const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
+  const fetchFichePayments = useFichePaymentsStore((s) => s.fetchFichePayments);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
 
   useEffect(() => {
@@ -51,6 +55,8 @@ export function StoreInitializer() {
       fetchSuppliers(),
       fetchReviews(),
       fetchCoupons(),
+      fetchFicheProducts(),
+      fetchFichePayments(),
       fetchSubscription(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -70,6 +76,8 @@ export function StoreInitializer() {
   useRealtimeStore('suppliers', fetchSuppliers);
   useRealtimeStore('reviews', fetchReviews);
   useRealtimeStore('coupons', fetchCoupons);
+  useRealtimeStore('fiche_products', fetchFicheProducts);
+  useRealtimeStore('fiche_payments', fetchFichePayments);
 
   return null;
 }

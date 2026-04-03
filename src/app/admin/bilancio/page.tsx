@@ -3,10 +3,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Wallet, Landmark, TrendingUp } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
 import { useStatsStore } from '@/lib/stores/stats';
-import { cn } from '@/lib/utils';
+import {
+  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
+} from '@/components/ui/select';
 import { KpiCard } from '@/lib/components/admin/bilancio/KpiCard';
 import { RevenueChart } from '@/lib/components/admin/bilancio/RevenueChart';
 import { TaxSimulatorCard } from '@/lib/components/admin/bilancio/TaxSimulatorCard';
@@ -18,6 +21,12 @@ const PERIOD_OPTIONS: { value: Period; label: string; months: number }[] = [
   { value: '3months', label: 'Ultimi 3 Mesi', months: 3  },
   { value: 'year',    label: "Quest'Anno",     months: 12 },
 ];
+
+const PERIOD_ITEMS: Record<string, string> = {
+  month: 'Questo Mese',
+  '3months': 'Ultimi 3 Mesi',
+  year: "Quest'Anno",
+};
 
 export default function BilancioPage() {
   const fiches            = useFichesStore((s) => s.fiches);
@@ -74,7 +83,7 @@ export default function BilancioPage() {
   const trendLabel = useMemo(() => {
     if (trendPercent === null) return null;
     const sign = trendPercent >= 0 ? '+' : '';
-    return `${sign}${trendPercent.toFixed(1)}% vs periodo prec.`;
+    return `${sign}${trendPercent.toFixed(1)}%`;
   }, [trendPercent]);
 
   const trendUp = trendPercent !== null ? trendPercent >= 0 : undefined;
@@ -87,36 +96,32 @@ export default function BilancioPage() {
   }, [period, earningsByDay, earningsByWeek, earningsByMonth]);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Bilancio</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Panoramica finanziaria del salone
-          </p>
-        </div>
-        {/* Period segment control */}
-        <div className="flex rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-1 gap-0.5">
-          {PERIOD_OPTIONS.map((o) => (
-            <button
-              key={o.value}
-              onClick={() => handlePeriodChange(o.value)}
-              className={cn(
-                'px-4 py-1.5 text-sm rounded-md transition-all whitespace-nowrap',
-                period === o.value
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm font-medium'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Bilancio"
+        icon={Wallet}
+        actions={
+          <Select
+            value={period}
+            onValueChange={(v) => handlePeriodChange(v as Period)}
+            items={PERIOD_ITEMS}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {PERIOD_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <KpiCard
           label="Incassi Lordi"
           value={grossRevenue}
@@ -139,7 +144,7 @@ export default function BilancioPage() {
       </div>
 
       {/* Chart + Tax Simulator */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
           <RevenueChart data={chartData} isEmpty={grossRevenue === 0} />
         </div>

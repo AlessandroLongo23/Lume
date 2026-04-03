@@ -47,7 +47,7 @@ function yTickFormatter(v: number): string {
 
 export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
   return (
-    <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border h-full">
+    <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border">
       <CardHeader>
         <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
           Andamento Ricavi
@@ -55,7 +55,7 @@ export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
       </CardHeader>
       <CardContent className="pb-4">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-[220px] gap-4">
+          <div className="flex flex-col items-center justify-center h-[350px] gap-4">
             <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 p-4">
               <Receipt className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
             </div>
@@ -77,7 +77,7 @@ export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
         ) : (
           /* min-w-0 + overflow-hidden prevents ResponsiveContainer from expanding infinitely in flex/grid */
           <div className="min-w-0 overflow-hidden">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                 <defs>
                   <linearGradient id="lumeGradient" x1="0" y1="0" x2="0" y2="1">

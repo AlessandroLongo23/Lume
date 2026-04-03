@@ -499,43 +499,33 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
           <div className="flex flex-col gap-4 min-h-0">
 
             {/* Tab switcher */}
-            <div className="flex rounded-lg border border-zinc-500/25 overflow-hidden shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab('services')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors
-                  ${activeTab === 'services'
-                    ? 'bg-indigo-500 text-white'
-                    : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-                  }`}
-              >
-                <Scissors className="size-3.5" />
-                Servizi
-                {ficheServices.length > 0 && (
-                  <span className={`inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold
-                    ${activeTab === 'services' ? 'bg-white/20 text-white' : 'bg-indigo-500/15 text-indigo-500'}`}>
-                    {ficheServices.length}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('products')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-l border-zinc-500/25
-                  ${activeTab === 'products'
-                    ? 'bg-indigo-500 text-white'
-                    : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-                  }`}
-              >
-                <Package className="size-3.5" />
-                Prodotti
-                {ficheProducts.length > 0 && (
-                  <span className={`inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold
-                    ${activeTab === 'products' ? 'bg-white/20 text-white' : 'bg-indigo-500/15 text-indigo-500'}`}>
-                    {ficheProducts.length}
-                  </span>
-                )}
-              </button>
+            <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+              {([
+                { id: 'services', label: 'Servizi', icon: Scissors, count: ficheServices.length },
+                { id: 'products', label: 'Prodotti', icon: Package, count: ficheProducts.length },
+              ] as { id: 'services' | 'products'; label: string; icon: React.ElementType; count: number }[]).map(({ id, label, icon: Icon, count }) => {
+                const isActive = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                      isActive
+                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
+                    }`}
+                  >
+                    <Icon className="size-4" />
+                    {label}
+                    {count > 0 && (
+                      <span className="inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-500">
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* ── SERVICES TAB ── */}

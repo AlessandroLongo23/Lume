@@ -1,22 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trash2, Tags, Plus, ArrowDownToLine } from 'lucide-react';
 import { Table } from '@/lib/components/admin/table/Table';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { ProductCategory } from '@/lib/types/ProductCategory';
 import { AddCategoryModal } from './AddCategoryModal';
 
-export function CategorieTab() {
+interface CategorieTabProps {
+  addTrigger?: number;
+}
+
+export function CategorieTab({ addTrigger }: CategorieTabProps) {
   const categories = useProductCategoriesStore((s) => s.product_categories);
   const isLoading = useProductCategoriesStore((s) => s.isLoading);
   const deleteProductCategory = useProductCategoriesStore((s) => s.deleteProductCategory);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selected, setSelected] = useState<ProductCategory | null>(null);
+
+  useEffect(() => {
+    if (!addTrigger) return;
+    setSelected(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowAdd(true);
+  }, [addTrigger]);
 
   const handleEditClick = (e: React.MouseEvent, item: ProductCategory) => {
     e.stopPropagation();
@@ -49,6 +63,7 @@ export function CategorieTab() {
         onClose={() => { setShowAdd(false); setSelected(null); }}
         selectedCategory={selected}
       />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
       <AddModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
@@ -70,29 +85,27 @@ export function CategorieTab() {
         </p>
       </AddModal>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
-            {categories.length} {categories.length === 1 ? 'categoria' : 'categorie'}
-          </p>
-          <button
-            onClick={() => { setSelected(null); setShowAdd(true); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-          >
-            <Plus className="size-4" />
-            Nuova Categoria
-          </button>
-        </div>
-        <Table
-          columns={ProductCategory.dataColumns}
-          data={categories}
-          isLoading={isLoading}
-          handleEditClick={handleEditClick}
-          handleDeleteClick={handleDeleteClick}
-          labelPlural="categorie"
-          labelSingular="categoria"
+      {!isLoading && categories.length === 0 ? (
+        <EmptyState
+          icon={Tags}
+          title="Nessuna categoria trovata"
+          description="Crea la tua prima categoria per organizzare i prodotti."
+          secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+          action={{ label: 'Nuova categoria', icon: Plus, onClick: () => { setSelected(null); setShowAdd(true); } }}
         />
-      </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Table
+            columns={ProductCategory.dataColumns}
+            data={categories}
+            isLoading={isLoading}
+            handleEditClick={handleEditClick}
+            handleDeleteClick={handleDeleteClick}
+            labelPlural="categorie"
+            labelSingular="categoria"
+          />
+        </div>
+      )}
     </>
   );
 }

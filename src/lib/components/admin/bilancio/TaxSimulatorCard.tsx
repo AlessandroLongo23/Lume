@@ -15,7 +15,7 @@ interface TaxSimulatorCardProps {
 export function TaxSimulatorCard({ gross, taxRate, onTaxRateChange, tax, net }: TaxSimulatorCardProps) {
   return (
     <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border">
-      <CardHeader>
+      <CardHeader className="px-6">
         <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
           Simulatore Fiscale e INPS
         </CardTitle>
@@ -23,7 +23,7 @@ export function TaxSimulatorCard({ gross, taxRate, onTaxRateChange, tax, net }: 
           Regimi forfettari tipici: 5% (primo anno) · 15% · 27% (IRPEF + INPS)
         </p>
       </CardHeader>
-      <CardContent className="space-y-5 pb-5">
+      <CardContent className="px-6 space-y-6">
         {/* Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -44,7 +44,7 @@ export function TaxSimulatorCard({ gross, taxRate, onTaxRateChange, tax, net }: 
           />
         </div>
 
-        {/* Breakdown */}
+        {/* Breakdown — Lordo & Tasse */}
         <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-zinc-500 dark:text-zinc-400">Lordo</span>
@@ -60,12 +60,14 @@ export function TaxSimulatorCard({ gross, taxRate, onTaxRateChange, tax, net }: 
               − {formatCurrency(tax)}
             </span>
           </div>
-          <div className="flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Utile Netto</span>
-            <span className={`text-sm font-semibold tabular-nums ${net >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-              = {formatCurrency(net)}
-            </span>
-          </div>
+        </div>
+
+        {/* Utile Netto — standalone emphasized row */}
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Utile Netto</span>
+          <span className={`text-lg font-bold tabular-nums ${net >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            {formatCurrency(net)}
+          </span>
         </div>
 
         {/* Disclaimer */}

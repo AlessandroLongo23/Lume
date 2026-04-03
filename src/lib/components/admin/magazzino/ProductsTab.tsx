@@ -1,13 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ALargeSmall, Factory, Tag, Truck, Euro, Package, AlertTriangle } from 'lucide-react';
+import { ALargeSmall, Factory, Tag, Truck, Euro, Package, AlertTriangle, Plus, ArrowDownToLine } from 'lucide-react';
 import { Table } from '@/lib/components/admin/table/Table';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { Filter } from '@/lib/types/filters/Filter';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { DeleteProductModal } from './DeleteProductModal';
 import type { DataColumn } from '@/lib/types/dataColumn';
 import type { Product } from '@/lib/types/Product';
@@ -143,10 +145,12 @@ interface ProductsTabProps {
   products: Product[];
   trackInventory: boolean;
   onEdit: (product: Product) => void;
+  onAdd: () => void;
 }
 
-export function ProductsTab({ products, trackInventory, onEdit }: ProductsTabProps) {
+export function ProductsTab({ products, trackInventory, onEdit, onAdd }: ProductsTabProps) {
   const isLoading = useProductsStore((s) => s.isLoading);
+  const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -170,6 +174,21 @@ export function ProductsTab({ products, trackInventory, onEdit }: ProductsTabPro
     setSelectedProduct(item);
     setShowDelete(true);
   };
+
+  if (!isLoading && products.length === 0) {
+    return (
+      <>
+        <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+        <EmptyState
+          icon={Package}
+          title="Nessun prodotto trovato"
+          description="Aggiungi il tuo primo prodotto per iniziare a gestire il magazzino."
+          secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+          action={{ label: 'Nuovo prodotto', icon: Plus, onClick: onAdd }}
+        />
+      </>
+    );
+  }
 
   return (
     <>
