@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     resend.emails.send({
       from: 'Lume <onboarding@resend.dev>',
-      to: ['longoa02@gmail.com'],
+      to: [process.env.NOTIFICATION_EMAIL!],
       subject: `[Lume Migration] Dati da importare — salon ${salonId}`,
       html,
       text,

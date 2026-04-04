@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { FicheProduct } from '@/lib/types/FicheProduct';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface FicheProductsState {
   fiche_products: FicheProduct[];
@@ -28,9 +29,11 @@ export const useFicheProductsStore = create<FicheProductsState>((set) => ({
   },
 
   addFicheProduct: async (ficheProduct) => {
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
     const { data, error } = await supabase
       .from('fiche_products')
-      .insert([ficheProduct])
+      .insert([{ ...ficheProduct, salon_id: activeSalonId }])
       .select()
       .single();
     if (error) throw new Error('Impossibile aggiungere il prodotto alla fiche.');

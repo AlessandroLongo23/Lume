@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { ProductCategory } from '@/lib/types/ProductCategory';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ProductCategoriesState {
   product_categories: ProductCategory[];
@@ -25,7 +26,9 @@ export const useProductCategoriesStore = create<ProductCategoriesState>((set) =>
   },
 
   addProductCategory: async (category) => {
-    const { data, error } = await supabase.from('product_categories').insert([category]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('product_categories').insert([{ ...category, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere la categoria.');
     return new ProductCategory(data);
   },

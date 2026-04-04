@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 export interface Coupon {
   id: string;
@@ -33,7 +34,9 @@ export const useCouponsStore = create<CouponsState>((set) => ({
   },
 
   addCoupon: async (coupon) => {
-    const { data, error } = await supabase.from('coupons').insert([coupon]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('coupons').insert([{ ...coupon, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere il coupon.');
     return data as Coupon;
   },

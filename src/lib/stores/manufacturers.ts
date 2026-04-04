@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Manufacturer } from '@/lib/types/Manufacturer';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ManufacturersState {
   manufacturers: Manufacturer[];
@@ -25,7 +26,9 @@ export const useManufacturersStore = create<ManufacturersState>((set) => ({
   },
 
   addManufacturer: async (manufacturer) => {
-    const { data, error } = await supabase.from('manufacturers').insert([manufacturer]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('manufacturers').insert([{ ...manufacturer, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere il produttore.');
     return new Manufacturer(data);
   },

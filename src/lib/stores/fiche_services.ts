@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { FicheService } from '@/lib/types/FicheService';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface FicheServicesState {
   fiche_services: FicheService[];
@@ -33,9 +34,11 @@ export const useFicheServicesStore = create<FicheServicesState>((set) => ({
   },
 
   addFicheService: async (ficheService) => {
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
     const { data, error } = await supabase
       .from('fiche_services')
-      .insert([ficheService])
+      .insert([{ ...ficheService, salon_id: activeSalonId }])
       .select()
       .single();
     if (error) throw new Error('Impossibile aggiungere il servizio alla fiche.');

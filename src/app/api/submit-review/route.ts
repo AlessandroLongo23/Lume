@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const { error } = await resend.emails.send({
       from: 'Lume <onboarding@resend.dev>',
-      to: ['longoa02@gmail.com'],
+      to: [process.env.NOTIFICATION_EMAIL!],
       subject: `${isEdit ? 'Recensione Aggiornata' : 'Nuova Recensione'} da ${client_name}`,
       html: emailHtml,
     });

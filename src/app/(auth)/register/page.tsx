@@ -58,7 +58,6 @@ export default function RegisterPage() {
     }
 
     const { firstName, salonName } = useOnboardingStore.getState();
-    reset();
     const params = new URLSearchParams({ name: firstName, salon: salonName });
     router.push(`/welcome?${params.toString()}`);
   }

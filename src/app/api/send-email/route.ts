@@ -8,6 +8,8 @@ function sanitize(value: unknown): string {
   return value.replace(/<[^>]*>/g, '').trim();
 }
 
+const MAX_LEN = 500;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.json();
@@ -22,6 +24,19 @@ export async function POST(request: NextRequest) {
     const subjects: string[] = Array.isArray(formData.subjects)
       ? formData.subjects.map(sanitize)
       : [];
+
+    // Validate required fields and enforce length limits to prevent abuse
+    if (!firstName || !lastName || !contact || !contactType || !level || !frequency) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    if (
+      firstName.length > MAX_LEN || lastName.length > MAX_LEN ||
+      contact.length > MAX_LEN || level.length > MAX_LEN ||
+      frequency.length > MAX_LEN || customSubject.length > MAX_LEN ||
+      subjects.length > 20 || subjects.some((s) => s.length > MAX_LEN)
+    ) {
+      return NextResponse.json({ error: 'Input too long' }, { status: 400 });
+    }
 
     const subjectList = subjects.includes('altro')
       ? subjects.filter((s) => s !== 'altro').concat(customSubject).join(', ')
@@ -48,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const { error } = await resend.emails.send({
       from: 'Lume <onboarding@resend.dev>',
-      to: ['longoa02@gmail.com'],
+      to: [process.env.NOTIFICATION_EMAIL!],
       subject: `Nuova Richiesta da ${firstName} ${lastName}`,
       html: emailHtml,
     });

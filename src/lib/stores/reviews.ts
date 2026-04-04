@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Review } from '@/lib/types/Review';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ReviewsState {
   reviews: Review[];
@@ -24,7 +25,9 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
   },
 
   addReview: async (review) => {
-    const { data, error } = await supabase.from('reviews').insert([review]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('reviews').insert([{ ...review, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere la recensione.');
     return new Review(data);
   },

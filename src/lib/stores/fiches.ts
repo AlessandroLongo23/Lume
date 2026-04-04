@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Fiche } from '@/lib/types/Fiche';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 export interface PaymentSplit {
   method: FichePaymentMethod;
@@ -43,7 +44,9 @@ export const useFichesStore = create<FichesState>((set) => ({
   },
 
   addFiche: async (fiche) => {
-    const { data, error } = await supabase.from('fiches').insert([fiche]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('fiches').insert([{ ...fiche, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere la fiche.');
     const newFiche = new Fiche(data);
     set((s) => ({ fiches: [...s.fiches, newFiche] }));

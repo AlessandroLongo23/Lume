@@ -18,6 +18,7 @@ import { useCouponsStore } from '@/lib/stores/coupons';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
@@ -38,6 +39,7 @@ export function StoreInitializer() {
   const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
   const fetchFichePayments = useFichePaymentsStore((s) => s.fetchFichePayments);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const activeSalonId = useWorkspaceStore((s) => s.activeSalonId);
 
   useEffect(() => {
     Promise.all([
@@ -61,23 +63,23 @@ export function StoreInitializer() {
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Realtime subscriptions — re-fetch store when any row changes
-  useRealtimeStore('clients', fetchClients);
-  useRealtimeStore('operators', fetchOperators);
-  useRealtimeStore('fiches', fetchFiches);
-  useRealtimeStore('fiche_services', fetchFicheServices);
-  useRealtimeStore('orders', fetchOrders);
-  useRealtimeStore('products', fetchProducts);
-  useRealtimeStore('product_categories', fetchProductCategories);
-  useRealtimeStore('services', fetchServices);
-  useRealtimeStore('service_categories', fetchServiceCategories);
-  useRealtimeStore('client_categories', fetchClientCategories);
-  useRealtimeStore('manufacturers', fetchManufacturers);
-  useRealtimeStore('suppliers', fetchSuppliers);
-  useRealtimeStore('reviews', fetchReviews);
-  useRealtimeStore('coupons', fetchCoupons);
-  useRealtimeStore('fiche_products', fetchFicheProducts);
-  useRealtimeStore('fiche_payments', fetchFichePayments);
+  // Realtime subscriptions — re-fetch store when any row changes (filtered to current salon)
+  useRealtimeStore('clients', fetchClients, activeSalonId);
+  useRealtimeStore('operators', fetchOperators, activeSalonId);
+  useRealtimeStore('fiches', fetchFiches, activeSalonId);
+  useRealtimeStore('fiche_services', fetchFicheServices, activeSalonId);
+  useRealtimeStore('orders', fetchOrders, activeSalonId);
+  useRealtimeStore('products', fetchProducts, activeSalonId);
+  useRealtimeStore('product_categories', fetchProductCategories, activeSalonId);
+  useRealtimeStore('services', fetchServices, activeSalonId);
+  useRealtimeStore('service_categories', fetchServiceCategories, activeSalonId);
+  useRealtimeStore('client_categories', fetchClientCategories, activeSalonId);
+  useRealtimeStore('manufacturers', fetchManufacturers, activeSalonId);
+  useRealtimeStore('suppliers', fetchSuppliers, activeSalonId);
+  useRealtimeStore('reviews', fetchReviews, activeSalonId);
+  useRealtimeStore('coupons', fetchCoupons, activeSalonId);
+  useRealtimeStore('fiche_products', fetchFicheProducts, activeSalonId);
+  useRealtimeStore('fiche_payments', fetchFichePayments, activeSalonId);
 
   return null;
 }

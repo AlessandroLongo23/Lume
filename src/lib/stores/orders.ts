@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Order } from '@/lib/types/Order';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface OrdersState {
   orders: Order[];
@@ -25,7 +26,9 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   },
 
   addOrder: async (order) => {
-    const { data, error } = await supabase.from('orders').insert([order]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('orders').insert([{ ...order, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere l\'ordine.');
     return new Order(data);
   },

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Service } from '@/lib/types/Service';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ServicesState {
   services: Service[];
@@ -25,7 +26,9 @@ export const useServicesStore = create<ServicesState>((set) => ({
   },
 
   addService: async (service) => {
-    const { data, error } = await supabase.from('services').insert([service]).select().single();
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+    const { data, error } = await supabase.from('services').insert([{ ...service, salon_id: activeSalonId }]).select().single();
     if (error) throw new Error('Impossibile aggiungere il servizio.');
     return new Service(data);
   },

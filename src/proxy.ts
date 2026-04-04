@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -13,9 +14,7 @@ export default async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -25,67 +24,20 @@ export default async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired (< 5 min remaining)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: Do not add logic between createServerClient and auth.getUser().
+  // auth.getUser() refreshes the session cookie — supabaseResponse must be
+  // returned unchanged so the refreshed cookie is forwarded to the browser.
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
-  // Force operators to change their temporary password before accessing anything else
-  if (
-    user &&
-    user.user_metadata?.must_change_password &&
-    pathname !== '/auth/change-password' &&
-    pathname !== '/auth/logout' &&
-    !pathname.startsWith('/api/')
-  ) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/auth/change-password';
-    const redirectResponse = NextResponse.redirect(redirectUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
-    });
-    return redirectResponse;
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (
-    user &&
-    (pathname === '/login' || pathname === '/register')
-  ) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/admin/bilancio';
-    const redirectResponse = NextResponse.redirect(redirectUrl);
-    // Carry over any session cookies that getUser() may have refreshed
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
-    });
-    return redirectResponse;
-  }
-
-  // Redirect unauthenticated users away from protected routes
-  if (
-    !user &&
-    (pathname.startsWith('/admin') || pathname.startsWith('/client'))
-  ) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/login';
-    const redirectResponse = NextResponse.redirect(redirectUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
-    });
-    return redirectResponse;
+  if (!user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/client/:path*',
-    // Exclude static files and Next.js internals
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/admin/:path*'],
 };

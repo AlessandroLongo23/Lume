@@ -21,6 +21,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user) {
+      return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+    }
+
     const { error: dbError } = await supabase.from('feedbacks').insert({
       user_id: user?.id ?? null,
       type,
@@ -99,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     resend.emails.send({
       from: 'Lume <onboarding@resend.dev>',
-      to: ['longoa02@gmail.com'],
+      to: [process.env.NOTIFICATION_EMAIL!],
       subject: `[Lume Feedback] ${typeLabel} da ${userEmail}`,
       html,
       text,
