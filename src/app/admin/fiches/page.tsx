@@ -6,6 +6,7 @@ import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
@@ -134,7 +135,9 @@ export default function FichesPage() {
           </div>
 
           {/* Content */}
-          {!isLoading && fiches.length === 0 ? (
+          {isLoading ? (
+            <TableSkeleton />
+          ) : fiches.length === 0 ? (
             <EmptyState
               icon={Calendar}
               title="Nessuna fiche trovata"

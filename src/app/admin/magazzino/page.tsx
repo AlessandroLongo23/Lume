@@ -11,6 +11,7 @@ import { CategorieTab } from '@/lib/components/admin/magazzino/CategorieTab';
 import { FornitoriTab } from '@/lib/components/admin/magazzino/FornitoriTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import type { Product } from '@/lib/types/Product';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori';
@@ -34,6 +35,7 @@ export default function MagazzinoPage() {
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const fetchManufacturers = useManufacturersStore((s) => s.fetchManufacturers);
   const products = useProductsStore((s) => s.products);
+  const isProductsLoading = useProductsStore((s) => s.isLoading);
 
   useEffect(() => {
     fetchProducts();
@@ -118,12 +120,16 @@ export default function MagazzinoPage() {
 
         {/* Tab content */}
         {activeTab === 'prodotti' && (
-          <ProductsTab
-            products={products}
-            trackInventory={trackInventory}
-            onEdit={openEditSheet}
-            onAdd={openAddSheet}
-          />
+          isProductsLoading ? (
+            <TableSkeleton />
+          ) : (
+            <ProductsTab
+              products={products}
+              trackInventory={trackInventory}
+              onEdit={openEditSheet}
+              onAdd={openAddSheet}
+            />
+          )
         )}
         {activeTab === 'categorie' && <CategorieTab addTrigger={categorieAddTrigger} />}
         {activeTab === 'fornitori' && <FornitoriTab addTrigger={fornitoriAddTrigger} />}

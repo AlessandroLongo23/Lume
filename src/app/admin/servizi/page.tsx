@@ -5,6 +5,7 @@ import { Scissors, Tags, Plus, ArrowDownToLine, FileDown } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
 import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServiceCategoryModal';
@@ -103,7 +104,9 @@ export default function ServiziPage() {
 
         {/* Tab content */}
         {activeTab === 'servizi' && (
-          !isLoading && services.length === 0 ? (
+          isLoading ? (
+            <TableSkeleton />
+          ) : services.length === 0 ? (
             <EmptyState
               icon={Scissors}
               title="Nessun servizio trovato"
@@ -116,7 +119,9 @@ export default function ServiziPage() {
           )
         )}
         {activeTab === 'categorie' && (
-          !isCategoriesLoading && categories.length === 0 ? (
+          isCategoriesLoading ? (
+            <TableSkeleton />
+          ) : categories.length === 0 ? (
             <EmptyState
               icon={Tags}
               title="Nessuna categoria trovata"

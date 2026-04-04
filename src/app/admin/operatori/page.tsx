@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { UserPlus, EllipsisVertical, Archive, Users, ArrowDownToLine, UserCog } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddOperatorModal } from '@/lib/components/admin/operators/AddOperatorModal';
 import { OperatorsTable } from '@/lib/components/admin/operators/OperatorsTable';
@@ -81,7 +82,9 @@ export default function OperatoriPage() {
           }
         />
 
-        {!isLoading && operators.length === 0 ? (
+        {isLoading ? (
+          <TableSkeleton />
+        ) : operators.length === 0 ? (
           <EmptyState
             icon={Users}
             title="Nessun operatore trovato"

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine } from 'lucide-react';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useViewsStore } from '@/lib/stores/views';
@@ -57,7 +58,9 @@ export default function ClientiPage() {
           }
         />
 
-        {!isLoading && clients.length === 0 ? (
+        {isLoading ? (
+          <TableSkeleton />
+        ) : clients.length === 0 ? (
           <EmptyState
             icon={Users}
             title="Nessun cliente trovato"

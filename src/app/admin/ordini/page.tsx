@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { ShoppingCart, TableProperties, CalendarDays, FileDown, ArrowDownToLine } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useViewsStore } from '@/lib/stores/views';
 import { useSearchStore } from '@/lib/stores/search';
@@ -66,7 +67,9 @@ export default function OrdiniPage() {
           }
         />
 
-        {!isLoading && orders.length === 0 ? (
+        {isLoading ? (
+          <TableSkeleton />
+        ) : orders.length === 0 ? (
           <EmptyState
             icon={ShoppingCart}
             title="Nessun ordine trovato"

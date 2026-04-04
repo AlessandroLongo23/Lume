@@ -13,6 +13,7 @@ import {
 import { KpiCard } from '@/lib/components/admin/bilancio/KpiCard';
 import { RevenueChart } from '@/lib/components/admin/bilancio/RevenueChart';
 import { TaxSimulatorCard } from '@/lib/components/admin/bilancio/TaxSimulatorCard';
+import { BilancioSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
 
 type Period = 'month' | '3months' | 'year';
 
@@ -29,9 +30,13 @@ const PERIOD_ITEMS: Record<string, string> = {
 };
 
 export default function BilancioPage() {
-  const fiches            = useFichesStore((s) => s.fiches);
-  const ficheServices     = useFicheServicesStore((s) => s.fiche_services);
-  const services          = useServicesStore((s) => s.services);
+  const fiches               = useFichesStore((s) => s.fiches);
+  const isFichesLoading      = useFichesStore((s) => s.isLoading);
+  const ficheServices        = useFicheServicesStore((s) => s.fiche_services);
+  const isFicheServicesLoading = useFicheServicesStore((s) => s.isLoading);
+  const services             = useServicesStore((s) => s.services);
+  const isServicesLoading    = useServicesStore((s) => s.isLoading);
+  const isLoading = isFichesLoading || isFicheServicesLoading || isServicesLoading;
   const earningsByMonth   = useStatsStore((s) => s.earningsByMonth);
   const earningsByDay     = useStatsStore((s) => s.earningsByDay);
   const earningsByWeek    = useStatsStore((s) => s.earningsByWeek);
@@ -120,44 +125,50 @@ export default function BilancioPage() {
         }
       />
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <KpiCard
-          label="Incassi Lordi"
-          value={grossRevenue}
-          icon={Wallet}
-          trend={trendLabel}
-          trendUp={trendUp}
-        />
-        <KpiCard
-          label="Tasse Stimate"
-          value={estimatedTax}
-          dimmed
-          icon={Landmark}
-        />
-        <KpiCard
-          label="Utile Netto"
-          value={netProfit}
-          accent={netProfit >= 0 ? 'green' : 'red'}
-          icon={TrendingUp}
-        />
-      </div>
+      {isLoading ? (
+        <BilancioSkeleton />
+      ) : (
+        <>
+          {/* KPI Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <KpiCard
+              label="Incassi Lordi"
+              value={grossRevenue}
+              icon={Wallet}
+              trend={trendLabel}
+              trendUp={trendUp}
+            />
+            <KpiCard
+              label="Tasse Stimate"
+              value={estimatedTax}
+              dimmed
+              icon={Landmark}
+            />
+            <KpiCard
+              label="Utile Netto"
+              value={netProfit}
+              accent={netProfit >= 0 ? 'green' : 'red'}
+              icon={TrendingUp}
+            />
+          </div>
 
-      {/* Chart + Tax Simulator */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2">
-          <RevenueChart data={chartData} isEmpty={grossRevenue === 0} />
-        </div>
-        <div className="lg:col-span-1">
-          <TaxSimulatorCard
-            gross={grossRevenue}
-            taxRate={taxRate}
-            onTaxRateChange={setTaxRate}
-            tax={estimatedTax}
-            net={netProfit}
-          />
-        </div>
-      </div>
+          {/* Chart + Tax Simulator */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="lg:col-span-2">
+              <RevenueChart data={chartData} isEmpty={grossRevenue === 0} />
+            </div>
+            <div className="lg:col-span-1">
+              <TaxSimulatorCard
+                gross={grossRevenue}
+                taxRate={taxRate}
+                onTaxRateChange={setTaxRate}
+                tax={estimatedTax}
+                net={netProfit}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
