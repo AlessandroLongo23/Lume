@@ -1,7 +1,7 @@
 'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, X, Check } from 'lucide-react';
 
@@ -38,6 +38,7 @@ export function CustomSelect({
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const listboxId = useId();
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -190,6 +191,7 @@ export function CustomSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={listboxId}
       >
         <span className={`block truncate ${selectedLabel === placeholder ? 'text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
           {selectedLabel}
@@ -234,7 +236,7 @@ export function CustomSelect({
               />
             </div>
           )}
-          <div ref={optionsRef} role="listbox" className={`${maxHeight} overflow-y-auto`}>
+          <div ref={optionsRef} id={listboxId} role="listbox" className={`${maxHeight} overflow-y-auto`}>
             {filteredOptions.length === 0 ? (
               <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
             ) : (

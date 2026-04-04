@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Geist } from 'next/font/google';
+import { JetBrains_Mono, Geist } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/MessagePopupContainer';

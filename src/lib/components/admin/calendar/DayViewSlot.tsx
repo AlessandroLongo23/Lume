@@ -6,7 +6,6 @@ import { Plus } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
-import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
 

@@ -135,7 +135,7 @@ function SalonePanel() {
   };
 
   const toggleDay = (index: number) => {
-    const { id: _, ...rest } = fields[index] as typeof fields[number] & { id: string };
+    const { id: _id, ...rest } = fields[index] as typeof fields[number] & { id: string };
     const willOpen = !rest.isOpen;
     update(index, {
       ...rest,
@@ -145,12 +145,12 @@ function SalonePanel() {
   };
 
   const addShift = (index: number) => {
-    const { id: _, ...rest } = fields[index] as typeof fields[number] & { id: string };
+    const { id: _id, ...rest } = fields[index] as typeof fields[number] & { id: string };
     update(index, { ...rest, shifts: [...rest.shifts, { start: '09:00', end: '18:00' }] });
   };
 
   const removeShift = (dayIndex: number, shiftIndex: number) => {
-    const { id: _, ...rest } = fields[dayIndex] as typeof fields[number] & { id: string };
+    const { id: _id, ...rest } = fields[dayIndex] as typeof fields[number] & { id: string };
     update(dayIndex, { ...rest, shifts: rest.shifts.filter((_, i) => i !== shiftIndex) });
   };
 

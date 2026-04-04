@@ -28,7 +28,6 @@ export default function OperatoriPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const activeCount = operators.filter((o) => !o.isArchived).length;
   const archivedCount = operators.filter((o) => o.isArchived).length;
 
   const visibleOperators = useMemo(
