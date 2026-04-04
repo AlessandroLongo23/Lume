@@ -137,7 +137,7 @@ export function CustomNumberInput({
             if (e.key === 'ArrowUp') { e.preventDefault(); increment(); }
             if (e.key === 'ArrowDown') { e.preventDefault(); decrement(); }
           }}
-          className={`flex-1 min-w-0 bg-transparent border-none outline-none text-base text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:ring-0 ${disabled ? 'cursor-not-allowed' : ''}`}
+          className={`text-end flex-1 pr-0 min-w-0 bg-transparent border-none outline-none text-base text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:ring-0 ${disabled ? 'cursor-not-allowed' : ''}`}
         />
         {suffix && (
           <span className="shrink-0 pr-1 text-sm text-zinc-400 dark:text-zinc-500 select-none self-center" aria-hidden="true">

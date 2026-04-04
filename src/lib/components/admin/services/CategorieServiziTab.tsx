@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Tag, FileText, Scissors } from 'lucide-react';
 import { Table } from '@/lib/components/admin/table/Table';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
@@ -51,24 +51,13 @@ const COLUMNS: DataColumn[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface CategorieServiziTabProps {
-  addTrigger?: number;
-}
-
-export function CategorieServiziTab({ addTrigger }: CategorieServiziTabProps) {
+export function CategorieServiziTab() {
   const categories = useServiceCategoriesStore((s) => s.service_categories);
   const isLoading = useServiceCategoriesStore((s) => s.isLoading);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selected, setSelected] = useState<ServiceCategory | null>(null);
-
-  useEffect(() => {
-    if (!addTrigger) return;
-    setSelected(null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShowAdd(true);
-  }, [addTrigger]);
 
   const handleEditClick = (e: React.MouseEvent, item: ServiceCategory) => {
     e.stopPropagation();

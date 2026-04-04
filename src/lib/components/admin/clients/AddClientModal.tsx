@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format, parse, isValid } from 'date-fns';
-import { User, Mars, Venus, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, Tag } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, Tag } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientCategoriesStore } from '@/lib/stores/client_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -128,7 +128,6 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
                 options={[Gender.MALE, Gender.FEMALE]}
                 value={client.gender}
                 onChange={(v) => set('gender', v)}
-                icons={[Mars, Venus]}
                 className="h-10"
               />
               {errors.gender && <p className="text-xs text-red-500">{errors.gender}</p>}

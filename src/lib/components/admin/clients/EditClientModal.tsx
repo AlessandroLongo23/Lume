@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { format, parse, isValid } from 'date-fns';
-import { User, Mars, Venus, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
@@ -86,7 +86,6 @@ export function EditClientModal({ isOpen, onClose, editedClient, onEditedClientC
                   options={[Gender.MALE, Gender.FEMALE]}
                   value={editedClient.gender ?? Gender.MALE}
                   onChange={(v) => set('gender', v)}
-                  icons={[Mars, Venus]}
                   className="w-full"
                 />
               </div>

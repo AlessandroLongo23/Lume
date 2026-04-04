@@ -7,6 +7,7 @@ import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
+import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServiceCategoryModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
@@ -29,8 +30,8 @@ export default function ServiziPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('servizi');
   const [showAdd, setShowAdd] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
 
   useEffect(() => {
     fetchServices();
@@ -40,6 +41,7 @@ export default function ServiziPage() {
   return (
     <>
       <AddServiceModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <AddServiceCategoryModal isOpen={showAddCategory} onClose={() => setShowAddCategory(false)} selectedCategory={null} />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-6">
@@ -61,13 +63,18 @@ export default function ServiziPage() {
                 ]} />
               </>
             ) : (
-              <button
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                onClick={() => setCategorieAddTrigger((n) => n + 1)}
-              >
-                <Plus className="size-4" />
-                Nuova Categoria
-              </button>
+              <>
+                <button
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                  onClick={() => setShowAddCategory(true)}
+                >
+                  <Plus className="size-4" />
+                  Nuova Categoria
+                </button>
+                <DropdownMenu items={[
+                  { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                ]} />
+              </>
             )
           }
         />
@@ -115,10 +122,10 @@ export default function ServiziPage() {
               title="Nessuna categoria trovata"
               description="Crea la tua prima categoria per organizzare i servizi del listino."
               secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
-              action={{ label: 'Nuova Categoria', icon: Tags, onClick: () => setCategorieAddTrigger((n) => n + 1) }}
+              action={{ label: 'Nuova Categoria', icon: Tags, onClick: () => setShowAddCategory(true) }}
             />
           ) : (
-            <CategorieServiziTab addTrigger={categorieAddTrigger} />
+            <CategorieServiziTab />
           )
         )}
       </div>

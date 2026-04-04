@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Info, Pencil, Trash2, Mars, Venus, Plane } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Info, Pencil, Trash2, Plane } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientCategoriesStore } from '@/lib/stores/client_categories';
@@ -43,8 +43,8 @@ function colorFromId(id: string): string {
 }
 
 const GENDER_OPTIONS = [
-  { value: 'M', label: 'Uomo', prefix: <Mars className="size-3.5 text-blue-500 mr-0.5" /> },
-  { value: 'F', label: 'Donna', prefix: <Venus className="size-3.5 text-pink-500 mr-0.5" /> },
+  { value: 'M', label: 'Uomo', prefix: <span className="text-xs font-semibold text-blue-500 mr-0.5">M</span> },
+  { value: 'F', label: 'Donna', prefix: <span className="text-xs font-semibold text-pink-500 mr-0.5">F</span> },
 ];
 
 export function ClientsTable({ clients }: ClientsTableProps) {
@@ -146,8 +146,8 @@ export function ClientsTable({ clients }: ClientsTableProps) {
         header: '',
         cell: ({ getValue }) => {
           const g = getValue() as string;
-          if (g === 'M') return <Mars className="size-4 text-blue-500" />;
-          if (g === 'F') return <Venus className="size-4 text-pink-500" />;
+          if (g === 'M') return <span className="text-sm font-semibold text-blue-500">M</span>;
+          if (g === 'F') return <span className="text-sm font-semibold text-pink-500">F</span>;
           return <span className="text-zinc-400">—</span>;
         },
       },

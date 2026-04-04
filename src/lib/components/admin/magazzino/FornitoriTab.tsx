@@ -27,8 +27,8 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
 
   useEffect(() => {
     if (!addTrigger) return;
-    setSelected(null);
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelected(null);
     setShowAdd(true);
   }, [addTrigger]);
 

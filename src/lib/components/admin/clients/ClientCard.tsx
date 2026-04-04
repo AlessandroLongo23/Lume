@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Plane, Mail, Phone, Calendar, Mars, Venus, Smile, Edit, Trash } from 'lucide-react';
+import { Plane, Mail, Phone, Calendar, Smile, Edit, Trash } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
 
 const genderColors: Record<string, string> = {
@@ -82,9 +82,9 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
       <div className="flex justify-between items-center px-5 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center">
           {client.gender === 'M' ? (
-            <Mars className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">M</span>
           ) : client.gender === 'F' ? (
-            <Venus className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+            <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">F</span>
           ) : (
             <Smile className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
           )}

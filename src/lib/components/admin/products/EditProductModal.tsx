@@ -1,6 +1,7 @@
 'use client';
 
-import { ALargeSmall, Tag, Factory, Truck, Euro } from 'lucide-react';
+import { ALargeSmall, Tag, Factory, Truck, Euro, Droplets } from 'lucide-react';
+import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
@@ -44,9 +45,15 @@ export function EditProductModal({ isOpen, onClose, editedProduct, onEditedProdu
   return (
     <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica Prodotto" subtitle="Aggiorna i dati del prodotto" classes="max-w-2xl">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><ALargeSmall className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-          <input type="text" className={inputClass} value={editedProduct.name ?? ''} onChange={(e) => set('name', e.target.value)} />
+        <div className="flex flex-row gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <label className={labelClass}><ALargeSmall className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
+            <input type="text" className={inputClass} value={editedProduct.name ?? ''} onChange={(e) => set('name', e.target.value)} />
+          </div>
+          <div className="flex w-36 flex-col gap-2">
+            <label className={labelClass}><Droplets className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Quantità</span></label>
+            <CustomNumberInput value={editedProduct.quantity_ml ?? null} onChange={(v) => set('quantity_ml', v)} min={0} step={50} suffix="mL" />
+          </div>
         </div>
 
         <div className="flex flex-row gap-4">
@@ -67,10 +74,7 @@ export function EditProductModal({ isOpen, onClose, editedProduct, onEditedProdu
           </div>
           <div className="flex flex-1 flex-col gap-2">
             <label className={labelClass}><Euro className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Prezzo</span></label>
-            <div className="relative">
-              <input type="number" className={inputClass} min="0" step="0.01" value={editedProduct.price ?? 0} onChange={(e) => set('price', parseFloat(e.target.value) || 0)} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">€</span>
-            </div>
+            <CustomNumberInput value={editedProduct.price ?? null} onChange={(v) => set('price', v ?? 0)} min={0} step={0.5} decimals={2} suffix="€" />
           </div>
         </div>
       </div>
