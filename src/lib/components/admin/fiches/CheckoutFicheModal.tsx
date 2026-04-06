@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2, Scissors, Package, Lightbulb } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useServicesStore } from '@/lib/stores/services';
 import { useProductsStore } from '@/lib/stores/products';
@@ -16,7 +17,7 @@ type PaymentView = FichePaymentMethod | 'mixed' | null;
 
 interface Split {
   method: FichePaymentMethod;
-  amount: string;
+  amount: number | null;
 }
 
 interface CheckoutFicheModalProps {
@@ -32,8 +33,8 @@ const METHOD_LABELS: Record<FichePaymentMethod, string> = {
 };
 
 const INITIAL_SPLITS: Split[] = [
-  { method: FichePaymentMethod.POS, amount: '' },
-  { method: FichePaymentMethod.CASH, amount: '' },
+  { method: FichePaymentMethod.POS, amount: null },
+  { method: FichePaymentMethod.CASH, amount: null },
 ];
 
 function fmt(value: number) {
@@ -85,7 +86,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
 
   const [view, setView] = useState<PaymentView>(FichePaymentMethod.CASH);
-  const [cashGiven, setCashGiven] = useState('');
+  const [cashGiven, setCashGiven] = useState<number | null>(null);
   const [splits, setSplits] = useState<Split[]>(INITIAL_SPLITS.map((s) => ({ ...s })));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -101,24 +102,18 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
   // Cash view — fixed change/shortfall logic
-  const cashGivenNum = parseFloat(cashGiven) || 0;
+  const cashGivenNum = cashGiven ?? 0;
   const isShortfall = cashGivenNum < total;
   const changeDisplay = isShortfall ? total - cashGivenNum : cashGivenNum - total;
 
   // Mixed view
-  const splitsSum = splits.reduce((sum, s) => {
-    const v = parseFloat(s.amount);
-    return sum + (isNaN(v) ? 0 : v);
-  }, 0);
+  const splitsSum = splits.reduce((sum, s) => sum + (s.amount ?? 0), 0);
   const splitsMatch = Math.round(splitsSum * 100) === Math.round(total * 100);
-  const splitsHaveNegative = splits.some((s) => {
-    const v = parseFloat(s.amount);
-    return !isNaN(v) && v < 0;
-  });
+  const splitsHaveNegative = splits.some((s) => s.amount !== null && s.amount < 0);
   const mixedValid =
     splitsMatch &&
     !splitsHaveNegative &&
-    splits.every((s) => s.amount.trim() !== '');
+    splits.every((s) => s.amount !== null);
 
   const handleSubmit = useCallback(async () => {
     if (!view || isSubmitting) return;
@@ -132,9 +127,8 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
     } else if (view === 'mixed') {
       if (!mixedValid) return;
       payments = splits
-        .filter((s) => s.amount.trim() !== '')
-        .map((s) => ({ method: s.method, amount: parseFloat(s.amount) }))
-        .filter((p) => p.amount >= 0);
+        .filter((s) => s.amount !== null && s.amount >= 0)
+        .map((s) => ({ method: s.method, amount: s.amount! }));
     }
 
     if (payments.length === 0) return;
@@ -150,12 +144,16 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
     }
   }, [view, total, splits, mixedValid, isSubmitting, closeFiche, fiche.id, fiche.salon_id, onClose]);
 
-  const updateSplit = (index: number, field: keyof Split, value: string) => {
-    setSplits((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  const updateSplitMethod = (index: number, value: string) => {
+    setSplits((prev) => prev.map((s, i) => (i === index ? { ...s, method: value as FichePaymentMethod } : s)));
+  };
+
+  const updateSplitAmount = (index: number, value: number | null) => {
+    setSplits((prev) => prev.map((s, i) => (i === index ? { ...s, amount: value } : s)));
   };
 
   const addSplit = () => {
-    setSplits((prev) => [...prev, { method: FichePaymentMethod.CASH, amount: '' }]);
+    setSplits((prev) => [...prev, { method: FichePaymentMethod.CASH, amount: null }]);
   };
 
   const removeSplit = (index: number) => {
@@ -348,18 +346,15 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
                     Soldi ricevuti (€)
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
+                  <CustomNumberInput
                     value={cashGiven}
-                    onChange={(e) => setCashGiven(e.target.value)}
+                    onChange={(v) => setCashGiven(v)}
+                    min={0}
+                    step={0.5}
+                    decimals={2}
                     placeholder="0,00"
-                    className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
-                      border-zinc-200 dark:border-zinc-700
-                      focus:border-indigo-400 dark:focus:border-indigo-500
-                      text-zinc-900 dark:text-zinc-100
-                      placeholder:text-zinc-400 outline-none transition-colors"
+                    suffix="€"
+                    size="md"
                   />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-100 dark:bg-zinc-900/60">
@@ -398,7 +393,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   <div key={i} className="flex items-center gap-2">
                     <select
                       value={split.method}
-                      onChange={(e) => updateSplit(i, 'method', e.target.value)}
+                      onChange={(e) => updateSplitMethod(i, e.target.value)}
                       className="flex-1 px-2.5 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
                         border-zinc-200 dark:border-zinc-700
                         focus:border-indigo-400 dark:focus:border-indigo-500
@@ -408,21 +403,16 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       <option value={FichePaymentMethod.POS}>POS</option>
                       <option value={FichePaymentMethod.OTHER}>Altro</option>
                     </select>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <CustomNumberInput
                       value={split.amount}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === '' || parseFloat(v) >= 0) updateSplit(i, 'amount', v);
-                      }}
+                      onChange={(v) => updateSplitAmount(i, v)}
+                      min={0}
+                      step={0.5}
+                      decimals={2}
                       placeholder="0,00"
-                      className="w-28 px-2.5 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
-                        border-zinc-200 dark:border-zinc-700
-                        focus:border-indigo-400 dark:focus:border-indigo-500
-                        text-zinc-900 dark:text-zinc-100
-                        placeholder:text-zinc-400 outline-none transition-colors"
+                      suffix="€"
+                      size="sm"
+                      width="w-28"
                     />
                     <button
                       onClick={() => removeSplit(i)}

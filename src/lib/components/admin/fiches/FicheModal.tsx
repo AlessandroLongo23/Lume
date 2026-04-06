@@ -22,6 +22,7 @@ import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
 import type { Service } from '@/lib/types/Service';
@@ -66,7 +67,7 @@ function toDatetimeLocal(date: Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const TABLE_COLS = '1fr 1.5fr 80px 60px 60px 76px 32px';
+const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 32px';
 
 export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }: FicheModalProps) {
   const addFiche = useFichesStore((s) => s.addFiche);
@@ -278,7 +279,25 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
 
   function updateProductQuantity(productId: string, delta: number) {
     setFicheProducts((prev) =>
-      prev.map((p) => p.product_id === productId ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p),
+      prev.map((p) => {
+        if (p.product_id !== productId) return p;
+        const qty = Math.max(1, p.quantity + delta);
+        return { ...p, quantity: qty, final_price: p.list_price * qty };
+      }),
+    );
+  }
+
+  function setProductQuantity(productId: string, raw: string) {
+    const qty = Math.max(1, parseInt(raw, 10) || 1);
+    setFicheProducts((prev) =>
+      prev.map((p) => p.product_id === productId ? { ...p, quantity: qty, final_price: p.list_price * qty } : p),
+    );
+  }
+
+  function setProductFinalPrice(productId: string, raw: string) {
+    const price = parseFloat(raw);
+    setFicheProducts((prev) =>
+      prev.map((p) => p.product_id === productId ? { ...p, final_price: isNaN(price) ? p.final_price : price } : p),
     );
   }
 
@@ -634,7 +653,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                         {servicesWithTimes.map((svc, i) => (
                           <div
                             key={svc.id ?? i}
-                            className="grid items-center px-3 py-2.5 group"
+                            className="grid items-center px-3 py-2.5"
                             style={{ gridTemplateColumns: TABLE_COLS }}
                           >
                             <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate pr-2">{svc.name}</span>
@@ -653,13 +672,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                             </div>
 
                             <div className="flex justify-center">
-                              <input
-                                type="number"
+                              <CustomNumberInput
                                 value={svc.duration}
-                                onChange={(e) => updateServiceDuration(i, parseInt(e.target.value))}
+                                onChange={(v) => updateServiceDuration(i, v ?? 5)}
                                 min={5}
                                 step={5}
-                                className="w-[60px] px-2 py-1 text-center text-sm rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-shadow"
+                                size="lg"
                               />
                             </div>
 
@@ -671,13 +689,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                             </span>
 
                             <div className="flex justify-end">
-                              <input
-                                type="number"
+                              <CustomNumberInput
                                 value={svc.final_price}
-                                onChange={(e) => updateServicePrice(i, parseFloat(e.target.value))}
+                                onChange={(v) => updateServicePrice(i, v ?? 0)}
                                 min={0}
                                 step={0.5}
-                                className="w-[68px] px-2 py-1 text-right text-sm rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-shadow"
+                                decimals={2}
+                                suffix="€"
+                                size="lg"
                               />
                             </div>
 
@@ -685,7 +704,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                               <button
                                 type="button"
                                 onClick={() => removeService(i)}
-                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                                 aria-label="Rimuovi servizio"
                               >
                                 <Trash2 className="size-3.5" />
@@ -752,6 +771,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
 
                 {/* Selected products list */}
                 <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                  {ficheProducts.length > 0 && (
+                    <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
+                      <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
+                      <span className="flex items-center gap-1 shrink-0 mr-4">Qtà</span>
+                      <span className="flex items-center gap-1 shrink-0 mr-6"><Euro className="size-3" />Totale</span>
+                      <span className="size-6" />
+                    </div>
+                  )}
                   {ficheProducts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
                       <Package className="size-8 opacity-20" />
@@ -761,40 +788,65 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
                   ) : (
                     <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
                       {ficheProducts.map((prod) => (
-                        <div key={prod.product_id} className="flex items-center gap-3 px-3 py-2.5 group">
-                          <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate flex-1">{prod.name}</span>
-
-                          {/* Qty stepper */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => updateProductQuantity(prod.product_id, -1)}
-                              className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                            >
-                              −
-                            </button>
-                            <span className="w-5 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300">{prod.quantity}</span>
-                            <button
-                              type="button"
-                              onClick={() => updateProductQuantity(prod.product_id, 1)}
-                              className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                            >
-                              +
-                            </button>
+                        <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                          {/* Left: name + unit price */}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
+                            <span className="text-xs text-zinc-400 dark:text-zinc-500">{prod.list_price.toFixed(2)} € / pz</span>
                           </div>
 
-                          <span className="text-sm font-mono text-zinc-500 dark:text-zinc-400 shrink-0 w-16 text-right">
-                            {(prod.final_price * prod.quantity).toFixed(2)} €
-                          </span>
+                          {/* Right: qty stepper + total price + delete */}
+                          <div className="flex items-center gap-4 shrink-0">
+                            {/* Qty stepper */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => updateProductQuantity(prod.product_id, -1)}
+                                className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                              >
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                min={1}
+                                value={prod.quantity}
+                                size={Math.max(2, String(prod.quantity).length)}
+                                onChange={(e) => setProductQuantity(prod.product_id, e.target.value)}
+                                className="min-w-[1.75rem] text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateProductQuantity(prod.product_id, 1)}
+                                className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                              >
+                                +
+                              </button>
+                            </div>
 
-                          <button
-                            type="button"
-                            onClick={() => removeProduct(prod.product_id)}
-                            className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
-                            aria-label="Rimuovi prodotto"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                            {/* Total price (editable) */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={prod.final_price.toFixed(2)}
+                                size={Math.max(4, prod.final_price.toFixed(2).length)}
+                                onChange={(e) => setProductFinalPrice(prod.product_id, e.target.value)}
+                                className="min-w-[3rem] text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
+                              />
+                              <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
+                            </div>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => removeProduct(prod.product_id)}
+                              className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                              aria-label="Rimuovi prodotto"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

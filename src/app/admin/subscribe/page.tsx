@@ -213,11 +213,17 @@ function ReferralSection() {
   const pendingCredits = useSubscriptionStore((s) => s.pendingCredits);
   const earnedCredits = useSubscriptionStore((s) => s.earnedCredits);
   const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+  }, []);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(referralCode);
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -323,19 +329,27 @@ export default function SubscribePage() {
       pollCountRef.current += 1;
       await fetchSubscription();
 
+      // Guard: interval may have been cleared while awaiting fetchSubscription
+      if (!pollRef.current) return;
+
       const currentState = useSubscriptionStore.getState();
       if (currentState.isActive) {
-        if (pollRef.current) clearInterval(pollRef.current);
+        clearInterval(pollRef.current);
+        pollRef.current = null;
         setIsPolling(false);
       } else if (pollCountRef.current >= 15) {
-        if (pollRef.current) clearInterval(pollRef.current);
+        clearInterval(pollRef.current);
+        pollRef.current = null;
         setIsPolling(false);
         setPollTimedOut(true);
       }
     }, 2000);
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
   }, [success, isActive, pollTimedOut, fetchSubscription]);
 

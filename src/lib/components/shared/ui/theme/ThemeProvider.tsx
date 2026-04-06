@@ -20,18 +20,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
 
   const applyTheme = (t: Theme) => {
-    document.documentElement.classList.add('disable-transitions');
-    document.documentElement.classList.toggle('dark', t === 'dark');
-    localStorage.setItem('theme', t);
-    setThemeState(t);
-    setTimeout(() => {
-      document.documentElement.classList.remove('disable-transitions');
-    }, 100);
+    const apply = () => {
+      document.documentElement.classList.toggle('dark', t === 'dark');
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      setThemeState(t);
+    };
+
+    if (!document.startViewTransition) {
+      apply();
+      return;
+    }
+
+    document.startViewTransition(apply);
   };
 
   useEffect(() => {
     const stored = (localStorage.getItem('theme') as Theme) || 'light';
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     applyTheme(stored);
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
