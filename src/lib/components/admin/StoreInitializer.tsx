@@ -19,6 +19,8 @@ import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
+import { useSpeseStore } from '@/lib/stores/spese';
+import { useObiettiviStore } from '@/lib/stores/obiettivi';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
@@ -39,9 +41,13 @@ export function StoreInitializer() {
   const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
   const fetchFichePayments = useFichePaymentsStore((s) => s.fetchFichePayments);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const fetchSpese = useSpeseStore((s) => s.fetchSpese);
+  const fetchObiettivi = useObiettiviStore((s) => s.fetchObiettivi);
   const activeSalonId = useWorkspaceStore((s) => s.activeSalonId);
+  const resolve = useWorkspaceStore((s) => s.resolve);
 
   useEffect(() => {
+    resolve();
     Promise.all([
       fetchClients(),
       fetchOperators(),
@@ -60,6 +66,8 @@ export function StoreInitializer() {
       fetchFicheProducts(),
       fetchFichePayments(),
       fetchSubscription(),
+      fetchSpese(),
+      fetchObiettivi(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

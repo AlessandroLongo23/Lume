@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const TYPE_LABELS: Record<string, string> = {
-  bug: 'Non funziona',
   feature: "Ho un'idea",
+  bug: 'Non funziona',
   other: 'Altro',
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Warehouse, Package, Tags, Truck, Plus } from 'lucide-react';
+import { Warehouse, Package, Tags, Truck, Factory, Plus } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -9,17 +9,19 @@ import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { ProductsTab } from '@/lib/components/admin/magazzino/ProductsTab';
 import { CategorieTab } from '@/lib/components/admin/magazzino/CategorieTab';
 import { FornitoriTab } from '@/lib/components/admin/magazzino/FornitoriTab';
+import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import type { Product } from '@/lib/types/Product';
 
-type Tab = 'prodotti' | 'categorie' | 'fornitori';
+type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'prodotti', label: 'Prodotti', icon: Package },
   { id: 'categorie', label: 'Categorie', icon: Tags },
   { id: 'fornitori', label: 'Fornitori', icon: Truck },
+  { id: 'marchi', label: 'Marchi', icon: Factory },
 ];
 
 export default function MagazzinoPage() {
@@ -29,6 +31,7 @@ export default function MagazzinoPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
   const [fornitoriAddTrigger, setFornitoriAddTrigger] = useState(0);
+  const [marchiAddTrigger, setMarchiAddTrigger] = useState(0);
 
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
   const fetchProductCategories = useProductCategoriesStore((s) => s.fetchProductCategories);
@@ -84,13 +87,21 @@ export default function MagazzinoPage() {
                 <Plus className="size-4" />
                 Nuova Categoria
               </button>
-            ) : (
+            ) : activeTab === 'fornitori' ? (
               <button
                 onClick={() => setFornitoriAddTrigger((n) => n + 1)}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
               >
                 <Plus className="size-4" />
                 Nuovo Fornitore
+              </button>
+            ) : (
+              <button
+                onClick={() => setMarchiAddTrigger((n) => n + 1)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              >
+                <Plus className="size-4" />
+                Nuovo Marchio
               </button>
             )
           }
@@ -133,6 +144,7 @@ export default function MagazzinoPage() {
         )}
         {activeTab === 'categorie' && <CategorieTab addTrigger={categorieAddTrigger} />}
         {activeTab === 'fornitori' && <FornitoriTab addTrigger={fornitoriAddTrigger} />}
+        {activeTab === 'marchi' && <MarchiTab addTrigger={marchiAddTrigger} />}
       </div>
     </>
   );

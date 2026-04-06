@@ -8,8 +8,8 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 
 const FEEDBACK_TYPES = [
-  { value: 'bug', label: 'Non funziona', Icon: Wrench },
   { value: 'feature', label: 'Ho un\'idea', Icon: Lightbulb },
+  { value: 'bug', label: 'Non funziona', Icon: Wrench },
   { value: 'other', label: 'Altro', Icon: HelpCircle },
 ] as const;
 
@@ -21,7 +21,7 @@ interface FeedbackModalProps {
 }
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-  const [type, setType] = useState<FeedbackType>('bug');
+  const [type, setType] = useState<FeedbackType>('feature');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClose = () => {
-    setType('bug');
+    setType('feature');
     setMessage('');
     setImageBase64(null);
     setImageName(null);

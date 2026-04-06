@@ -139,7 +139,7 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
                 className={inputClass}
-                placeholder="es. Shampoo Idratante 500ml"
+                placeholder="Inserisci nome prodotto"
               />
               {errors.name && <p className={errorClass}>{errors.name}</p>}
             </div>
@@ -159,7 +159,7 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
                 valueKey="id"
                 value={form.manufacturer_id}
                 onChange={(v) => set('manufacturer_id', v ?? '')}
-                placeholder="— Seleziona marca —"
+                placeholder="Seleziona marca"
                 isNullable
               />
             </div>
@@ -172,7 +172,7 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
                 valueKey="id"
                 value={form.product_category_id}
                 onChange={(v) => set('product_category_id', v ?? '')}
-                placeholder="— Seleziona categoria —"
+                placeholder="Seleziona categoria"
                 isNullable
               />
             </div>
@@ -188,7 +188,7 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
                 valueKey="id"
                 value={form.supplier_id}
                 onChange={(v) => set('supplier_id', v ?? '')}
-                placeholder="— Seleziona fornitore —"
+                placeholder="Seleziona fornitore"
                 isNullable
               />
             </div>

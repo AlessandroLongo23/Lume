@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
-  Check, AlertTriangle, Package, X, Plus, Pencil,
+  Check, AlertTriangle, Package, Plus, Pencil,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -42,6 +42,7 @@ interface FicheProductState {
   id?: string;
   product_id: string;
   name: string;
+  quantity: number;
   list_price: number;
   final_price: number;
 }
@@ -92,10 +93,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   const [svcQuery, setSvcQuery] = useState('');
   const [svcOpen, setSvcOpen] = useState(false);
   const [prodQuery, setProdQuery] = useState('');
+  const [prodOpen, setProdOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
 
   const svcInputRef = useRef<HTMLInputElement>(null);
   const svcDropdownRef = useRef<HTMLDivElement>(null);
+  const prodInputRef = useRef<HTMLInputElement>(null);
+  const prodDropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialise state when the modal opens
   useEffect(() => {
@@ -126,6 +130,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
             id: fp.id,
             product_id: fp.product_id,
             name: prod?.name ?? 'Prodotto',
+            quantity: fp.quantity ?? 1,
             list_price: fp.list_price,
             final_price: fp.final_price,
           };
@@ -144,6 +149,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     setSvcQuery('');
     setSvcOpen(false);
     setProdQuery('');
+    setProdOpen(false);
     setActiveTab('services');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fiche, mode]);
@@ -158,6 +164,17 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     const handler = (e: MouseEvent) => {
       if (svcDropdownRef.current && !svcDropdownRef.current.contains(e.target as Node)) {
         setSvcOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close product dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (prodDropdownRef.current && !prodDropdownRef.current.contains(e.target as Node)) {
+        setProdOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -184,7 +201,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
 
   const totalDuration = useMemo(() => ficheServices.reduce((acc, s) => acc + s.duration, 0), [ficheServices]);
   const totalServicesPrice = useMemo(() => ficheServices.reduce((acc, s) => acc + s.final_price, 0), [ficheServices]);
-  const totalProductsPrice = useMemo(() => ficheProducts.reduce((acc, p) => acc + p.final_price, 0), [ficheProducts]);
+  const totalProductsPrice = useMemo(() => ficheProducts.reduce((acc, p) => acc + p.final_price * p.quantity, 0), [ficheProducts]);
 
   const selectedClient = useMemo(() => clients.find((c) => c.id === clientId) ?? null, [clients, clientId]);
   const lastNote = useMemo(() => selectedClient?.getLastNote() ?? '', [selectedClient]);
@@ -249,13 +266,20 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, final_price } : s)));
   }
 
-  function toggleProduct(prod: Product) {
+  function addProductToList(prod: Product) {
     setFicheProducts((prev) => {
-      const existing = prev.find((p) => p.product_id === prod.id);
-      if (existing) return prev.filter((p) => p.product_id !== prod.id);
+      if (prev.some((p) => p.product_id === prod.id)) return prev;
       const snapPrice = prod.sell_price ?? prod.price;
-      return [...prev, { product_id: prod.id, name: prod.name, list_price: snapPrice, final_price: snapPrice }];
+      return [...prev, { product_id: prod.id, name: prod.name, quantity: 1, list_price: snapPrice, final_price: snapPrice }];
     });
+    setProdQuery('');
+    setProdOpen(false);
+  }
+
+  function updateProductQuantity(productId: string, delta: number) {
+    setFicheProducts((prev) =>
+      prev.map((p) => p.product_id === productId ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p),
+    );
   }
 
   function removeProduct(productId: string) {
@@ -320,7 +344,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
         if (ficheProducts.length > 0) {
           await Promise.all(
             ficheProducts.map((prod) =>
-              addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: 1, list_price: prod.list_price, final_price: prod.final_price }),
+              addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price }),
             ),
           );
         }
@@ -371,9 +395,9 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
         }
         for (const prod of ficheProducts) {
           if (prod.id) {
-            await updateFicheProduct(prod.id, { final_price: prod.final_price });
+            await updateFicheProduct(prod.id, { quantity: prod.quantity, final_price: prod.final_price });
           } else {
-            await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: 1, list_price: prod.list_price, final_price: prod.final_price });
+            await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price });
           }
         }
 
@@ -678,106 +702,105 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
 
             {/* ── PRODUCTS TAB ── */}
             {activeTab === 'products' && (
-              <div className="flex flex-col gap-3 flex-1 min-h-0">
-                {/* Search */}
-                <div className="relative shrink-0">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    className={`${inputClass} pl-8`}
-                    placeholder="Cerca prodotti per nome…"
-                    value={prodQuery}
-                    onChange={(e) => setProdQuery(e.target.value)}
-                  />
-                </div>
+              <>
+                {/* Grouped product combobox */}
+                <div ref={prodDropdownRef} className="relative shrink-0">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+                    <input
+                      ref={prodInputRef}
+                      type="text"
+                      className={`${inputClass} pl-8`}
+                      placeholder="Cerca e aggiungi prodotti…"
+                      value={prodQuery}
+                      onChange={(e) => { setProdQuery(e.target.value); setProdOpen(true); }}
+                      onFocus={() => setProdOpen(true)}
+                    />
+                  </div>
 
-                {/* Product catalog list */}
-                <div className="flex flex-col rounded-lg border border-zinc-500/25 overflow-hidden bg-white dark:bg-zinc-800/40 flex-1 min-h-0">
-                  {groupedProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
-                      <Package className="size-8 opacity-20" />
-                      <p className="text-sm">Nessun prodotto trovato</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="overflow-y-auto overscroll-contain flex-1">
-                        {groupedProducts.map(({ categoryName, items }) => (
-                          <div key={categoryName}>
-                            <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
-                              {categoryName}
-                            </div>
-                            {items.map((prod) => {
-                              const selected = ficheProducts.some((p) => p.product_id === prod.id);
-                              return (
+                  {prodOpen && (
+                    <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
+                      {groupedProducts.length === 0 ? (
+                        <p className="p-4 text-sm text-center text-zinc-500">Nessun prodotto trovato</p>
+                      ) : (
+                        <div className="max-h-56 overflow-y-auto">
+                          {groupedProducts.map(({ categoryName, items }) => (
+                            <div key={categoryName}>
+                              <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
+                                {categoryName}
+                              </div>
+                              {items.map((prod) => (
                                 <button
                                   key={prod.id}
                                   type="button"
-                                  onClick={() => toggleProduct(prod)}
-                                  className={`w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 transition-colors text-sm
-                                    ${selected
-                                      ? 'bg-indigo-500/5 dark:bg-indigo-500/10'
-                                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/40 cursor-pointer'
-                                    }`}
+                                  onClick={() => addProductToList(prod)}
+                                  className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
                                 >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <div className={`size-4 shrink-0 rounded border flex items-center justify-center transition-colors
-                                      ${selected
-                                        ? 'bg-indigo-500 border-indigo-500'
-                                        : 'border-zinc-300 dark:border-zinc-600'
-                                      }`}>
-                                      {selected && <Check className="size-2.5 text-white" />}
-                                    </div>
-                                    <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                                  </div>
+                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
                                   <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
-                                    <Euro className="size-3" />
-                                    {(prod.sell_price ?? prod.price).toFixed(2)}
+                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
                                   </span>
                                 </button>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-
-                      {ficheProducts.length > 0 && (
-                        <div className="shrink-0 border-t border-zinc-500/15 bg-zinc-50 dark:bg-zinc-700/30">
-                          <div className="divide-y divide-zinc-500/10 max-h-32 overflow-y-auto">
-                            {ficheProducts.map((prod) => (
-                              <div key={prod.product_id} className="flex items-center justify-between px-3 py-2 group">
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{prod.name}</span>
-                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                  <span className="text-xs text-zinc-400 flex items-center gap-1">
-                                    <Euro className="size-3" />
-                                    {prod.final_price.toFixed(2)}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeProduct(prod.product_id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 text-zinc-400 hover:text-red-500 transition-all"
-                                    aria-label="Rimuovi prodotto"
-                                  >
-                                    <X className="size-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-500/15">
-                            <span className="text-xs text-zinc-500 font-medium">
-                              {ficheProducts.length} prodott{ficheProducts.length === 1 ? 'o' : 'i'}
-                            </span>
-                            <span className="flex items-center gap-1 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                              <Euro className="size-3 text-zinc-400" />
-                              {totalProductsPrice.toFixed(2)}
-                            </span>
-                          </div>
+                              ))}
+                            </div>
+                          ))}
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
-              </div>
+
+                {/* Selected products list */}
+                <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                  {ficheProducts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
+                      <Package className="size-8 opacity-20" />
+                      <p className="text-sm">Nessun prodotto aggiunto</p>
+                      <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
+                      {ficheProducts.map((prod) => (
+                        <div key={prod.product_id} className="flex items-center gap-3 px-3 py-2.5 group">
+                          <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate flex-1">{prod.name}</span>
+
+                          {/* Qty stepper */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => updateProductQuantity(prod.product_id, -1)}
+                              className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                            >
+                              −
+                            </button>
+                            <span className="w-5 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300">{prod.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateProductQuantity(prod.product_id, 1)}
+                              className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <span className="text-sm font-mono text-zinc-500 dark:text-zinc-400 shrink-0 w-16 text-right">
+                            {(prod.final_price * prod.quantity).toFixed(2)} €
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => removeProduct(prod.product_id)}
+                            className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                            aria-label="Rimuovi prodotto"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             {errorMessage && <p className="text-xs text-red-500 shrink-0">{errorMessage}</p>}

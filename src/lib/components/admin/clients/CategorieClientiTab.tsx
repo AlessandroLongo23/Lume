@@ -10,60 +10,55 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { useRouter } from 'next/navigation';
-import { ChevronUp, ChevronDown, Pencil, Trash2, ExternalLink } from 'lucide-react';
-import { useOrdersStore } from '@/lib/stores/orders';
-import { EditOrderModal } from './EditOrderModal';
-import { DeleteOrderModal } from './DeleteOrderModal';
+import { ChevronUp, ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { useClientCategoriesStore } from '@/lib/stores/client_categories';
+import { AddClientCategoryModal } from './AddClientCategoryModal';
+import { DeleteClientCategoryModal } from './DeleteClientCategoryModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { cardStyle } from '@/lib/const/appearance';
-import type { Order } from '@/lib/types/Order';
+import type { ClientCategory } from '@/lib/types/ClientCategory';
 
 const PAGE_SIZE = 10;
 
-interface OrdersTableProps {
-  orders: Order[];
+function ColorNameCell({ color, name }: { color: string; name: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="size-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <span className="font-medium text-zinc-900 dark:text-zinc-100">{name}</span>
+    </div>
+  );
 }
 
-export function OrdersTable({ orders }: OrdersTableProps) {
-  const isLoading = useOrdersStore((s) => s.isLoading);
-  const router = useRouter();
+export function CategorieClientiTab() {
+  const categories = useClientCategoriesStore((s) => s.client_categories);
+  const isLoading = useClientCategoriesStore((s) => s.isLoading);
 
-  const [showEdit, setShowEdit] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [editedOrder, setEditedOrder] = useState<Partial<Order>>({});
+  const [selected, setSelected] = useState<ClientCategory | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
-  const columns = useMemo<ColumnDef<Order>[]>(
+  const columns = useMemo<ColumnDef<ClientCategory>[]>(
     () => [
       {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ getValue }) => (
-          <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{getValue() as string}</span>
-        ),
+        accessorKey: 'name',
+        header: 'Nome',
+        cell: ({ row }) => <ColorNameCell color={row.original.color} name={row.original.name} />,
       },
       {
-        accessorKey: 'datetime',
-        header: 'Data',
+        accessorKey: 'client_count',
+        header: () => <span className="block w-full text-right">Clienti</span>,
         cell: ({ getValue }) => (
-          <span>{new Date(getValue() as string).toLocaleString('it-IT')}</span>
+          <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
         ),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Stato',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        cell: ({ row }) => <span>{(row.original as any).status ?? ''}</span>,
       },
     ],
     []
   );
 
   const table = useReactTable({
-    data: orders,
+    data: categories,
     columns,
     state: {
       sorting,
@@ -80,21 +75,31 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     manualFiltering: true,
   });
 
-  const handleEditClick = (e: React.MouseEvent, order: Order) => {
+  const handleEditClick = (e: React.MouseEvent, item: ClientCategory) => {
     e.stopPropagation();
-    setSelectedOrder(order);
-    setEditedOrder({ ...order });
-    setShowEdit(true);
+    setSelected(item);
+    setShowAdd(true);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, order: Order) => {
+  const handleDeleteClick = (e: React.MouseEvent, item: ClientCategory) => {
     e.stopPropagation();
-    setSelectedOrder(order);
+    setSelected(item);
     setShowDelete(true);
   };
 
   return (
     <>
+      <AddClientCategoryModal
+        isOpen={showAdd}
+        onClose={() => { setShowAdd(false); setSelected(null); }}
+        selectedCategory={selected}
+      />
+      <DeleteClientCategoryModal
+        isOpen={showDelete}
+        onClose={() => { setShowDelete(false); setSelected(null); }}
+        category={selected}
+      />
+
       <div className="flex flex-col gap-4 w-full">
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">
@@ -104,16 +109,18 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
+                    const isNumeric = header.column.id === 'client_count';
                     return (
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                         className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
+                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap',
                           canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
+                          isNumeric ? 'text-right' : 'text-left',
                         ].join(' ')}
                       >
-                        <span className="inline-flex items-center gap-1">
+                        <span className={['inline-flex items-center gap-1', isNumeric ? 'flex-row-reverse' : ''].join(' ')}>
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
                             <span className="flex flex-col">
@@ -125,7 +132,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-24">
+                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-20">
                     Azioni
                   </th>
                 </tr>
@@ -135,13 +142,13 @@ export function OrdersTable({ orders }: OrdersTableProps) {
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
-                    Caricando ordini...
+                    Caricando categorie...
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
-                    Nessun ordine trovato.
+                    Nessuna categoria trovata.
                   </td>
                 </tr>
               ) : (
@@ -150,20 +157,22 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                     key={row.id}
                     className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
+                    {row.getVisibleCells().map((cell) => {
+                      const isNumeric = cell.column.id === 'client_count';
+                      return (
+                        <td
+                          key={cell.id}
+                          className={[
+                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300',
+                            isNumeric ? 'text-right' : '',
+                          ].join(' ')}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={() => router.push(`/admin/ordini/${row.original.id}`)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                          title="Dettaglio"
-                        >
-                          <ExternalLink className="size-3.5" />
-                        </button>
                         <button
                           onClick={(e) => handleEditClick(e, row.original)}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
@@ -190,24 +199,11 @@ export function OrdersTable({ orders }: OrdersTableProps) {
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
-          totalItems={orders.length}
+          totalItems={categories.length}
           itemsPerPage={PAGE_SIZE}
-          labelPlural="ordini"
+          labelPlural="categorie"
         />
       </div>
-
-      <EditOrderModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        editedOrder={editedOrder}
-        onEditedOrderChange={setEditedOrder}
-        selectedOrder={selectedOrder}
-      />
-      <DeleteOrderModal
-        isOpen={showDelete}
-        onClose={() => setShowDelete(false)}
-        selectedOrder={selectedOrder}
-      />
     </>
   );
 }

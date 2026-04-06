@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
-import { ClientCategory } from '@/lib/types/ClientCategory';
+import { ClientCategory, type RawClientCategory } from '@/lib/types/ClientCategory';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ClientCategoriesState {
@@ -20,9 +20,9 @@ export const useClientCategoriesStore = create<ClientCategoriesState>((set) => (
 
   fetchClientCategories: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('client_categories').select('*');
+    const { data, error } = await supabase.from('client_categories').select('*, clients(count)');
     if (error) { set({ isLoading: false, error: error.message }); return; }
-    set({ client_categories: data.map((c) => new ClientCategory(c)), isLoading: false, error: null });
+    set({ client_categories: data.map((c) => new ClientCategory(c as RawClientCategory)), isLoading: false, error: null });
   },
 
   addClientCategory: async (category) => {

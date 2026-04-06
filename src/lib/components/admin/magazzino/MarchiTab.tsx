@@ -10,32 +10,33 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Truck, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { Trash2, Factory, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { useSuppliersStore } from '@/lib/stores/suppliers';
+import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
-import { Supplier } from '@/lib/types/Supplier';
-import { AddFornitoreModal } from './AddFornitoreModal';
+import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { Manufacturer } from '@/lib/types/Manufacturer';
+import { AddMarchioModal } from './AddMarchioModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { cardStyle } from '@/lib/const/appearance';
 
 const PAGE_SIZE = 10;
 
-interface FornitoriTabProps {
+interface MarchiTabProps {
   addTrigger?: number;
 }
 
-export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
-  const suppliers = useSuppliersStore((s) => s.suppliers);
-  const isLoading = useSuppliersStore((s) => s.isLoading);
-  const deleteSupplier = useSuppliersStore((s) => s.deleteSupplier);
+export function MarchiTab({ addTrigger }: MarchiTabProps) {
+  const manufacturers = useManufacturersStore((s) => s.manufacturers);
+  const isLoading = useManufacturersStore((s) => s.isLoading);
+  const deleteManufacturer = useManufacturersStore((s) => s.deleteManufacturer);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [selected, setSelected] = useState<Supplier | null>(null);
+  const [selected, setSelected] = useState<Manufacturer | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
@@ -45,7 +46,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     setShowAdd(true);
   }, [addTrigger]);
 
-  const columns = useMemo<ColumnDef<Supplier>[]>(
+  const columns = useMemo<ColumnDef<Manufacturer>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -54,34 +55,12 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
       },
-      {
-        accessorKey: 'city',
-        header: 'Città',
-        cell: ({ getValue }) => (
-          <span>{(getValue() as string | null) ?? '—'}</span>
-        ),
-      },
-      {
-        accessorKey: 'phone',
-        header: 'Telefono',
-        enableSorting: false,
-        cell: ({ getValue }) => (
-          <span>{(getValue() as string | null) ?? '—'}</span>
-        ),
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-        cell: ({ getValue }) => (
-          <span>{(getValue() as string | null) ?? '—'}</span>
-        ),
-      },
     ],
     []
   );
 
   const table = useReactTable({
-    data: suppliers,
+    data: manufacturers,
     columns,
     state: {
       sorting,
@@ -98,13 +77,13 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     manualFiltering: true,
   });
 
-  const handleEditClick = (e: React.MouseEvent, item: Supplier) => {
+  const handleEditClick = (e: React.MouseEvent, item: Manufacturer) => {
     e.stopPropagation();
     setSelected(item);
     setShowAdd(true);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, item: Supplier) => {
+  const handleDeleteClick = (e: React.MouseEvent, item: Manufacturer) => {
     e.stopPropagation();
     setSelected(item);
     setShowDelete(true);
@@ -113,8 +92,8 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
   const handleDelete = async () => {
     if (!selected) return;
     try {
-      await deleteSupplier(selected.id);
-      messagePopup.getState().success('Fornitore eliminato.');
+      await deleteManufacturer(selected.id);
+      messagePopup.getState().success('Marchio eliminato.');
       setShowDelete(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
@@ -124,17 +103,17 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
 
   return (
     <>
-      <AddFornitoreModal
+      <AddMarchioModal
         isOpen={showAdd}
         onClose={() => { setShowAdd(false); setSelected(null); }}
-        selectedSupplier={selected}
+        selectedManufacturer={selected}
       />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
       <AddModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         onSubmit={handleDelete}
-        title="Elimina Fornitore"
+        title="Elimina Marchio"
         subtitle={selected ? `Stai eliminando: ${selected.name}` : ''}
         confirmText="Elimina"
         classes="max-w-sm"
@@ -146,18 +125,20 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
         }
       >
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Sei sicuro di voler eliminare il fornitore{' '}
+          Sei sicuro di voler eliminare il marchio{' '}
           <strong className="text-zinc-900 dark:text-zinc-100">{selected?.name}</strong>?
         </p>
       </AddModal>
 
-      {!isLoading && suppliers.length === 0 ? (
+      {isLoading ? (
+        <TableSkeleton />
+      ) : manufacturers.length === 0 ? (
         <EmptyState
-          icon={Truck}
-          title="Nessun fornitore trovato"
-          description="Aggiungi il tuo primo fornitore per gestire gli approvvigionamenti."
+          icon={Factory}
+          title="Nessun marchio trovato"
+          description="Aggiungi il tuo primo marchio per classificare i prodotti per brand."
           secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
-          action={{ label: 'Nuovo fornitore', icon: Plus, onClick: () => { setSelected(null); setShowAdd(true); } }}
+          action={{ label: 'Nuovo marchio', icon: Plus, onClick: () => { setSelected(null); setShowAdd(true); } }}
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
@@ -197,16 +178,10 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
                 ))}
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {isLoading ? (
+                {table.getRowModel().rows.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
-                      Caricando fornitori...
-                    </td>
-                  </tr>
-                ) : table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
-                      Nessun fornitore trovato.
+                      Nessun marchio trovato.
                     </td>
                   </tr>
                 ) : (
@@ -248,9 +223,9 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
           <Pagination
             currentPage={pageIndex + 1}
             onPageChange={(p) => setPageIndex(p - 1)}
-            totalItems={suppliers.length}
+            totalItems={manufacturers.length}
             itemsPerPage={PAGE_SIZE}
-            labelPlural="fornitori"
+            labelPlural="marchi"
           />
         </div>
       )}
