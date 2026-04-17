@@ -10,7 +10,8 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Package, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
+import { Package, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useProductsStore } from '@/lib/stores/products';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
@@ -141,12 +142,12 @@ function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProp
 interface ProductsTabProps {
   products: Product[];
   trackInventory: boolean;
-  onEdit: (product: Product) => void;
   onAdd: () => void;
   showArchived?: boolean;
 }
 
-export function ProductsTab({ products, trackInventory, onEdit, onAdd, showArchived = false }: ProductsTabProps) {
+export function ProductsTab({ products, trackInventory, onAdd, showArchived = false }: ProductsTabProps) {
+  const router = useRouter();
   const isLoading = useProductsStore((s) => s.isLoading);
   const restoreProduct = useProductsStore((s) => s.restoreProduct);
   const categories = useProductCategoriesStore((s) => s.product_categories);
@@ -302,11 +303,6 @@ export function ProductsTab({ products, trackInventory, onEdit, onAdd, showArchi
     manualFiltering: true,
   });
 
-  const handleEditClick = (e: React.MouseEvent, item: Product) => {
-    e.stopPropagation();
-    onEdit(item);
-  };
-
   const handleDeleteClick = (e: React.MouseEvent, item: Product) => {
     e.stopPropagation();
     setSelectedProduct(item);
@@ -449,7 +445,18 @@ export function ProductsTab({ products, trackInventory, onEdit, onAdd, showArchi
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button, a, [data-no-row-click]')) return;
+                      router.push(`/admin/magazzino/prodotti/${row.original.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target === e.currentTarget) {
+                        router.push(`/admin/magazzino/prodotti/${row.original.id}`);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isNumeric = numericColumns.has(cell.column.id);
@@ -477,20 +484,13 @@ export function ProductsTab({ products, trackInventory, onEdit, onAdd, showArchi
                           </button>
                         ) : (
                           <button
-                            onClick={(e) => handleEditClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                            title="Modifica"
+                            onClick={(e) => handleDeleteClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Elimina"
                           >
-                            <Pencil className="size-3.5" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         )}
-                        <button
-                          onClick={(e) => handleDeleteClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
                       </div>
                     </td>
                   </tr>

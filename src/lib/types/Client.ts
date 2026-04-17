@@ -10,9 +10,9 @@ export class Client {
   user_id: string | null;
   firstName: string;
   lastName: string;
-  email: string;
-  phonePrefix: string;
-  phoneNumber: string;
+  email: string | null;
+  phonePrefix: string | null;
+  phoneNumber: string | null;
   gender: string;
   isTourist: boolean;
   birthDate: string;
@@ -25,9 +25,9 @@ export class Client {
     this.user_id = client.user_id ?? null;
     this.firstName = client.firstName;
     this.lastName = client.lastName;
-    this.email = client.email;
-    this.phonePrefix = client.phonePrefix;
-    this.phoneNumber = client.phoneNumber;
+    this.email = client.email ?? null;
+    this.phonePrefix = client.phonePrefix ?? null;
+    this.phoneNumber = client.phoneNumber ?? null;
     this.gender = client.gender;
     this.isTourist = client.isTourist;
     this.birthDate = client.birthDate;
@@ -43,7 +43,12 @@ export class Client {
     return `${this.firstName} ${this.lastName}`;
   }
 
+  hasPhone(): boolean {
+    return !!(this.phonePrefix && this.phoneNumber);
+  }
+
   getPhoneNumber(): string {
+    if (!this.hasPhone()) return '';
     return `${this.phonePrefix} ${this.phoneNumber}`;
   }
 
@@ -77,8 +82,9 @@ export class Client {
       key: 'email',
       sortable: true,
       icon: AtSign,
-      display: (client: Client) => client.email,
+      display: (client: Client) => client.email ?? '',
       onclick: (client: Client): void => {
+        if (!client.email) return;
         window.open(`mailto:${client.email}`, '_blank');
       },
     },
@@ -87,9 +93,10 @@ export class Client {
       key: 'phone',
       sortable: false,
       icon: Phone,
-      display: (client) => client.phonePrefix + ' ' + client.phoneNumber,
+      display: (client) => client.hasPhone() ? `${client.phonePrefix} ${client.phoneNumber}` : '',
       onclick: (client: Client) => {
-        const phone = client.phonePrefix.concat(client.phoneNumber).replace(/[^0-9]/g, '');
+        if (!client.hasPhone()) return;
+        const phone = `${client.phonePrefix}${client.phoneNumber}`.replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${phone}`, '_blank');
       },
     },

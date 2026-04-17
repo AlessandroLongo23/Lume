@@ -13,7 +13,6 @@ import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
-import type { Product } from '@/lib/types/Product';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
@@ -28,7 +27,6 @@ export default function MagazzinoPage() {
   const [activeTab, setActiveTab] = useState<Tab>('prodotti');
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
   const [fornitoriAddTrigger, setFornitoriAddTrigger] = useState(0);
   const [marchiAddTrigger, setMarchiAddTrigger] = useState(0);
@@ -82,8 +80,7 @@ export default function MagazzinoPage() {
     [categories, categoriesShowArchived]
   );
 
-  const openAddSheet = () => { setSelectedProduct(null); setModalOpen(true); };
-  const openEditSheet = (product: Product) => { setSelectedProduct(product); setModalOpen(true); };
+  const openAddSheet = () => { setModalOpen(true); };
 
   const archivableTab = activeTab === 'prodotti' || activeTab === 'categorie';
   const tabShowArchived = activeTab === 'prodotti' ? productsShowArchived : categoriesShowArchived;
@@ -99,7 +96,6 @@ export default function MagazzinoPage() {
       <ProductModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        selectedProduct={selectedProduct}
         trackInventory={trackInventory}
       />
 
@@ -214,7 +210,6 @@ export default function MagazzinoPage() {
             <ProductsTab
               products={visibleProducts}
               trackInventory={trackInventory}
-              onEdit={openEditSheet}
               onAdd={openAddSheet}
               showArchived={productsShowArchived}
             />

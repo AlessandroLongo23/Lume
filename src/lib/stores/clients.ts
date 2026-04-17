@@ -11,6 +11,7 @@ interface ClientsState {
   fetchClients: () => Promise<void>;
   addClient: (clientData: Partial<Client>) => Promise<Client>;
   updateClient: (clientId: string, updatedClient: Partial<Client>) => Promise<Client>;
+  updateClientContact: (clientId: string, contact: { email?: string; phonePrefix?: string; phoneNumber?: string }) => Promise<void>;
   archiveClient: (clientId: string) => Promise<void>;
   restoreClient: (clientId: string) => Promise<void>;
   deleteClient: (clientId: string) => Promise<void>;
@@ -57,6 +58,16 @@ export const useClientsStore = create<ClientsState>((set) => ({
       .single();
     if (error) throw new Error('Impossibile aggiornare il cliente.');
     return new Client(data);
+  },
+
+  updateClientContact: async (clientId, contact) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: clientId, action: 'updateContact', ...contact }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
 
   archiveClient: async (clientId) => {

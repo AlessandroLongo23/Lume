@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { generateTimeSlots, formatTimeSlot, CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 
 export interface TimeGridColumn {
@@ -14,9 +15,11 @@ interface TimeGridProps {
   renderSlot: (columnKey: string, timeSlot: Date) => React.ReactNode;
   startHour?: number;
   endHour?: number;
+  /** Original schedule bounds — slots outside this range are marked as extended hours. */
+  scheduleBounds?: { startHour: number; endHour: number };
 }
 
-export function TimeGrid({ columns, date, renderSlot, startHour, endHour }: TimeGridProps) {
+export function TimeGrid({ columns, date, renderSlot, startHour, endHour, scheduleBounds }: TimeGridProps) {
   const effectiveStartHour = startHour ?? CALENDAR_CONFIG.daily.startHour;
   const effectiveEndHour = endHour ?? CALENDAR_CONFIG.daily.endHour;
   const bounds = startHour !== undefined && endHour !== undefined ? { startHour, endHour } : undefined;
@@ -94,6 +97,10 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour }: Time
           )}
           {timeSlots.map((timeSlot, i) => {
             const isHourMark = timeSlot.getMinutes() === 0;
+            const slotHour = timeSlot.getHours();
+            const isExtended =
+              !!scheduleBounds &&
+              (slotHour < scheduleBounds.startHour || slotHour >= scheduleBounds.endHour);
             return (
               <div
                 key={i}
@@ -102,10 +109,14 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour }: Time
               >
                 {/* Time gutter */}
                 <div
-                  className={`p-2 h-8 text-xs border-r border-zinc-500/25 flex items-center justify-center border-t ${
+                  className={`p-2 h-8 text-xs border-r border-zinc-500/25 flex items-center justify-center gap-1 border-t ${
                     isHourMark ? 'border-zinc-500/50' : 'border-zinc-500/25'
+                  } ${
+                    isExtended ? 'bg-amber-500/8 text-amber-700 dark:text-amber-400' : ''
                   }`}
+                  title={isExtended ? 'Fuori orari di apertura' : undefined}
                 >
+                  {isExtended && <AlertTriangle className="size-3 shrink-0" />}
                   {formatTimeSlot(timeSlot)}
                 </div>
 

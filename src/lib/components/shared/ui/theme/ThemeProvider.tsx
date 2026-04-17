@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setThemeState(t);
     };
 
-    if (!document.startViewTransition) {
+    if (!document.startViewTransition || document.visibilityState !== 'visible') {
       apply();
       return;
     }

@@ -12,7 +12,7 @@ import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
-import { isSlotActive } from '@/lib/utils/operating-hours';
+import { isSlotActive, extendBoundsForRanges } from '@/lib/utils/operating-hours';
 
 interface WeekViewProps {
   selectedDate: Date;
@@ -61,6 +61,17 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
     return map;
   }, [weekFiches, weekDays]);
 
+  // Extend grid across the week so any out-of-hours fiche is fully visible.
+  const displayBounds = useMemo(() => {
+    const ranges = weekFiches.flatMap((fiche) =>
+      fiche.getFicheServices().map((fs) => ({
+        start: new Date(fs.start_time),
+        end: new Date(fs.end_time),
+      })),
+    );
+    return extendBoundsForRanges(gridBounds, ranges);
+  }, [weekFiches, gridBounds]);
+
   if (!operator) return null;
 
   function renderSlot(columnKey: string, timeSlot: Date) {
@@ -73,6 +84,8 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
 
     const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
     const disabled = !isSlotActive(operatingHours, columnDate.getDay(), slotMinutes);
+    const slotHour = timeSlot.getHours();
+    const extended = slotHour < gridBounds.startHour || slotHour >= gridBounds.endHour;
 
     return (
       <DayViewSlot
@@ -82,6 +95,7 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
         onSlotSelected={onSlotSelected}
         onFicheSelected={onFicheSelected}
         isDisabled={disabled}
+        isExtendedHours={extended}
       />
     );
   }
@@ -91,8 +105,9 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
       columns={columns}
       date={selectedDate}
       renderSlot={renderSlot}
-      startHour={gridBounds.startHour}
-      endHour={gridBounds.endHour}
+      startHour={displayBounds.startHour}
+      endHour={displayBounds.endHour}
+      scheduleBounds={gridBounds}
     />
   );
 }

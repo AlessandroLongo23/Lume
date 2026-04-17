@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Plane, Mail, Phone, Calendar, Smile, Edit, Trash, ArchiveRestore } from 'lucide-react';
+import { Plane, Mail, Phone, Calendar, Smile, Trash, ArchiveRestore } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { ClientRatingBadge } from './ClientRatingBadge';
@@ -18,13 +18,12 @@ const initialsColors: Record<string, string> = {
 
 interface ClientCardProps {
   client: Client;
-  onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
   onRestore?: (client: Client) => void;
   showArchived?: boolean;
 }
 
-export function ClientCard({ client, onEdit, onDelete, onRestore, showArchived = false }: ClientCardProps) {
+export function ClientCard({ client, onDelete, onRestore, showArchived = false }: ClientCardProps) {
   const router = useRouter();
   const rating = useClientRatingsStore((s) => s.ratings[client.id]);
 
@@ -110,20 +109,13 @@ export function ClientCard({ client, onEdit, onDelete, onRestore, showArchived =
             </button>
           ) : (
             <button
-              onClick={(e) => { e.stopPropagation(); onEdit(client); }}
-              className="p-1.5 rounded-md bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
-              title="Modifica cliente"
+              onClick={(e) => { e.stopPropagation(); onDelete(client); }}
+              className="p-1.5 rounded-md bg-zinc-200 hover:bg-red-200 dark:bg-zinc-700 dark:hover:bg-red-900/40 transition-colors"
+              title="Elimina cliente"
             >
-              <Edit className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
+              <Trash className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300 hover:text-red-700 dark:hover:text-red-400" />
             </button>
           )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(client); }}
-            className="p-1.5 rounded-md bg-zinc-200 hover:bg-red-200 dark:bg-zinc-700 dark:hover:bg-red-900/40 transition-colors"
-            title="Elimina cliente"
-          >
-            <Trash className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300 hover:text-red-700 dark:hover:text-red-400" />
-          </button>
         </div>
       </div>
     </div>

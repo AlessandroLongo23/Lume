@@ -4,9 +4,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { addMonths, subMonths, formatDateString, getWeekDays } from '@/lib/utils/date';
 import { capitalize } from '@/lib/utils/string';
+import { startOfMonth } from 'date-fns';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { CalendarDatePicker } from './CalendarDatePicker';
 
 const VIEW_OPTIONS = [
   { value: 'day', label: 'Giorno' },
@@ -90,30 +92,22 @@ export function CalendarToolbar() {
           <ChevronLeft size={18} />
         </button>
 
-        {/* Clickable date label — triggers goToToday */}
-        <span className="relative group">
-          <button
-            type="button"
-            onClick={goToToday}
-            className="px-3 py-1 rounded-md text-lg font-medium
-              text-zinc-800 dark:text-zinc-100 select-none
-              hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            {getDateLabel()}
-          </button>
-          <span
-            role="tooltip"
-            className={[
-              'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
-              'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-white',
-              'bg-zinc-800 dark:bg-zinc-700 shadow-lg',
-              'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
-            ].join(' ')}
-          >
-            Torna a oggi
-            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700" />
-          </span>
-        </span>
+        {/* Date label opens a dropdown to pick year / month / day */}
+        <CalendarDatePicker
+          label={getDateLabel()}
+          selectedDate={selectedDate}
+          currentMonth={currentMonth}
+          monthOnly={currentView === 'month'}
+          onSelect={(date) => {
+            if (currentView === 'month') {
+              setCurrentMonth(startOfMonth(date));
+            } else {
+              setSelectedDate(date);
+              setCurrentMonth(date);
+            }
+          }}
+          onGoToToday={goToToday}
+        />
 
         <button
           type="button"

@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { Mail, Lock } from 'lucide-react';
+import { AtSign, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { isEmailLike, normalizeLoginPhone } from '@/lib/utils/phone';
 
 const AUTH_ERRORS: Record<string, string> = {
   'Invalid login credentials': 'Email o password non corretti.',
@@ -36,7 +37,7 @@ const fieldVariants = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail]         = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword]   = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError]         = useState<string | null>(null);
@@ -46,7 +47,21 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const trimmed = identifier.trim();
+    const credentials = isEmailLike(trimmed)
+      ? { email: trimmed, password }
+      : (() => {
+          const phone = normalizeLoginPhone(trimmed);
+          return phone ? { phone, password } : null;
+        })();
+
+    if (!credentials) {
+      setError('Inserisci un\'email o un numero di telefono valido.');
+      setIsLoading(false);
+      return;
+    }
+
+    const { error: authError } = await supabase.auth.signInWithPassword(credentials);
 
     if (authError) {
       setError(mapError(authError.message));
@@ -73,14 +88,14 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
           <FormInput
-            label="Email"
-            type="email"
-            placeholder="nome@salone.it"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            icon={<Mail className="w-4 h-4 text-zinc-400" />}
+            label="Email o telefono"
+            type="text"
+            placeholder="nome@salone.it oppure 3331234567"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            icon={<AtSign className="w-4 h-4 text-zinc-400" />}
             required
-            autoComplete="email"
+            autoComplete="username"
           />
         </motion.div>
 

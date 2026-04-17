@@ -9,6 +9,9 @@ interface MonthViewDayProps {
   selectedDate: Date;
   totalMinutes: number;
   totalEarnings: number;
+  /** Null when no operator is selected (view shows salon-wide totals) */
+  operatorMinutes: number | null;
+  operatorEarnings: number | null;
   onClick: (day: Date) => void;
 }
 
@@ -29,11 +32,15 @@ function formatEarnings(amount: number): string {
   }).format(amount);
 }
 
-export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMinutes, totalEarnings, onClick }: MonthViewDayProps) {
+export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMinutes, totalEarnings, operatorMinutes, operatorEarnings, onClick }: MonthViewDayProps) {
   const isDayToday = isToday(day);
   const isSelected = isSameDay(day, selectedDate);
   const isDayPast = isPast(day) && !isDayToday;
-  const opacity = isCurrentMonth ? getHeatmapOpacity(totalMinutes) : 0;
+  const hasOperatorFilter = operatorMinutes !== null && operatorEarnings !== null;
+  // Heatmap and primary earnings reflect the selected operator when one is chosen
+  const heatmapMinutes = hasOperatorFilter ? operatorMinutes : totalMinutes;
+  const primaryEarnings = hasOperatorFilter ? operatorEarnings : totalEarnings;
+  const opacity = isCurrentMonth ? getHeatmapOpacity(heatmapMinutes) : 0;
 
   let textClasses = '';
   if (!isCurrentMonth) {
@@ -78,10 +85,17 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMi
           {format(day, 'd', { locale: it })}
         </span>
 
-        {/* Daily earnings total — bottom-right corner */}
-        {isCurrentMonth && totalEarnings > 0 && (
-          <span className="absolute bottom-1.5 right-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
-            {formatEarnings(totalEarnings)}
+        {/* Daily earnings — operator-specific when a filter is active, with salon-wide total alongside for context */}
+        {isCurrentMonth && (primaryEarnings > 0 || (hasOperatorFilter && totalEarnings > 0)) && (
+          <span className="absolute bottom-1.5 right-2 text-xs font-medium tabular-nums flex items-baseline gap-1">
+            <span className="text-indigo-600 dark:text-indigo-400">
+              {formatEarnings(primaryEarnings)}
+            </span>
+            {hasOperatorFilter && totalEarnings > 0 && totalEarnings !== primaryEarnings && (
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                / {formatEarnings(totalEarnings)}
+              </span>
+            )}
           </span>
         )}
       </button>

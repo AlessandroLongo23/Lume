@@ -17,6 +17,8 @@ interface DayViewSlotProps {
   onFicheSelected: (fiche: Fiche) => void;
   /** True when this slot falls outside the salon's configured operating hours */
   isDisabled?: boolean;
+  /** True when this slot is before opening / after closing (beyond the schedule bounds). */
+  isExtendedHours?: boolean;
 }
 
 function getTimeAsMinutes(date: Date): number {
@@ -29,7 +31,7 @@ function withOpacity(hex: string, opacity: number): string {
   return `${hex}${clamped.toString(16).padStart(2, '0')}`;
 }
 
-export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected, isDisabled = false }: DayViewSlotProps) {
+export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected, isDisabled = false, isExtendedHours = false }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
   const clients = useClientsStore((s) => s.clients);
   const services = useServicesStore((s) => s.services);
@@ -61,13 +63,13 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
     });
   }, [slotFiches, operator.id, datetime]);
 
-  const ficheRowSpan = useMemo(() => {
-    if (!isStartOfFiche || slotFiches.length === 0) return 1;
+  const ficheTotalMinutes = useMemo(() => {
+    if (!isStartOfFiche || slotFiches.length === 0) return 0;
     const operatorServices = slotFiches[0].getFicheServices().filter((fs) => fs.operator_id === operator.id);
-    if (operatorServices.length === 0) return 1;
+    if (operatorServices.length === 0) return 0;
     const minStart = Math.min(...operatorServices.map((fs) => getTimeAsMinutes(new Date(fs.start_time))));
     const maxEnd = Math.max(...operatorServices.map((fs) => getTimeAsMinutes(new Date(fs.end_time))));
-    return Math.ceil((maxEnd - minStart) / 15);
+    return maxEnd - minStart;
   }, [isStartOfFiche, slotFiches, operator.id]);
 
   const isOccupied = slotFiches.length > 0;
@@ -84,33 +86,37 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
     }
   }
 
-  // Diagonal stripe pattern for closed-hours slots (light mode only;
-  // dark mode uses the bg colour alone for subtlety)
+  // Diagonal stripe pattern for closed-hours slots. Extended hours
+  // (before opening / after closing) use an amber tint so they read
+  // as "warning" rather than "just closed for break".
   const closedHoursStyle = isDisabled && !isPast
     ? {
-        backgroundImage:
-          'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 5px)',
+        backgroundImage: isExtendedHours
+          ? 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(245,158,11,0.12) 3px, rgba(245,158,11,0.12) 5px)'
+          : 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 5px)',
       }
     : undefined;
+
+  const baseBg = isPast
+    ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
+    : isExtendedHours
+      ? 'bg-amber-500/5 dark:bg-amber-500/10'
+      : isDisabled
+        ? 'bg-zinc-50 dark:bg-zinc-800/40'
+        : isOccupied && !isStartOfFiche
+          ? 'bg-zinc-50 dark:bg-zinc-800/50'
+          : 'bg-white dark:bg-zinc-900';
 
   return (
     <div
       className={`flex items-center relative w-full h-8 border-t ${
         datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'
-      } ${
-        isPast
-          ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
-          : isDisabled
-            ? 'bg-zinc-50 dark:bg-zinc-800/40'
-            : isOccupied && !isStartOfFiche
-              ? 'bg-zinc-50 dark:bg-zinc-800/50'
-              : 'bg-white dark:bg-zinc-900'
-      }`}
+      } ${baseBg}`}
       style={closedHoursStyle}
       onMouseEnter={() => !isBlocked && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...(!isBlocked && { role: 'button', tabIndex: 0 })}
-      title={isPast ? 'Questo orario è passato' : undefined}
+      title={isPast ? 'Questo orario è passato' : isExtendedHours ? 'Fuori orari di apertura' : undefined}
     >
       <button
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
@@ -138,7 +144,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
                 isPast ? 'opacity-60' : ''
               }`}
               style={{
-                height: `calc(${ficheRowSpan * 2}rem)`,
+                height: `${(ficheTotalMinutes / 15) * 2}rem`,
                 borderLeft: `3px solid ${accentColor}`,
               }}
             >

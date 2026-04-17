@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Info, Pencil, Trash2, Plane, ArchiveRestore } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -19,7 +19,6 @@ import { Client } from '@/lib/types/Client';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ClientRatingBadge } from './ClientRatingBadge';
-import { EditClientModal } from './EditClientModal';
 import { DeleteClientModal } from './DeleteClientModal';
 import { cardStyle } from '@/lib/const/appearance';
 
@@ -41,10 +40,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const restoreClient = useClientsStore((s) => s.restoreClient);
   const ratings = useClientRatingsStore((s) => s.ratings);
 
-  const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [editedClient, setEditedClient] = useState<Partial<Client>>({});
 
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
@@ -61,8 +58,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       data = data.filter((c) =>
         c.firstName.toLowerCase().includes(q) ||
         c.lastName.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        (c.phonePrefix + ' ' + c.phoneNumber).toLowerCase().includes(q)
+        (c.email ?? '').toLowerCase().includes(q) ||
+        `${c.phonePrefix ?? ''} ${c.phoneNumber ?? ''}`.toLowerCase().includes(q)
       );
     }
     return data;
@@ -103,29 +100,39 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => (
-          <span
-            className="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline"
-            onClick={() => window.open(`mailto:${row.original.email}`, '_blank')}
-          >
-            {row.original.email}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const email = row.original.email;
+          if (!email) return <span className="text-zinc-400 italic">—</span>;
+          return (
+            <span
+              data-no-row-click
+              className="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline"
+              onClick={() => window.open(`mailto:${email}`, '_blank')}
+            >
+              {email}
+            </span>
+          );
+        },
       },
       {
         id: 'phone',
         header: 'Telefono',
-        cell: ({ row }) => (
-          <span
-            className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            onClick={() => {
-              const phone = row.original.phonePrefix.concat(row.original.phoneNumber).replace(/[^0-9]/g, '');
-              window.open(`https://wa.me/${phone}`, '_blank');
-            }}
-          >
-            {row.original.phonePrefix} {row.original.phoneNumber}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const { phonePrefix, phoneNumber } = row.original;
+          if (!phonePrefix || !phoneNumber) return <span className="text-zinc-400 italic">—</span>;
+          return (
+            <span
+              data-no-row-click
+              className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              onClick={() => {
+                const phone = `${phonePrefix}${phoneNumber}`.replace(/[^0-9]/g, '');
+                window.open(`https://wa.me/${phone}`, '_blank');
+              }}
+            >
+              {phonePrefix} {phoneNumber}
+            </span>
+          );
+        },
         enableSorting: false,
       },
       {
@@ -262,7 +269,21 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <tr
+                    key={row.id}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button, a, [data-no-row-click]')) return;
+                      router.push(`/admin/clienti/${row.original.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target === e.currentTarget) {
+                        router.push(`/admin/clienti/${row.original.id}`);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -279,30 +300,14 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                             <ArchiveRestore className="size-3.5" />
                           </button>
                         ) : (
-                          <>
-                            <button
-                              onClick={() => router.push(`/admin/clienti/${row.original.id}`)}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                              title="Dettaglio"
-                            >
-                              <Info className="size-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setEditedClient({ ...row.original }); setShowEdit(true); }}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                              title="Modifica"
-                            >
-                              <Pencil className="size-3.5" />
-                            </button>
-                          </>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setShowDelete(true); }}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Elimina"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
                         )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setShowDelete(true); }}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -321,13 +326,6 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         />
       </div>
 
-      <EditClientModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        editedClient={editedClient}
-        onEditedClientChange={setEditedClient}
-        selectedClient={selectedClient}
-      />
       <DeleteClientModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}

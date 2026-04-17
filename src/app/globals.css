@@ -470,4 +470,11 @@ button, a {
   html {
     @apply font-sans;
 	}
+  /* Force focus rings on form controls to render inset, so they are never
+     clipped by a parent with overflow: hidden/auto/scroll (e.g. modals). */
+  input,
+  select,
+  textarea {
+    --tw-ring-inset: inset;
+  }
 }

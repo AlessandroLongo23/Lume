@@ -6,6 +6,7 @@ import { getMonthDays, weekDays } from '@/lib/utils/date';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
+import { useCalendarStore } from '@/lib/stores/calendar';
 import { MonthViewDay } from './MonthViewDay';
 
 interface MonthViewProps {
@@ -17,12 +18,15 @@ interface MonthViewProps {
 interface DayMetrics {
   totalMinutes: number;
   totalEarnings: number;
+  operatorMinutes: number;
+  operatorEarnings: number;
 }
 
 export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewProps) {
   const fiches = useFichesStore((s) => s.fiches);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
   const services = useServicesStore((s) => s.services);
+  const selectedOperatorId = useCalendarStore((s) => s.selectedOperatorId);
   const monthDays = useMemo(() => getMonthDays(currentMonth), [currentMonth]);
 
   // Pre-compute metrics per day in a single pass
@@ -50,19 +54,26 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
       const dayFiches = fiches.filter((f) => isSameDay(new Date(f.datetime), date));
       let totalMinutes = 0;
       let totalEarnings = 0;
+      let operatorMinutes = 0;
+      let operatorEarnings = 0;
 
       for (const fiche of dayFiches) {
         for (const fs of fsByFicheId.get(fiche.id) ?? []) {
+          const price = priceById.get(fs.service_id) ?? 0;
           totalMinutes += fs.duration;
-          totalEarnings += priceById.get(fs.service_id) ?? 0;
+          totalEarnings += price;
+          if (selectedOperatorId && fs.operator_id === selectedOperatorId) {
+            operatorMinutes += fs.duration;
+            operatorEarnings += price;
+          }
         }
       }
 
-      metrics.set(key, { totalMinutes, totalEarnings });
+      metrics.set(key, { totalMinutes, totalEarnings, operatorMinutes, operatorEarnings });
     }
 
     return metrics;
-  }, [fiches, ficheServices, services, monthDays]);
+  }, [fiches, ficheServices, services, monthDays, selectedOperatorId]);
 
   return (
     <>
@@ -75,7 +86,8 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
       </div>
       <div className="grid grid-cols-7 gap-0 border border-zinc-500/25 rounded-lg overflow-hidden">
         {monthDays.map((day, i) => {
-          const metrics = dayMetrics.get(day.date.toDateString()) ?? { totalMinutes: 0, totalEarnings: 0 };
+          const metrics = dayMetrics.get(day.date.toDateString())
+            ?? { totalMinutes: 0, totalEarnings: 0, operatorMinutes: 0, operatorEarnings: 0 };
           return (
             <MonthViewDay
               key={i}
@@ -84,6 +96,8 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
               selectedDate={selectedDate}
               totalMinutes={metrics.totalMinutes}
               totalEarnings={metrics.totalEarnings}
+              operatorMinutes={selectedOperatorId ? metrics.operatorMinutes : null}
+              operatorEarnings={selectedOperatorId ? metrics.operatorEarnings : null}
               onClick={onDayClick}
             />
           );

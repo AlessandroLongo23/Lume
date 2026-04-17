@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
+import { isSuperAdmin } from '@/lib/gateway/superAdmins';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
@@ -19,14 +20,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'salonId mancante' }, { status: 400 });
     }
 
-    // Verify the user actually belongs to the requested salon
-    const workspace = await resolveWorkspace(user.id);
-    const allSalonIds = [
-      ...workspace.businessContexts.map((c) => c.salonId),
-      ...workspace.clientContexts.map((c) => c.salonId),
-    ];
-    if (!allSalonIds.includes(salonId)) {
-      return NextResponse.json({ error: 'Accesso negato' }, { status: 403 });
+    // Super-admins may activate any salon (impersonation); other users must
+    // belong to the requested salon.
+    if (!(await isSuperAdmin(user.id))) {
+      const workspace = await resolveWorkspace(user.id);
+      const allSalonIds = [
+        ...workspace.businessContexts.map((c) => c.salonId),
+        ...workspace.clientContexts.map((c) => c.salonId),
+      ];
+      if (!allSalonIds.includes(salonId)) {
+        return NextResponse.json({ error: 'Accesso negato' }, { status: 403 });
+      }
     }
 
     const cookieStore = await cookies();

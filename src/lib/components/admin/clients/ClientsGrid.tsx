@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Users } from 'lucide-react';
 import { ClientCard } from './ClientCard';
-import { EditClientModal } from './EditClientModal';
 import { DeleteClientModal } from './DeleteClientModal';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -16,16 +15,8 @@ interface ClientsGridProps {
 
 export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps) {
   const restoreClient = useClientsStore((s) => s.restoreClient);
-  const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [editedClient, setEditedClient] = useState<Partial<Client>>({});
-
-  const handleEdit = (client: Client) => {
-    setSelectedClient(client);
-    setEditedClient({ ...client });
-    setShowEdit(true);
-  };
 
   const handleDelete = (client: Client) => {
     setSelectedClient(client);
@@ -55,7 +46,6 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
             <ClientCard
               key={client.id}
               client={client}
-              onEdit={handleEdit}
               onDelete={handleDelete}
               onRestore={handleRestore}
               showArchived={showArchived}
@@ -64,13 +54,6 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
         </div>
       )}
 
-      <EditClientModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        editedClient={editedClient}
-        onEditedClientChange={setEditedClient}
-        selectedClient={selectedClient}
-      />
       <DeleteClientModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}

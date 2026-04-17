@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
   Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
@@ -43,6 +43,7 @@ import type { Service } from '@/lib/types/Service';
 import type { Product } from '@/lib/types/Product';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
+import { isRangeWithinHours, type DaySchedule } from '@/lib/utils/operating-hours';
 
 interface FicheModalProps {
   mode: 'add' | 'edit';
@@ -66,6 +67,97 @@ function toDatetimeLocal(date: Date | null | undefined): string {
 }
 
 const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 28px 56px 32px';
+
+interface CategoryGroup<T> {
+  categoryId: string;
+  categoryName: string;
+  items: T[];
+}
+
+interface CategoryDropdownProps<T> {
+  groups: CategoryGroup<T>[];
+  query: string;
+  onSelect: (item: T) => void;
+  renderItem: (item: T) => ReactNode;
+  getKey: (item: T) => string;
+  emptyText: string;
+}
+
+function CategoryDropdown<T>({
+  groups,
+  query,
+  onSelect,
+  renderItem,
+  getKey,
+  emptyText,
+}: CategoryDropdownProps<T>) {
+  const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
+
+  if (groups.length === 0) {
+    return <p className="p-4 text-sm text-center text-zinc-500">{emptyText}</p>;
+  }
+
+  if (query.trim()) {
+    const allItems = groups.flatMap((g) => g.items);
+    return (
+      <div className="max-h-72 overflow-y-auto">
+        {allItems.map((item) => (
+          <button
+            key={getKey(item)}
+            type="button"
+            onClick={() => onSelect(item)}
+            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+          >
+            {renderItem(item)}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  const activeId =
+    hoveredCategoryId && groups.some((g) => g.categoryId === hoveredCategoryId)
+      ? hoveredCategoryId
+      : groups[0].categoryId;
+  const activeGroup = groups.find((g) => g.categoryId === activeId);
+
+  return (
+    <div className="grid max-h-72" style={{ gridTemplateColumns: '1fr 2.5fr' }}>
+      <div className="overflow-y-auto border-r border-zinc-500/15 bg-zinc-50/50 dark:bg-zinc-700/20">
+        {groups.map((g) => {
+          const isActive = g.categoryId === activeId;
+          return (
+            <button
+              key={g.categoryId}
+              type="button"
+              onMouseEnter={() => setHoveredCategoryId(g.categoryId)}
+              onFocus={() => setHoveredCategoryId(g.categoryId)}
+              className={`w-full px-3 py-2 text-left text-sm truncate transition-colors cursor-default ${
+                isActive
+                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-500/5'
+              }`}
+            >
+              {g.categoryName}
+            </button>
+          );
+        })}
+      </div>
+      <div className="overflow-y-auto">
+        {activeGroup?.items.map((item) => (
+          <button
+            key={getKey(item)}
+            type="button"
+            onClick={() => onSelect(item)}
+            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+          >
+            {renderItem(item)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /** Count how many *other* draft rows (excluding the row at `ignoreIndex`) are currently assigning each abbonamento. */
 function abbonamentoDraftCounts(
@@ -114,6 +206,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
+  const [pendingAction, setPendingAction] = useState<'submit' | 'pay' | null>(null);
 
   // Payment state
   const [paymentView, setPaymentView] = useState<PaymentView>(FichePaymentMethod.CASH);
@@ -185,8 +279,28 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
     setSplits(INITIAL_SPLITS.map((s) => ({ ...s })));
     setSelectedCoupons([]);
     setIsSubmitting(false);
+    setPendingAction(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fiche, mode, initialView]);
+
+  // Fetch operating hours once the modal opens so we can warn when the
+  // appointment falls outside configured shifts.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.operating_hours)) {
+          setOperatingHours(data.operating_hours as DaySchedule[]);
+        }
+      })
+      .catch(() => {
+        // leave empty → isRangeWithinHours returns true (safe fallback)
+      });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   // Sync datetime when the calendar slot changes while the modal is already open (add mode only)
   useEffect(() => {
@@ -257,32 +371,36 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
 
   const clientName = selectedClient?.getFullName() ?? 'Cliente sconosciuto';
 
-  const groupedServices = useMemo(() => {
+  const groupedServices = useMemo<CategoryGroup<Service>[]>(() => {
     const q = svcQuery.toLowerCase().trim();
     const activeServices = services.filter((s) => !s.isArchived);
     const filtered = q ? activeServices.filter((s) => s.name.toLowerCase().includes(q)) : activeServices;
-    const groups = new Map<string, { categoryName: string; items: Service[] }>();
+    const groups = new Map<string, CategoryGroup<Service>>();
     for (const svc of filtered) {
       const cat = serviceCategories.find((c) => c.id === svc.category_id);
       const catName = cat?.name ?? 'Altro';
-      if (!groups.has(svc.category_id)) groups.set(svc.category_id, { categoryName: catName, items: [] });
+      if (!groups.has(svc.category_id)) {
+        groups.set(svc.category_id, { categoryId: svc.category_id, categoryName: catName, items: [] });
+      }
       groups.get(svc.category_id)!.items.push(svc);
     }
-    return Array.from(groups.values());
+    return Array.from(groups.values()).sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'it'));
   }, [services, serviceCategories, svcQuery]);
 
-  const groupedProducts = useMemo(() => {
+  const groupedProducts = useMemo<CategoryGroup<Product>[]>(() => {
     const q = prodQuery.toLowerCase().trim();
     const activeProducts = products.filter((p) => !p.isArchived);
     const filtered = q ? activeProducts.filter((p) => p.name.toLowerCase().includes(q)) : activeProducts;
-    const groups = new Map<string, { categoryName: string; items: Product[] }>();
+    const groups = new Map<string, CategoryGroup<Product>>();
     for (const prod of filtered) {
       const cat = productCategories.find((c) => c.id === prod.product_category_id);
       const catName = cat?.name ?? 'Altro';
-      if (!groups.has(prod.product_category_id)) groups.set(prod.product_category_id, { categoryName: catName, items: [] });
+      if (!groups.has(prod.product_category_id)) {
+        groups.set(prod.product_category_id, { categoryId: prod.product_category_id, categoryName: catName, items: [] });
+      }
       groups.get(prod.product_category_id)!.items.push(prod);
     }
-    return Array.from(groups.values());
+    return Array.from(groups.values()).sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'it'));
   }, [products, productCategories, prodQuery]);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -485,9 +603,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
     return !Object.values(newErrors).some(Boolean);
   }
 
+  /** Returns true when the appointment (first service start → last service end) falls outside configured shifts. */
+  function isOutOfHours(): boolean {
+    if (ficheServices.length === 0) return false;
+    const firstStart = servicesWithTimes[0].start_time;
+    const lastEnd = servicesWithTimes[servicesWithTimes.length - 1].end_time;
+    return !isRangeWithinHours(operatingHours, firstStart, lastEnd);
+  }
+
   async function handleSubmit() {
     if (!validateForm()) return;
     if (isSubmitting) return;
+    if (pendingAction !== 'submit' && isOutOfHours()) {
+      setPendingAction('submit');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await persistFiche();
@@ -497,6 +627,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     } finally {
       setIsSubmitting(false);
+      setPendingAction(null);
     }
   }
 
@@ -508,6 +639,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
     const payments = buildPayments(paymentView, effectiveTotal, cashGiven, splits);
     if (!payments) return;
     if (isSubmitting) return;
+    if (pendingAction !== 'pay' && isOutOfHours()) {
+      setPendingAction('pay');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const ficheId = await persistFiche();
@@ -528,13 +663,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
       messagePopup.getState().error(err instanceof Error ? err.message : 'Errore durante la chiusura della fiche');
     } finally {
       setIsSubmitting(false);
+      setPendingAction(null);
     }
   }
 
   // ── Styles ────────────────────────────────────────────────────────────────
 
   const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
+    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
   const labelClass =
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
@@ -778,33 +914,22 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
 
                         {svcOpen && (
                           <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
-                            {groupedServices.length === 0 ? (
-                              <p className="p-4 text-sm text-center text-zinc-500">Nessun servizio trovato</p>
-                            ) : (
-                              <div className="max-h-56 overflow-y-auto">
-                                {groupedServices.map(({ categoryName, items }) => (
-                                  <div key={categoryName}>
-                                    <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
-                                      {categoryName}
-                                    </div>
-                                    {items.map((svc) => (
-                                      <button
-                                        key={svc.id}
-                                        type="button"
-                                        onClick={() => addServiceToList(svc)}
-                                        className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
-                                      >
-                                        <span className="text-zinc-900 dark:text-zinc-100 truncate">{svc.name}</span>
-                                        <div className="flex items-center gap-2.5 text-xs text-zinc-400 shrink-0">
-                                          <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
-                                          <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
-                                        </div>
-                                      </button>
-                                    ))}
+                            <CategoryDropdown
+                              groups={groupedServices}
+                              query={svcQuery}
+                              onSelect={addServiceToList}
+                              getKey={(s) => s.id}
+                              emptyText="Nessun servizio trovato"
+                              renderItem={(svc) => (
+                                <>
+                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{svc.name}</span>
+                                  <div className="flex items-center gap-2.5 text-xs text-zinc-400 shrink-0">
+                                    <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
+                                    <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
                                   </div>
-                                ))}
-                              </div>
-                            )}
+                                </>
+                              )}
+                            />
                           </div>
                         )}
                       </div>
@@ -890,10 +1015,15 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
                                   <div className="flex justify-center">
                                     <button
                                       type="button"
-                                      onClick={() => updateServicePrice(i, 0)}
-                                      disabled={svc.final_price === 0 || !!svc.abbonamento_id}
-                                      className="p-1 rounded-md text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 transition-colors disabled:text-pink-500 disabled:bg-pink-50 dark:disabled:bg-pink-500/10 disabled:cursor-not-allowed"
-                                      title={svc.final_price === 0 ? 'Omaggio' : 'Segna come omaggio'}
+                                      onClick={() => updateServicePrice(i, svc.final_price === 0 ? svc.list_price : 0)}
+                                      disabled={!!svc.abbonamento_id}
+                                      aria-pressed={svc.final_price === 0}
+                                      className={`p-1 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        svc.final_price === 0
+                                          ? 'text-pink-500 bg-pink-50 dark:bg-pink-500/10'
+                                          : 'text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'
+                                      }`}
+                                      title={svc.final_price === 0 ? 'Omaggio attivo (clicca per ripristinare)' : 'Segna come omaggio'}
                                       aria-label="Segna come omaggio"
                                     >
                                       <Gift className="size-3.5" />
@@ -946,32 +1076,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
 
                         {prodOpen && (
                           <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
-                            {groupedProducts.length === 0 ? (
-                              <p className="p-4 text-sm text-center text-zinc-500">Nessun prodotto trovato</p>
-                            ) : (
-                              <div className="max-h-56 overflow-y-auto">
-                                {groupedProducts.map(({ categoryName, items }) => (
-                                  <div key={categoryName}>
-                                    <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
-                                      {categoryName}
-                                    </div>
-                                    {items.map((prod) => (
-                                      <button
-                                        key={prod.id}
-                                        type="button"
-                                        onClick={() => addProductToList(prod)}
-                                        className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
-                                      >
-                                        <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                                        <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
-                                          <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
-                                        </span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            <CategoryDropdown
+                              groups={groupedProducts}
+                              query={prodQuery}
+                              onSelect={addProductToList}
+                              getKey={(p) => p.id}
+                              emptyText="Nessun prodotto trovato"
+                              renderItem={(prod) => (
+                                <>
+                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
+                                  <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
+                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
+                                  </span>
+                                </>
+                              )}
+                            />
                           </div>
                         )}
                       </div>
@@ -1029,10 +1148,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
                                   <div className="flex items-center gap-1 shrink-0">
                                     <button
                                       type="button"
-                                      onClick={() => setProductFinalPrice(prod.product_id, '0')}
-                                      disabled={prod.final_price === 0}
-                                      className="p-1 rounded-md text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 transition-colors disabled:text-pink-500 disabled:bg-pink-50 dark:disabled:bg-pink-500/10 disabled:cursor-not-allowed"
-                                      title={prod.final_price === 0 ? 'Omaggio' : 'Segna come omaggio'}
+                                      onClick={() => setProductFinalPrice(prod.product_id, prod.final_price === 0 ? String(prod.list_price * prod.quantity) : '0')}
+                                      aria-pressed={prod.final_price === 0}
+                                      className={`p-1 rounded-md transition-colors ${
+                                        prod.final_price === 0
+                                          ? 'text-pink-500 bg-pink-50 dark:bg-pink-500/10'
+                                          : 'text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'
+                                      }`}
+                                      title={prod.final_price === 0 ? 'Omaggio attivo (clicca per ripristinare)' : 'Segna come omaggio'}
                                       aria-label="Segna come omaggio"
                                     >
                                       <Gift className="size-3.5" />
@@ -1125,6 +1248,31 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
           </p>
         </DeleteModal>
       )}
+
+      <DeleteModal
+        isOpen={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={pendingAction === 'pay' ? handlePay : handleSubmit}
+        title="Fuori orari di lavoro"
+        subtitle="L'appuntamento è fuori dagli orari configurati"
+        mainIcon={AlertTriangle}
+        confirmIcon={Check}
+        confirmText="Conferma comunque"
+      >
+        {servicesWithTimes.length > 0 && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            L&apos;appuntamento è previsto dalle{' '}
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              {format(servicesWithTimes[0].start_time, 'HH:mm', { locale: it })}
+            </span>{' '}
+            alle{' '}
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              {format(servicesWithTimes[servicesWithTimes.length - 1].end_time, 'HH:mm', { locale: it })}
+            </span>
+            , fuori dagli orari di apertura del salone. Confermi di voler creare l&apos;appuntamento comunque?
+          </p>
+        )}
+      </DeleteModal>
     </>
   );
 }

@@ -15,6 +15,31 @@ function parseTime(t: string): number {
   return h * 60 + (m ?? 0);
 }
 
+export interface Bounds {
+  startHour: number;
+  endHour: number;
+}
+
+/**
+ * Extend grid bounds so any appointment whose service range falls
+ * outside the schedule is still fully visible. Hours are rounded
+ * outward (floor for start, ceil for end) so partial hours render
+ * as a complete row.
+ */
+export function extendBoundsForRanges(
+  base: Bounds,
+  ranges: { start: Date; end: Date }[],
+): Bounds {
+  let startHour = base.startHour;
+  let endHour = base.endHour;
+  for (const { start, end } of ranges) {
+    startHour = Math.min(startHour, start.getHours());
+    const endMin = end.getHours() * 60 + end.getMinutes();
+    endHour = Math.max(endHour, Math.ceil(endMin / 60));
+  }
+  return { startHour, endHour };
+}
+
 /**
  * Scan every open day and return the absolute earliest opening time
  * and latest closing time as whole hours.
@@ -68,5 +93,43 @@ export function isSlotActive(
     const start = parseTime(shift.start);
     const end = parseTime(shift.end);
     return slotMinutes >= start && slotMinutes < end;
+  });
+}
+
+/**
+ * Returns true when the entire [start, end] range fits inside a single
+ * configured shift for the range's weekday. Crossing a break, starting
+ * before opening, or ending after closing all return false.
+ *
+ * Returns true unconditionally when `schedule` is empty so the check
+ * doesn't block anything while settings are still loading.
+ */
+export function isRangeWithinHours(
+  schedule: DaySchedule[],
+  start: Date,
+  end: Date,
+): boolean {
+  if (schedule.length === 0) return true;
+  if (end.getTime() <= start.getTime()) return true;
+
+  // Ranges that cross midnight are always considered out-of-hours.
+  if (
+    start.getFullYear() !== end.getFullYear() ||
+    start.getMonth() !== end.getMonth() ||
+    start.getDate() !== end.getDate()
+  ) {
+    return false;
+  }
+
+  const daySchedule = schedule.find((d) => d.day === start.getDay());
+  if (!daySchedule?.isOpen || daySchedule.shifts.length === 0) return false;
+
+  const startMin = start.getHours() * 60 + start.getMinutes();
+  const endMin = end.getHours() * 60 + end.getMinutes();
+
+  return daySchedule.shifts.some((shift) => {
+    const shiftStart = parseTime(shift.start);
+    const shiftEnd = parseTime(shift.end);
+    return startMin >= shiftStart && endMin <= shiftEnd;
   });
 }

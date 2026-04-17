@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { toE164 } from '@/lib/utils/phone';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 
 function getAdminClient() {
   return createClient(
@@ -9,46 +11,47 @@ function getAdminClient() {
   );
 }
 
-async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const supabaseAdmin = getAdminClient();
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('salon_id, role')
-    .eq('id', user.id)
-    .single();
-
-  return profile;
-}
-
 /**
- * Looks up an existing auth.users identity by email without creating a new one.
- * Checks the profiles table (owners/operators) and the clients table (existing
- * clients of any salon). Returns the user_id if found, null otherwise.
+ * Looks up an existing auth.users identity by email OR phone without creating
+ * a new one. Checks the profiles table (owners/operators, email only — phone
+ * is not denormalized there) and the clients table (any salon) for either
+ * identifier. Returns the user_id if found, null otherwise.
  */
 async function findExistingUserId(
   supabaseAdmin: ReturnType<typeof getAdminClient>,
-  email: string,
+  params: { email: string | null; phonePrefix: string | null; phoneNumber: string | null },
 ): Promise<string | null> {
-  // Owners and operators have a profiles row
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-  if (profile?.id) return profile.id;
+  const { email, phonePrefix, phoneNumber } = params;
 
-  // Clients added by any salon have a clients row with a user_id
-  const { data: existingClient } = await supabaseAdmin
-    .from('clients')
-    .select('user_id')
-    .eq('email', email)
-    .not('user_id', 'is', null)
-    .limit(1)
-    .maybeSingle();
-  if (existingClient?.user_id) return existingClient.user_id;
+  if (email) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    if (profile?.id) return profile.id;
+
+    const { data: existingClient } = await supabaseAdmin
+      .from('clients')
+      .select('user_id')
+      .eq('email', email)
+      .not('user_id', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (existingClient?.user_id) return existingClient.user_id;
+  }
+
+  if (phonePrefix && phoneNumber) {
+    const { data: existingClient } = await supabaseAdmin
+      .from('clients')
+      .select('user_id')
+      .eq('phonePrefix', phonePrefix)
+      .eq('phoneNumber', phoneNumber)
+      .not('user_id', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (existingClient?.user_id) return existingClient.user_id;
+  }
 
   return null;
 }
@@ -66,24 +69,54 @@ export async function POST(request: NextRequest) {
     }
 
     const { client } = await request.json();
+
+    const email = typeof client.email === 'string' && client.email.trim() !== ''
+      ? client.email.trim()
+      : null;
+    const phonePrefix = typeof client.phonePrefix === 'string' && client.phonePrefix.trim() !== ''
+      ? client.phonePrefix.trim()
+      : null;
+    const phoneNumber = typeof client.phoneNumber === 'string' && client.phoneNumber.trim() !== ''
+      ? client.phoneNumber.trim()
+      : null;
+
+    if (!email && !(phonePrefix && phoneNumber)) {
+      return NextResponse.json(
+        { success: false, error: 'Inserisci almeno un\'email o un numero di telefono' },
+        { status: 400 },
+      );
+    }
+
     const supabaseAdmin = getAdminClient();
 
     // 1. Resolve the auth identity: reuse an existing user or create a new one.
     //    A person can be an owner of another salon, or a client of another salon —
     //    in both cases they already have an auth.users row we must not duplicate.
-    let userId = await findExistingUserId(supabaseAdmin, client.email);
+    let userId = await findExistingUserId(supabaseAdmin, { email, phonePrefix, phoneNumber });
 
     if (!userId) {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: client.email,
+      // Supabase Auth requires email OR phone on createUser. We pass whichever
+      // the operator provided (or both). The auto-generated password is shared
+      // across both channels so the client can log in with either.
+      const phoneE164 = toE164(phonePrefix, phoneNumber);
+      const createPayload: Parameters<typeof supabaseAdmin.auth.admin.createUser>[0] = {
         password: client.password,
-        email_confirm: true,
         user_metadata: {
           role: 'client',
           firstName: client.firstName,
           lastName: client.lastName,
         },
-      });
+      };
+      if (email) {
+        createPayload.email = email;
+        createPayload.email_confirm = true;
+      }
+      if (phoneE164) {
+        createPayload.phone = phoneE164;
+        createPayload.phone_confirm = true;
+      }
+
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser(createPayload);
       if (authError) throw authError;
       userId = authData.user.id;
       createdAuthUserId = userId; // remember we own this — roll back on failure
@@ -97,9 +130,9 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         firstName: client.firstName,
         lastName: client.lastName,
-        email: client.email,
-        phonePrefix: client.phonePrefix ?? null,
-        phoneNumber: client.phoneNumber ?? null,
+        email,
+        phonePrefix,
+        phoneNumber,
         gender: client.gender ?? null,
         isTourist: client.isTourist ?? false,
         birthDate: client.birthDate ?? null,
@@ -139,31 +172,114 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id, action } = await request.json();
-    if (!id || !['archive', 'restore'].includes(action)) {
-      return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
-    }
+    const body = await request.json();
+    const { id, action } = body;
+    if (!id) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
 
     const supabaseAdmin = getAdminClient();
-    const archived_at = action === 'archive' ? new Date().toISOString() : null;
 
-    // Do not touch auth.users — matches operator behavior. Only archive the clients row.
-    const { error: dbError } = await supabaseAdmin
-      .from('clients')
-      .update({ archived_at })
-      .eq('id', id)
-      .eq('salon_id', profile.salon_id);
+    if (action === 'archive' || action === 'restore') {
+      if (profile.role !== 'owner') {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+      const archived_at = action === 'archive' ? new Date().toISOString() : null;
 
-    if (dbError) throw dbError;
+      const { error: dbError } = await supabaseAdmin
+        .from('clients')
+        .update({ archived_at })
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id);
 
-    return NextResponse.json({ success: true });
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'updateContact') {
+      // Add the missing identifier (email OR phone) to an existing client.
+      // Cannot clear or overwrite an identifier that is already set — this
+      // keeps the auth.users identity stable.
+      const newEmail = typeof body.email === 'string' && body.email.trim() !== ''
+        ? body.email.trim()
+        : null;
+      const newPrefix = typeof body.phonePrefix === 'string' && body.phonePrefix.trim() !== ''
+        ? body.phonePrefix.trim()
+        : null;
+      const newNumber = typeof body.phoneNumber === 'string' && body.phoneNumber.trim() !== ''
+        ? body.phoneNumber.trim()
+        : null;
+
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from('clients')
+        .select('id, user_id, email, phonePrefix, phoneNumber')
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id)
+        .single();
+      if (lookupError || !existing) {
+        return NextResponse.json({ success: false, error: 'Cliente non trovato' }, { status: 404 });
+      }
+
+      // Enforce "add-only" semantics
+      if (existing.email && newEmail !== existing.email) {
+        return NextResponse.json(
+          { success: false, error: 'Non è possibile modificare o rimuovere l\'email esistente' },
+          { status: 400 },
+        );
+      }
+      const hasExistingPhone = !!(existing.phonePrefix && existing.phoneNumber);
+      if (hasExistingPhone && (newPrefix !== existing.phonePrefix || newNumber !== existing.phoneNumber)) {
+        return NextResponse.json(
+          { success: false, error: 'Non è possibile modificare o rimuovere il telefono esistente' },
+          { status: 400 },
+        );
+      }
+
+      const addingEmail = !existing.email && !!newEmail;
+      const addingPhone = !hasExistingPhone && !!(newPrefix && newNumber);
+
+      if (!addingEmail && !addingPhone) {
+        return NextResponse.json({ success: true }); // no-op
+      }
+
+      // Update auth.users first (fails loudly if the identifier is already in use)
+      if (existing.user_id) {
+        const authUpdate: { email?: string; phone?: string } = {};
+        if (addingEmail) authUpdate.email = newEmail!;
+        if (addingPhone) {
+          const phoneE164 = toE164(newPrefix, newNumber);
+          if (phoneE164) authUpdate.phone = phoneE164;
+        }
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+          existing.user_id,
+          authUpdate,
+        );
+        if (authError) throw authError;
+      }
+
+      // Then update denormalized columns on clients
+      const clientUpdate: { email?: string; phonePrefix?: string; phoneNumber?: string } = {};
+      if (addingEmail) clientUpdate.email = newEmail!;
+      if (addingPhone) {
+        clientUpdate.phonePrefix = newPrefix!;
+        clientUpdate.phoneNumber = newNumber!;
+      }
+      const { error: dbError } = await supabaseAdmin
+        .from('clients')
+        .update(clientUpdate)
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error archiving client:', msg);
+    console.error('Error patching client:', msg);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

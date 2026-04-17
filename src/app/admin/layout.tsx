@@ -9,6 +9,7 @@ import { adminRoutes } from '@/lib/const/data';
 import { AdminHeader } from '@/lib/components/admin/AdminHeader';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
+import { ImpersonationBanner } from '@/lib/components/admin/ImpersonationBanner';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -43,13 +44,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isLoading = useSubscriptionStore((s) => s.isLoading);
   const salonName = useSubscriptionStore((s) => s.salonName);
   const logoUrl = useSubscriptionStore((s) => s.logoUrl);
+  const isSuperAdmin = useSubscriptionStore((s) => s.isSuperAdmin);
 
-  // Redirect expired users to subscribe page
+  // Redirect expired users to subscribe page — super-admins (impersonating) bypass.
   useEffect(() => {
+    if (isSuperAdmin) return;
     if (!isLoading && isExpired && pathname !== '/admin/subscribe') {
       router.replace('/admin/subscribe');
     }
-  }, [isLoading, isExpired, pathname, router]);
+  }, [isSuperAdmin, isLoading, isExpired, pathname, router]);
 
   // Soft session-expiry handler: silently redirect to /login with a friendly toast
   useEffect(() => {
@@ -187,6 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
               ) : (
                 <>
+                  <ImpersonationBanner />
                   <TrialWarningBanner />
                   {children}
                 </>

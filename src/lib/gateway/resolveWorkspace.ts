@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import type { GatewayResult, WorkspaceContext } from '@/lib/types/Workspace';
 
@@ -21,6 +22,28 @@ function getAdminClient() {
  */
 export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const supabaseAdmin = getAdminClient();
+
+  // Super-admin short-circuit: platform owners bypass tenant routing entirely.
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (profile?.is_super_admin) {
+    // If the super-admin is currently impersonating a salon, surface that salon
+    // as the active one so client-side stores (useWorkspaceStore) can scope
+    // inserts/updates to it just like a regular owner would.
+    const cookieStore = await cookies();
+    const activeSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
+    return {
+      businessContexts: [],
+      clientContexts:   [],
+      redirect:         activeSalonId ? '/admin/calendario' : '/platform',
+      activeSalonId,
+      isSuperAdmin:     true,
+    };
+  }
 
   const [ownedResult, operatorResult, clientResult] = await Promise.all([
     supabaseAdmin

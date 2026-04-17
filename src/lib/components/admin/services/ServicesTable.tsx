@@ -10,13 +10,13 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, SlidersHorizontal, Check, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, SlidersHorizontal, Check, Trash2, ArchiveRestore } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Service } from '@/lib/types/Service';
 import { CategoryBadge } from './CategoryBadge';
-import { EditServiceModal } from './EditServiceModal';
 import { DeleteServiceModal } from './DeleteServiceModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { cardStyle } from '@/lib/const/appearance';
@@ -29,14 +29,13 @@ interface ServicesTableProps {
 const PAGE_SIZE = 10;
 
 export function ServicesTable({ services, showArchived = false }: ServicesTableProps) {
+  const router = useRouter();
   const isLoading = useServicesStore((s) => s.isLoading);
   const restoreService = useServicesStore((s) => s.restoreService);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
 
-  const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [editedService, setEditedService] = useState<Partial<Service>>({});
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
@@ -142,13 +141,6 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
     getPaginationRowModel: getPaginationRowModel(),
     manualFiltering: true,
   });
-
-  const handleEditClick = (e: React.MouseEvent, service: Service) => {
-    e.stopPropagation();
-    setSelectedService(service);
-    setEditedService(new Service(service));
-    setShowEdit(true);
-  };
 
   const handleDeleteClick = (e: React.MouseEvent, service: Service) => {
     e.stopPropagation();
@@ -334,7 +326,18 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button, a, [data-no-row-click]')) return;
+                      router.push(`/admin/servizi/${row.original.category_id}/${row.original.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target === e.currentTarget) {
+                        router.push(`/admin/servizi/${row.original.category_id}/${row.original.id}`);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isNumeric = cell.column.id === 'duration' || cell.column.id === 'price' || cell.column.id === 'product_cost';
@@ -362,20 +365,13 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                           </button>
                         ) : (
                           <button
-                            onClick={(e) => handleEditClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                            title="Modifica"
+                            onClick={(e) => handleDeleteClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Elimina"
                           >
-                            <Pencil className="size-3.5" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         )}
-                        <button
-                          onClick={(e) => handleDeleteClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -394,13 +390,6 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
         />
       </div>
 
-      <EditServiceModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        editedService={editedService}
-        onEditedServiceChange={setEditedService}
-        selectedService={selectedService}
-      />
       <DeleteServiceModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
