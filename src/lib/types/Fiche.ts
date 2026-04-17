@@ -15,14 +15,16 @@ export class Fiche {
   datetime: Date;
   status: FicheStatus;
   note: string;
+  total_override: number | null;
 
-  constructor(fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'>) {
+  constructor(fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'> & { total_override?: number | null }) {
     this.id = fiche.id;
     this.salon_id = fiche.salon_id;
     this.client_id = fiche.client_id;
     this.datetime = fiche.datetime;
     this.status = fiche.status;
     this.note = fiche.note;
+    this.total_override = fiche.total_override ?? null;
   }
 
   getClient(): Client | null {
@@ -43,13 +45,21 @@ export class Fiche {
     return this.getFicheServices().reduce((sum, fs) => sum + fs.duration, 0);
   }
 
-  getTotal(): number {
+  getSubtotal(): number {
     const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + fs.final_price, 0);
     const productsTotal = this.getFicheProducts().reduce(
       (sum: number, fp: FicheProduct) => sum + (fp.final_price * (fp.quantity ?? 1)),
       0
     );
     return servicesTotal + productsTotal;
+  }
+
+  getTotal(): number {
+    return this.total_override ?? this.getSubtotal();
+  }
+
+  hasDiscount(): boolean {
+    return this.total_override !== null && this.total_override < this.getSubtotal();
   }
 
   static dataColumns: DataColumn[] = [

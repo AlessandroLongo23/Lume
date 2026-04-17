@@ -10,8 +10,9 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Package, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Trash2, Search, X, SlidersHorizontal, Check } from 'lucide-react';
+import { Package, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -142,10 +143,12 @@ interface ProductsTabProps {
   trackInventory: boolean;
   onEdit: (product: Product) => void;
   onAdd: () => void;
+  showArchived?: boolean;
 }
 
-export function ProductsTab({ products, trackInventory, onEdit, onAdd }: ProductsTabProps) {
+export function ProductsTab({ products, trackInventory, onEdit, onAdd, showArchived = false }: ProductsTabProps) {
   const isLoading = useProductsStore((s) => s.isLoading);
+  const restoreProduct = useProductsStore((s) => s.restoreProduct);
   const categories = useProductCategoriesStore((s) => s.product_categories);
   const manufacturers = useManufacturersStore((s) => s.manufacturers);
   const suppliers = useSuppliersStore((s) => s.suppliers);
@@ -310,6 +313,16 @@ export function ProductsTab({ products, trackInventory, onEdit, onAdd }: Product
     setShowDelete(true);
   };
 
+  const handleRestore = async (e: React.MouseEvent, item: Product) => {
+    e.stopPropagation();
+    try {
+      await restoreProduct(item.id);
+      messagePopup.getState().success('Prodotto ripristinato con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante il ripristino.');
+    }
+  };
+
   if (!isLoading && products.length === 0) {
     return (
       <>
@@ -454,13 +467,23 @@ export function ProductsTab({ products, trackInventory, onEdit, onAdd }: Product
                     })}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={(e) => handleEditClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {showArchived ? (
+                          <button
+                            onClick={(e) => handleRestore(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            title="Ripristina"
+                          >
+                            <ArchiveRestore className="size-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleEditClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                            title="Modifica"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleDeleteClick(e, row.original)}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

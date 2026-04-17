@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart, Archive, ArchiveRestore } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditServiceModal } from '@/lib/components/admin/services/EditServiceModal';
 import { DeleteServiceModal } from '@/lib/components/admin/services/DeleteServiceModal';
 import type { Service } from '@/lib/types/Service';
@@ -14,6 +15,8 @@ export default function ServiceDetailPage() {
   const router = useRouter();
   const services = useServicesStore((s) => s.services);
   const isLoading = useServicesStore((s) => s.isLoading);
+  const archiveService = useServicesStore((s) => s.archiveService);
+  const restoreService = useServicesStore((s) => s.restoreService);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
 
   const [service, setService] = useState<Service | null>(null);
@@ -23,6 +26,22 @@ export default function ServiceDetailPage() {
 
   const categoryId = params.category_id as string;
   const serviceId = params.service_id as string;
+
+  const handleToggleArchive = async () => {
+    if (!service) return;
+    try {
+      if (service.isArchived) {
+        await restoreService(service.id);
+        messagePopup.getState().success('Servizio ripristinato.');
+      } else {
+        await archiveService(service.id);
+        messagePopup.getState().success('Servizio archiviato.');
+        router.push(`/admin/servizi/${categoryId}`);
+      }
+    } catch {
+      messagePopup.getState().error("Errore durante l'operazione.");
+    }
+  };
 
   useEffect(() => {
     if (!isLoading) {
@@ -58,12 +77,26 @@ export default function ServiceDetailPage() {
             <ArrowLeft className="size-5 text-zinc-600 dark:text-zinc-300" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{service.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{service.name}</h1>
+              {service.isArchived && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Archiviato</span>
+              )}
+            </div>
             <p className="text-sm text-zinc-500">{category?.name ?? 'Servizio'}</p>
           </div>
           <div className="ml-auto flex gap-2">
-            <button onClick={() => { setEditedService(service); setShowEdit(true); }} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md">
-              <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
+            {!service.isArchived && (
+              <button onClick={() => { setEditedService(service); setShowEdit(true); }} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md">
+                <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
+              </button>
+            )}
+            <button
+              onClick={handleToggleArchive}
+              className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
+              title={service.isArchived ? 'Ripristina servizio' : 'Archivia servizio'}
+            >
+              {service.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
             </button>
             <button onClick={() => setShowDelete(true)} className="p-2 bg-zinc-100 hover:bg-red-100 dark:bg-zinc-800 rounded-md">
               <Trash2 className="size-5 text-zinc-600 dark:text-zinc-300" />

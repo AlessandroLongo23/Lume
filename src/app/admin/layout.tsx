@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Loader2, MessageSquare, Settings } from 'lucide-react';
+import { X, Loader2, Settings } from 'lucide-react';
 import { adminRoutes } from '@/lib/const/data';
 import { AdminHeader } from '@/lib/components/admin/AdminHeader';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
-import { FeedbackModal } from '@/lib/components/shared/ui/FeedbackModal';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 function getInitials(name: string): string {
@@ -38,7 +37,6 @@ function getTitle(pathname: string): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const isExpired = useSubscriptionStore((s) => s.isExpired);
@@ -111,15 +109,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       })}
                     </div>
                   ))}
-                  <hr className="border-zinc-500/25 my-2" />
-                  <button
-                    type="button"
-                    onClick={() => { setIsMobileSidebarOpen(false); setIsFeedbackOpen(true); }}
-                    className="flex items-center gap-3 font-medium transition-all duration-200 ease-in-out px-4 py-3 text-sm rounded-md text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A] w-full"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    <span>Invia Feedback</span>
-                  </button>
                 </div>
               </div>
               <button
@@ -178,14 +167,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
               ))}
               <div className="mt-auto pt-2 flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => setIsFeedbackOpen(true)}
-                  className="flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A] w-full"
-                >
-                  <MessageSquare className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                  <span className="hidden lg:inline">Invia Feedback</span>
-                </button>
                 <Link
                   href="/admin/impostazioni"
                   className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md ${pathname.includes('impostazioni') ? 'text-[#4F46E5] bg-[#EEF2FF] dark:text-[#818CF8] dark:bg-[#1E1B4B]/30' : 'text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]'}`}
@@ -196,8 +177,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
           </div>
-
-          <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
 
           <div className="ml-0 md:ml-[72px] lg:ml-[240px] min-h-screen w-full bg-[#FAFAFA] dark:bg-[#09090B]">
             <div className="px-4 md:p-6 pt-20 md:pt-24 min-h-screen">

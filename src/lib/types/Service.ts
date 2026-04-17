@@ -12,6 +12,7 @@ export class Service {
   product_cost: number;
   category_id: string;
   description: string;
+  archived_at: string | null;
 
   constructor(service: Service) {
     this.id = service.id;
@@ -22,6 +23,11 @@ export class Service {
     this.product_cost = service.product_cost ?? 0;
     this.category_id = service.category_id;
     this.description = service.description;
+    this.archived_at = service.archived_at ?? null;
+  }
+
+  get isArchived(): boolean {
+    return this.archived_at !== null;
   }
 
   static dataColumns: DataColumn[] = [

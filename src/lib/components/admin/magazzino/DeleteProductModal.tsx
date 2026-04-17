@@ -1,9 +1,10 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
-import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { useState, useEffect } from 'react';
+import { TriangleAlert, Trash2, X, Archive } from 'lucide-react';
+import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { useProductsStore } from '@/lib/stores/products';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Product } from '@/lib/types/Product';
 
 interface DeleteProductModalProps {
@@ -14,41 +15,147 @@ interface DeleteProductModalProps {
 
 export function DeleteProductModal({ isOpen, onClose, selectedProduct }: DeleteProductModalProps) {
   const deleteProduct = useProductsStore((s) => s.deleteProduct);
+  const archiveProduct = useProductsStore((s) => s.archiveProduct);
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
+  const [confirmInput, setConfirmInput] = useState('');
+
+  const isConfirmed = confirmInput === selectedProduct?.name;
+  const isArchived = selectedProduct?.isArchived ?? false;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isOpen) setConfirmInput('');
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setConfirmInput('');
+    onClose();
+  };
 
   const handleDelete = async () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct || !isConfirmed) return;
     try {
       await deleteProduct(selectedProduct.id);
       await fetchProducts();
       messagePopup.getState().success('Prodotto eliminato.');
-      onClose();
+      handleClose();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
+      const msg = err instanceof Error ? err.message : "Errore durante l'eliminazione.";
       messagePopup.getState().error(msg);
     }
   };
 
+  const handleArchive = async () => {
+    if (!selectedProduct) return;
+    try {
+      await archiveProduct(selectedProduct.id);
+      messagePopup.getState().success('Prodotto archiviato con successo.');
+      handleClose();
+    } catch {
+      messagePopup.getState().error("Errore durante l'archiviazione.");
+    }
+  };
+
   return (
-    <AddModal
-      isOpen={isOpen}
-      onClose={onClose}
-      onSubmit={handleDelete}
-      title="Elimina Prodotto"
-      subtitle={selectedProduct ? `Stai eliminando: ${selectedProduct.name}` : ''}
-      confirmText="Elimina"
-      classes="max-w-sm"
-      dangerAction={
-        <div className="flex items-center gap-2 text-sm text-red-500">
-          <Trash2 className="size-4" />
-          <span>Azione irreversibile</span>
+    <Modal isOpen={isOpen} onClose={handleClose} classes="max-w-lg" closeOnOutsideClick={false}>
+      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
+
+        {/* Header */}
+        <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
+          <div className="flex flex-row items-center gap-3 min-w-0">
+            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-red-500/10">
+              <TriangleAlert className="size-5 text-red-500" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Elimina prodotto</h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">Azione irreversibile — leggi attentamente</p>
+            </div>
+          </div>
+          <button
+            className="shrink-0 ml-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+            onClick={handleClose}
+            aria-label="Chiudi"
+          >
+            <X className="size-5" />
+          </button>
         </div>
-      }
-    >
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Sei sicuro di voler eliminare <strong className="text-zinc-900 dark:text-zinc-100">{selectedProduct?.name}</strong>?
-        Questa azione non può essere annullata.
-      </p>
-    </AddModal>
+
+        {/* Body */}
+        <div className="p-6 flex flex-col gap-5">
+          <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
+            <p className="text-sm text-red-800 dark:text-red-300 leading-relaxed">
+              <strong>Attenzione:</strong> eliminando il prodotto{' '}
+              <strong>{selectedProduct?.name}</strong> verranno cancellati permanentemente il prodotto
+              e <strong>tutte le righe ordine/fiche collegate</strong>. Questa operazione{' '}
+              <strong>non potrà essere annullata</strong>.
+            </p>
+          </div>
+
+          {!isArchived && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4">
+              <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+                <strong>Consiglio:</strong> usa <strong>Archivia</strong> per nascondere il prodotto
+                mantenendo intatto lo storico dati.
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-zinc-600 dark:text-zinc-400">
+              Digita{' '}
+              <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
+                {selectedProduct?.name}
+              </strong>{' '}
+              per confermare
+            </label>
+            <input
+              type="text"
+              value={confirmInput}
+              onChange={(e) => setConfirmInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && isConfirmed) handleDelete(); }}
+              placeholder={selectedProduct?.name ?? ''}
+              autoComplete="off"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex flex-row items-center justify-between gap-3 p-6 border-t border-zinc-500/25">
+          <div>
+            {!isArchived && (
+              <button
+                type="button"
+                onClick={handleArchive}
+                className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+              >
+                <Archive className="size-4" />
+                Archivia
+              </button>
+            )}
+          </div>
+          <div className="flex flex-row items-center gap-3">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
+            >
+              <X className="size-4" />
+              Annulla
+            </button>
+            <button
+              type="button"
+              disabled={!isConfirmed}
+              onClick={handleDelete}
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-600"
+            >
+              <Trash2 className="size-4" />
+              Elimina prodotto
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </Modal>
   );
 }

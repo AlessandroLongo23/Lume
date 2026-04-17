@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Archive, ArchiveRestore } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
@@ -17,6 +18,9 @@ const emptyForm = () => ({ name: '', description: '' });
 export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCategoryModalProps) {
   const addProductCategory = useProductCategoriesStore((s) => s.addProductCategory);
   const updateProductCategory = useProductCategoriesStore((s) => s.updateProductCategory);
+  const archiveProductCategory = useProductCategoriesStore((s) => s.archiveProductCategory);
+  const restoreProductCategory = useProductCategoriesStore((s) => s.restoreProductCategory);
+  const fetchProductCategories = useProductCategoriesStore((s) => s.fetchProductCategories);
   const [form, setForm] = useState(emptyForm());
   const [nameError, setNameError] = useState('');
 
@@ -48,6 +52,23 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
     }
   };
 
+  const handleToggleArchive = async () => {
+    if (!selectedCategory) return;
+    try {
+      if (selectedCategory.isArchived) {
+        await restoreProductCategory(selectedCategory.id);
+        messagePopup.getState().success('Categoria ripristinata.');
+      } else {
+        await archiveProductCategory(selectedCategory.id);
+        messagePopup.getState().success('Categoria archiviata.');
+      }
+      await fetchProductCategories();
+      onClose();
+    } catch {
+      messagePopup.getState().error("Errore durante l'operazione.");
+    }
+  };
+
   const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
 
   return (
@@ -59,6 +80,18 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
       subtitle="Categoria per i prodotti del magazzino"
       confirmText={selectedCategory ? 'Aggiorna' : 'Aggiungi'}
       classes="max-w-sm"
+      footerContent={
+        selectedCategory && (
+          <button
+            type="button"
+            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+            onClick={handleToggleArchive}
+          >
+            {selectedCategory.isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+            {selectedCategory.isArchived ? 'Ripristina' : 'Archivia'}
+          </button>
+        )
+      }
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

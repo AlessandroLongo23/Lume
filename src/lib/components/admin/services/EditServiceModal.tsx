@@ -1,6 +1,6 @@
 'use client';
 
-import { ALargeSmall, Tag, Clock, Euro, FileText, ShoppingCart } from 'lucide-react';
+import { ALargeSmall, Tag, Clock, Euro, FileText, ShoppingCart, Archive, ArchiveRestore } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -19,6 +19,8 @@ interface EditServiceModalProps {
 
 export function EditServiceModal({ isOpen, onClose, editedService, onEditedServiceChange, selectedService }: EditServiceModalProps) {
   const updateService = useServicesStore((s) => s.updateService);
+  const archiveService = useServicesStore((s) => s.archiveService);
+  const restoreService = useServicesStore((s) => s.restoreService);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const set = (key: string, value: any) => onEditedServiceChange({ ...editedService, [key]: value });
@@ -34,11 +36,46 @@ export function EditServiceModal({ isOpen, onClose, editedService, onEditedServi
     }
   };
 
+  const handleToggleArchive = async () => {
+    if (!selectedService) return;
+    try {
+      if (selectedService.isArchived) {
+        await restoreService(selectedService.id);
+        messagePopup.getState().success('Servizio ripristinato.');
+      } else {
+        await archiveService(selectedService.id);
+        messagePopup.getState().success('Servizio archiviato.');
+      }
+      onClose();
+    } catch {
+      messagePopup.getState().error("Errore durante l'operazione.");
+    }
+  };
+
+  const isArchived = selectedService?.isArchived ?? false;
+
   const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
   const labelClass = 'flex flex-row items-center gap-2';
 
   return (
-    <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica Servizio" subtitle="Aggiorna i dati del servizio" classes="max-w-2xl">
+    <EditModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Modifica Servizio"
+      subtitle="Aggiorna i dati del servizio"
+      classes="max-w-2xl"
+      footerContent={
+        <button
+          type="button"
+          className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+          onClick={handleToggleArchive}
+        >
+          {isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+          {isArchived ? 'Ripristina' : 'Archivia'}
+        </button>
+      }
+    >
       <div className="flex flex-col gap-4">
         {/* Row 1: Name + Category */}
         <div className="flex flex-row gap-4">

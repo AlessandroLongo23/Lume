@@ -6,6 +6,7 @@ export type RawServiceCategory = {
   color: string;
   service_count?: number;
   services?: { count: number }[];
+  archived_at?: string | null;
 };
 
 export class ServiceCategory {
@@ -15,6 +16,7 @@ export class ServiceCategory {
   description: string;
   color: string;
   service_count: number;
+  archived_at: string | null;
 
   constructor(data: RawServiceCategory) {
     this.id = data.id;
@@ -23,5 +25,10 @@ export class ServiceCategory {
     this.description = data.description;
     this.color = data.color ?? '#6366F1';
     this.service_count = data.service_count ?? data.services?.[0]?.count ?? 0;
+    this.archived_at = data.archived_at ?? null;
+  }
+
+  get isArchived(): boolean {
+    return this.archived_at !== null;
   }
 }

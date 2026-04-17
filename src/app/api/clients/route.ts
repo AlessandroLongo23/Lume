@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
         gender: client.gender ?? null,
         isTourist: client.isTourist ?? false,
         birthDate: client.birthDate ?? null,
-        categoryId: client.categoryId || null,
         note: client.note ?? null,
       })
       .select()
@@ -131,6 +130,40 @@ export async function POST(request: NextRequest) {
         ? String(error.message)
         : 'Unknown error';
     console.error('Error creating client:', error);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createServerClient();
+    const profile = await getCallerProfile(supabase);
+
+    if (!profile || profile.role !== 'owner') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { id, action } = await request.json();
+    if (!id || !['archive', 'restore'].includes(action)) {
+      return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+    }
+
+    const supabaseAdmin = getAdminClient();
+    const archived_at = action === 'archive' ? new Date().toISOString() : null;
+
+    // Do not touch auth.users — matches operator behavior. Only archive the clients row.
+    const { error: dbError } = await supabaseAdmin
+      .from('clients')
+      .update({ archived_at })
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id);
+
+    if (dbError) throw dbError;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error archiving client:', msg);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

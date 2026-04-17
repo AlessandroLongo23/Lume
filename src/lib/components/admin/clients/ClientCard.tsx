@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Plane, Mail, Phone, Calendar, Smile, Edit, Trash } from 'lucide-react';
+import { Plane, Mail, Phone, Calendar, Smile, Edit, Trash, ArchiveRestore } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
+import { useClientRatingsStore } from '@/lib/stores/client_ratings';
+import { ClientRatingBadge } from './ClientRatingBadge';
 
 const genderColors: Record<string, string> = {
   M: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
@@ -18,10 +20,13 @@ interface ClientCardProps {
   client: Client;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  onRestore?: (client: Client) => void;
+  showArchived?: boolean;
 }
 
-export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
+export function ClientCard({ client, onEdit, onDelete, onRestore, showArchived = false }: ClientCardProps) {
   const router = useRouter();
+  const rating = useClientRatingsStore((s) => s.ratings[client.id]);
 
   return (
     <div
@@ -34,7 +39,7 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
     >
       <div className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold ${initialsColors[client.gender] ?? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
+          <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold ${initialsColors[client.gender] ?? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
             {client.firstName?.[0]}{client.lastName?.[0]}
           </div>
           <div className="min-w-0 flex-1">
@@ -77,6 +82,11 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
             </div>
           )}
         </div>
+
+        <div className="flex flex-col gap-1 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+          <ClientRatingBadge stars={rating ? rating.spend_stars : null} kind="money" />
+          <ClientRatingBadge stars={rating ? rating.visit_stars : null} kind="calendar" />
+        </div>
       </div>
 
       <div className="flex justify-between items-center px-5 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700">
@@ -90,13 +100,23 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
           )}
         </div>
         <div className="flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(client); }}
-            className="p-1.5 rounded-md bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
-            title="Modifica cliente"
-          >
-            <Edit className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
-          </button>
+          {showArchived ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRestore?.(client); }}
+              className="p-1.5 rounded-md bg-zinc-200 hover:bg-emerald-200 dark:bg-zinc-700 dark:hover:bg-emerald-900/40 transition-colors"
+              title="Ripristina cliente"
+            >
+              <ArchiveRestore className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300 hover:text-emerald-700 dark:hover:text-emerald-400" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(client); }}
+              className="p-1.5 rounded-md bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
+              title="Modifica cliente"
+            >
+              <Edit className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(client); }}
             className="p-1.5 rounded-md bg-zinc-200 hover:bg-red-200 dark:bg-zinc-700 dark:hover:bg-red-900/40 transition-colors"

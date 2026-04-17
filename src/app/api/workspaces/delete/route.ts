@@ -91,10 +91,7 @@ export async function DELETE(request: NextRequest) {
     { const { error } = await admin.from('manufacturers').delete().eq('salon_id', salonId); if (error) throw error; }
     { const { error } = await admin.from('suppliers').delete().eq('salon_id', salonId); if (error) throw error; }
 
-    // 12. Client categories
-    { const { error } = await admin.from('client_categories').delete().eq('salon_id', salonId); if (error) throw error; }
-
-    // 13. Smart client deletion:
+    // 12. Smart client deletion:
     //     Remove this salon's client rows, then garbage-collect any auth identities
     //     that are no longer referenced anywhere in the system.
     const { data: salonClients } = await admin

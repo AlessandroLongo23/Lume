@@ -10,14 +10,14 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Tags, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
-import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { Trash2, Tags, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, ArchiveRestore } from 'lucide-react';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { ProductCategory } from '@/lib/types/ProductCategory';
 import { AddCategoryModal } from './AddCategoryModal';
+import { DeleteCategorieModal } from './DeleteCategorieModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { cardStyle } from '@/lib/const/appearance';
 
@@ -25,12 +25,15 @@ const PAGE_SIZE = 10;
 
 interface CategorieTabProps {
   addTrigger?: number;
+  categories?: ProductCategory[];
+  showArchived?: boolean;
 }
 
-export function CategorieTab({ addTrigger }: CategorieTabProps) {
-  const categories = useProductCategoriesStore((s) => s.product_categories);
+export function CategorieTab({ addTrigger, categories: categoriesProp, showArchived = false }: CategorieTabProps) {
+  const storeCategories = useProductCategoriesStore((s) => s.product_categories);
   const isLoading = useProductCategoriesStore((s) => s.isLoading);
-  const deleteProductCategory = useProductCategoriesStore((s) => s.deleteProductCategory);
+  const restoreProductCategory = useProductCategoriesStore((s) => s.restoreProductCategory);
+  const categories = categoriesProp ?? storeCategories;
 
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -95,15 +98,13 @@ export function CategorieTab({ addTrigger }: CategorieTabProps) {
     setShowDelete(true);
   };
 
-  const handleDelete = async () => {
-    if (!selected) return;
+  const handleRestore = async (e: React.MouseEvent, item: ProductCategory) => {
+    e.stopPropagation();
     try {
-      await deleteProductCategory(selected.id);
-      messagePopup.getState().success('Categoria eliminata.');
-      setShowDelete(false);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
-      messagePopup.getState().error(msg);
+      await restoreProductCategory(item.id);
+      messagePopup.getState().success('Categoria ripristinata con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante il ripristino.');
     }
   };
 
@@ -115,26 +116,11 @@ export function CategorieTab({ addTrigger }: CategorieTabProps) {
         selectedCategory={selected}
       />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
-      <AddModal
+      <DeleteCategorieModal
         isOpen={showDelete}
-        onClose={() => setShowDelete(false)}
-        onSubmit={handleDelete}
-        title="Elimina Categoria"
-        subtitle={selected ? `Stai eliminando: ${selected.name}` : ''}
-        confirmText="Elimina"
-        classes="max-w-sm"
-        dangerAction={
-          <div className="flex items-center gap-2 text-sm text-red-500">
-            <Trash2 className="size-4" />
-            <span>Azione irreversibile</span>
-          </div>
-        }
-      >
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Sei sicuro di voler eliminare la categoria{' '}
-          <strong className="text-zinc-900 dark:text-zinc-100">{selected?.name}</strong>?
-        </p>
-      </AddModal>
+        onClose={() => { setShowDelete(false); setSelected(null); }}
+        category={selected}
+      />
 
       {!isLoading && categories.length === 0 ? (
         <EmptyState
@@ -207,13 +193,23 @@ export function CategorieTab({ addTrigger }: CategorieTabProps) {
                       ))}
                       <td className="px-4 py-2">
                         <div className="flex flex-row items-center justify-end gap-1">
-                          <button
-                            onClick={(e) => handleEditClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                            title="Modifica"
-                          >
-                            <Pencil className="size-3.5" />
-                          </button>
+                          {showArchived ? (
+                            <button
+                              onClick={(e) => handleRestore(e, row.original)}
+                              className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                              title="Ripristina"
+                            >
+                              <ArchiveRestore className="size-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => handleEditClick(e, row.original)}
+                              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                              title="Modifica"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => handleDeleteClick(e, row.original)}
                             className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

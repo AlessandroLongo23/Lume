@@ -10,9 +10,10 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, SlidersHorizontal, Check, Pencil, Trash2 } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, SlidersHorizontal, Check, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Service } from '@/lib/types/Service';
 import { CategoryBadge } from './CategoryBadge';
 import { EditServiceModal } from './EditServiceModal';
@@ -22,12 +23,14 @@ import { cardStyle } from '@/lib/const/appearance';
 
 interface ServicesTableProps {
   services: Service[];
+  showArchived?: boolean;
 }
 
 const PAGE_SIZE = 10;
 
-export function ServicesTable({ services }: ServicesTableProps) {
+export function ServicesTable({ services, showArchived = false }: ServicesTableProps) {
   const isLoading = useServicesStore((s) => s.isLoading);
+  const restoreService = useServicesStore((s) => s.restoreService);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
 
   const [showEdit, setShowEdit] = useState(false);
@@ -157,6 +160,15 @@ export function ServicesTable({ services }: ServicesTableProps) {
     setSelectedCategories((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
+  };
+
+  const handleRestore = async (service: Service) => {
+    try {
+      await restoreService(service.id);
+      messagePopup.getState().success('Servizio ripristinato con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante il ripristino.');
+    }
   };
 
   return (
@@ -340,13 +352,23 @@ export function ServicesTable({ services }: ServicesTableProps) {
                     })}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={(e) => handleEditClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {showArchived ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            title="Ripristina"
+                          >
+                            <ArchiveRestore className="size-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleEditClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                            title="Modifica"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleDeleteClick(e, row.original)}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

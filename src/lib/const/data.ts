@@ -5,10 +5,12 @@ import {
   Ticket,
   Users,
   Tag,
+  BadgePercent,
   Scissors,
   ShoppingCart,
   UserCog,
   Warehouse,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,6 +32,7 @@ export const adminRoutes: {
       { name: 'Fiches', icon: Ticket, url: 'fiches' },
       { name: 'Clienti', icon: Users, url: 'clienti' },
       { name: 'Coupons', icon: Tag, url: 'coupons' },
+      { name: 'Abbonamenti', icon: BadgePercent, url: 'abbonamenti' },
     ],
   },
   {
@@ -39,6 +42,12 @@ export const adminRoutes: {
       { name: 'Magazzino', icon: Warehouse, url: 'magazzino' },
       { name: 'Ordini', icon: ShoppingCart, url: 'ordini' },
       { name: 'Operatori', icon: UserCog, url: 'operatori' },
+    ],
+  },
+  {
+    title: 'Community',
+    routes: [
+      { name: 'Feedback', icon: MessageSquare, url: 'feedback' },
     ],
   },
 ];

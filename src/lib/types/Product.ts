@@ -14,6 +14,7 @@ export class Product {
   stock_quantity: number;
   min_threshold: number;
   quantity_ml: number | null;
+  archived_at: string | null;
 
   constructor(product: Product) {
     this.id = product.id;
@@ -28,6 +29,11 @@ export class Product {
     this.stock_quantity = product.stock_quantity ?? 0;
     this.min_threshold = product.min_threshold ?? 0;
     this.quantity_ml = product.quantity_ml ?? null;
+    this.archived_at = product.archived_at ?? null;
+  }
+
+  get isArchived(): boolean {
+    return this.archived_at !== null;
   }
 
   static dataColumns: DataColumn[] = [

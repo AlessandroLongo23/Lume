@@ -17,6 +17,7 @@ interface AddModalProps {
   contentClasses?: string;
   confirmText?: string;
   cancelText?: string;
+  confirmDisabled?: boolean;
 }
 
 export function AddModal({
@@ -33,6 +34,7 @@ export function AddModal({
   contentClasses = '',
   confirmText = 'Aggiungi',
   cancelText = 'Annulla',
+  confirmDisabled = false,
 }: AddModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
@@ -72,7 +74,8 @@ export function AddModal({
             </button>
             <button
               type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
+              disabled={confirmDisabled}
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
               onClick={onSubmit}
             >
               <Check className="size-4" />

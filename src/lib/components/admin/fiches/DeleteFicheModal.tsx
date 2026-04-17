@@ -4,6 +4,7 @@ import { useFichesStore } from '@/lib/stores/fiches';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import type { Fiche } from '@/lib/types/Fiche';
+import { formatDateDisplay, formatTime } from '@/lib/utils/format';
 
 interface DeleteFicheModalProps {
   isOpen: boolean;
@@ -25,9 +26,18 @@ export function DeleteFicheModal({ isOpen, onClose, selectedFiche }: DeleteFiche
     }
   };
 
+  const clientName = selectedFiche?.getClient()?.getFullName();
+  const date = selectedFiche ? formatDateDisplay(selectedFiche.datetime, 'd MMMM yyyy') : '';
+  const time = selectedFiche ? formatTime(new Date(selectedFiche.datetime).toISOString()) : '';
+
   return (
     <DeleteModal isOpen={isOpen} onConfirm={handleDelete} onClose={onClose}>
-      <p>Sei sicuro di voler eliminare la fiche <strong>{selectedFiche?.id}</strong>?</p>
+      <p>
+        Sei sicuro di voler eliminare la fiche
+        {clientName ? <> di <strong>{clientName}</strong></> : null}
+        {date ? <> del <strong>{date}</strong></> : null}
+        {time ? <> alle <strong>{time}</strong></> : null}?
+      </p>
     </DeleteModal>
   );
 }

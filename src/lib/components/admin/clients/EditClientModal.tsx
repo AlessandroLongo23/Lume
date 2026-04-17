@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { format, parse, isValid } from 'date-fns';
-import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, Archive, ArchiveRestore } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
@@ -33,8 +33,28 @@ const validateBirthDate = (date: string): string => {
 
 export function EditClientModal({ isOpen, onClose, editedClient, onEditedClientChange, selectedClient }: EditClientModalProps) {
   const updateClient = useClientsStore((s) => s.updateClient);
+  const archiveClient = useClientsStore((s) => s.archiveClient);
+  const restoreClient = useClientsStore((s) => s.restoreClient);
   const [dateError, setDateError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleToggleArchive = async () => {
+    if (!selectedClient) return;
+    try {
+      if (selectedClient.isArchived) {
+        await restoreClient(selectedClient.id);
+        messagePopup.getState().success('Cliente ripristinato.');
+      } else {
+        await archiveClient(selectedClient.id);
+        messagePopup.getState().success('Cliente archiviato.');
+      }
+      onClose();
+    } catch {
+      messagePopup.getState().error("Errore durante l'operazione.");
+    }
+  };
+
+  const isArchived = selectedClient?.isArchived ?? false;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const set = (key: string, value: any) => onEditedClientChange({ ...editedClient, [key]: value });
@@ -67,7 +87,24 @@ export function EditClientModal({ isOpen, onClose, editedClient, onEditedClientC
   const labelClass = 'flex flex-row items-center gap-2';
 
   return (
-    <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica Cliente" subtitle="Aggiorna i dati dello cliente" classes="max-w-2xl">
+    <EditModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Modifica Cliente"
+      subtitle="Aggiorna i dati dello cliente"
+      classes="max-w-2xl"
+      footerContent={
+        <button
+          type="button"
+          className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+          onClick={handleToggleArchive}
+        >
+          {isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+          {isArchived ? 'Ripristina' : 'Archivia'}
+        </button>
+      }
+    >
       <div className="flex flex-col gap-4">
         <div className="max-h-[60vh] overflow-y-auto pr-2">
           <div className="flex flex-col gap-6">

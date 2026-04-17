@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
-  Check, AlertTriangle, Package, Plus, Pencil,
+  Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -16,37 +16,33 @@ import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
+import {
+  FichePaymentPanel,
+  INITIAL_SPLITS,
+  buildPayments,
+  isPaymentValid,
+  type PaymentView,
+  type Split,
+} from '@/lib/components/admin/fiches/FichePaymentPanel';
+import { CouponSuggestionsPanel, type SelectedCoupon } from '@/lib/components/admin/fiches/CouponSuggestionsPanel';
+import { AbbonamentoCell } from '@/lib/components/admin/fiches/AbbonamentoCell';
+import { useCouponsStore } from '@/lib/stores/coupons';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
 import type { Service } from '@/lib/types/Service';
 import type { Product } from '@/lib/types/Product';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
-
-interface FicheServiceState {
-  id?: string;
-  service_id: string;
-  name: string;
-  operator_id: string;
-  duration: number;
-  list_price: number;
-  final_price: number;
-}
-
-interface FicheProductState {
-  id?: string;
-  product_id: string;
-  name: string;
-  quantity: number;
-  list_price: number;
-  final_price: number;
-}
+import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
 
 interface FicheModalProps {
   mode: 'add' | 'edit';
@@ -58,6 +54,8 @@ interface FicheModalProps {
   datetime?: Date;
   /** Add mode: pre-selected operator from a calendar slot */
   operator?: Operator | null;
+  /** Edit mode: open the modal directly on the Pagamento tab (e.g. from the fiches grid checkout action) */
+  initialView?: 'edit' | 'payment';
 }
 
 function toDatetimeLocal(date: Date | null | undefined): string {
@@ -67,12 +65,28 @@ function toDatetimeLocal(date: Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 32px';
+const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 28px 56px 32px';
 
-export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }: FicheModalProps) {
+/** Count how many *other* draft rows (excluding the row at `ignoreIndex`) are currently assigning each abbonamento. */
+function abbonamentoDraftCounts(
+  drafts: FicheServiceDraft[],
+  ignoreIndex: number,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  drafts.forEach((d, i) => {
+    if (i === ignoreIndex) return;
+    if (!d.abbonamento_id) return;
+    counts[d.abbonamento_id] = (counts[d.abbonamento_id] ?? 0) + 1;
+  });
+  return counts;
+}
+
+export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, initialView }: FicheModalProps) {
   const addFiche = useFichesStore((s) => s.addFiche);
   const updateFiche = useFichesStore((s) => s.updateFiche);
   const deleteFiche = useFichesStore((s) => s.deleteFiche);
+  const closeFiche = useFichesStore((s) => s.closeFiche);
+  const applyCoupon = useCouponsStore((s) => s.applyCoupon);
   const clients = useClientsStore((s) => s.clients);
   const operators = useOperatorsStore((s) => s.operators);
   const services = useServicesStore((s) => s.services);
@@ -81,13 +95,15 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   const products = useProductsStore((s) => s.products);
   const productCategories = useProductCategoriesStore((s) => s.product_categories);
   const { addFicheProduct, updateFicheProduct, deleteFicheProduct } = useFicheProductsStore();
+  const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
   const [note, setNote] = useState('');
   const [status, setStatus] = useState<FicheStatus>(FicheStatus.CREATED);
-  const [ficheServices, setFicheServices] = useState<FicheServiceState[]>([]);
-  const [ficheProducts, setFicheProducts] = useState<FicheProductState[]>([]);
+  const [ficheServices, setFicheServices] = useState<FicheServiceDraft[]>([]);
+  const [ficheProducts, setFicheProducts] = useState<FicheProductDraft[]>([]);
+  const [totalOverride, setTotalOverride] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -96,6 +112,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   const [prodQuery, setProdQuery] = useState('');
   const [prodOpen, setProdOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
+  const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Payment state
+  const [paymentView, setPaymentView] = useState<PaymentView>(FichePaymentMethod.CASH);
+  const [cashGiven, setCashGiven] = useState<number | null>(null);
+  const [splits, setSplits] = useState<Split[]>(INITIAL_SPLITS.map((s) => ({ ...s })));
+  const [selectedCoupons, setSelectedCoupons] = useState<SelectedCoupon[]>([]);
 
   const svcInputRef = useRef<HTMLInputElement>(null);
   const svcDropdownRef = useRef<HTMLDivElement>(null);
@@ -110,6 +134,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
       setDatetimeStr(toDatetimeLocal(new Date(fiche.datetime)));
       setNote(fiche.note ?? '');
       setStatus(fiche.status);
+      setTotalOverride(fiche.total_override ?? null);
       setFicheServices(
         fiche.getFicheServices().map((fs) => {
           const svc = services.find((s) => s.id === fs.service_id);
@@ -121,6 +146,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
             duration: fs.duration,
             list_price: fs.list_price,
             final_price: fs.final_price,
+            abbonamento_id: fs.abbonamento_id ?? null,
           };
         }),
       );
@@ -142,6 +168,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
       setDatetimeStr(toDatetimeLocal(datetime));
       setNote('');
       setStatus(FicheStatus.CREATED);
+      setTotalOverride(null);
       setFicheServices([]);
       setFicheProducts([]);
     }
@@ -152,8 +179,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     setProdQuery('');
     setProdOpen(false);
     setActiveTab('services');
+    setActiveTopTab(initialView ?? 'edit');
+    setPaymentView(FichePaymentMethod.CASH);
+    setCashGiven(null);
+    setSplits(INITIAL_SPLITS.map((s) => ({ ...s })));
+    setSelectedCoupons([]);
+    setIsSubmitting(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, fiche, mode]);
+  }, [isOpen, fiche, mode, initialView]);
 
   // Sync datetime when the calendar slot changes while the modal is already open (add mode only)
   useEffect(() => {
@@ -201,18 +234,33 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   }, [ficheServices, baseTime]);
 
   const totalDuration = useMemo(() => ficheServices.reduce((acc, s) => acc + s.duration, 0), [ficheServices]);
-  const totalServicesPrice = useMemo(() => ficheServices.reduce((acc, s) => acc + s.final_price, 0), [ficheServices]);
-  const totalProductsPrice = useMemo(() => ficheProducts.reduce((acc, p) => acc + p.final_price * p.quantity, 0), [ficheProducts]);
+  const subtotal = useMemo(
+    () =>
+      ficheServices.reduce((acc, s) => acc + s.final_price, 0) +
+      ficheProducts.reduce((acc, p) => acc + p.final_price * p.quantity, 0),
+    [ficheServices, ficheProducts],
+  );
+  const couponsDiscount = useMemo(
+    () => selectedCoupons.reduce((acc, c) => acc + c.amount, 0),
+    [selectedCoupons],
+  );
+  const subtotalAfterCoupons = Math.max(0, subtotal - couponsDiscount);
+  const effectiveTotal = totalOverride ?? subtotalAfterCoupons;
+  const hasOverride =
+    totalOverride !== null && Math.round(totalOverride * 100) !== Math.round(subtotalAfterCoupons * 100);
 
   const selectedClient = useMemo(() => clients.find((c) => c.id === clientId) ?? null, [clients, clientId]);
   const lastNote = useMemo(() => selectedClient?.getLastNote() ?? '', [selectedClient]);
 
-  const clientOptions = clients.map((c) => ({ ...c, fullName: c.getFullName() }));
+  const clientOptions = clients.filter((c) => !c.isArchived).map((c) => ({ ...c, fullName: c.getFullName() }));
   const operatorOptions = operators.filter((op) => !op.isArchived).map((op) => ({ ...op, fullName: op.getFullName() }));
+
+  const clientName = selectedClient?.getFullName() ?? 'Cliente sconosciuto';
 
   const groupedServices = useMemo(() => {
     const q = svcQuery.toLowerCase().trim();
-    const filtered = q ? services.filter((s) => s.name.toLowerCase().includes(q)) : services;
+    const activeServices = services.filter((s) => !s.isArchived);
+    const filtered = q ? activeServices.filter((s) => s.name.toLowerCase().includes(q)) : activeServices;
     const groups = new Map<string, { categoryName: string; items: Service[] }>();
     for (const svc of filtered) {
       const cat = serviceCategories.find((c) => c.id === svc.category_id);
@@ -225,7 +273,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
 
   const groupedProducts = useMemo(() => {
     const q = prodQuery.toLowerCase().trim();
-    const filtered = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
+    const activeProducts = products.filter((p) => !p.isArchived);
+    const filtered = q ? activeProducts.filter((p) => p.name.toLowerCase().includes(q)) : activeProducts;
     const groups = new Map<string, { categoryName: string; items: Product[] }>();
     for (const prod of filtered) {
       const cat = productCategories.find((c) => c.id === prod.product_category_id);
@@ -239,14 +288,27 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   function addServiceToList(svc: Service) {
-    // Pre-fill the operator from the calendar slot in add mode
     const operatorId = mode === 'add' ? (operator?.id ?? '') : '';
     setFicheServices((prev) => [
       ...prev,
-      { service_id: svc.id, name: svc.name, operator_id: operatorId, duration: svc.duration, list_price: svc.price, final_price: svc.price },
+      { service_id: svc.id, name: svc.name, operator_id: operatorId, duration: svc.duration, list_price: svc.price, final_price: svc.price, abbonamento_id: null },
     ]);
     setSvcQuery('');
     setSvcOpen(false);
+  }
+
+  function setServiceAbbonamento(index: number, abbonamentoId: string | null) {
+    setFicheServices((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        if (abbonamentoId) {
+          // Redeemed by abbonamento → no charge
+          return { ...s, abbonamento_id: abbonamentoId, final_price: 0 };
+        }
+        // Removed: restore list price
+        return { ...s, abbonamento_id: null, final_price: s.list_price };
+      }),
+    );
   }
 
   function removeService(index: number) {
@@ -317,114 +379,155 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     }
   }
 
-  async function handleSubmit() {
+  /** Persist all fiche fields + services + products. Returns the fiche id on success, throws on failure. */
+  async function persistFiche(): Promise<string> {
+    const validation = await validateFicheConflicts(
+      clientId,
+      servicesWithTimes.map((svc) => ({
+        operator_id: svc.operator_id,
+        operator_name: operators.find((op) => op.id === svc.operator_id)?.getFullName() ?? svc.operator_id,
+        start_time: svc.start_time.toISOString(),
+        end_time: svc.end_time.toISOString(),
+      })),
+      mode === 'edit' ? fiche?.id : undefined,
+    );
+    if (validation.error) throw new Error(validation.error);
+
+    if (mode === 'add') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride });
+      await Promise.all(
+        servicesWithTimes.map((svc) =>
+          addFicheService({
+            fiche_id: newFiche.id,
+            service_id: svc.service_id,
+            operator_id: svc.operator_id || undefined,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            start_time: svc.start_time as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            end_time: svc.end_time as any,
+            duration: svc.duration,
+            list_price: svc.list_price,
+            final_price: svc.final_price,
+            abbonamento_id: svc.abbonamento_id ?? null,
+          }),
+        ),
+      );
+      if (ficheProducts.length > 0) {
+        await Promise.all(
+          ficheProducts.map((prod) =>
+            addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price }),
+          ),
+        );
+      }
+      return newFiche.id;
+    }
+
+    if (!fiche) throw new Error('Fiche mancante');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride });
+
+    const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
+    for (const fs of fiche.getFicheServices()) {
+      if (!currentServiceIds.has(fs.id)) await deleteFicheService(fs.id);
+    }
+    for (const svc of servicesWithTimes) {
+      if (svc.id) {
+        await updateFicheService(svc.id, {
+          operator_id: svc.operator_id || undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          start_time: svc.start_time as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          end_time: svc.end_time as any,
+          duration: svc.duration,
+          list_price: svc.list_price,
+          final_price: svc.final_price,
+          abbonamento_id: svc.abbonamento_id ?? null,
+        });
+      } else {
+        await addFicheService({
+          fiche_id: fiche.id,
+          service_id: svc.service_id,
+          operator_id: svc.operator_id || undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          start_time: svc.start_time as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          end_time: svc.end_time as any,
+          duration: svc.duration,
+          list_price: svc.list_price,
+          final_price: svc.final_price,
+          abbonamento_id: svc.abbonamento_id ?? null,
+        });
+      }
+    }
+
+    const currentProductIds = new Set(ficheProducts.filter((p) => p.id).map((p) => p.id!));
+    for (const fp of fiche.getFicheProducts()) {
+      if (!currentProductIds.has(fp.id)) await deleteFicheProduct(fp.id);
+    }
+    for (const prod of ficheProducts) {
+      if (prod.id) {
+        await updateFicheProduct(prod.id, { quantity: prod.quantity, final_price: prod.final_price });
+      } else {
+        await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price });
+      }
+    }
+
+    return fiche.id;
+  }
+
+  function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
     if (!clientId) newErrors.client_id = 'Seleziona un cliente';
     if (!datetimeStr) newErrors.datetime = 'Inserisci data e ora';
     if (!ficheServices.length) newErrors.services = 'Aggiungi almeno un servizio';
     setErrors(newErrors);
-    if (Object.values(newErrors).some(Boolean)) return;
+    return !Object.values(newErrors).some(Boolean);
+  }
 
+  async function handleSubmit() {
+    if (!validateForm()) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      const validation = await validateFicheConflicts(
-        clientId,
-        servicesWithTimes.map((svc) => ({
-          operator_id: svc.operator_id,
-          operator_name: operators.find((op) => op.id === svc.operator_id)?.getFullName() ?? svc.operator_id,
-          start_time: svc.start_time.toISOString(),
-          end_time: svc.end_time.toISOString(),
-        })),
-        mode === 'edit' ? fiche?.id : undefined,
-      );
-      if (validation.error) {
-        messagePopup.getState().error(validation.error);
-        return;
-      }
-
-      if (mode === 'add') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status, note });
-        await Promise.all(
-          servicesWithTimes.map((svc) =>
-            addFicheService({
-              fiche_id: newFiche.id,
-              service_id: svc.service_id,
-              operator_id: svc.operator_id || undefined,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              start_time: svc.start_time as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              end_time: svc.end_time as any,
-              duration: svc.duration,
-              list_price: svc.list_price,
-              final_price: svc.final_price,
-            }),
-          ),
-        );
-        if (ficheProducts.length > 0) {
-          await Promise.all(
-            ficheProducts.map((prod) =>
-              addFicheProduct({ fiche_id: newFiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price }),
-            ),
-          );
-        }
-        onClose();
-        messagePopup.getState().success('Appuntamento creato con successo');
-      } else {
-        if (!fiche) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note });
-
-        // Sync services: delete removed, update existing, insert new
-        const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
-        for (const fs of fiche.getFicheServices()) {
-          if (!currentServiceIds.has(fs.id)) await deleteFicheService(fs.id);
-        }
-        for (const svc of servicesWithTimes) {
-          if (svc.id) {
-            await updateFicheService(svc.id, {
-              operator_id: svc.operator_id || undefined,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              start_time: svc.start_time as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              end_time: svc.end_time as any,
-              duration: svc.duration,
-              list_price: svc.list_price,
-              final_price: svc.final_price,
-            });
-          } else {
-            await addFicheService({
-              fiche_id: fiche.id,
-              service_id: svc.service_id,
-              operator_id: svc.operator_id || undefined,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              start_time: svc.start_time as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              end_time: svc.end_time as any,
-              duration: svc.duration,
-              list_price: svc.list_price,
-              final_price: svc.final_price,
-            });
-          }
-        }
-
-        // Sync products: delete removed, update existing final_price, insert new
-        const currentProductIds = new Set(ficheProducts.filter((p) => p.id).map((p) => p.id!));
-        for (const fp of fiche.getFicheProducts()) {
-          if (!currentProductIds.has(fp.id)) await deleteFicheProduct(fp.id);
-        }
-        for (const prod of ficheProducts) {
-          if (prod.id) {
-            await updateFicheProduct(prod.id, { quantity: prod.quantity, final_price: prod.final_price });
-          } else {
-            await addFicheProduct({ fiche_id: fiche.id, product_id: prod.product_id, quantity: prod.quantity, list_price: prod.list_price, final_price: prod.final_price });
-          }
-        }
-
-        onClose();
-        messagePopup.getState().success('Appuntamento aggiornato con successo');
-      }
+      await persistFiche();
+      onClose();
+      messagePopup.getState().success(mode === 'add' ? 'Appuntamento creato con successo' : 'Appuntamento aggiornato con successo');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handlePay() {
+    if (!validateForm()) {
+      setActiveTopTab('edit');
+      return;
+    }
+    const payments = buildPayments(paymentView, effectiveTotal, cashGiven, splits);
+    if (!payments) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const ficheId = await persistFiche();
+      const salonId = fiche?.salon_id;
+      if (!salonId) throw new Error('Salone mancante');
+
+      // Redeem any selected coupons before closing the fiche so the operator
+      // sees the failure and can react instead of having a closed fiche with
+      // dangling un-redeemed coupons.
+      for (const sel of selectedCoupons) {
+        if (sel.amount > 0) await applyCoupon(sel.coupon.id, ficheId, sel.amount);
+      }
+
+      await closeFiche(ficheId, salonId, payments);
+      onClose();
+      messagePopup.getState().success('Fiche chiusa con successo');
+    } catch (err) {
+      messagePopup.getState().error(err instanceof Error ? err.message : 'Errore durante la chiusura della fiche');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -436,6 +539,15 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   const isEdit = mode === 'edit';
+  const isCompleted = fiche?.status === FicheStatus.COMPLETED;
+  const paymentValid = isPaymentValid(paymentView, effectiveTotal, cashGiven, splits);
+
+  const confirmText = activeTopTab === 'payment'
+    ? (isSubmitting ? 'Chiusura…' : 'Conferma pagamento')
+    : (isEdit ? (isSubmitting ? 'Salvataggio…' : 'Salva') : (isSubmitting ? 'Creazione…' : 'Aggiungi'));
+
+  const onConfirm = activeTopTab === 'payment' ? handlePay : handleSubmit;
+  const confirmDisabled = isSubmitting || (activeTopTab === 'payment' && !paymentValid);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -444,419 +556,559 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator }:
       <AddModal
         isOpen={isOpen}
         onClose={onClose}
-        onSubmit={handleSubmit}
-        title={isEdit ? 'Modifica fiche' : 'Nuova fiche'}
-        subtitle={isEdit ? "Aggiorna i dettagli dell'appuntamento" : 'Crea un nuovo appuntamento'}
-        icon={isEdit ? Pencil : Plus}
+        onSubmit={onConfirm}
+        title={
+          isEdit
+            ? (activeTopTab === 'payment' ? 'Chiudi fiche' : 'Modifica fiche')
+            : 'Nuova fiche'
+        }
+        subtitle={
+          isEdit
+            ? (activeTopTab === 'payment' ? 'Incassa e chiudi la fiche' : "Aggiorna i dettagli dell'appuntamento")
+            : 'Crea un nuovo appuntamento'
+        }
+        icon={
+          isEdit
+            ? (activeTopTab === 'payment' ? ReceiptText : Pencil)
+            : Plus
+        }
         classes="max-w-6xl h-[90vh]"
-        confirmText={isEdit ? 'Salva' : 'Aggiungi'}
+        confirmText={confirmText}
+        confirmDisabled={confirmDisabled}
         footerContent={
-          <div className="flex flex-col gap-0.5">
-            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Preventivo: € {(totalServicesPrice + totalProductsPrice).toFixed(2)}
-            </span>
-            <span className="text-xs text-zinc-500">Durata: {totalDuration} min</span>
+          <div className="flex items-center gap-5">
+            <div className="flex flex-col gap-0.5">
+              <span className={`text-xs ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-500'}`}>
+                Subtotale: € {subtotal.toFixed(2)}
+              </span>
+              <span className="text-xs text-zinc-500">Durata: {totalDuration} min</span>
+            </div>
+            {isEdit && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  Totale finale (€)
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <CustomNumberInput
+                    value={totalOverride}
+                    onChange={(v) => setTotalOverride(v)}
+                    min={0}
+                    step={0.5}
+                    decimals={2}
+                    placeholder={subtotal.toFixed(2)}
+                    suffix="€"
+                    size="md"
+                    width="w-32"
+                  />
+                  {totalOverride !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setTotalOverride(null)}
+                      className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors"
+                      title="Rimuovi sconto"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         }
         dangerAction={
           isEdit ? (
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-            >
-              <Trash2 className="size-4" />
-              Elimina
-            </button>
+            <>
+              {activeTopTab === 'edit' && !isCompleted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!validateForm()) return;
+                    setActiveTopTab('payment');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+                >
+                  <ReceiptText className="size-4" />
+                  Procedi al pagamento
+                </button>
+              )}
+              {activeTopTab === 'payment' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTopTab('edit')}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  <ArrowLeft className="size-4" />
+                  Torna alla modifica
+                </button>
+              )}
+              {activeTopTab === 'edit' && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 className="size-4" />
+                  Elimina
+                </button>
+              )}
+            </>
           ) : undefined
         }
       >
-        <div className="grid gap-8 h-full" style={{ gridTemplateColumns: '2fr 3fr' }}>
+        <div className="flex flex-col gap-4 h-full min-h-0">
 
-          {/* ══ LEFT COLUMN ═══════════════════════════════════════════════════ */}
-          <div className="flex flex-col gap-5">
+          {activeTopTab === 'edit' ? (
+            /* ══ MODIFICA TAB ═══════════════════════════════════════════════ */
+            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '1fr 2fr' }}>
 
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
-              <input
-                type="datetime-local"
-                className={inputClass}
-                value={datetimeStr}
-                onChange={(e) => setDatetimeStr(e.target.value)}
-              />
-              {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
-            </div>
+              {/* ── LEFT: Dettagli ── */}
+              <div className="flex flex-col gap-5 overflow-y-auto pr-1">
 
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><User className="size-3.5" />Cliente *</label>
-              <CustomSelect
-                options={clientOptions}
-                labelKey="fullName"
-                valueKey="id"
-                value={clientId}
-                onChange={setClientId}
-                placeholder="Cerca cliente…"
-                maxHeight="max-h-48"
-              />
-              {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><FileText className="size-3.5" />Ultima nota tecnica</label>
-              <textarea
-                className={`${inputClass} resize-none bg-zinc-50 dark:bg-zinc-700/30 text-zinc-500 dark:text-zinc-400 cursor-default`}
-                rows={3}
-                value={lastNote}
-                readOnly
-                placeholder={selectedClient ? 'Nessuna nota precedente' : 'Seleziona un cliente…'}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><FileText className="size-3.5" />Nota appuntamento</label>
-              <textarea
-                className={`${inputClass} resize-none`}
-                rows={3}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Note per questo appuntamento…"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Check className="size-3.5" />Stato</label>
-              <select
-                className={inputClass}
-                value={status}
-                onChange={(e) => setStatus(e.target.value as FicheStatus)}
-              >
-                <option value={FicheStatus.CREATED}>Creata</option>
-                <option value={FicheStatus.PENDING}>In attesa</option>
-                <option value={FicheStatus.COMPLETED}>Completata</option>
-              </select>
-            </div>
-
-          </div>
-
-          {/* ══ RIGHT COLUMN ══════════════════════════════════════════════════ */}
-          <div className="flex flex-col gap-4 min-h-0">
-
-            {/* Tab switcher */}
-            <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-              {([
-                { id: 'services', label: 'Servizi', icon: Scissors, count: ficheServices.length },
-                { id: 'products', label: 'Prodotti', icon: Package, count: ficheProducts.length },
-              ] as { id: 'services' | 'products'; label: string; icon: React.ElementType; count: number }[]).map(({ id, label, icon: Icon, count }) => {
-                const isActive = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveTab(id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                      isActive
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                        : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {label}
-                    {count > 0 && (
-                      <span className="inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-500">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ── SERVICES TAB ── */}
-            {activeTab === 'services' && (
-              <>
-                {/* Grouped service combobox */}
-                <div ref={svcDropdownRef} className="relative shrink-0">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                    <input
-                      ref={svcInputRef}
-                      type="text"
-                      className={`${inputClass} pl-8`}
-                      placeholder="Cerca e aggiungi servizi…"
-                      value={svcQuery}
-                      onChange={(e) => { setSvcQuery(e.target.value); setSvcOpen(true); }}
-                      onFocus={() => setSvcOpen(true)}
-                    />
-                  </div>
-
-                  {svcOpen && (
-                    <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
-                      {groupedServices.length === 0 ? (
-                        <p className="p-4 text-sm text-center text-zinc-500">Nessun servizio trovato</p>
-                      ) : (
-                        <div className="max-h-56 overflow-y-auto">
-                          {groupedServices.map(({ categoryName, items }) => (
-                            <div key={categoryName}>
-                              <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
-                                {categoryName}
-                              </div>
-                              {items.map((svc) => (
-                                <button
-                                  key={svc.id}
-                                  type="button"
-                                  onClick={() => addServiceToList(svc)}
-                                  className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
-                                >
-                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{svc.name}</span>
-                                  <div className="flex items-center gap-2.5 text-xs text-zinc-400 shrink-0">
-                                    <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
-                                    <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
+                  <input
+                    type="datetime-local"
+                    className={inputClass}
+                    value={datetimeStr}
+                    onChange={(e) => setDatetimeStr(e.target.value)}
+                  />
+                  {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
                 </div>
 
-                {errors.services && <p className="text-xs text-red-500 -mt-2">{errors.services}</p>}
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}><User className="size-3.5" />Cliente *</label>
+                  <CustomSelect
+                    options={clientOptions}
+                    labelKey="fullName"
+                    valueKey="id"
+                    value={clientId}
+                    onChange={setClientId}
+                    placeholder="Cerca cliente…"
+                    maxHeight="max-h-48"
+                  />
+                  {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
+                </div>
 
-                {/* Services table */}
-                <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
-                  {ficheServices.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
-                      <Scissors className="size-8 opacity-20" />
-                      <p className="text-sm">Nessun servizio aggiunto</p>
-                      <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
-                    </div>
-                  ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}><FileText className="size-3.5" />Ultima nota tecnica</label>
+                  <textarea
+                    className={`${inputClass} resize-none bg-zinc-50 dark:bg-zinc-700/30 text-zinc-500 dark:text-zinc-400 cursor-default`}
+                    rows={3}
+                    value={lastNote}
+                    readOnly
+                    placeholder={selectedClient ? 'Nessuna nota precedente' : 'Seleziona un cliente…'}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}><FileText className="size-3.5" />Nota appuntamento</label>
+                  <textarea
+                    className={`${inputClass} resize-none`}
+                    rows={3}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Note per questo appuntamento…"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}><Check className="size-3.5" />Stato</label>
+                  <select
+                    className={inputClass}
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as FicheStatus)}
+                  >
+                    <option value={FicheStatus.CREATED}>Creata</option>
+                    <option value={FicheStatus.PENDING}>In attesa</option>
+                    <option value={FicheStatus.COMPLETED}>Completata</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* ── RIGHT: Servizi / Prodotti ── */}
+              <div className="flex flex-col gap-4 min-h-0">
+
+                {/* Tab switcher (nested) */}
+                <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+                    {([
+                      { id: 'services', label: 'Servizi', icon: Scissors, count: ficheServices.length },
+                      { id: 'products', label: 'Prodotti', icon: Package, count: ficheProducts.length },
+                    ] as { id: 'services' | 'products'; label: string; icon: React.ElementType; count: number }[]).map(({ id, label, icon: Icon, count }) => {
+                      const isActive = activeTab === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setActiveTab(id)}
+                          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                            isActive
+                              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                              : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
+                          }`}
+                        >
+                          <Icon className="size-4" />
+                          {label}
+                          {count > 0 && (
+                            <span className="inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-500">
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── SERVICES TAB ── */}
+                  {activeTab === 'services' && (
                     <>
-                      {/* Header */}
-                      <div
-                        className="grid items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg"
-                        style={{ gridTemplateColumns: TABLE_COLS }}
-                      >
-                        <span className="flex items-center gap-1"><Scissors className="size-3" />Servizio</span>
-                        <span className="flex items-center gap-1"><User className="size-3" />Operatore</span>
-                        <span className="flex items-center gap-1 justify-center"><Clock className="size-3" />Min</span>
-                        <span className="text-center">Inizio</span>
-                        <span className="text-center">Fine</span>
-                        <span className="flex items-center gap-1 justify-end"><Euro className="size-3" />Prezzo</span>
-                        <span />
+                      <div ref={svcDropdownRef} className="relative shrink-0">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+                          <input
+                            ref={svcInputRef}
+                            type="text"
+                            className={`${inputClass} pl-8`}
+                            placeholder="Cerca e aggiungi servizi…"
+                            value={svcQuery}
+                            onChange={(e) => { setSvcQuery(e.target.value); setSvcOpen(true); }}
+                            onFocus={() => setSvcOpen(true)}
+                          />
+                        </div>
+
+                        {svcOpen && (
+                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
+                            {groupedServices.length === 0 ? (
+                              <p className="p-4 text-sm text-center text-zinc-500">Nessun servizio trovato</p>
+                            ) : (
+                              <div className="max-h-56 overflow-y-auto">
+                                {groupedServices.map(({ categoryName, items }) => (
+                                  <div key={categoryName}>
+                                    <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
+                                      {categoryName}
+                                    </div>
+                                    {items.map((svc) => (
+                                      <button
+                                        key={svc.id}
+                                        type="button"
+                                        onClick={() => addServiceToList(svc)}
+                                        className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+                                      >
+                                        <span className="text-zinc-900 dark:text-zinc-100 truncate">{svc.name}</span>
+                                        <div className="flex items-center gap-2.5 text-xs text-zinc-400 shrink-0">
+                                          <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
+                                          <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Rows */}
-                      <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
-                        {servicesWithTimes.map((svc, i) => (
-                          <div
-                            key={svc.id ?? i}
-                            className="grid items-center px-3 py-2.5"
-                            style={{ gridTemplateColumns: TABLE_COLS }}
-                          >
-                            <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate pr-2">{svc.name}</span>
+                      {errors.services && <p className="text-xs text-red-500 -mt-2">{errors.services}</p>}
 
-                            <div className="pr-2">
-                              <CustomSelect
-                                options={operatorOptions}
-                                labelKey="fullName"
-                                valueKey="id"
-                                value={svc.operator_id}
-                                onChange={(v) => updateServiceOperator(i, v)}
-                                placeholder="—"
-                                maxHeight="max-h-40"
-                                classes="text-sm"
-                              />
-                            </div>
-
-                            <div className="flex justify-center">
-                              <CustomNumberInput
-                                value={svc.duration}
-                                onChange={(v) => updateServiceDuration(i, v ?? 5)}
-                                min={5}
-                                step={5}
-                                size="lg"
-                              />
-                            </div>
-
-                            <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
-                              {format(svc.start_time, 'HH:mm', { locale: it })}
-                            </span>
-                            <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
-                              {format(svc.end_time, 'HH:mm', { locale: it })}
-                            </span>
-
-                            <div className="flex justify-end">
-                              <CustomNumberInput
-                                value={svc.final_price}
-                                onChange={(v) => updateServicePrice(i, v ?? 0)}
-                                min={0}
-                                step={0.5}
-                                decimals={2}
-                                suffix="€"
-                                size="lg"
-                              />
-                            </div>
-
-                            <div className="flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => removeService(i)}
-                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                                aria-label="Rimuovi servizio"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </button>
-                            </div>
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                        {ficheServices.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
+                            <Scissors className="size-8 opacity-20" />
+                            <p className="text-sm">Nessun servizio aggiunto</p>
+                            <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
                           </div>
-                        ))}
+                        ) : (
+                          <>
+                            <div
+                              className="grid items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg"
+                              style={{ gridTemplateColumns: TABLE_COLS }}
+                            >
+                              <span className="flex items-center gap-1"><Scissors className="size-3" />Servizio</span>
+                              <span className="flex items-center gap-1"><User className="size-3" />Operatore</span>
+                              <span className="flex items-center gap-1 justify-center"><Clock className="size-3" />Min</span>
+                              <span className="text-center">Inizio</span>
+                              <span className="text-center">Fine</span>
+                              <span className="flex items-center gap-1 justify-end"><Euro className="size-3" />Prezzo</span>
+                              <span />
+                              <span className="text-center">Abb.</span>
+                              <span />
+                            </div>
+
+                            <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
+                              {servicesWithTimes.map((svc, i) => (
+                                <div
+                                  key={svc.id ?? i}
+                                  className="grid items-center px-3 py-2.5"
+                                  style={{ gridTemplateColumns: TABLE_COLS }}
+                                >
+                                  <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate pr-2">{svc.name}</span>
+
+                                  <div className="pr-2">
+                                    <CustomSelect
+                                      options={operatorOptions}
+                                      labelKey="fullName"
+                                      valueKey="id"
+                                      value={svc.operator_id}
+                                      onChange={(v) => updateServiceOperator(i, v)}
+                                      placeholder="—"
+                                      maxHeight="max-h-40"
+                                      classes="text-sm"
+                                    />
+                                  </div>
+
+                                  <div className="flex justify-center">
+                                    <CustomNumberInput
+                                      value={svc.duration}
+                                      onChange={(v) => updateServiceDuration(i, v ?? 5)}
+                                      min={5}
+                                      step={5}
+                                      size="lg"
+                                    />
+                                  </div>
+
+                                  <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
+                                    {format(svc.start_time, 'HH:mm', { locale: it })}
+                                  </span>
+                                  <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
+                                    {format(svc.end_time, 'HH:mm', { locale: it })}
+                                  </span>
+
+                                  <div className="flex justify-end">
+                                    <CustomNumberInput
+                                      value={svc.final_price}
+                                      onChange={(v) => updateServicePrice(i, v ?? 0)}
+                                      min={0}
+                                      step={0.5}
+                                      decimals={2}
+                                      suffix="€"
+                                      size="lg"
+                                      disabled={!!svc.abbonamento_id}
+                                    />
+                                  </div>
+
+                                  <div className="flex justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateServicePrice(i, 0)}
+                                      disabled={svc.final_price === 0 || !!svc.abbonamento_id}
+                                      className="p-1 rounded-md text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 transition-colors disabled:text-pink-500 disabled:bg-pink-50 dark:disabled:bg-pink-500/10 disabled:cursor-not-allowed"
+                                      title={svc.final_price === 0 ? 'Omaggio' : 'Segna come omaggio'}
+                                      aria-label="Segna come omaggio"
+                                    >
+                                      <Gift className="size-3.5" />
+                                    </button>
+                                  </div>
+
+                                  <AbbonamentoCell
+                                    clientId={clientId}
+                                    serviceId={svc.service_id}
+                                    currentAbbonamentoId={svc.abbonamento_id}
+                                    otherDraftAssignments={abbonamentoDraftCounts(ficheServices, i)}
+                                    onChange={(id) => setServiceAbbonamento(i, id)}
+                                  />
+
+                                  <div className="flex justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={() => removeService(i)}
+                                      className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                      aria-label="Rimuovi servizio"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   )}
-                </div>
-              </>
-            )}
 
-            {/* ── PRODUCTS TAB ── */}
-            {activeTab === 'products' && (
-              <>
-                {/* Grouped product combobox */}
-                <div ref={prodDropdownRef} className="relative shrink-0">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                    <input
-                      ref={prodInputRef}
-                      type="text"
-                      className={`${inputClass} pl-8`}
-                      placeholder="Cerca e aggiungi prodotti…"
-                      value={prodQuery}
-                      onChange={(e) => { setProdQuery(e.target.value); setProdOpen(true); }}
-                      onFocus={() => setProdOpen(true)}
-                    />
-                  </div>
+                  {/* ── PRODUCTS TAB ── */}
+                  {activeTab === 'products' && (
+                    <>
+                      <div ref={prodDropdownRef} className="relative shrink-0">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+                          <input
+                            ref={prodInputRef}
+                            type="text"
+                            className={`${inputClass} pl-8`}
+                            placeholder="Cerca e aggiungi prodotti…"
+                            value={prodQuery}
+                            onChange={(e) => { setProdQuery(e.target.value); setProdOpen(true); }}
+                            onFocus={() => setProdOpen(true)}
+                          />
+                        </div>
 
-                  {prodOpen && (
-                    <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
-                      {groupedProducts.length === 0 ? (
-                        <p className="p-4 text-sm text-center text-zinc-500">Nessun prodotto trovato</p>
-                      ) : (
-                        <div className="max-h-56 overflow-y-auto">
-                          {groupedProducts.map(({ categoryName, items }) => (
-                            <div key={categoryName}>
-                              <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
-                                {categoryName}
+                        {prodOpen && (
+                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
+                            {groupedProducts.length === 0 ? (
+                              <p className="p-4 text-sm text-center text-zinc-500">Nessun prodotto trovato</p>
+                            ) : (
+                              <div className="max-h-56 overflow-y-auto">
+                                {groupedProducts.map(({ categoryName, items }) => (
+                                  <div key={categoryName}>
+                                    <div className="sticky top-0 px-3 py-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-700/60 border-b border-zinc-500/10">
+                                      {categoryName}
+                                    </div>
+                                    {items.map((prod) => (
+                                      <button
+                                        key={prod.id}
+                                        type="button"
+                                        onClick={() => addProductToList(prod)}
+                                        className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+                                      >
+                                        <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
+                                        <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
+                                          <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ))}
                               </div>
-                              {items.map((prod) => (
-                                <button
-                                  key={prod.id}
-                                  type="button"
-                                  onClick={() => addProductToList(prod)}
-                                  className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
-                                >
-                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                                  <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
-                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Selected products list */}
-                <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
-                  {ficheProducts.length > 0 && (
-                    <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
-                      <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
-                      <span className="flex items-center gap-1 shrink-0 mr-4">Qtà</span>
-                      <span className="flex items-center gap-1 shrink-0 mr-6"><Euro className="size-3" />Totale</span>
-                      <span className="size-6" />
-                    </div>
-                  )}
-                  {ficheProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
-                      <Package className="size-8 opacity-20" />
-                      <p className="text-sm">Nessun prodotto aggiunto</p>
-                      <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
-                      {ficheProducts.map((prod) => (
-                        <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                          {/* Left: name + unit price */}
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                            <span className="text-xs text-zinc-400 dark:text-zinc-500">{prod.list_price.toFixed(2)} € / pz</span>
+                            )}
                           </div>
+                        )}
+                      </div>
 
-                          {/* Right: qty stepper + total price + delete */}
-                          <div className="flex items-center gap-4 shrink-0">
-                            {/* Qty stepper */}
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => updateProductQuantity(prod.product_id, -1)}
-                                className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                min={1}
-                                value={prod.quantity}
-                                size={Math.max(2, String(prod.quantity).length)}
-                                onChange={(e) => setProductQuantity(prod.product_id, e.target.value)}
-                                className="min-w-[1.75rem] text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => updateProductQuantity(prod.product_id, 1)}
-                                className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                              >
-                                +
-                              </button>
-                            </div>
-
-                            {/* Total price (editable) */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              <input
-                                type="number"
-                                min={0}
-                                step={0.01}
-                                value={prod.final_price.toFixed(2)}
-                                size={Math.max(4, prod.final_price.toFixed(2).length)}
-                                onChange={(e) => setProductFinalPrice(prod.product_id, e.target.value)}
-                                className="min-w-[3rem] text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
-                              />
-                              <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
-                            </div>
-
-                            {/* Delete */}
-                            <button
-                              type="button"
-                              onClick={() => removeProduct(prod.product_id)}
-                              className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                              aria-label="Rimuovi prodotto"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                        {ficheProducts.length > 0 && (
+                          <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
+                            <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
+                            <span className="flex items-center gap-1 shrink-0 mr-4">Qtà</span>
+                            <span className="flex items-center gap-1 shrink-0 mr-6"><Euro className="size-3" />Totale</span>
+                            <span className="size-6" />
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                        )}
+                        {ficheProducts.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
+                            <Package className="size-8 opacity-20" />
+                            <p className="text-sm">Nessun prodotto aggiunto</p>
+                            <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
+                            {ficheProducts.map((prod) => (
+                              <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
+                                  <span className="text-xs text-zinc-400 dark:text-zinc-500">{prod.list_price.toFixed(2)} € / pz</span>
+                                </div>
 
-            {errorMessage && <p className="text-xs text-red-500 shrink-0">{errorMessage}</p>}
-          </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateProductQuantity(prod.product_id, -1)}
+                                      className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={prod.quantity}
+                                      size={Math.max(2, String(prod.quantity).length)}
+                                      onChange={(e) => setProductQuantity(prod.product_id, e.target.value)}
+                                      className="min-w-7 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => updateProductQuantity(prod.product_id, 1)}
+                                      className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => setProductFinalPrice(prod.product_id, '0')}
+                                      disabled={prod.final_price === 0}
+                                      className="p-1 rounded-md text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 transition-colors disabled:text-pink-500 disabled:bg-pink-50 dark:disabled:bg-pink-500/10 disabled:cursor-not-allowed"
+                                      title={prod.final_price === 0 ? 'Omaggio' : 'Segna come omaggio'}
+                                      aria-label="Segna come omaggio"
+                                    >
+                                      <Gift className="size-3.5" />
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={0.01}
+                                      value={prod.final_price.toFixed(2)}
+                                      size={Math.max(4, prod.final_price.toFixed(2).length)}
+                                      onChange={(e) => setProductFinalPrice(prod.product_id, e.target.value)}
+                                      className="min-w-12 text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
+                                    />
+                                    <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => removeProduct(prod.product_id)}
+                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                    aria-label="Rimuovi prodotto"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                {errorMessage && <p className="text-xs text-red-500 shrink-0">{errorMessage}</p>}
+              </div>
+            </div>
+          ) : (
+            /* ══ PAGAMENTO TAB ══════════════════════════════════════════════ */
+            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '320px 1fr' }}>
+              <div className="overflow-y-auto min-h-0">
+                <FicheReceipt
+                  clientName={clientName}
+                  ficheId={fiche?.id}
+                  datetime={baseTime}
+                  services={ficheServices}
+                  products={ficheProducts}
+                  subtotal={subtotal}
+                  totalOverride={totalOverride}
+                  salonName={salonName}
+                  couponDiscounts={selectedCoupons.map((c) => ({
+                    label: c.coupon.kind === 'gift_card' ? 'Gift card' : 'Coupon',
+                    detail: c.coupon.displayDiscount(),
+                    amount: c.amount,
+                  }))}
+                />
+              </div>
+              <div className="flex flex-col gap-4 overflow-y-auto min-h-0">
+                <CouponSuggestionsPanel
+                  clientId={clientId}
+                  services={ficheServices}
+                  products={ficheProducts}
+                  selected={selectedCoupons}
+                  onSelectedChange={setSelectedCoupons}
+                />
+                <FichePaymentPanel
+                  total={effectiveTotal}
+                  view={paymentView}
+                  onViewChange={setPaymentView}
+                  cashGiven={cashGiven}
+                  onCashGivenChange={setCashGiven}
+                  splits={splits}
+                  onSplitsChange={setSplits}
+                />
+              </div>
+            </div>
+          )}
 
         </div>
       </AddModal>

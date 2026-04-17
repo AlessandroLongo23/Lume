@@ -1,20 +1,24 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Service } from '@/lib/types/Service';
-import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ServicesState {
   services: Service[];
+  showArchived: boolean;
   isLoading: boolean;
   error: string | null;
   fetchServices: () => Promise<void>;
   addService: (service: Partial<Service>) => Promise<Service>;
   updateService: (id: string, updated: Partial<Service>) => Promise<Service>;
+  archiveService: (id: string) => Promise<void>;
+  restoreService: (id: string) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useServicesStore = create<ServicesState>((set) => ({
   services: [],
+  showArchived: false,
   isLoading: true,
   error: null,
 
@@ -26,46 +30,56 @@ export const useServicesStore = create<ServicesState>((set) => ({
   },
 
   addService: async (service) => {
-    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
-    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
-    const { data, error } = await supabase.from('services').insert([{ ...service, salon_id: activeSalonId }]).select().single();
-    if (error) throw new Error('Impossibile aggiungere il servizio.');
-    return new Service(data);
+    const response = await fetch('/api/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new Service(result.service);
   },
 
   updateService: async (id, updated) => {
-    const { data, error } = await supabase.from('services').update(updated).eq('id', id).select().single();
-    if (error) throw new Error('Impossibile aggiornare il servizio.');
-    return new Service(data);
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, service: updated }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new Service(result.service);
+  },
+
+  archiveService: async (id) => {
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'archive' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
+  restoreService: async (id) => {
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'restore' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
 
   deleteService: async (id) => {
-    // Find all fiches that reference this service
-    const { data: ficheServicesData, error: fsQueryError } = await supabase
-      .from('fiche_services')
-      .select('fiche_id')
-      .eq('service_id', id);
-    if (fsQueryError) throw new Error('Impossibile recuperare le fiche associate al servizio.');
-
-    const ficheIds = [...new Set((ficheServicesData ?? []).map((fs) => fs.fiche_id))];
-
-    if (ficheIds.length > 0) {
-      // Delete fiche_services rows for those fiches first (FK constraint)
-      const { error: fsDeleteError } = await supabase
-        .from('fiche_services')
-        .delete()
-        .in('fiche_id', ficheIds);
-      if (fsDeleteError) throw new Error('Impossibile eliminare i servizi delle fiche associate.');
-
-      // Delete the fiches themselves
-      const { error: fichesError } = await supabase
-        .from('fiches')
-        .delete()
-        .in('id', ficheIds);
-      if (fichesError) throw new Error('Impossibile eliminare le fiche associate al servizio.');
-    }
-
-    const { error } = await supabase.from('services').delete().eq('id', id);
-    if (error) throw new Error('Impossibile eliminare il servizio.');
+    const response = await fetch('/api/services', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
+
+  setShowArchived: (show) => set({ showArchived: show }),
 }));

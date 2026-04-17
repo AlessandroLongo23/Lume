@@ -1,4 +1,4 @@
-import { User, AtSign, Phone, VenusAndMars, Calendar, Plane, Tag } from 'lucide-react';
+import { User, AtSign, Phone, VenusAndMars, Calendar, Plane } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
 import type { Fiche } from './Fiche';
 import { GenderTd } from '@/lib/components/admin/table/GenderTd';
@@ -17,7 +17,7 @@ export class Client {
   isTourist: boolean;
   birthDate: string;
   note: string;
-  categoryId: string;
+  archived_at: string | null;
 
   constructor(client: Client) {
     this.id = client.id;
@@ -32,7 +32,11 @@ export class Client {
     this.isTourist = client.isTourist;
     this.birthDate = client.birthDate;
     this.note = client.note;
-    this.categoryId = client.categoryId;
+    this.archived_at = client.archived_at ?? null;
+  }
+
+  get isArchived(): boolean {
+    return this.archived_at !== null;
   }
 
   getFullName(): string {
@@ -54,19 +58,6 @@ export class Client {
   }
 
   static dataColumns: DataColumn[] = [
-    {
-      label: '',
-      key: 'categoryId',
-      sortable: true,
-      icon: Tag,
-      display: (client: Client) => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { useClientCategoriesStore } = require('@/lib/stores/client_categories');
-        const { client_categories } = useClientCategoriesStore.getState();
-        const category = client_categories.find((cat: { id: string; name: string }) => cat.id === client.categoryId);
-        return category ? category.name : 'N/A';
-      },
-    },
     {
       label: 'Nome',
       key: 'firstName',

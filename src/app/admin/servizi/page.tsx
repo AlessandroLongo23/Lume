@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Scissors, Tags, Plus, ArrowDownToLine, FileDown } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Scissors, Tags, Plus, ArrowDownToLine, FileDown, EllipsisVertical, Archive } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -11,7 +11,6 @@ import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal
 import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServiceCategoryModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
-import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 
 type Tab = 'servizi' | 'categorie';
@@ -34,10 +33,46 @@ export default function ServiziPage() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  const [servicesShowArchived, setServicesShowArchived] = useState(false);
+  const [categoriesShowArchived, setCategoriesShowArchived] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchServices();
     fetchServiceCategories();
   }, [fetchServices, fetchServiceCategories]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const servicesArchivedCount = services.filter((s) => s.isArchived).length;
+  const categoriesArchivedCount = categories.filter((c) => c.isArchived).length;
+
+  const visibleServices = useMemo(
+    () => services.filter((s) => (servicesShowArchived ? s.isArchived : !s.isArchived)),
+    [services, servicesShowArchived]
+  );
+
+  const visibleCategories = useMemo(
+    () => categories.filter((c) => (categoriesShowArchived ? c.isArchived : !c.isArchived)),
+    [categories, categoriesShowArchived]
+  );
+
+  const isServiziTab = activeTab === 'servizi';
+  const tabShowArchived = isServiziTab ? servicesShowArchived : categoriesShowArchived;
+  const toggleTabShowArchived = () => {
+    if (isServiziTab) setServicesShowArchived((v) => !v);
+    else setCategoriesShowArchived((v) => !v);
+  };
+  const tabArchivedCount = isServiziTab ? servicesArchivedCount : categoriesArchivedCount;
+  const entityLabel = isServiziTab ? 'servizi' : 'categorie';
 
   return (
     <>
@@ -50,8 +85,8 @@ export default function ServiziPage() {
           title="Servizi"
           icon={Scissors}
           actions={
-            activeTab === 'servizi' ? (
-              <>
+            <>
+              {isServiziTab ? (
                 <button
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
                   onClick={() => setShowAdd(true)}
@@ -59,12 +94,7 @@ export default function ServiziPage() {
                   <Plus className="size-4" />
                   Nuovo Servizio
                 </button>
-                <DropdownMenu items={[
-                  { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
-                ]} />
-              </>
-            ) : (
-              <>
+              ) : (
                 <button
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
                   onClick={() => setShowAddCategory(true)}
@@ -72,11 +102,39 @@ export default function ServiziPage() {
                   <Plus className="size-4" />
                   Nuova Categoria
                 </button>
-                <DropdownMenu items={[
-                  { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
-                ]} />
-              </>
-            )
+              )}
+              <div className="relative" ref={menuRef}>
+                <button
+                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                  onClick={() => setMenuOpen((v) => !v)}
+                >
+                  <EllipsisVertical className="size-4 text-zinc-500" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-20 py-1">
+                    <button
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      onClick={() => { toggleTabShowArchived(); setMenuOpen(false); }}
+                    >
+                      <Archive className="size-4 text-zinc-400" />
+                      {tabShowArchived ? `Mostra ${entityLabel} attivi` : `Mostra ${entityLabel} archiviati`}
+                      {tabArchivedCount > 0 && (
+                        <span className="ml-auto text-xs font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">
+                          {tabArchivedCount}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      onClick={() => { setMenuOpen(false); /* TODO: export PDF */ }}
+                    >
+                      <FileDown className="size-4 text-zinc-400" />
+                      Scarica PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           }
         />
 
@@ -84,6 +142,9 @@ export default function ServiziPage() {
         <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
+            const archivedForTab = id === 'servizi' ? servicesShowArchived : categoriesShowArchived;
+            const countForTab = id === 'servizi' ? servicesArchivedCount : categoriesArchivedCount;
+            const displayLabel = archivedForTab ? `${label} archiviati` : label;
             return (
               <button
                 key={id}
@@ -96,7 +157,12 @@ export default function ServiziPage() {
                 }`}
               >
                 <Icon className="size-4" />
-                {label}
+                {displayLabel}
+                {archivedForTab && countForTab > 0 && (
+                  <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                    {countForTab}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -115,7 +181,7 @@ export default function ServiziPage() {
               action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
             />
           ) : (
-            <ServicesTable services={services} />
+            <ServicesTable services={visibleServices} showArchived={servicesShowArchived} />
           )
         )}
         {activeTab === 'categorie' && (
@@ -130,7 +196,7 @@ export default function ServiziPage() {
               action={{ label: 'Nuova Categoria', icon: Tags, onClick: () => setShowAddCategory(true) }}
             />
           ) : (
-            <CategorieServiziTab />
+            <CategorieServiziTab categories={visibleCategories} showArchived={categoriesShowArchived} />
           )
         )}
       </div>

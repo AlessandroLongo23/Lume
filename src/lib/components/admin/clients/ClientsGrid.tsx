@@ -5,13 +5,17 @@ import { Users } from 'lucide-react';
 import { ClientCard } from './ClientCard';
 import { EditClientModal } from './EditClientModal';
 import { DeleteClientModal } from './DeleteClientModal';
+import { useClientsStore } from '@/lib/stores/clients';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Client } from '@/lib/types/Client';
 
 interface ClientsGridProps {
   clients: Client[];
+  showArchived?: boolean;
 }
 
-export function ClientsGrid({ clients }: ClientsGridProps) {
+export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps) {
+  const restoreClient = useClientsStore((s) => s.restoreClient);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -28,6 +32,15 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
     setShowDelete(true);
   };
 
+  const handleRestore = async (client: Client) => {
+    try {
+      await restoreClient(client.id);
+      messagePopup.getState().success('Cliente ripristinato con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante il ripristino.');
+    }
+  };
+
   return (
     <div>
       {clients.length === 0 ? (
@@ -39,7 +52,14 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
           {clients.map((client) => (
-            <ClientCard key={client.id} client={client} onEdit={handleEdit} onDelete={handleDelete} />
+            <ClientCard
+              key={client.id}
+              client={client}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onRestore={handleRestore}
+              showArchived={showArchived}
+            />
           ))}
         </div>
       )}

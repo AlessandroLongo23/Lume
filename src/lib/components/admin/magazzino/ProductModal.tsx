@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, Archive, ArchiveRestore } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
@@ -43,6 +43,8 @@ const emptyErrors = () => ({
 export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory }: ProductModalProps) {
   const addProduct = useProductsStore((s) => s.addProduct);
   const updateProduct = useProductsStore((s) => s.updateProduct);
+  const archiveProduct = useProductsStore((s) => s.archiveProduct);
+  const restoreProduct = useProductsStore((s) => s.restoreProduct);
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
 
   const categories = useProductCategoriesStore((s) => s.product_categories);
@@ -112,6 +114,23 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
     }
   };
 
+  const handleToggleArchive = async () => {
+    if (!selectedProduct) return;
+    try {
+      if (selectedProduct.isArchived) {
+        await restoreProduct(selectedProduct.id);
+        messagePopup.getState().success('Prodotto ripristinato.');
+      } else {
+        await archiveProduct(selectedProduct.id);
+        messagePopup.getState().success('Prodotto archiviato.');
+      }
+      await fetchProducts();
+      onClose();
+    } catch {
+      messagePopup.getState().error("Errore durante l'operazione.");
+    }
+  };
+
   const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
   const labelClass = 'text-sm font-medium text-zinc-700 dark:text-zinc-300';
   const errorClass = 'text-xs text-red-500 mt-1';
@@ -128,6 +147,18 @@ export function ProductModal({ isOpen, onClose, selectedProduct, trackInventory 
         confirmText={selectedProduct ? 'Aggiorna' : 'Aggiungi'}
         classes="max-w-2xl"
         contentClasses="overflow-y-auto"
+        footerContent={
+          selectedProduct && (
+            <button
+              type="button"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+              onClick={handleToggleArchive}
+            >
+              {selectedProduct.isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+              {selectedProduct.isArchived ? 'Ripristina' : 'Archivia'}
+            </button>
+          )
+        }
       >
         <div className="flex flex-col gap-5">
           {/* Nome | Quantità */}

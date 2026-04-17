@@ -4,18 +4,23 @@ import { Client } from '@/lib/types/Client';
 
 interface ClientsState {
   clients: Client[];
+  showArchived: boolean;
   isLoading: boolean;
   error: string | null;
   selectedClient: Client | null;
   fetchClients: () => Promise<void>;
   addClient: (clientData: Partial<Client>) => Promise<Client>;
   updateClient: (clientId: string, updatedClient: Partial<Client>) => Promise<Client>;
+  archiveClient: (clientId: string) => Promise<void>;
+  restoreClient: (clientId: string) => Promise<void>;
   deleteClient: (clientId: string) => Promise<void>;
   setSelectedClient: (client: Client | null) => void;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useClientsStore = create<ClientsState>((set) => ({
   clients: [],
+  showArchived: false,
   isLoading: true,
   error: null,
   selectedClient: null,
@@ -54,6 +59,26 @@ export const useClientsStore = create<ClientsState>((set) => ({
     return new Client(data);
   },
 
+  archiveClient: async (clientId) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: clientId, action: 'archive' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
+  restoreClient: async (clientId) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: clientId, action: 'restore' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
   deleteClient: async (clientId) => {
     const response = await fetch('/api/clients', {
       method: 'DELETE',
@@ -65,4 +90,5 @@ export const useClientsStore = create<ClientsState>((set) => ({
   },
 
   setSelectedClient: (client) => set({ selectedClient: client }),
+  setShowArchived: (show) => set({ showArchived: show }),
 }));

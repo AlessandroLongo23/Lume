@@ -7,11 +7,9 @@ import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 
 interface LandingHeaderProps {
   session: Session | null;
-  onLoginClick: () => void;
-  onRegisterClick: () => void;
 }
 
-export function LandingHeader({ session, onLoginClick, onRegisterClick }: LandingHeaderProps) {
+export function LandingHeader({ session }: LandingHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -56,15 +54,15 @@ export function LandingHeader({ session, onLoginClick, onRegisterClick }: Landin
             </Link>
           ) : (
             <>
-              <button
-                onClick={onLoginClick}
+              <Link
+                href="/login"
                 className="hidden sm:block text-sm text-zinc-500 hover:text-[#09090B] transition-colors"
               >
                 Accedi
-              </button>
-              <button onClick={onRegisterClick} className="btn-primary text-sm px-4 py-2">
+              </Link>
+              <Link href="/register" className="btn-primary text-sm px-4 py-2">
                 Inizia gratis
-              </button>
+              </Link>
             </>
           )}
         </div>

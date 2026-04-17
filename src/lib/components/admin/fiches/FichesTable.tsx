@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2, ReceiptText } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
@@ -20,7 +20,6 @@ import { FicheStatus } from '@/lib/types/ficheStatus';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
-import { CheckoutFicheModal } from './CheckoutFicheModal';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface FichesTableProps {
@@ -61,7 +60,6 @@ export function FichesTable({ fiches }: FichesTableProps) {
 
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -238,15 +236,6 @@ export function FichesTable({ fiches }: FichesTableProps) {
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        {row.original.status !== FicheStatus.COMPLETED && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowCheckout(true); }}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                            title="Chiudi Fiche"
-                          >
-                            <ReceiptText className="size-3.5" />
-                          </button>
-                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowDelete(true); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -282,11 +271,6 @@ export function FichesTable({ fiches }: FichesTableProps) {
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         selectedFiche={selectedFiche}
-      />
-      <CheckoutFicheModal
-        isOpen={showCheckout}
-        onClose={() => setShowCheckout(false)}
-        fiche={selectedFiche}
       />
     </>
   );

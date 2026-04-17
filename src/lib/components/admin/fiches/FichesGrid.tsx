@@ -5,7 +5,6 @@ import { Calendar } from 'lucide-react';
 import { FicheCard } from './FicheCard';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
-import { CheckoutFicheModal } from './CheckoutFicheModal';
 import type { Fiche } from '@/lib/types/Fiche';
 
 interface FichesGridProps {
@@ -15,8 +14,8 @@ interface FichesGridProps {
 export function FichesGrid({ fiches }: FichesGridProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
+  const [editInitialView, setEditInitialView] = useState<'edit' | 'payment'>('edit');
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,9 +30,9 @@ export function FichesGrid({ fiches }: FichesGridProps) {
             <FicheCard
               key={fiche.id}
               fiche={fiche}
-              onEdit={(f) => { setSelectedFiche(f); setShowEdit(true); }}
+              onEdit={(f) => { setSelectedFiche(f); setEditInitialView('edit'); setShowEdit(true); }}
               onDelete={(f) => { setSelectedFiche(f); setShowDelete(true); }}
-              onCheckout={(f) => { setSelectedFiche(f); setShowCheckout(true); }}
+              onCheckout={(f) => { setSelectedFiche(f); setEditInitialView('payment'); setShowEdit(true); }}
             />
           ))}
         </div>
@@ -44,16 +43,12 @@ export function FichesGrid({ fiches }: FichesGridProps) {
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         fiche={selectedFiche}
+        initialView={editInitialView}
       />
       <DeleteFicheModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         selectedFiche={selectedFiche}
-      />
-      <CheckoutFicheModal
-        isOpen={showCheckout}
-        onClose={() => setShowCheckout(false)}
-        fiche={selectedFiche}
       />
     </div>
   );

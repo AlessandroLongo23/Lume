@@ -1,20 +1,24 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { ProductCategory } from '@/lib/types/ProductCategory';
-import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ProductCategoriesState {
   product_categories: ProductCategory[];
+  showArchived: boolean;
   isLoading: boolean;
   error: string | null;
   fetchProductCategories: () => Promise<void>;
   addProductCategory: (category: Partial<ProductCategory>) => Promise<ProductCategory>;
   updateProductCategory: (id: string, updated: Partial<ProductCategory>) => Promise<ProductCategory>;
+  archiveProductCategory: (id: string) => Promise<void>;
+  restoreProductCategory: (id: string) => Promise<void>;
   deleteProductCategory: (id: string) => Promise<void>;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useProductCategoriesStore = create<ProductCategoriesState>((set) => ({
   product_categories: [],
+  showArchived: false,
   isLoading: true,
   error: null,
 
@@ -26,21 +30,56 @@ export const useProductCategoriesStore = create<ProductCategoriesState>((set) =>
   },
 
   addProductCategory: async (category) => {
-    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
-    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
-    const { data, error } = await supabase.from('product_categories').insert([{ ...category, salon_id: activeSalonId }]).select().single();
-    if (error) throw new Error('Impossibile aggiungere la categoria.');
-    return new ProductCategory(data);
+    const response = await fetch('/api/product-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new ProductCategory(result.category);
   },
 
   updateProductCategory: async (id, updated) => {
-    const { data, error } = await supabase.from('product_categories').update(updated).eq('id', id).select().single();
-    if (error) throw new Error('Impossibile aggiornare la categoria.');
-    return new ProductCategory(data);
+    const response = await fetch('/api/product-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, category: updated }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new ProductCategory(result.category);
+  },
+
+  archiveProductCategory: async (id) => {
+    const response = await fetch('/api/product-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'archive' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
+  restoreProductCategory: async (id) => {
+    const response = await fetch('/api/product-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'restore' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
 
   deleteProductCategory: async (id) => {
-    const { error } = await supabase.from('product_categories').delete().eq('id', id);
-    if (error) throw new Error('Impossibile eliminare la categoria.');
+    const response = await fetch('/api/product-categories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
+
+  setShowArchived: (show) => set({ showArchived: show }),
 }));

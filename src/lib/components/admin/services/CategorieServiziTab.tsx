@@ -10,8 +10,9 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddServiceCategoryModal } from './AddServiceCategoryModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -29,9 +30,16 @@ function ColorNameCell({ color, name }: { color: string; name: string }) {
   );
 }
 
-export function CategorieServiziTab() {
-  const categories = useServiceCategoriesStore((s) => s.service_categories);
+interface CategorieServiziTabProps {
+  categories?: ServiceCategory[];
+  showArchived?: boolean;
+}
+
+export function CategorieServiziTab({ categories: categoriesProp, showArchived = false }: CategorieServiziTabProps = {}) {
+  const storeCategories = useServiceCategoriesStore((s) => s.service_categories);
   const isLoading = useServiceCategoriesStore((s) => s.isLoading);
+  const restoreCategory = useServiceCategoriesStore((s) => s.restoreServiceCategory);
+  const categories = categoriesProp ?? storeCategories;
 
   const [showAdd, setShowAdd] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -92,6 +100,16 @@ export function CategorieServiziTab() {
     e.stopPropagation();
     setSelected(item);
     setShowDelete(true);
+  };
+
+  const handleRestore = async (e: React.MouseEvent, item: ServiceCategory) => {
+    e.stopPropagation();
+    try {
+      await restoreCategory(item.id);
+      messagePopup.getState().success('Categoria ripristinata con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante il ripristino.');
+    }
   };
 
   return (
@@ -180,13 +198,23 @@ export function CategorieServiziTab() {
                     })}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={(e) => handleEditClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {showArchived ? (
+                          <button
+                            onClick={(e) => handleRestore(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            title="Ripristina"
+                          >
+                            <ArchiveRestore className="size-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleEditClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                            title="Modifica"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleDeleteClick(e, row.original)}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

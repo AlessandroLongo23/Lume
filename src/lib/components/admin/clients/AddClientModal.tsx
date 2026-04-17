@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { format, parse, isValid } from 'date-fns';
-import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, Tag } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
-import { useClientCategoriesStore } from '@/lib/stores/client_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { CustomCheckbox } from '@/lib/components/shared/ui/forms/CustomCheckbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
@@ -27,7 +25,6 @@ const emptyClient = () => ({
   phonePrefix: '+39',
   phoneNumber: '',
   isTourist: false,
-  categoryId: '',
   birthDate: '',
   note: '',
 });
@@ -39,7 +36,6 @@ const emptyErrors = () => ({
   email: '',
   phoneNumber: '',
   password: '',
-  categoryId: '',
   birthDate: '',
 });
 
@@ -57,7 +53,6 @@ const validateBirthDate = (date: string): string => {
 export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   const clients = useClientsStore((s) => s.clients);
   const addClient = useClientsStore((s) => s.addClient);
-  const clientCategories = useClientCategoriesStore((s) => s.client_categories);
 
   const [client, setClient] = useState(emptyClient());
   const [errors, setErrors] = useState(emptyErrors());
@@ -143,18 +138,6 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
               <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono</span></label>
               <PhoneNumber prefixCode={client.phonePrefix} phoneNumber={client.phoneNumber} onPrefixChange={(v) => set('phonePrefix', v)} onPhoneChange={(v) => set('phoneNumber', v)} />
               {errors.phoneNumber && <p className="text-xs text-red-500">{errors.phoneNumber}</p>}
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <label className={labelClass}><Tag className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Categoria</span></label>
-              <CustomSelect
-                options={clientCategories}
-                labelKey="name"
-                valueKey="id"
-                value={client.categoryId}
-                onChange={(v) => set('categoryId', v)}
-                placeholder="Seleziona categoria"
-              />
-              {errors.categoryId && <p className="text-xs text-red-500">{errors.categoryId}</p>}
             </div>
             <div className="flex flex-1 flex-col gap-2">
               <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data di nascita</span></label>

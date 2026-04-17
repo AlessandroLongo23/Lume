@@ -30,11 +30,7 @@ export default function LandingPage() {
 
   return (
     <>
-      <LandingHeader
-        session={session}
-        onLoginClick={() => router.push('/login')}
-        onRegisterClick={() => router.push('/register')}
-      />
+      <LandingHeader session={session} />
 
       <main>
         {/* Hero */}

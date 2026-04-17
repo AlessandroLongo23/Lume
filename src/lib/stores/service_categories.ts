@@ -1,20 +1,24 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { ServiceCategory, type RawServiceCategory } from '@/lib/types/ServiceCategory';
-import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ServiceCategoriesState {
   service_categories: ServiceCategory[];
+  showArchived: boolean;
   isLoading: boolean;
   error: string | null;
   fetchServiceCategories: () => Promise<void>;
   addServiceCategory: (category: Partial<ServiceCategory>) => Promise<ServiceCategory>;
   updateServiceCategory: (id: string, updated: Partial<ServiceCategory>) => Promise<ServiceCategory>;
+  archiveServiceCategory: (id: string) => Promise<void>;
+  restoreServiceCategory: (id: string) => Promise<void>;
   deleteServiceCategory: (id: string) => Promise<void>;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useServiceCategoriesStore = create<ServiceCategoriesState>((set) => ({
   service_categories: [],
+  showArchived: false,
   isLoading: true,
   error: null,
 
@@ -26,56 +30,56 @@ export const useServiceCategoriesStore = create<ServiceCategoriesState>((set) =>
   },
 
   addServiceCategory: async (category) => {
-    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
-    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
-    const { data, error } = await supabase.from('service_categories').insert([{ ...category, salon_id: activeSalonId }]).select().single();
-    if (error) throw new Error('Impossibile aggiungere la categoria.');
-    return new ServiceCategory(data);
+    const response = await fetch('/api/service-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new ServiceCategory(result.category);
   },
 
   updateServiceCategory: async (id, updated) => {
-    const { data, error } = await supabase.from('service_categories').update(updated).eq('id', id).select().single();
-    if (error) throw new Error('Impossibile aggiornare la categoria.');
-    return new ServiceCategory(data);
+    const response = await fetch('/api/service-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, category: updated }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return new ServiceCategory(result.category);
+  },
+
+  archiveServiceCategory: async (id) => {
+    const response = await fetch('/api/service-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'archive' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+  },
+
+  restoreServiceCategory: async (id) => {
+    const response = await fetch('/api/service-categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'restore' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
 
   deleteServiceCategory: async (id) => {
-    // 1. Find all services in this category
-    const { data: services, error: sErr } = await supabase
-      .from('services')
-      .select('id')
-      .eq('category_id', id);
-    if (sErr) throw new Error('Impossibile eliminare la categoria.');
-
-    const serviceIds = (services ?? []).map((s) => s.id);
-
-    if (serviceIds.length > 0) {
-      // 2. Find all fiches that reference these services
-      const { data: ficheServices, error: fsErr } = await supabase
-        .from('fiche_services')
-        .select('fiche_id')
-        .in('service_id', serviceIds);
-      if (fsErr) throw new Error('Impossibile eliminare la categoria.');
-
-      const ficheIds = [...new Set((ficheServices ?? []).map((fs) => fs.fiche_id))];
-
-      if (ficheIds.length > 0) {
-        // 3. Delete fiche_services rows first
-        const { error: fsDelErr } = await supabase.from('fiche_services').delete().in('fiche_id', ficheIds);
-        if (fsDelErr) throw new Error('Impossibile eliminare la categoria.');
-
-        // 4. Delete the fiches
-        const { error: fDelErr } = await supabase.from('fiches').delete().in('id', ficheIds);
-        if (fDelErr) throw new Error('Impossibile eliminare la categoria.');
-      }
-
-      // 5. Delete the services
-      const { error: svDelErr } = await supabase.from('services').delete().in('id', serviceIds);
-      if (svDelErr) throw new Error('Impossibile eliminare la categoria.');
-    }
-
-    // 6. Finally delete the category
-    const { error } = await supabase.from('service_categories').delete().eq('id', id);
-    if (error) throw new Error('Impossibile eliminare la categoria.');
+    const response = await fetch('/api/service-categories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
+
+  setShowArchived: (show) => set({ showArchived: show }),
 }));
