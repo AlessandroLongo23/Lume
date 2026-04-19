@@ -2,6 +2,8 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import type { GatewayResult, WorkspaceContext } from '@/lib/types/Workspace';
 
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — mirrors /api/platform/enter-salon
+
 function getAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,21 +33,44 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
     .maybeSingle();
 
   if (profile?.is_super_admin) {
-    // If the super-admin is currently impersonating a salon, surface that salon
-    // as the active one so client-side stores (useWorkspaceStore) can scope
-    // inserts/updates to it just like a regular owner would.
-    //
-    // Impersonation requires BOTH cookies set together (by /api/platform/enter-salon).
-    // If only one is present, it's stale (e.g. the non-httpOnly flag was cleared
-    // while the httpOnly id cookie survived across a logout/login) — clean up and
-    // treat as not impersonating. Otherwise the sidebar would label the user's
-    // own data as the impersonated salon.
+    // The super_admin_impersonation table is the source of truth for RLS. The
+    // cookies are fast-path UI hints that should mirror it. If they disagree
+    // (legacy cookies left over from before this table existed, a stale
+    // httpOnly cookie surviving a logout, direct DB edits, etc.), trust the
+    // table and resync the cookies to match.
     const cookieStore = await cookies();
-    const activeSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
-    const impersonating = cookieStore.get('lume-impersonating')?.value === '1';
-    const isImpersonating = !!activeSalonId && impersonating;
+    const cookieSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
+    const cookieImpersonating = cookieStore.get('lume-impersonating')?.value === '1';
 
-    if (!isImpersonating && (activeSalonId || impersonating)) {
+    const { data: imp } = await supabaseAdmin
+      .from('super_admin_impersonation')
+      .select('salon_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const tableSalonId: string | null = imp?.salon_id ?? null;
+    const isImpersonating = !!tableSalonId;
+
+    if (isImpersonating) {
+      if (cookieSalonId !== tableSalonId) {
+        cookieStore.set('lume-active-salon-id', tableSalonId, {
+          httpOnly: true,
+          secure:   process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path:     '/',
+          maxAge:   COOKIE_MAX_AGE,
+        });
+      }
+      if (!cookieImpersonating) {
+        cookieStore.set('lume-impersonating', '1', {
+          httpOnly: false,
+          secure:   process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path:     '/',
+          maxAge:   COOKIE_MAX_AGE,
+        });
+      }
+    } else if (cookieSalonId || cookieImpersonating) {
       cookieStore.delete('lume-active-salon-id');
       cookieStore.delete('lume-impersonating');
     }
@@ -54,7 +79,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
       businessContexts: [],
       clientContexts:   [],
       redirect:         isImpersonating ? '/admin/calendario' : '/platform',
-      activeSalonId:    isImpersonating ? activeSalonId : null,
+      activeSalonId:    tableSalonId,
       isSuperAdmin:     true,
     };
   }
