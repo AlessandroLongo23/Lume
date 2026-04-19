@@ -19,14 +19,14 @@ export async function PATCH(req: NextRequest) {
     const admin = getAdminClient();
     const { data: profile } = await admin
       .from('profiles')
-      .select('salon_id, role')
+      .select('salon_id, role, is_super_admin')
       .eq('id', user.id)
       .single();
 
     if (!profile) return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
     if (profile.role !== 'owner') return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
 
-    const salonId = await getActiveSalonId(profile.salon_id);
+    const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
     const { logoUrl } = await req.json();
 
     if (typeof logoUrl !== 'string' && logoUrl !== null) {

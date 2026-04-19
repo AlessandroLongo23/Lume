@@ -34,13 +34,27 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
     // If the super-admin is currently impersonating a salon, surface that salon
     // as the active one so client-side stores (useWorkspaceStore) can scope
     // inserts/updates to it just like a regular owner would.
+    //
+    // Impersonation requires BOTH cookies set together (by /api/platform/enter-salon).
+    // If only one is present, it's stale (e.g. the non-httpOnly flag was cleared
+    // while the httpOnly id cookie survived across a logout/login) — clean up and
+    // treat as not impersonating. Otherwise the sidebar would label the user's
+    // own data as the impersonated salon.
     const cookieStore = await cookies();
     const activeSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
+    const impersonating = cookieStore.get('lume-impersonating')?.value === '1';
+    const isImpersonating = !!activeSalonId && impersonating;
+
+    if (!isImpersonating && (activeSalonId || impersonating)) {
+      cookieStore.delete('lume-active-salon-id');
+      cookieStore.delete('lume-impersonating');
+    }
+
     return {
       businessContexts: [],
       clientContexts:   [],
-      redirect:         activeSalonId ? '/admin/calendario' : '/platform',
-      activeSalonId,
+      redirect:         isImpersonating ? '/admin/calendario' : '/platform',
+      activeSalonId:    isImpersonating ? activeSalonId : null,
       isSuperAdmin:     true,
     };
   }

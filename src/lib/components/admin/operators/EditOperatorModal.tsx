@@ -46,7 +46,7 @@ export function EditOperatorModal({ isOpen, onClose, editedOperator, onEditedOpe
     if (Object.values(e).some(Boolean)) return;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { password: _pw, ...toUpdate } = editedOperator as any;
       await updateOperator(selectedOperator.id, { ...selectedOperator, ...toUpdate });
       messagePopup.getState().success('Operatore aggiornato con successo!');

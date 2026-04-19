@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
     const admin = getAdminSupabase();
     const { data: profile } = await admin
       .from('profiles')
-      .select('salon_id')
+      .select('salon_id, is_super_admin')
       .eq('id', user.id)
       .single();
 
-    const salonId = await getActiveSalonId(profile?.salon_id ?? 'N/A');
+    const salonId = await getActiveSalonId(profile?.salon_id ?? 'N/A', profile?.is_super_admin ?? false);
     const timestamp = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
 
     const html = `

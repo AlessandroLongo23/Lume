@@ -30,7 +30,7 @@ export async function GET() {
     }
 
     // Prefer the cookie-selected salon (multi-salon owners), fall back to profile default
-    const salonId = await getActiveSalonId(profile.salon_id);
+    const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
 
     const { data: salon } = await supabaseAdmin
       .from('salons')

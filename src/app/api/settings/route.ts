@@ -18,13 +18,13 @@ async function getAuthContext() {
   const admin = getAdminClient();
   const { data: profile } = await admin
     .from('profiles')
-    .select('salon_id, role')
+    .select('salon_id, role, is_super_admin')
     .eq('id', user.id)
     .single();
 
   if (!profile) return null;
 
-  const salonId = await getActiveSalonId(profile.salon_id);
+  const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
   return { user, profile, salonId, admin };
 }
 

@@ -12,7 +12,7 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { email, password, submitRegistration, reset } = useOnboardingStore();
+  const { email, password, submitRegistration } = useOnboardingStore();
 
   // Reset store if the user navigates back to this page after completing it
   useEffect(() => {

@@ -25,10 +25,8 @@ export function AddMarchioModal({ isOpen, onClose, selectedManufacturer }: AddMa
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({ name: selectedManufacturer.name });
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(emptyForm());
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNameError('');
   }, [selectedManufacturer, isOpen]);
 

@@ -107,18 +107,18 @@ export function FichesTable({ fiches }: FichesTableProps) {
         enableSorting: false,
         cell: ({ row }) => {
           const fServices = ficheServicesByFiche.get(row.original.id) ?? [];
-          const names = fServices
-            .map((fs) => serviceMap.get(fs.service_id)?.name)
-            .filter(Boolean) as string[];
-          if (names.length === 0) return <span className="text-zinc-400">—</span>;
+          const entries = fServices
+            .map((fs) => ({ id: fs.id, name: serviceMap.get(fs.service_id)?.name }))
+            .filter((e): e is { id: string; name: string } => Boolean(e.name));
+          if (entries.length === 0) return <span className="text-zinc-400">—</span>;
           return (
             <div className="flex flex-wrap gap-1">
-              {names.map((name) => (
+              {entries.map((entry) => (
                 <span
-                  key={name}
+                  key={entry.id}
                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70 border border-primary/20"
                 >
-                  {name}
+                  {entry.name}
                 </span>
               ))}
             </div>
