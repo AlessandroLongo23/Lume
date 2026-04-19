@@ -20,17 +20,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'salonId mancante' }, { status: 400 });
     }
 
-    // Super-admins may activate any salon (impersonation); other users must
-    // belong to the requested salon.
-    if (!(await isSuperAdmin(user.id))) {
-      const workspace = await resolveWorkspace(user.id);
-      const allSalonIds = [
-        ...workspace.businessContexts.map((c) => c.salonId),
-        ...workspace.clientContexts.map((c) => c.salonId),
-      ];
-      if (!allSalonIds.includes(salonId)) {
-        return NextResponse.json({ error: 'Accesso negato' }, { status: 403 });
-      }
+    const callerIsSuperAdmin = await isSuperAdmin(user.id);
+
+    if (callerIsSuperAdmin) {
+      // Super-admins must go through /api/platform/enter-salon to change their
+      // active salon — that route writes the super_admin_impersonation row
+      // atomically. set-salon is a blunt cookie-writer and would leave the
+      // table out of sync with the cookie.
+      return NextResponse.json(
+        { error: 'I super-admin devono usare /api/platform/enter-salon' },
+        { status: 403 },
+      );
+    }
+
+    const workspace = await resolveWorkspace(user.id);
+    const allSalonIds = [
+      ...workspace.businessContexts.map((c) => c.salonId),
+      ...workspace.clientContexts.map((c) => c.salonId),
+    ];
+    if (!allSalonIds.includes(salonId)) {
+      return NextResponse.json({ error: 'Accesso negato' }, { status: 403 });
     }
 
     const cookieStore = await cookies();
