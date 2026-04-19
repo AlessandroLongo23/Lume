@@ -32,6 +32,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
   }
 
+  // Write the RLS truth row FIRST. If this fails we return an error and do
+  // not set any cookies, keeping UI and data consistent (both off).
+  const { error: upsertError } = await supabaseAdmin
+    .from('super_admin_impersonation')
+    .upsert(
+      { user_id: guard.user.id, salon_id: salonId },
+      { onConflict: 'user_id' },
+    );
+
+  if (upsertError) {
+    console.error('enter-salon upsert error:', upsertError);
+    return NextResponse.json({ error: 'Impossibile attivare il salone' }, { status: 500 });
+  }
+
   const cookieStore = await cookies();
   const baseCookie = {
     secure:   process.env.NODE_ENV === 'production',
