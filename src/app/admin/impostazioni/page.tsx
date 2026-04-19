@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -168,7 +168,7 @@ function SalonePanel() {
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <Clock className="size-4 text-indigo-500" />
+            <Clock className="size-4 text-primary" />
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Orari di Apertura</h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
@@ -212,14 +212,14 @@ function SalonePanel() {
                             type="time"
                             lang="it"
                             {...register(`operating_hours.${index}.shifts.${shiftIndex}.start`)}
-                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-shadow"
+                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
                           />
                           <span className="text-zinc-300 dark:text-zinc-600 text-sm select-none">—</span>
                           <input
                             type="time"
                             lang="it"
                             {...register(`operating_hours.${index}.shifts.${shiftIndex}.end`)}
-                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-shadow"
+                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
                           />
                           {field.shifts.length > 1 && (
                             <button
@@ -238,7 +238,7 @@ function SalonePanel() {
                         <button
                           type="button"
                           onClick={() => addShift(index)}
-                          className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors w-fit mt-0.5"
+                          className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-active dark:hover:text-primary/70 transition-colors w-fit mt-0.5"
                         >
                           <Plus className="size-3.5" />
                           Aggiungi fascia oraria
@@ -257,7 +257,7 @@ function SalonePanel() {
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <Warehouse className="size-4 text-indigo-500" />
+            <Warehouse className="size-4 text-primary" />
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Gestione Magazzino</h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
@@ -285,7 +285,7 @@ function SalonePanel() {
         <button
           type="submit"
           disabled={saving || (!isDirty && !trackInventoryDirty)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active active:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="size-4" />
           {saving ? 'Salvataggio...' : 'Salva Impostazioni'}
@@ -295,9 +295,20 @@ function SalonePanel() {
   );
 }
 
+function readImpersonatingCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some((c) => c.trim().startsWith('lume-impersonating=1'));
+}
+const subscribeImpersonation = () => () => {};
+
 function AccountPanel() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [salonName, setSalonName] = useState<string | null>(null);
+  const isImpersonating = useSyncExternalStore(
+    subscribeImpersonation,
+    readImpersonatingCookie,
+    () => false,
+  );
 
   useEffect(() => {
     fetch('/api/settings')
@@ -311,7 +322,7 @@ function AccountPanel() {
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <User className="size-4 text-indigo-500" />
+            <User className="size-4 text-primary" />
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Profilo Account</h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">Gestisci email e password del tuo account.</p>
@@ -328,7 +339,7 @@ function AccountPanel() {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-1.5 text-sm text-indigo-500 hover:text-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary-active disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Modifica
                 <ChevronRight className="size-3.5" />
@@ -346,7 +357,7 @@ function AccountPanel() {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-1.5 text-sm text-indigo-500 hover:text-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary-active disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Modifica
                 <ChevronRight className="size-3.5" />
@@ -356,7 +367,8 @@ function AccountPanel() {
         </div>
       </div>
 
-      {/* Danger Zone */}
+      {/* Danger Zone — only the real owner can self-delete. Hidden during super-admin impersonation; platform page handles that case. */}
+      {!isImpersonating && (
       <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-red-100 dark:border-red-900/40">
           <div className="flex items-center gap-2">
@@ -388,8 +400,9 @@ function AccountPanel() {
           </div>
         </div>
       </div>
+      )}
 
-      {salonName !== null && (
+      {!isImpersonating && salonName !== null && (
         <DeleteWorkspaceModal
           isOpen={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
@@ -406,7 +419,7 @@ function AbbonamentoPanel() {
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <CreditCard className="size-4 text-indigo-500" />
+            <CreditCard className="size-4 text-primary" />
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Gestione Abbonamento</h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">Visualizza e gestisci il tuo piano Lume.</p>
@@ -423,7 +436,7 @@ function AbbonamentoPanel() {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-1.5 text-sm text-indigo-500 hover:text-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary-active disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Gestisci
                 <ChevronRight className="size-3.5" />
@@ -441,7 +454,7 @@ function AbbonamentoPanel() {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-1.5 text-sm text-indigo-500 hover:text-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary-active disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Visualizza
                 <ChevronRight className="size-3.5" />
@@ -487,7 +500,7 @@ export default function ImpostazioniPage() {
                     onClick={() => setActiveTab(id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                       isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+                        ? 'bg-primary/10 dark:bg-primary/20 text-primary-hover dark:text-primary/70'
                         : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100'
                     }`}
                   >

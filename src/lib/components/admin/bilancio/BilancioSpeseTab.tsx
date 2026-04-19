@@ -27,7 +27,7 @@ const CATEGORIE = ['Manutenzione', 'Prodotti', 'Utenze', 'Affitto', 'Marketing',
 
 const CATEGORIA_COLORS: Record<string, string> = {
   Manutenzione: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  Prodotti:     'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+  Prodotti:     'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
   Utenze:       'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
   Affitto:      'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
   Marketing:    'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
@@ -141,7 +141,7 @@ export function BilancioSpeseTab() {
     manualFiltering: true,
   });
 
-  const inputClass = 'w-full px-4 py-3 h-12 rounded-xl border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow text-base';
+  const inputClass = 'w-full px-4 py-3 h-12 rounded-xl border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow text-base';
   const labelClass = 'text-base font-medium text-zinc-700 dark:text-zinc-300';
 
   const openDialog = () => { setForm(emptyForm()); setDialogOpen(true); };
@@ -154,8 +154,8 @@ export function BilancioSpeseTab() {
         <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
           <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
             <div className="flex flex-row items-center gap-3">
-              <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
-                <Receipt className="size-5 text-indigo-500" />
+              <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
+                <Receipt className="size-5 text-primary" />
               </div>
               <div className="flex flex-col">
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Nuova Spesa</h2>
@@ -164,7 +164,7 @@ export function BilancioSpeseTab() {
             </div>
             <button
               aria-label="Chiudi"
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={() => setDialogOpen(false)}
             >
               <X className="size-5" />
@@ -197,7 +197,7 @@ export function BilancioSpeseTab() {
           <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25 shrink-0">
             <button
               type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={() => setDialogOpen(false)}
             >
               <X className="size-4" />
@@ -206,7 +206,7 @@ export function BilancioSpeseTab() {
             <button
               type="button"
               disabled={isSaving}
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 disabled:pointer-events-none transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
               onClick={handleAdd}
             >
               <Check className="size-4" />
@@ -256,8 +256,8 @@ export function BilancioSpeseTab() {
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
                             <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
                             </span>
                           )}
                         </span>

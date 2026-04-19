@@ -52,7 +52,7 @@ export function StepThree() {
               onClick={() => setField('businessType', isSelected ? null : value)}
               className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-colors duration-200 cursor-pointer
                 ${isSelected
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+                  ? 'border-primary bg-primary/10 text-primary-hover'
                   : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 hover:bg-zinc-100'
                 }
                 ${value === 'other' ? 'col-span-2' : ''}`}

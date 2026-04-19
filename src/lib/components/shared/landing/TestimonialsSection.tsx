@@ -1,123 +1,29 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { Star, Quote } from 'lucide-react';
 import { motion, itemVariants, viewportConfig } from './motion';
+import type { ReviewWithAuthor } from '@/lib/types/Review';
+import {
+  staticTestimonialsRow1,
+  staticTestimonialsRow2,
+  type Testimonial,
+} from '@/lib/const/testimonials';
 
-interface Testimonial {
-  id: number;
-  name: string;
-  role: string;
-  salon: string;
-  city: string;
-  quote: string;
-  stars: number;
+function reviewToTestimonial(r: ReviewWithAuthor): Testimonial {
+  const firstName = r.author_first_name?.trim() ?? '';
+  const lastName = r.author_last_name?.trim() ?? '';
+  const name = [firstName, lastName].filter(Boolean).join(' ') || 'Utente Lume';
+  return {
+    id: r.id,
+    name,
+    role: r.author_role === 'owner' ? 'Titolare' : 'Operatore',
+    salon: r.salon_name ?? '',
+    city: null,
+    quote: r.message,
+    stars: r.rating,
+  };
 }
-
-const row1: Testimonial[] = [
-  {
-    id: 1,
-    name: 'Francesca Moretti',
-    role: 'Titolare',
-    salon: 'Atelier Capelli',
-    city: 'Milano',
-    quote:
-      'Usavamo il vecchio gestionale da 6 anni. Pensavo che cambiare sarebbe stato un incubo, invece con Lume in mezza giornata eravamo operativi. Le ragazze lo adorano.',
-    stars: 5,
-  },
-  {
-    id: 2,
-    name: 'Marco Ferretti',
-    role: 'Titolare',
-    salon: 'Barbershop Ferretti',
-    city: 'Roma',
-    quote:
-      'Finalmente un gestionale che non sembra uscito dal 2005. I clienti ricevono il promemoria, io vedo tutto dal telefono. Pagavo €60 al mese per un software che odiavo.',
-    stars: 5,
-  },
-  {
-    id: 3,
-    name: 'Giulia Esposito',
-    role: 'Responsabile',
-    salon: 'Studio G Hair',
-    city: 'Napoli',
-    quote:
-      'Il calendario è una rivoluzione. Vedo tutti gli operatori in un colpo d\'occhio, sposto appuntamenti con un drag, e la scheda cliente si apre con un clic.',
-    stars: 5,
-  },
-  {
-    id: 4,
-    name: 'Alessandro Bianchi',
-    role: 'Titolare',
-    salon: 'Bianchi Barbers',
-    city: 'Torino',
-    quote:
-      'Con due sedi aperte, avevo bisogno di qualcosa di chiaro per gestire tutto. Lume mi dà i numeri in tempo reale: incassi, servizi più richiesti, prodotti da riordinare.',
-    stars: 5,
-  },
-  {
-    id: 5,
-    name: 'Elena Conti',
-    role: 'Titolare',
-    salon: 'Maison Elena',
-    city: 'Bologna',
-    quote:
-      'Ho convinto anche le mie colleghe a provarlo. Tutte passate a Lume nel giro di un mese. La gestione del magazzino da sola vale l\'abbonamento.',
-    stars: 5,
-  },
-];
-
-const row2: Testimonial[] = [
-  {
-    id: 6,
-    name: 'Davide Russo',
-    role: 'Titolare',
-    salon: 'The Blade Room',
-    city: 'Firenze',
-    quote:
-      'Sono un barbiere, non un informatico. Mi serviva qualcosa che funzionasse e basta. Lume fa esattamente quello: apri, clicchi, fatto. Nessun manuale necessario.',
-    stars: 5,
-  },
-  {
-    id: 7,
-    name: 'Sara Marchetti',
-    role: 'Co-titolare',
-    salon: 'Onde Salon',
-    city: 'Verona',
-    quote:
-      'La cosa che mi ha conquistato è la scheda cliente. Ogni preferenza, ogni nota, ogni trattamento passato — tutto salvato. I clienti si sentono seguiti e tornano.',
-    stars: 5,
-  },
-  {
-    id: 8,
-    name: 'Roberto Galli',
-    role: 'Titolare',
-    salon: 'Galli Style',
-    city: 'Palermo',
-    quote:
-      'Prima scrivevo gli appuntamenti su un\'agenda di carta. Mia figlia mi ha fatto provare Lume e non sono più tornato alla carta. A 58 anni, se ci riesco io ci riesce chiunque.',
-    stars: 5,
-  },
-  {
-    id: 9,
-    name: 'Valentina Ricci',
-    role: 'Titolare',
-    salon: 'VR Beauty Lab',
-    city: 'Genova',
-    quote:
-      'L\'assistenza è incredibile. Ho scritto una sera alle 22 per un dubbio e mi hanno risposto in dieci minuti. Con il vecchio software aspettavo giorni.',
-    stars: 5,
-  },
-  {
-    id: 10,
-    name: 'Luca De Santis',
-    role: 'Titolare',
-    salon: 'Taglio & Stile',
-    city: 'Bari',
-    quote:
-      'I miei clienti mi chiedono come faccio a ricordarmi tutto. Il segreto è Lume: apro la scheda e so esattamente cosa hanno fatto l\'ultima volta. Fa sembrare tutto magico.',
-    stars: 5,
-  },
-];
 
 function Stars({ count }: { count: number }) {
   return (
@@ -133,14 +39,20 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   const initials = testimonial.name
     .split(' ')
     .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
     .join('');
 
+  const authorLine = [testimonial.role, testimonial.salon, testimonial.city]
+    .filter((s) => typeof s === 'string' && s.trim().length > 0)
+    .join(' — ');
+
   return (
-    <div className="w-[340px] sm:w-[380px] shrink-0 rounded-2xl border border-[#E4E4E7] bg-white p-6 flex flex-col justify-between hover:border-[#6366F1]/25 hover:shadow-md transition-all duration-300">
+    <div className="w-[340px] sm:w-[380px] shrink-0 rounded-2xl border border-border bg-white p-6 flex flex-col justify-between hover:border-primary/25 hover:shadow-md transition-all duration-300">
       {/* Top: quote icon + stars */}
       <div>
         <div className="flex items-start justify-between mb-4">
-          <Quote className="w-7 h-7 text-[#6366F1]/15" />
+          <Quote className="w-7 h-7 text-primary/20" />
           <Stars count={testimonial.stars} />
         </div>
 
@@ -150,19 +62,17 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       </div>
 
       {/* Bottom: author */}
-      <div className="flex items-center gap-3 mt-5 pt-5 border-t border-[#E4E4E7]">
-        <div className="w-9 h-9 rounded-full bg-[#6366F1] flex items-center justify-center shrink-0">
-          <span className="text-white text-[10px] font-bold tracking-tight">
+      <div className="flex items-center gap-3 mt-5 pt-5 border-t border-border">
+        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
+          <span className="text-white text-2xs font-bold tracking-tight">
             {initials}
           </span>
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-[#09090B] truncate">
+          <div className="text-sm font-semibold text-foreground truncate">
             {testimonial.name}
           </div>
-          <div className="text-xs text-zinc-400 truncate">
-            {testimonial.role}, {testimonial.salon} — {testimonial.city}
-          </div>
+          <div className="text-xs text-zinc-400 truncate">{authorLine}</div>
         </div>
       </div>
     </div>
@@ -182,8 +92,8 @@ function MarqueeRow({
   return (
     <div className="relative overflow-hidden">
       {/* Fade edges */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 z-10 bg-gradient-to-r from-[#FAFAFA] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 z-10 bg-gradient-to-l from-[#FAFAFA] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 z-10 bg-linear-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 z-10 bg-linear-to-l from-background to-transparent" />
 
       <div
         className={`gap-4 ${
@@ -201,8 +111,43 @@ function MarqueeRow({
 }
 
 export function TestimonialsSection() {
+  const [dbReviews, setDbReviews] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/reviews')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.success && Array.isArray(data.reviews)) {
+          setDbReviews((data.reviews as ReviewWithAuthor[]).map(reviewToTestimonial));
+        }
+      })
+      .catch(() => {
+        // Silent — landing page falls back to static testimonials.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Interleave real reviews across both rows so they're visible, with static
+  // mocks as backfill. The interleave is deterministic (no shuffle) so the
+  // order is stable across renders.
+  const { row1, row2 } = useMemo(() => {
+    const realRow1: Testimonial[] = [];
+    const realRow2: Testimonial[] = [];
+    dbReviews.forEach((t, i) => {
+      (i % 2 === 0 ? realRow1 : realRow2).push(t);
+    });
+    return {
+      row1: [...realRow1, ...staticTestimonialsRow1],
+      row2: [...realRow2, ...staticTestimonialsRow2],
+    };
+  }, [dbReviews]);
+
   return (
-    <section className="py-24 bg-[#FAFAFA] overflow-hidden">
+    <section className="py-24 bg-background overflow-hidden">
       {/* Header — contained */}
       <motion.div
         className="max-w-6xl mx-auto px-4 mb-14"
@@ -212,13 +157,13 @@ export function TestimonialsSection() {
         variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
       >
         <motion.div className="max-w-2xl" variants={itemVariants}>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E4E4E7] bg-white text-xs text-zinc-500 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-white text-xs text-zinc-500 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             Testimonianze
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#09090B] leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4">
             Chi lo usa,{' '}
-            <span className="text-[#6366F1]">non torna indietro.</span>
+            <span className="text-primary">non torna indietro.</span>
           </h2>
           <p className="text-zinc-500 text-lg leading-relaxed">
             Saloni e barbieri in tutta Italia hanno già scelto Lume per
@@ -250,9 +195,9 @@ export function TestimonialsSection() {
               {['FM', 'MF', 'GE', 'AB', 'EC'].map((initials, i) => (
                 <div
                   key={i}
-                  className="w-8 h-8 rounded-full bg-[#6366F1] border-2 border-[#FAFAFA] flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-primary border-2 border-background flex items-center justify-center"
                 >
-                  <span className="text-white text-[9px] font-bold">
+                  <span className="text-white text-2xs font-bold">
                     {initials}
                   </span>
                 </div>
@@ -265,7 +210,7 @@ export function TestimonialsSection() {
 
           <div className="flex items-center gap-1.5">
             <Stars count={5} />
-            <span className="text-sm font-medium text-[#09090B]">4.9/5</span>
+            <span className="text-sm font-medium text-foreground">4.9/5</span>
             <span className="text-sm text-zinc-400">media recensioni</span>
           </div>
         </motion.div>

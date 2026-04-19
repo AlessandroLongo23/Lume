@@ -38,7 +38,7 @@ export function StoreInitializer() {
   const fetchClientRatings = useClientRatingsStore((s) => s.fetchClientRatings);
   const fetchManufacturers = useManufacturersStore((s) => s.fetchManufacturers);
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
-  const fetchReviews = useReviewsStore((s) => s.fetchReviews);
+  const fetchMyReview = useReviewsStore((s) => s.fetchMyReview);
   const fetchCoupons = useCouponsStore((s) => s.fetchCoupons);
   const fetchCouponRedemptions = useCouponsStore((s) => s.fetchRedemptions);
   const fetchAbbonamenti = useAbbonamentiStore((s) => s.fetchAbbonamenti);
@@ -66,7 +66,7 @@ export function StoreInitializer() {
       fetchClientRatings(),
       fetchManufacturers(),
       fetchSuppliers(),
-      fetchReviews(),
+      fetchMyReview(),
       fetchCoupons(),
       fetchCouponRedemptions(),
       fetchAbbonamenti(),
@@ -97,7 +97,8 @@ export function StoreInitializer() {
   useRealtimeStore('service_categories', fetchServiceCategories, activeSalonId);
   useRealtimeStore('manufacturers', fetchManufacturers, activeSalonId);
   useRealtimeStore('suppliers', fetchSuppliers, activeSalonId);
-  useRealtimeStore('reviews', fetchReviews, activeSalonId);
+  // Reviews are platform-wide (one per user, not per-salon) — no salon_id filter.
+  useRealtimeStore('reviews', fetchMyReview);
   useRealtimeStore('coupons', fetchCoupons, activeSalonId);
   useRealtimeStore('coupon_redemptions', fetchCouponRedemptions, activeSalonId);
   useRealtimeStore('abbonamenti', fetchAbbonamenti, activeSalonId);

@@ -83,7 +83,7 @@ export default function RegisterPage() {
         transition={{ duration: 0.4, delay: 0.3 }}
       >
         Hai già un account?{' '}
-        <Link href="/login" className="text-indigo-600 hover:text-indigo-700 transition-colors font-medium">
+        <Link href="/login" className="text-primary-hover hover:text-primary-active transition-colors font-medium">
           Accedi
         </Link>
       </motion.p>

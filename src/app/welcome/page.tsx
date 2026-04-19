@@ -12,7 +12,7 @@ function hi(name: string) {
   return (
     <>
       Benvenuto in Lume,{' '}
-      <span className="text-indigo-500 font-semibold">{name}</span>.
+      <span className="text-primary font-semibold">{name}</span>.
     </>
   );
 }
@@ -21,7 +21,7 @@ function workspace(salon: string) {
   return (
     <>
       Stiamo creando lo spazio di lavoro di{' '}
-      <span className="text-indigo-500 font-semibold">{salon}</span>...
+      <span className="text-primary font-semibold">{salon}</span>...
     </>
   );
 }

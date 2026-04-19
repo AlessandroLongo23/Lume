@@ -22,7 +22,7 @@ export function LandingHeader({ session }: LandingHeaderProps) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-sm border-b border-[#E4E4E7] shadow-sm'
+          ? 'bg-white/95 backdrop-blur-sm border-b border-border shadow-sm'
           : 'bg-transparent'
       }`}
     >
@@ -30,13 +30,13 @@ export function LandingHeader({ session }: LandingHeaderProps) {
         <LumeLogo size="md" />
 
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#funzionalita" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+          <a href="#funzionalita" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
             Funzionalità
           </a>
-          <a href="#come-funziona" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+          <a href="#come-funziona" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
             Come funziona
           </a>
-          <a href="#prezzi" className="text-sm text-zinc-500 hover:text-[#09090B] transition-colors">
+          <a href="#prezzi" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
             Prezzi
           </a>
         </nav>
@@ -56,7 +56,7 @@ export function LandingHeader({ session }: LandingHeaderProps) {
             <>
               <Link
                 href="/login"
-                className="hidden sm:block text-sm text-zinc-500 hover:text-[#09090B] transition-colors"
+                className="hidden sm:block text-sm text-zinc-500 hover:text-foreground transition-colors"
               >
                 Accedi
               </Link>

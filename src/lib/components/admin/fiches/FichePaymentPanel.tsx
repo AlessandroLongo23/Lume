@@ -126,7 +126,7 @@ export function FichePaymentPanel({
               className={[
                 'flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border text-xs font-medium transition-all',
                 view === key
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-500'
+                  ? 'border-primary bg-primary/10 dark:bg-primary/10 text-primary-hover dark:text-primary/70 ring-1 ring-primary'
                   : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600',
               ].join(' ')}
             >
@@ -192,7 +192,7 @@ export function FichePaymentPanel({
                   onChange={(e) => updateSplitMethod(i, e.target.value)}
                   className="flex-1 px-2.5 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
                     border-zinc-200 dark:border-zinc-700
-                    focus:border-indigo-400 dark:focus:border-indigo-500
+                    focus:border-primary/70 dark:focus:border-primary
                     text-zinc-900 dark:text-zinc-100 outline-none transition-colors"
                 >
                   <option value={FichePaymentMethod.CASH}>Contanti</option>
@@ -225,7 +225,7 @@ export function FichePaymentPanel({
             <button
               type="button"
               onClick={addSplit}
-              className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors self-start"
+              className="flex items-center gap-1.5 text-xs text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40 transition-colors self-start"
             >
               <Plus className="size-3.5" />
               Aggiungi pagamento

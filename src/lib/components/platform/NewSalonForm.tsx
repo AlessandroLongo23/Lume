@@ -45,10 +45,10 @@ export function NewSalonForm() {
     }
   }
 
-  const inputCls = 'w-full px-3 py-2 text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:border-indigo-500';
+  const inputCls = 'w-full px-3 py-2 text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:border-primary';
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181B]">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card">
       <label className="flex flex-col gap-1">
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Nome salone</span>
         <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
@@ -87,7 +87,7 @@ export function NewSalonForm() {
       <button
         type="submit"
         disabled={isSaving}
-        className="mt-2 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60"
+        className="mt-2 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-60"
       >
         {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
         <span>{isSaving ? 'Creazione…' : 'Crea salone'}</span>

@@ -12,7 +12,7 @@ const points = [
 
 export function SubjectsSection() {
   return (
-    <section className="py-24 px-4 bg-[#FAFAFA]">
+    <section className="py-24 px-4 bg-background">
       <motion.div
         className="max-w-3xl mx-auto"
         initial="hidden"
@@ -24,7 +24,7 @@ export function SubjectsSection() {
           <div className="flex justify-center mb-4">
             <div className="accent-line" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#09090B] mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Perché cambiare adesso?
           </h2>
           <p className="text-zinc-500 text-lg">
@@ -37,15 +37,15 @@ export function SubjectsSection() {
           <div className="grid grid-cols-3 text-sm font-medium mb-3 px-4">
             <span className="text-zinc-400">Quello che usi ora</span>
             <span className="text-center text-zinc-300">→</span>
-            <span className="text-right text-[#6366F1]">Lume</span>
+            <span className="text-right text-primary">Lume</span>
           </div>
 
-          <div className="rounded-xl border border-[#E4E4E7] bg-white overflow-hidden">
+          <div className="rounded-xl border border-border bg-white overflow-hidden">
             {points.map(({ them, us }, i) => (
               <motion.div
                 key={i}
                 className={`grid grid-cols-3 items-center px-4 py-4 text-sm ${
-                  i < points.length - 1 ? 'border-b border-[#E4E4E7]' : ''
+                  i < points.length - 1 ? 'border-b border-border' : ''
                 }`}
                 variants={{
                   hidden: { opacity: 0, x: -12 },
@@ -58,7 +58,7 @@ export function SubjectsSection() {
               >
                 <span className="text-zinc-400 line-through">{them}</span>
                 <span className="text-center text-zinc-300">→</span>
-                <span className="text-right font-medium text-[#09090B]">{us}</span>
+                <span className="text-right font-medium text-foreground">{us}</span>
               </motion.div>
             ))}
           </div>

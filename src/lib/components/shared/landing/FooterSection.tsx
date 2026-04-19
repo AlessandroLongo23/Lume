@@ -5,7 +5,7 @@ import { motion, viewportConfig } from './motion';
 
 export function FooterSection() {
   return (
-    <footer className="bg-white border-t border-[#E4E4E7] py-12 px-4">
+    <footer className="bg-white border-t border-border py-12 px-4">
       <motion.div
         className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6"
         initial={{ opacity: 0 }}

@@ -48,7 +48,7 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMi
   } else if (isDayPast) {
     textClasses = 'text-zinc-400 dark:text-zinc-500';
   } else if (isSelected) {
-    textClasses = 'text-indigo-700 font-semibold dark:text-indigo-300';
+    textClasses = 'text-primary-active font-semibold dark:text-primary/40';
   } else {
     textClasses = 'text-zinc-900 dark:text-zinc-100';
   }
@@ -76,9 +76,9 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMi
         <span
           className={`text-sm font-medium ${
             isDayToday
-              ? 'text-white bg-indigo-500 rounded-full w-7 h-7 flex items-center justify-center'
+              ? 'text-white bg-primary rounded-full w-7 h-7 flex items-center justify-center'
               : isSelected
-                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 rounded-full w-7 h-7 flex items-center justify-center'
+                ? 'text-primary-hover dark:text-primary/70 bg-primary/10 rounded-full w-7 h-7 flex items-center justify-center'
                 : ''
           }`}
         >
@@ -88,11 +88,11 @@ export function MonthViewDay({ day, isCurrentMonth = true, selectedDate, totalMi
         {/* Daily earnings — operator-specific when a filter is active, with salon-wide total alongside for context */}
         {isCurrentMonth && (primaryEarnings > 0 || (hasOperatorFilter && totalEarnings > 0)) && (
           <span className="absolute bottom-1.5 right-2 text-xs font-medium tabular-nums flex items-baseline gap-1">
-            <span className="text-indigo-600 dark:text-indigo-400">
+            <span className="text-primary-hover dark:text-primary/70">
               {formatEarnings(primaryEarnings)}
             </span>
             {hasOperatorFilter && totalEarnings > 0 && totalEarnings !== primaryEarnings && (
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+              <span className="text-2xs text-zinc-400 dark:text-zinc-500">
                 / {formatEarnings(totalEarnings)}
               </span>
             )}

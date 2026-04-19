@@ -106,7 +106,7 @@ function CategoryDropdown<T>({
             key={getKey(item)}
             type="button"
             onClick={() => onSelect(item)}
-            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer"
           >
             {renderItem(item)}
           </button>
@@ -134,7 +134,7 @@ function CategoryDropdown<T>({
               onFocus={() => setHoveredCategoryId(g.categoryId)}
               className={`w-full px-3 py-2 text-left text-sm truncate transition-colors cursor-default ${
                 isActive
-                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium'
+                  ? 'bg-primary/10 text-primary-hover dark:text-primary/70 font-medium'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-500/5'
               }`}
             >
@@ -149,7 +149,7 @@ function CategoryDropdown<T>({
             key={getKey(item)}
             type="button"
             onClick={() => onSelect(item)}
-            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 cursor-pointer"
+            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer"
           >
             {renderItem(item)}
           </button>
@@ -670,7 +670,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
   // ── Styles ────────────────────────────────────────────────────────────────
 
   const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
+    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:border-primary/50 transition-shadow';
   const labelClass =
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
@@ -721,7 +721,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
             </div>
             {isEdit && (
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                <label className="text-2xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
                   Totale finale (€)
                 </label>
                 <div className="flex items-center gap-1.5">
@@ -879,14 +879,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
                           onClick={() => setActiveTab(id)}
                           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                             isActive
-                              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                              ? 'border-primary text-primary-hover dark:text-primary/70'
                               : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
                           }`}
                         >
                           <Icon className="size-4" />
                           {label}
                           {count > 0 && (
-                            <span className="inline-flex items-center justify-center size-4 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-500">
+                            <span className="inline-flex items-center justify-center size-4 rounded-full text-2xs font-semibold bg-primary/15 text-primary">
                               {count}
                             </span>
                           )}
@@ -1134,7 +1134,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
                                       value={prod.quantity}
                                       size={Math.max(2, String(prod.quantity).length)}
                                       onChange={(e) => setProductQuantity(prod.product_id, e.target.value)}
-                                      className="min-w-7 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
+                                      className="min-w-7 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
                                     />
                                     <button
                                       type="button"
@@ -1167,7 +1167,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
                                       value={prod.final_price.toFixed(2)}
                                       size={Math.max(4, prod.final_price.toFixed(2).length)}
                                       onChange={(e) => setProductFinalPrice(prod.product_id, e.target.value)}
-                                      className="min-w-12 text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
+                                      className="min-w-12 text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
                                     />
                                     <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
                                   </div>

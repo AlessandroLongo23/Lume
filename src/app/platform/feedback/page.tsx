@@ -109,7 +109,7 @@ export default async function PlatformFeedbackPage() {
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-600 dark:text-zinc-300">
                       {TYPE_LABEL[entry.type]}
                     </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70">
                       {STATUS_LABEL[entry.status]}
                     </span>
                     {salon && (

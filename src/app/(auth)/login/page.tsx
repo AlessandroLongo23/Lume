@@ -140,7 +140,7 @@ export default function LoginPage() {
         transition={{ duration: 0.4, delay: 0.4 }}
       >
         Non hai un account?{' '}
-        <Link href="/register" className="text-indigo-600 hover:text-indigo-700 transition-colors font-medium">
+        <Link href="/register" className="text-primary-hover hover:text-primary-active transition-colors font-medium">
           Inizia la prova gratuita
         </Link>
       </motion.p>

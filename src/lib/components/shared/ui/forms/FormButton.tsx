@@ -18,7 +18,7 @@ const sizeClasses = {
 
 const variantClasses = {
   primary:
-    'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl',
+    'bg-gradient-to-r from-blue-500 to-primary hover:from-blue-600 hover:to-primary-hover text-white shadow-lg hover:shadow-xl',
   secondary:
     'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-500/25',
   outline:

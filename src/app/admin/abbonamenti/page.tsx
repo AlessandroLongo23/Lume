@@ -50,7 +50,7 @@ export default function AbbonamentiPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cerca per cliente…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
 

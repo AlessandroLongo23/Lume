@@ -5,6 +5,7 @@ import { Archive, ArchiveRestore } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { CATEGORY_PICKER_COLORS, DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
 interface AddServiceCategoryModalProps {
@@ -13,13 +14,7 @@ interface AddServiceCategoryModalProps {
   selectedCategory: ServiceCategory | null;
 }
 
-const COLOR_PALETTE = [
-  '#EF4444', '#F97316', '#EAB308', '#22C55E',
-  '#10B981', '#14B8A6', '#06B6D4', '#3B82F6',
-  '#6366F1', '#8B5CF6', '#EC4899', '#6B7280',
-];
-
-const emptyForm = () => ({ name: '', description: '', color: '#6366F1' });
+const emptyForm = () => ({ name: '', description: '', color: DEFAULT_CATEGORY_COLOR });
 
 export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: AddServiceCategoryModalProps) {
   const addCategory = useServiceCategoriesStore((s) => s.addServiceCategory);
@@ -33,7 +28,7 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
   useEffect(() => {
     if (selectedCategory) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm({ name: selectedCategory.name, description: selectedCategory.description ?? '', color: selectedCategory.color ?? '#6366F1' });
+      setForm({ name: selectedCategory.name, description: selectedCategory.description ?? '', color: selectedCategory.color ?? DEFAULT_CATEGORY_COLOR });
     } else {
       setForm(emptyForm());
     }
@@ -76,7 +71,7 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
     }
   };
 
-  const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
+  const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
 
   return (
     <AddModal
@@ -128,7 +123,7 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Colore</label>
           <div className="flex flex-wrap gap-1.5">
-            {COLOR_PALETTE.map((c) => (
+            {CATEGORY_PICKER_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"

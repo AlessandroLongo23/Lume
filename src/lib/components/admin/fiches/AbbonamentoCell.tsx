@@ -84,7 +84,7 @@ export function AbbonamentoCell({
   }
 
   const buttonBase =
-    'p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50';
+    'p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
 
   // Selected state — small emerald pill
   if (current) {
@@ -113,7 +113,7 @@ export function AbbonamentoCell({
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Usa un abbonamento"
-        className={`${buttonBase} text-zinc-400 hover:text-indigo-500 hover:bg-indigo-500/10`}
+        className={`${buttonBase} text-zinc-400 hover:text-primary hover:bg-primary/10`}
         aria-label="Usa abbonamento"
       >
         <BadgePercent className="size-3.5" />
@@ -124,7 +124,7 @@ export function AbbonamentoCell({
           style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }}
           className="w-56 rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 shadow-xl z-1000"
         >
-          <div className="px-2 py-1.5 text-[10px] uppercase tracking-wide text-zinc-400 border-b border-zinc-500/10">
+          <div className="px-2 py-1.5 text-2xs uppercase tracking-wide text-zinc-400 border-b border-zinc-500/10">
             Abbonamenti disponibili
           </div>
           <ul className="max-h-48 overflow-y-auto divide-y divide-zinc-500/10">
@@ -143,7 +143,7 @@ export function AbbonamentoCell({
                         {effectiveRemaining} / {a.total_treatments} rimanenti
                       </span>
                       {a.valid_until && (
-                        <span className="text-zinc-400 text-[10px]">
+                        <span className="text-zinc-400 text-2xs">
                           scade {new Date(a.valid_until).toLocaleDateString('it-IT')}
                         </span>
                       )}

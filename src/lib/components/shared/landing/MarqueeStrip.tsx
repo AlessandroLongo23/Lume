@@ -35,7 +35,7 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
           <div className="flex justify-center mb-4">
             <div className="accent-line" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#09090B] mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Un prezzo semplice. Tutto incluso.
           </h2>
           <p className="text-zinc-500 text-lg">
@@ -45,13 +45,13 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
 
         {/* Toggle */}
         <motion.div className="flex items-center justify-center gap-4 mb-10" variants={itemVariants}>
-          <span className={`text-sm font-medium ${!yearly ? 'text-[#09090B]' : 'text-zinc-400'}`}>
+          <span className={`text-sm font-medium ${!yearly ? 'text-foreground' : 'text-zinc-400'}`}>
             Mensile
           </span>
           <button
             onClick={() => setYearly(!yearly)}
             className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${
-              yearly ? 'bg-[#6366F1]' : 'bg-[#E4E4E7]'
+              yearly ? 'bg-primary' : 'bg-border'
             }`}
             aria-label="Passa a fatturazione annuale"
           >
@@ -61,9 +61,9 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>
-          <span className={`text-sm font-medium ${yearly ? 'text-[#09090B]' : 'text-zinc-400'}`}>
+          <span className={`text-sm font-medium ${yearly ? 'text-foreground' : 'text-zinc-400'}`}>
             Annuale
-            <span className="ml-2 text-xs text-[#6366F1] font-semibold bg-[#EEF2FF] px-1.5 py-0.5 rounded-full">
+            <span className="ml-2 text-xs text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded-full">
               2 mesi gratis
             </span>
           </span>
@@ -81,13 +81,13 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
             <div className="mb-6">
               <p className="text-sm font-medium text-zinc-500 mb-1">Piano unico — tutto incluso</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-5xl font-bold text-[#09090B]">
+                <span className="text-5xl font-bold text-foreground">
                   €{yearly ? '490' : '49'}
                 </span>
                 <span className="text-zinc-400 text-sm">/ {yearly ? 'anno' : 'mese'}</span>
               </div>
               {yearly && (
-                <p className="text-sm text-[#6366F1] mt-1 font-medium">
+                <p className="text-sm text-primary mt-1 font-medium">
                   Risparmi €98 rispetto al mensile
                 </p>
               )}
@@ -95,8 +95,8 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
 
             <ul className="space-y-3 mb-8">
               {included.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-sm text-[#09090B]">
-                  <Check className="w-4 h-4 text-[#6366F1] mt-0.5 shrink-0" />
+                <li key={item} className="flex items-start gap-2.5 text-sm text-foreground">
+                  <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   {item}
                 </li>
               ))}

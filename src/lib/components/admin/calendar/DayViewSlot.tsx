@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
 
@@ -135,7 +136,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
           // Derive the accent color from the first service's category
           const firstSvcObj = ficheServices[0] ? services.find((s) => s.id === ficheServices[0].service_id) : null;
           const firstCat = firstSvcObj ? categories.find((c) => c.id === firstSvcObj.category_id) : null;
-          const accentColor = firstCat?.color ?? '#6366F1';
+          const accentColor = firstCat?.color ?? DEFAULT_CATEGORY_COLOR;
 
           return (
             <div
@@ -153,7 +154,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
                 const category = service
                   ? categories.find((c) => c.id === service.category_id)
                   : null;
-                const color = category?.color ?? '#6366F1';
+                const color = category?.color ?? DEFAULT_CATEGORY_COLOR;
                 const blockHeightRem = (fs.duration / 15) * 2;
                 const startTime = format(new Date(fs.start_time), 'HH:mm');
                 const endTime = format(new Date(fs.end_time), 'HH:mm');

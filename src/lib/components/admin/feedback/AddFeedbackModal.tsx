@@ -49,7 +49,7 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
     }
   };
 
-  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
+  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow';
 
   return (
     <AddModal
@@ -78,7 +78,7 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
                   onClick={() => setType(value)}
                   className={`flex flex-col items-center gap-2 px-3 py-3 rounded-lg border text-sm transition-colors ${
                     isSelected
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                      ? 'border-primary bg-primary/10 dark:bg-primary/10 text-primary-hover dark:text-primary/70'
                       : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500'
                   }`}
                 >

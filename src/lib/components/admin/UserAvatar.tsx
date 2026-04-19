@@ -48,7 +48,7 @@ export function UserAvatar() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-500 text-white text-sm font-semibold cursor-pointer select-none hover:bg-indigo-600 transition-colors"
+        className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer select-none hover:bg-primary-hover transition-colors"
         aria-label="Menu utente"
       >
         {initials || '?'}

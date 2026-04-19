@@ -18,7 +18,7 @@ function formatEur(cents: number): string {
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181B]">
+    <div className="flex flex-col gap-1 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card">
       <p className="text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{label}</p>
       <p className="text-2xl font-semibold tabular-nums text-zinc-900 dark:text-white">{value}</p>
       {hint && <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>}

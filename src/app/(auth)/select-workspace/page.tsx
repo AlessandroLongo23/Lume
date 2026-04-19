@@ -76,11 +76,11 @@ export default function SelectWorkspacePage() {
           onClick={handleBusiness}
           className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-zinc-200
             bg-white text-left cursor-pointer transition-all duration-200
-            hover:border-indigo-300 hover:bg-indigo-50/40 hover:shadow-sm
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            hover:border-primary/40 hover:bg-primary/40 hover:shadow-sm
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-            <Briefcase className="w-5 h-5 text-indigo-600" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Briefcase className="w-5 h-5 text-primary-hover" />
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-zinc-900 leading-tight">Gestisci il Business</p>
@@ -97,8 +97,8 @@ export default function SelectWorkspacePage() {
           onClick={handleClient}
           className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-zinc-200
             bg-white text-left cursor-pointer transition-all duration-200
-            hover:border-indigo-300 hover:bg-indigo-50/40 hover:shadow-sm
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            hover:border-primary/40 hover:bg-primary/40 hover:shadow-sm
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0">
             <User className="w-5 h-5 text-zinc-600" />

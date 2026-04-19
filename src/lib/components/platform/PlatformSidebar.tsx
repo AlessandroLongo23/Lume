@@ -32,8 +32,8 @@ export function PlatformSidebar() {
               href={href}
               className={`flex items-center gap-3 transition-all duration-200 ease-in-out px-3 py-2 text-sm rounded-md ${
                 isActive
-                  ? 'text-[#4F46E5] bg-[#EEF2FF] dark:text-[#818CF8] dark:bg-[#1E1B4B]/30'
-                  : 'text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]'
+                  ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-white dark:hover:bg-muted'
               }`}
             >
               <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
@@ -47,7 +47,7 @@ export function PlatformSidebar() {
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md text-[#52525B] hover:text-[#09090B] hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:text-white dark:hover:bg-[#27272A]"
+          className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-white dark:hover:bg-muted"
         >
           <LogOut className="w-5 h-5 shrink-0" strokeWidth={1.5} />
           <span>Esci</span>

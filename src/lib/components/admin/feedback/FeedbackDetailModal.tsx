@@ -108,8 +108,8 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
 
         {/* Super admin controls */}
         {isSuperAdmin && (
-          <div className="flex flex-col gap-2 px-6 py-4 border-t border-zinc-500/25 bg-indigo-500/5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          <div className="flex flex-col gap-2 px-6 py-4 border-t border-zinc-500/25 bg-primary/5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-primary-hover dark:text-primary/70">
               Stato (solo admin)
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -122,7 +122,7 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
                     onClick={() => handleStatusChange(s)}
                     className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
                       isSelected
-                        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                        ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
                         : 'border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400'
                     }`}
                   >
@@ -142,8 +142,8 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
             disabled={!canVote}
             className={`flex flex-row items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors ${
               hasVoted
-                ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                : 'border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-indigo-400'
+                ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
+                : 'border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-primary/70'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <ChevronUp className="size-4" strokeWidth={2.5} />

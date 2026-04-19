@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 2 — PRIMITIVE (THEME-INDEPENDENT) TOKENS
+   ═══════════════════════════════════════════════════════════════════════════
+   Scales that do NOT change between light and dark mode:
+     - spacing
+     - radius
+     - typography (family, size, weight, line-height, tracking)
+     - opacity
+     - shadow (shadow *color* lives in semantic.css; blur/offset here)
+     - motion (duration, easing)
+     - z-index
+
+   Every value here is a raw unit (rem / px / ms / unitless). No color refs.
+   Declared under @theme so they become Tailwind utilities automatically.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Spacing (4px grid, no odd steps) ─────────────────────────────────── */
+  /* Tailwind's default --spacing is 0.25rem; we re-declare for clarity     */
+  /* and to document the allowed subset. Use these via p-*, m-*, gap-*.    */
+  --spacing: 0.25rem; /* base unit = 4px */
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;  /*  4px — pill tags, chips */
+  --radius-md:   0.5rem;   /*  8px — buttons, inputs  */
+  --radius-lg:   0.75rem;  /* 12px — default cards    */
+  --radius-xl:   1rem;     /* 16px — pricing cards    */
+  --radius-2xl:  1.5rem;   /* 24px — hero panels      */
+  --radius-full: 9999px;   /* avatars, fully round    */
+
+  /* ── Typography — family ──────────────────────────────────────────────── */
+  --font-sans:    'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+  --font-heading: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Menlo', 'Monaco', monospace;
+
+  /* ── Typography — size ────────────────────────────────────────────────── */
+  /* 2xs (11px) replaces arbitrary text-[9px]/text-[10px]/text-[11px]       */
+  /* usage across the codebase. 9/10px are rejected on accessibility.      */
+  --text-2xs:  0.6875rem;  /* 11px */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.25rem;    /* 20px */
+  --text-2xl:  1.5rem;     /* 24px */
+  --text-3xl:  1.875rem;   /* 30px */
+  --text-4xl:  2.25rem;    /* 36px */
+  --text-5xl:  3rem;       /* 48px */
+  --text-6xl:  3.75rem;    /* 60px */
+
+  /* ── Typography — weight ──────────────────────────────────────────────── */
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* ── Typography — line-height ─────────────────────────────────────────── */
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* ── Typography — tracking ────────────────────────────────────────────── */
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+
+  /* ── Opacity (8-step symmetric scale) ─────────────────────────────────── */
+  --opacity-0:   0;
+  --opacity-5:   0.05;
+  --opacity-10:  0.10;
+  --opacity-20:  0.20;
+  --opacity-40:  0.40;
+  --opacity-60:  0.60;
+  --opacity-80:  0.80;
+  --opacity-100: 1;
+
+  /* ── Shadow (blur/offset only — color comes from semantic layer) ──────── */
+  /* The shadow color is tinted via the --shadow-color var in semantic.css */
+  /* so shadows automatically adjust in dark mode.                         */
+  --shadow-xs: 0 1px 1px 0 var(--shadow-color, rgb(0 0 0 / 0.04));
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color, rgb(0 0 0 / 0.05)),
+               0 1px 3px 0 var(--shadow-color, rgb(0 0 0 / 0.04));
+  --shadow-md: 0 2px 4px -1px var(--shadow-color, rgb(0 0 0 / 0.06)),
+               0 4px 8px -2px var(--shadow-color, rgb(0 0 0 / 0.06));
+  --shadow-lg: 0 4px 8px -2px var(--shadow-color, rgb(0 0 0 / 0.08)),
+               0 10px 20px -4px var(--shadow-color, rgb(0 0 0 / 0.08));
+  --shadow-xl: 0 8px 16px -4px var(--shadow-color, rgb(0 0 0 / 0.10)),
+               0 20px 40px -8px var(--shadow-color, rgb(0 0 0 / 0.10));
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Z-index ──────────────────────────────────────────────────────────── */
+  --z-base:     0;
+  --z-dropdown: 10;
+  --z-sticky:   20;
+  --z-overlay:  30;
+  --z-modal:    40;
+  --z-toast:    50;
+  --z-tooltip:  60;
+}

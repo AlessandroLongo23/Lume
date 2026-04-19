@@ -278,7 +278,7 @@ export default function ClientDetailPage() {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-hover hover:bg-primary-active text-white rounded-md transition-colors disabled:opacity-50"
                       >
                         <Save className="size-4" />
                         {saving ? 'Salvando...' : 'Salva'}
@@ -503,13 +503,13 @@ function ClientCouponsSection({
               const isAsRecipient = c.recipient_client_id === clientId;
               return (
                 <li key={c.id} className="py-3 flex items-center gap-3">
-                  <Icon className={`size-4 shrink-0 ${isCard ? 'text-emerald-500' : 'text-indigo-500'}`} />
+                  <Icon className={`size-4 shrink-0 ${isCard ? 'text-emerald-500' : 'text-primary'}`} />
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {isCard ? 'Gift card' : 'Coupon'} · {c.displayDiscount()}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                      <span className="text-2xs uppercase tracking-wider text-zinc-400">
                         {isAsRecipient ? 'destinatario' : 'acquirente'}
                       </span>
                     </div>

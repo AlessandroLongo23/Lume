@@ -58,12 +58,12 @@ export default function SelectSalonPage() {
             transition={{ duration: 0.35, delay: i * 0.07, ease }}
             className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-zinc-200
               bg-white text-left cursor-pointer transition-all duration-200
-              hover:border-indigo-300 hover:bg-indigo-50/30 hover:shadow-sm
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              hover:border-primary/40 hover:bg-primary/30 hover:shadow-sm
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
               {ctx.role === 'owner'
-                ? <Crown className="w-4 h-4 text-indigo-600" />
+                ? <Crown className="w-4 h-4 text-primary-hover" />
                 : <User  className="w-4 h-4 text-zinc-500" />
               }
             </div>

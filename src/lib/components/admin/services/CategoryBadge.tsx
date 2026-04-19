@@ -1,6 +1,7 @@
 'use client';
 
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 
 interface CategoryBadgeProps {
   category_id: string;
@@ -12,7 +13,7 @@ export function CategoryBadge({ category_id }: CategoryBadgeProps) {
 
   if (!cat) return <span className="text-zinc-400 text-xs">—</span>;
 
-  const color = cat.color ?? '#6366F1';
+  const color = cat.color ?? DEFAULT_CATEGORY_COLOR;
 
   return (
     <span

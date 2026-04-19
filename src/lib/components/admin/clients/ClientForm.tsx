@@ -36,7 +36,7 @@ export const validateBirthDate = (date: string): string => {
   return '';
 };
 
-const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow';
+const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow';
 const labelClass = 'flex flex-row items-center gap-2';
 
 export function ClientForm({
@@ -123,7 +123,7 @@ export function ClientForm({
               <button
                 type="button"
                 aria-label={passwordVisible ? 'Nascondi password' : 'Mostra password'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
                 onClick={() => setPasswordVisible((v) => !v)}
               >
                 {passwordVisible ? <Eye className="size-5" /> : <EyeOff className="size-5" />}

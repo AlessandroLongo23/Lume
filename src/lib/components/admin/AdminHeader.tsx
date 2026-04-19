@@ -33,11 +33,11 @@ export function AdminHeader({ onMobileMenuOpen }: AdminHeaderProps) {
   }, []);
 
   return (
-    <header className="fixed flex flex-row top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 md:py-4 bg-white dark:bg-[#18181B] border-b border-[#E4E4E7] dark:border-[#27272A] shadow-sm dark:shadow-md">
+    <header className="fixed flex flex-row top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 md:py-4 bg-white dark:bg-card border-b border-border dark:border-border shadow-sm dark:shadow-md">
       <div className="flex flex-row flex-1 justify-start items-center">
         <span className="hidden sm:inline-flex"><LumeLogo size="md" /></span>
         <button
-          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-[#E4E4E7] dark:border-[#27272A] bg-white dark:bg-[#18181B] text-zinc-900 dark:text-white"
+          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border dark:border-border bg-white dark:bg-card text-zinc-900 dark:text-white"
           onClick={onMobileMenuOpen}
           aria-label="Apri menu"
         >

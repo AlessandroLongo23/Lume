@@ -142,12 +142,12 @@ export function CalendarToolbar() {
                 onClick={() => handleViewChange(value)}
                 className={[
                   'flex items-center justify-center px-3 py-2 text-sm transition-all',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:z-10',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-10',
                   i > 0 ? 'border-l border-zinc-500/25' : '',
                   isDisabled
                     ? 'cursor-not-allowed opacity-40 bg-white dark:bg-zinc-800 text-zinc-400'
                     : isActive
-                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                      ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
                       : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700',
                 ].join(' ')}
               >

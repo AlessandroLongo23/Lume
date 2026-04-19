@@ -37,15 +37,15 @@ export function CustomCheckbox({
         onClick={toggle}
         onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } }}
         className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
           ${checked
-            ? 'border-indigo-500/50 bg-indigo-500/10'
+            ? 'border-primary/50 bg-primary/10'
             : 'border-zinc-500/25 bg-white dark:bg-zinc-800'
           }
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-indigo-500/30'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/30'}
           ${className}`}
       >
-        {checked && <Check className="size-4 text-indigo-500" strokeWidth={2} />}
+        {checked && <Check className="size-4 text-primary" strokeWidth={2} />}
       </div>
     </div>
   );

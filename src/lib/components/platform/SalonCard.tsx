@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { DeletePlatformSalonModal } from './DeletePlatformSalonModal';
 
 export type SalonCardRow = {
   id:                 string;
@@ -60,7 +61,7 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(row.name);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   async function handleEnter() {
     setIsEntering(true);
@@ -96,24 +97,12 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
     }
   }
 
-  async function handleDelete() {
-    const confirmed = window.confirm(`Eliminare definitivamente "${row.name}"? Questa azione non può essere annullata.`);
-    if (!confirmed) return;
-    setIsDeleting(true);
-    const res = await fetch(`/api/platform/salons/${row.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      router.refresh();
-    } else {
-      setIsDeleting(false);
-    }
-  }
-
   const plan = row.subscriptionPlan === 'yearly' ? 'Annuale' : row.subscriptionPlan === 'monthly' ? 'Mensile' : '—';
   const renewalDate = row.subscriptionStatus === 'trialing' ? row.trialEndsAt : row.subscriptionEndsAt;
   const renewalLabel = row.subscriptionStatus === 'trialing' ? 'Trial fino al' : 'Rinnovo';
 
   return (
-    <div className="relative flex flex-col gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181B] hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+    <div className="relative flex flex-col gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {row.logoUrl ? (
@@ -125,8 +114,8 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
               className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
             />
           ) : (
-            <div className="w-10 h-10 rounded-md bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 leading-none">
+            <div className="w-10 h-10 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
                 {getInitials(row.name)}
               </span>
             </div>
@@ -139,7 +128,7 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                 onChange={(e) => setRenameValue(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setIsRenaming(false); }}
-                className="w-full text-sm font-semibold tracking-tight text-zinc-900 dark:text-white bg-transparent border-b border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-indigo-500"
+                className="w-full text-sm font-semibold tracking-tight text-zinc-900 dark:text-white bg-transparent border-b border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-primary"
               />
             ) : (
               <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
@@ -177,9 +166,8 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { handleDelete(); setMenuOpen(false); }}
-                  disabled={isDeleting}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                  onClick={() => { setDeleteModalOpen(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
                   <Trash2 className="w-4 h-4" /> Elimina
                 </button>
@@ -212,11 +200,18 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
         type="button"
         onClick={handleEnter}
         disabled={isEntering}
-        className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60"
+        className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-md bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-60"
       >
         {isEntering ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
         <span>{isEntering ? 'Entrando…' : 'Entra nel salone'}</span>
       </button>
+
+      <DeletePlatformSalonModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        salonId={row.id}
+        salonName={row.name}
+      />
     </div>
   );
 }

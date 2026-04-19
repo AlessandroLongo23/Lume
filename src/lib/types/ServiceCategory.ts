@@ -1,3 +1,5 @@
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+
 export type RawServiceCategory = {
   id: string;
   salon_id: string;
@@ -23,7 +25,7 @@ export class ServiceCategory {
     this.salon_id = data.salon_id;
     this.name = data.name;
     this.description = data.description;
-    this.color = data.color ?? '#6366F1';
+    this.color = data.color ?? DEFAULT_CATEGORY_COLOR;
     this.service_count = data.service_count ?? data.services?.[0]?.count ?? 0;
     this.archived_at = data.archived_at ?? null;
   }

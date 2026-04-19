@@ -46,7 +46,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
             required
             className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300
               bg-white text-zinc-900 focus:outline-none cursor-pointer
-              border-zinc-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+              border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20
               hover:border-zinc-300"
           >
             <option value="" disabled>Seleziona un&apos;opzione...</option>

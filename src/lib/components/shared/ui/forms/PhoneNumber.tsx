@@ -123,7 +123,7 @@ export function PhoneNumber({
           aria-haspopup="listbox"
           aria-expanded={showDropdown}
           disabled={disabled}
-          className={`h-full px-3 flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-500/25 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`h-full px-3 flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-500/25 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           onClick={openDropdown}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
@@ -145,7 +145,7 @@ export function PhoneNumber({
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
                 placeholder="Cerca paese..."
-                className="w-full px-2 py-1 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow"
+                className="w-full px-2 py-1 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 rounded focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
                 onKeyDown={handleKeyNavigation}
               />
             </div>
@@ -161,7 +161,7 @@ export function PhoneNumber({
                     aria-selected={isSelected}
                     className={`w-full px-3 py-2 text-left transition-colors
                       ${isSelected
-                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                        ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
                         : isHighlighted
                           ? 'bg-zinc-100 dark:bg-zinc-800'
                           : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -170,7 +170,7 @@ export function PhoneNumber({
                     onMouseEnter={() => setHighlightedIndex(i)}
                   >
                     <span className={isSelected ? '' : 'text-zinc-900 dark:text-zinc-100'}>{p.code}</span>
-                    <span className={`text-sm ml-2 ${isSelected ? 'text-indigo-500/70' : 'text-zinc-500'}`}>{p.country}</span>
+                    <span className={`text-sm ml-2 ${isSelected ? 'text-primary/70' : 'text-zinc-500'}`}>{p.country}</span>
                   </button>
                 );
               })}
@@ -184,7 +184,7 @@ export function PhoneNumber({
         type="text"
         placeholder={selectedPrefix.placeholder || '000 000 0000'}
         disabled={disabled}
-        className={`flex flex-1 min-w-0 p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`flex flex-1 min-w-0 p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         value={phoneNumber}
         onChange={(e) => onPhoneChange(formatNumber(e.target.value))}
       />

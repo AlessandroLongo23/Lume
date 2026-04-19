@@ -1,3 +1,5 @@
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+
 export type RawClientCategory = {
   id: string;
   salon_id: string;
@@ -17,7 +19,7 @@ export class ClientCategory {
     this.id = raw.id;
     this.salon_id = raw.salon_id;
     this.name = raw.name;
-    this.color = raw.color ?? '#6366F1';
+    this.color = raw.color ?? DEFAULT_CATEGORY_COLOR;
     this.client_count = 'clients' in raw ? (raw.clients?.[0]?.count ?? 0) : ((raw as ClientCategory).client_count ?? 0);
   }
 }

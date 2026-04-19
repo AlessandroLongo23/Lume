@@ -33,7 +33,7 @@ export default function BilancioPage() {
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 isActive
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  ? 'border-primary text-primary-hover dark:text-primary/70'
                   : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
               }`}
             >

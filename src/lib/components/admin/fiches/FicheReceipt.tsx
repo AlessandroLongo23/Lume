@@ -86,18 +86,18 @@ export function FicheReceipt({
 
   return (
     <div
-      className="text-[#FAFAF8] dark:text-zinc-950"
+      className="text-receipt"
       style={{ filter: 'drop-shadow(0 4px 20px rgb(0 0 0 / 0.13))' }}
     >
       <TornEdge kind="top" />
 
-      <div className="bg-[#FAFAF8] dark:bg-zinc-950 font-mono text-sm">
+      <div className="bg-receipt font-mono text-sm">
         {/* Salon name */}
         <div className="px-5 pt-5 pb-4 text-center">
           <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest leading-tight">
             {salonName}
           </p>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5">
+          <p className="text-2xs text-zinc-400 dark:text-zinc-500 mt-1.5">
             {datetime.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
             {' · '}
             {datetime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
@@ -107,11 +107,11 @@ export function FicheReceipt({
         {/* Client + receipt ID */}
         <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans grid grid-cols-2 gap-x-2">
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
+            <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
             <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 truncate">{clientName}</p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
+            <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
             <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 font-mono">
               {ficheId ? ficheId.slice(-8).toUpperCase() : '—'}
             </p>
@@ -123,7 +123,7 @@ export function FicheReceipt({
           <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
               <Scissors className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
+              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
             </div>
             {services.map((fs, i) => {
               const service = serviceMap.get(fs.service_id);
@@ -135,12 +135,12 @@ export function FicheReceipt({
                   <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{service?.name ?? fs.name ?? 'Servizio'}</span>
                   <span className="flex items-baseline gap-1.5 shrink-0">
                     {isDiscounted && (
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
+                      <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
                     )}
                     {isAbbonamento ? (
                       <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Coperto da abbonamento" aria-label="Coperto da abbonamento">
                         <BadgePercent className="size-3.5" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Abb.</span>
+                        <span className="text-2xs font-semibold uppercase tracking-wide">Abb.</span>
                       </span>
                     ) : isGift ? (
                       <span className="inline-flex items-center text-pink-500 dark:text-pink-400" title="Omaggio" aria-label="Omaggio">
@@ -163,7 +163,7 @@ export function FicheReceipt({
           <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
               <Package className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
+              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
             </div>
             {products.map((fp, i) => {
               const product = productMap.get(fp.product_id);
@@ -181,7 +181,7 @@ export function FicheReceipt({
                   </span>
                   <span className="flex items-baseline gap-1.5 shrink-0">
                     {isDiscounted && (
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
+                      <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
                     )}
                     {isGift ? (
                       <span className="inline-flex items-center text-pink-500 dark:text-pink-400" title="Omaggio" aria-label="Omaggio">
@@ -204,7 +204,7 @@ export function FicheReceipt({
           <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
               <Tag className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Coupon</span>
+              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Coupon</span>
             </div>
             {couponDiscounts.map((c, i) => (
               <div key={i} className="flex items-baseline justify-between gap-2 py-0.5">
@@ -224,12 +224,12 @@ export function FicheReceipt({
         <div className="mx-4 border-t border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans">
           {(hasOverride || couponsTotal > 0) && (
             <div className="flex items-baseline justify-between py-0.5">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Subtotale</span>
+              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Subtotale</span>
               <span className="text-xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(subtotal)}</span>
             </div>
           )}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Totale</span>
+            <span className="text-2xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Totale</span>
             <span className={`text-base font-bold ${(hasOverride || couponsTotal > 0) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
               € {fmt(finalTotal)}
             </span>
@@ -238,9 +238,9 @@ export function FicheReceipt({
 
         {/* Lume branding footer */}
         <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 py-3 flex items-center justify-center gap-1.5 font-sans">
-          <Lightbulb className="size-3 text-indigo-500" strokeWidth={2.25} />
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            Gestito con <span className="text-indigo-500 font-semibold">Lume.</span>
+          <Lightbulb className="size-3 text-primary" strokeWidth={2.25} />
+          <span className="text-2xs text-zinc-400 dark:text-zinc-500">
+            Gestito con <span className="text-primary font-semibold">Lume.</span>
           </span>
         </div>
       </div>

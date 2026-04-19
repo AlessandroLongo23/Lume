@@ -35,7 +35,7 @@ export function ServicesMultiSelect({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
           placeholder="Cerca servizi…"
         />
       </div>
@@ -52,7 +52,7 @@ export function ServicesMultiSelect({
                 onClick={() => toggle(s.id)}
                 className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-sm text-left transition-colors ${
                   isSelected
-                    ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                    ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
                     : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50'
                 }`}
               >

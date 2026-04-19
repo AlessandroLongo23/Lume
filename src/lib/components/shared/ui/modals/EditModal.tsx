@@ -32,19 +32,19 @@ export function EditModal({
 }: EditModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
+      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full">
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-blue-500/10">
               <SquarePen className="size-5 text-blue-500" />
             </div>
             <div className="flex flex-col truncate">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">{subtitle}</p>
+              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+              <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
           <button
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+            className="text-muted-foreground hover:text-foreground transition-colors rounded-full p-2 hover:bg-muted"
             onClick={onClose}
           >
             <X className="size-5" />
@@ -58,7 +58,7 @@ export function EditModal({
           <div className="flex flex-row items-center gap-3">
             <button
               type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
               onClick={onClose}
             >
               <X className="size-4" />

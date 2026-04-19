@@ -148,13 +148,13 @@ export function StepTwo() {
             onClick={() => fileInputRef.current?.click()}
             className="flex flex-col items-center gap-2 p-5 border-2 border-dashed border-zinc-500/25 rounded-xl cursor-pointer
                        text-zinc-400 dark:text-zinc-500 text-sm
-                       hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10
+                       hover:border-primary/70 hover:bg-primary/40 dark:hover:bg-primary/10
                        transition-all duration-200"
           >
             <Upload className="w-5 h-5" />
             <span>
               Trascina qui o{' '}
-              <span className="text-indigo-500 font-medium">scegli un file</span>
+              <span className="text-primary font-medium">scegli un file</span>
             </span>
             <span className="text-xs text-zinc-400 dark:text-zinc-600">
               PNG, JPG, WebP, SVG · max 2 MB

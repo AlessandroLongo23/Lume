@@ -114,7 +114,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
         ) : (
           <button
             onClick={() => onCheckout(fiche)}
-            className="w-full py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-md transition-colors"
+            className="w-full py-2 text-sm font-medium bg-primary-hover hover:bg-primary-active active:bg-primary-active text-white rounded-md transition-colors"
           >
             Chiudi Fiche
           </button>

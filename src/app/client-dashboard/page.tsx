@@ -18,7 +18,7 @@ type Appointment = {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   completed:  { label: 'Completata',  className: 'bg-green-50 text-green-700 border border-green-200' },
-  confirmed:  { label: 'Confermata',  className: 'bg-indigo-50 text-indigo-700 border border-indigo-200' },
+  confirmed:  { label: 'Confermata',  className: 'bg-primary/10 text-primary-active border border-primary/25' },
   pending:    { label: 'In attesa',   className: 'bg-amber-50 text-amber-700 border border-amber-200' },
   cancelled:  { label: 'Cancellata',  className: 'bg-red-50 text-red-700 border border-red-200' },
 };
@@ -111,7 +111,7 @@ export default function ClientDashboardPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">
+                    <p className="text-xs font-medium text-primary-hover uppercase tracking-wide mb-1">
                       {format(parseISO(appt.date), "EEEE d MMMM", { locale: it })}
                       {' · '}
                       {format(parseISO(appt.date), "HH:mm")}

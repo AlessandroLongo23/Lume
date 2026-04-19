@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireSuperAdmin } from '@/lib/gateway/requireSuperAdmin';
+import { deleteSalonCascade, isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
 
 function getAdminClient() {
   return createClient(
@@ -32,23 +33,41 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const guard = await requireSuperAdmin();
   if (guard.response) return guard.response;
 
   const { id } = await params;
-  const supabaseAdmin = getAdminClient();
+  const admin = getAdminClient();
 
-  // Hard delete. Tenant tables have salon_id FKs and should cascade via DB
-  // constraints. If cascades are not configured, this will fail loudly and
-  // the super-admin can clean up manually before retrying.
-  const { error } = await supabaseAdmin.from('salons').delete().eq('id', id);
-  if (error) {
+  try {
+    const { data: salon, error: salonErr } = await admin
+      .from('salons')
+      .select('name, owner_id')
+      .eq('id', id)
+      .single();
+    if (salonErr || !salon) {
+      return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const confirmedName = typeof body.confirmed_name === 'string' ? body.confirmed_name : '';
+    if (salon.name !== confirmedName) {
+      return NextResponse.json({ error: 'Il nome del salone non corrisponde' }, { status: 400 });
+    }
+
+    const { ownerId } = await deleteSalonCascade(id, admin);
+
+    if (ownerId && await isAuthUserOrphaned(admin, ownerId)) {
+      await admin.auth.admin.deleteUser(ownerId);
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Errore imprevisto';
     console.error('Platform salon delete failed:', error);
-    return NextResponse.json({ error: 'Eliminazione fallita: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Eliminazione fallita: ' + msg }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }

@@ -65,10 +65,10 @@ export function ToggleButton({
             onClick={() => onChange(opt)}
             onKeyDown={(e) => handleKeyDown(e, i)}
             className={`flex items-center justify-center gap-1.5 text-sm transition-all
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:z-10
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-10
               ${isIconOnly ? 'size-9' : 'flex-1 px-3 py-2'}
               ${isActive
-                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
                 : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
               }
               ${i > 0 ? 'border-l border-zinc-500/25' : ''}`}

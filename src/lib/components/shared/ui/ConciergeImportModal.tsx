@@ -83,8 +83,8 @@ export function ConciergeImportModal({ isOpen, onClose }: ConciergeImportModalPr
         {/* Header */}
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
           <div className="flex flex-row items-center gap-3 min-w-0">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
-              <Sparkles className="size-5 text-indigo-500" />
+            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
+              <Sparkles className="size-5 text-primary" />
             </div>
             <div className="flex flex-col min-w-0">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Migrazione Gratuita</h2>
@@ -118,7 +118,7 @@ export function ConciergeImportModal({ isOpen, onClose }: ConciergeImportModalPr
               <div className="flex flex-col gap-1.5">
                 {files.map((f) => (
                   <div key={f.fileName} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900">
-                    <Paperclip className="size-4 shrink-0 text-indigo-500" />
+                    <Paperclip className="size-4 shrink-0 text-primary" />
                     <span className="flex-1 text-sm text-zinc-700 dark:text-zinc-300 truncate">{f.fileName}</span>
                     <button
                       type="button"
@@ -136,7 +136,7 @@ export function ConciergeImportModal({ isOpen, onClose }: ConciergeImportModalPr
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 px-3 py-5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-500 dark:text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-500 dark:text-zinc-400 hover:border-primary/70 hover:text-primary transition-colors"
             >
               {files.length === 0
                 ? <><Upload className="size-4 shrink-0" /> Clicca per scegliere i file</>
@@ -169,7 +169,7 @@ export function ConciergeImportModal({ isOpen, onClose }: ConciergeImportModalPr
             type="button"
             disabled={files.length === 0 || isSubmitting}
             onClick={handleSubmit}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-indigo-600"
+            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-primary-hover"
           >
             <Send className="size-4" />
             {isSubmitting ? 'Invio...' : 'Invia al team'}

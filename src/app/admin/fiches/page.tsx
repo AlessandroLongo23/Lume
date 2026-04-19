@@ -99,7 +99,7 @@ export default function FichesPage() {
                 className={[
                   'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
                   activeTab === tab.value
-                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    ? 'border-primary text-primary-hover dark:text-primary/70'
                     : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200',
                 ].join(' ')}
               >

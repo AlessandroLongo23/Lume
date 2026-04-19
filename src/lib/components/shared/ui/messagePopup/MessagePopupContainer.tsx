@@ -10,7 +10,7 @@ export function MessagePopupContainer() {
   const icons = {
     success: <CheckCircle className="size-4.5 text-emerald-500 shrink-0" />,
     error: <XCircle className="size-4.5 text-red-500 shrink-0" />,
-    info: <Info className="size-4.5 text-indigo-500 shrink-0" />,
+    info: <Info className="size-4.5 text-primary shrink-0" />,
   };
 
   if (messages.length === 0) return null;

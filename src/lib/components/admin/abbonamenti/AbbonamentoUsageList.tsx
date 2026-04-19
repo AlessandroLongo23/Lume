@@ -61,7 +61,7 @@ export function AbbonamentoUsageList({ abbonamento }: AbbonamentoUsageListProps)
                   {new Date(r.when).toLocaleDateString('it-IT')}
                 </span>
                 {r.ficheStatus !== 'completed' && (
-                  <span className="text-[10px] text-amber-500 uppercase">In sospeso</span>
+                  <span className="text-2xs text-amber-500 uppercase">In sospeso</span>
                 )}
               </div>
             </div>

@@ -21,9 +21,9 @@ export function StepProgressBar({ currentStep }: StepProgressBarProps) {
             <motion.div
               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold
                 ${isCompleted
-                  ? 'bg-indigo-500 text-white'
+                  ? 'bg-primary text-white'
                   : isActive
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-zinc-100 text-zinc-400 border border-zinc-200'
                 }`}
               initial={false}
@@ -63,7 +63,7 @@ export function StepProgressBar({ currentStep }: StepProgressBarProps) {
             {index < STEPS.length - 1 && (
               <div className="h-px w-10 bg-zinc-200 relative overflow-hidden">
                 <motion.div
-                  className="absolute inset-0 bg-indigo-500 origin-left"
+                  className="absolute inset-0 bg-primary origin-left"
                   initial={false}
                   animate={{ scaleX: isCompleted ? 1 : 0 }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}

@@ -36,14 +36,14 @@ export function MigrationSection() {
       >
         {/* Header */}
         <motion.div className="max-w-xl mb-16" variants={itemVariants}>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E4E4E7] bg-[#FAFAFA] text-xs text-zinc-500 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-background text-xs text-zinc-500 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             Cambio senza paura
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#09090B] leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4">
             Anni di lavoro?
             <br />
-            <span className="text-[#6366F1]">Li porti con te.</span>
+            <span className="text-primary">Li porti con te.</span>
           </h2>
           <p className="text-zinc-500 text-lg leading-relaxed">
             Sappiamo che cambiare strumento fa paura. Anni di clienti, appuntamenti, preferenze — tutto accumulato con fatica. Con Lume non perdi niente: il nostro strumento di importazione porta tutto con te in pochi minuti.
@@ -66,15 +66,15 @@ export function MigrationSection() {
             >
               {/* Icon + number + connector line */}
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-[#6366F1]" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <span className="text-2xl font-bold text-[#E4E4E7] ml-3 shrink-0">{number}</span>
+                <span className="text-2xl font-bold text-border ml-3 shrink-0">{number}</span>
                 {i < steps.length - 1 && (
-                  <div className="flex-1 h-px bg-[#E4E4E7] ml-4" aria-hidden="true" />
+                  <div className="flex-1 h-px bg-border ml-4" aria-hidden="true" />
                 )}
               </div>
-              <h3 className="font-semibold text-[#09090B] mb-2">{title}</h3>
+              <h3 className="font-semibold text-foreground mb-2">{title}</h3>
               <p className="text-sm text-zinc-500 leading-relaxed">{description}</p>
             </motion.div>
           ))}
@@ -85,12 +85,12 @@ export function MigrationSection() {
           {steps.map(({ number, icon: Icon, title, description }) => (
             <motion.div key={number} className="flex flex-col items-start" variants={itemVariants}>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-[#6366F1]" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <span className="text-2xl font-bold text-[#E4E4E7]">{number}</span>
+                <span className="text-2xl font-bold text-border">{number}</span>
               </div>
-              <h3 className="font-semibold text-[#09090B] mb-2">{title}</h3>
+              <h3 className="font-semibold text-foreground mb-2">{title}</h3>
               <p className="text-sm text-zinc-500 leading-relaxed">{description}</p>
             </motion.div>
           ))}
@@ -98,14 +98,14 @@ export function MigrationSection() {
 
         {/* Reassurance callout */}
         <motion.div
-          className="rounded-2xl bg-[#6366F1]/4 border border-[#6366F1]/12 p-6 flex items-start gap-4"
+          className="rounded-2xl bg-primary/10 border border-primary/20 p-6 flex items-start gap-4"
           variants={itemVariants}
         >
-          <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center shrink-0 mt-0.5">
-            <Shield className="w-5 h-5 text-[#6366F1]" />
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+            <Shield className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-[#09090B] mb-1">
+            <p className="font-semibold text-foreground mb-1">
               I tuoi dati restano tuoi — sempre.
             </p>
             <p className="text-sm text-zinc-500 leading-relaxed">

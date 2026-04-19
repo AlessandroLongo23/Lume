@@ -71,14 +71,14 @@ export default function CouponsPage() {
                 onClick={() => setActiveTab(id)}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   isActive
-                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    ? 'border-primary text-primary-hover dark:text-primary/70'
                     : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
                 }`}
               >
                 <Icon className="size-4" />
                 {label}
                 {count > 0 && (
-                  <span className="inline-flex items-center justify-center size-5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-500">
+                  <span className="inline-flex items-center justify-center size-5 rounded-full text-2xs font-semibold bg-primary/15 text-primary">
                     {count}
                   </span>
                 )}

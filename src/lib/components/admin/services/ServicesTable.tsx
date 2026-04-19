@@ -198,14 +198,14 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
               className={[
                 'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
                 selectedCategories.length > 0
-                  ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
+                  ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
                   : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
               ].join(' ')}
             >
               <SlidersHorizontal className="size-4" />
               <span>Categoria</span>
               {selectedCategories.length > 0 && (
-                <span className="bg-indigo-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
+                <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
                   {selectedCategories.length}
                 </span>
               )}
@@ -234,7 +234,7 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                             className={[
                               'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
                               checked
-                                ? 'bg-indigo-500 border-indigo-500'
+                                ? 'bg-primary border-primary'
                                 : 'border-zinc-300 dark:border-zinc-600',
                             ].join(' ')}
                           >
@@ -286,10 +286,10 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                           {canSort && (
                             <span className="flex flex-col">
                               <ChevronUp
-                                className={`size-3 ${sorted === 'asc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`}
+                                className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`}
                               />
                               <ChevronDown
-                                className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`}
+                                className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`}
                               />
                             </span>
                           )}

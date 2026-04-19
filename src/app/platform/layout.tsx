@@ -10,13 +10,13 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   if (!user || !(await isSuperAdmin(user.id))) notFound();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-[#09090B] dark:text-white font-sans">
+    <div className="min-h-screen bg-background dark:bg-background text-foreground dark:text-white font-sans">
       <div className="flex min-h-screen">
-        <aside className="hidden md:flex fixed top-0 bottom-0 left-0 bg-white dark:bg-[#18181B] border-r border-[#E4E4E7] dark:border-[#27272A] w-[240px] shadow-sm flex-col overflow-y-auto">
+        <aside className="hidden md:flex fixed top-0 bottom-0 left-0 bg-white dark:bg-card border-r border-border dark:border-border w-[240px] shadow-sm flex-col overflow-y-auto">
           <div className="px-4 pt-6 pb-4 flex flex-col flex-1 gap-1">
             <Link href="/platform" className="flex items-center gap-2 mb-6 px-2">
               <span className="text-base font-semibold tracking-tight">Lume</span>
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 uppercase tracking-wider">
+              <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-active dark:bg-primary/20 dark:text-primary/40 uppercase tracking-wider">
                 Platform
               </span>
             </Link>

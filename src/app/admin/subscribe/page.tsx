@@ -52,7 +52,7 @@ function StatusBadge() {
   if (isTrialing) {
     const daysText = trialDaysLeft === 1 ? '1 giorno' : `${trialDaysLeft} giorni`;
     return (
-      <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
+      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary-active dark:bg-primary/20 dark:text-primary/70">
         <Crown className="w-4 h-4" />
         Prova gratuita — {daysText} rimanenti
       </div>
@@ -120,7 +120,7 @@ function PlanCard({
   const borderClass = isCurrentPlan
     ? 'border-emerald-500 shadow-lg shadow-emerald-500/10 dark:shadow-emerald-500/5'
     : recommended
-      ? 'border-indigo-500 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-500/5'
+      ? 'border-primary shadow-lg shadow-primary/10 dark:shadow-primary/5'
       : 'border-zinc-200 dark:border-zinc-800';
 
   const badgeContent = isCurrentPlan
@@ -131,7 +131,7 @@ function PlanCard({
 
   const badgeColor = isCurrentPlan
     ? 'bg-emerald-500'
-    : 'bg-indigo-500';
+    : 'bg-primary';
 
   const renderButton = () => {
     if (isOperator) {
@@ -175,7 +175,7 @@ function PlanCard({
       <button
         onClick={handleSubscribe}
         disabled={loading}
-        className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+        className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -229,7 +229,7 @@ function ReferralSection() {
   return (
     <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Gift className="w-5 h-5 text-indigo-500" />
+        <Gift className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Invita un collega</h3>
       </div>
 
@@ -371,7 +371,7 @@ export default function SubscribePage() {
       </div>
 
       {success && isPolling && (
-        <div className="flex items-center gap-3 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-3 text-sm text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
+        <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary-active dark:border-primary-active dark:bg-primary/20 dark:text-primary/25">
           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
           Stiamo attivando il tuo abbonamento...
         </div>

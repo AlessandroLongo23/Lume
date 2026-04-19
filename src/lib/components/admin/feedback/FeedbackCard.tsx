@@ -57,9 +57,9 @@ export function FeedbackCard({ entry, currentUserId, onClick }: FeedbackCardProp
         aria-disabled={!canVote}
         className={`flex shrink-0 flex-col items-center justify-center gap-0.5 w-14 py-2 rounded-lg border transition-colors ${
           hasVoted
-            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+            ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
             : 'border-zinc-500/25 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300'
-        } ${canVote ? 'hover:border-indigo-400 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+        } ${canVote ? 'hover:border-primary/70 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
       >
         <ChevronUp className="size-4" strokeWidth={2.5} />
         <span className="text-sm font-semibold tabular-nums">{entry.upvote_count}</span>

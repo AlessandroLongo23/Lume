@@ -38,20 +38,20 @@ export function AddModal({
 }: AddModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full h-full max-h-[90vh]">
+      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[90vh]">
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
-              <Icon className="size-5 text-indigo-500" />
+            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
+              <Icon className="size-5 text-primary" />
             </div>
             <div className="flex flex-col truncate">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">{subtitle}</p>
+              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+              <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
           <button
             aria-label="Chiudi"
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+            className="text-muted-foreground hover:text-foreground transition-colors rounded-full p-2 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             onClick={onClose}
           >
             <X className="size-5" />
@@ -66,7 +66,7 @@ export function AddModal({
             {dangerAction}
             <button
               type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={onClose}
             >
               <X className="size-4" />
@@ -75,7 +75,7 @@ export function AddModal({
             <button
               type="button"
               disabled={confirmDisabled}
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
+              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
               onClick={onSubmit}
             >
               <Check className="size-4" />

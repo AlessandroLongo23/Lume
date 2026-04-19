@@ -4,7 +4,11 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { formatCurrency } from '@/lib/utils/format';
 import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
-import { designSystem } from '@/lib/const/appearance';
+
+/** Read a CSS custom property from :root. Re-run on theme change to pick
+ *  up the .dark-scoped override. */
+const readCssVar = (name: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 interface DataPoint {
   month: string;
@@ -129,14 +133,15 @@ export function StackedAreaChart({ data, height = 300, tension = 0.4, onHover, o
         });
     });
 
-    const isDark = theme === 'dark';
-    const gridColor = isDark ? designSystem.colors.chart.grid.dark : designSystem.colors.chart.grid.light;
+    const gridColor = readCssVar('--lume-border');
+    const labelColor = readCssVar('--lume-text-muted');
+    const mouseLineColor = readCssVar('--lume-text-secondary');
 
     g.append('g')
       .attr('transform', `translate(0,${chartHeight})`)
       .call(d3.axisBottom(xScale))
       .selectAll('text')
-      .attr('fill', designSystem.colors.chart.text)
+      .attr('fill', labelColor)
       .attr('font-size', '11px');
 
     g.append('g')
@@ -146,12 +151,13 @@ export function StackedAreaChart({ data, height = 300, tension = 0.4, onHover, o
       .attr('stroke-opacity', 0.5);
 
     g.selectAll('.domain').attr('stroke', gridColor);
-    g.selectAll('text').attr('fill', designSystem.colors.chart.text).attr('font-size', '11px');
+    g.selectAll('text').attr('fill', labelColor).attr('font-size', '11px');
 
     const mouseG = g.append('g');
     const mouseLine = mouseG
       .append('path')
-      .style('stroke', isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)')
+      .style('stroke', mouseLineColor)
+      .style('stroke-opacity', '0.4')
       .style('stroke-width', '1px')
       .style('opacity', '0');
 

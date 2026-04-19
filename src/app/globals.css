@@ -2,127 +2,108 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUME DESIGN TOKEN SYSTEM
+   Layer 1 (palette) → Layer 2 (primitives) → Layer 3 (semantic).
+   Palette holds the only color literals; semantic maps roles → palette;
+   primitives cover everything else. See src/styles/tokens/ for details.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@import "../styles/tokens/palette.css";
+@import "../styles/tokens/primitives.css";
+@import "../styles/tokens/semantic.css";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-/* ═══════════════════════════════════════════════════════════════
-   LUME DESIGN SYSTEM
-   Cool & crisp — zinc surfaces, indigo accent, Inter typography
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHADCN / UI TOKEN BRIDGE
+   Existing shadcn-style tokens (--background, --primary, --card, …) are now
+   rewired to reference our palette + semantic layer, so every shadcn component
+   transitively uses the new token system without any component-code changes.
+   To be deleted in Phase C of the migration once call sites move to
+   --lume-* or the Tailwind utilities generated below.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-	/* Surfaces */
-	--lume-bg:            #FAFAFA;
-	--lume-surface:       #F4F4F5;
-	--lume-surface-raised:#FFFFFF;
-	--lume-border:        #E4E4E7;
-	--lume-border-subtle: #F0F0F1;
-
-	/* Accent — Indigo */
-	--lume-accent:        #6366F1;
-	--lume-accent-dark:   #4F46E5;
-	--lume-accent-light:  #EEF2FF;
-	--lume-accent-muted:  rgba(99, 102, 241, 0.1);
-
-	/* Text */
-	--lume-text:          #09090B;
-	--lume-text-secondary:#52525B;
-	--lume-text-muted:    #A1A1AA;
-
-	/* Typography */
-	--font-sans: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
-	--font-mono: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
-	--background:            oklch(1 0 0);
-	--foreground:            oklch(0.145 0 0);
-	--card:            oklch(1 0 0);
-	--card-foreground:            oklch(0.145 0 0);
-	--popover:            oklch(1 0 0);
-	--popover-foreground:            oklch(0.145 0 0);
-	--primary:            oklch(0.205 0 0);
-	--primary-foreground:            oklch(0.985 0 0);
-	--secondary:            oklch(0.97 0 0);
-	--secondary-foreground:            oklch(0.205 0 0);
-	--muted:            oklch(0.97 0 0);
-	--muted-foreground:            oklch(0.556 0 0);
-	--accent:            oklch(0.97 0 0);
-	--accent-foreground:            oklch(0.205 0 0);
-	--destructive:            oklch(0.577 0.245 27.325);
-	--border:            oklch(0.922 0 0);
-	--input:            oklch(0.922 0 0);
-	--ring:            oklch(0.708 0 0);
-	--chart-1:            oklch(0.87 0 0);
-	--chart-2:            oklch(0.556 0 0);
-	--chart-3:            oklch(0.439 0 0);
-	--chart-4:            oklch(0.371 0 0);
-	--chart-5:            oklch(0.269 0 0);
-	--radius:            0.625rem;
-	--sidebar:            oklch(0.985 0 0);
-	--sidebar-foreground:            oklch(0.145 0 0);
-	--sidebar-primary:            oklch(0.205 0 0);
-	--sidebar-primary-foreground:            oklch(0.985 0 0);
-	--sidebar-accent:            oklch(0.97 0 0);
-	--sidebar-accent-foreground:            oklch(0.205 0 0);
-	--sidebar-border:            oklch(0.922 0 0);
-	--sidebar-ring:            oklch(0.708 0 0);
+  --background:           var(--lume-bg);
+  --foreground:           var(--lume-text);
+  --card:                 var(--lume-surface-raised);
+  --card-foreground:      var(--lume-text);
+  --popover:              var(--lume-surface-raised);
+  --popover-foreground:   var(--lume-text);
+  --primary:              var(--lume-button-accent-bg);
+  --primary-foreground:   var(--lume-button-accent-fg);
+  --secondary:            var(--lume-button-secondary-bg);
+  --secondary-foreground: var(--lume-button-secondary-fg);
+  --muted:                var(--color-neutral-100);
+  --muted-foreground:     var(--lume-text-muted);
+  --accent:               var(--color-neutral-100);
+  --accent-foreground:    var(--lume-text);
+  --destructive:          var(--lume-button-destructive-bg);
+  --border:               var(--lume-border);
+  --input:                var(--lume-border);
+  --ring:                 var(--lume-ring-focus);
+  --chart-1:              var(--color-brand-primary-500);
+  --chart-2:              var(--color-info-500);
+  --chart-3:              var(--color-success-500);
+  --chart-4:              var(--color-warning-500);
+  --chart-5:              var(--color-danger-500);
+  --radius:               var(--radius-lg);
+  --sidebar:                           var(--lume-surface);
+  --sidebar-foreground:                var(--lume-text);
+  --sidebar-primary:                   var(--lume-button-accent-bg);
+  --sidebar-primary-foreground:        var(--lume-button-accent-fg);
+  --sidebar-accent:                    var(--color-neutral-100);
+  --sidebar-accent-foreground:         var(--lume-text);
+  --sidebar-border:                    var(--lume-border);
+  --sidebar-ring:                      var(--lume-ring-focus);
 }
 
 .dark {
-	--lume-bg:            #09090B;
-	--lume-surface:       #18181B;
-	--lume-surface-raised:#1C1C1F;
-	--lume-border:        #27272A;
-	--lume-border-subtle: #1F1F22;
-
-	--lume-accent-light:  #1E1B4B;
-	--lume-accent-muted:  rgba(99, 102, 241, 0.15);
-
-	--lume-text:          #FAFAFA;
-	--lume-text-secondary:#A1A1AA;
-	--lume-text-muted:    #52525B;
-	--background:            oklch(0.145 0 0);
-	--foreground:            oklch(0.985 0 0);
-	--card:            oklch(0.205 0 0);
-	--card-foreground:            oklch(0.985 0 0);
-	--popover:            oklch(0.205 0 0);
-	--popover-foreground:            oklch(0.985 0 0);
-	--primary:            oklch(0.922 0 0);
-	--primary-foreground:            oklch(0.205 0 0);
-	--secondary:            oklch(0.269 0 0);
-	--secondary-foreground:            oklch(0.985 0 0);
-	--muted:            oklch(0.269 0 0);
-	--muted-foreground:            oklch(0.708 0 0);
-	--accent:            oklch(0.269 0 0);
-	--accent-foreground:            oklch(0.985 0 0);
-	--destructive:            oklch(0.704 0.191 22.216);
-	--border:            oklch(1 0 0 / 10%);
-	--input:            oklch(1 0 0 / 15%);
-	--ring:            oklch(0.556 0 0);
-	--chart-1:            oklch(0.87 0 0);
-	--chart-2:            oklch(0.556 0 0);
-	--chart-3:            oklch(0.439 0 0);
-	--chart-4:            oklch(0.371 0 0);
-	--chart-5:            oklch(0.269 0 0);
-	--sidebar:            oklch(0.205 0 0);
-	--sidebar-foreground:            oklch(0.985 0 0);
-	--sidebar-primary:            oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground:            oklch(0.985 0 0);
-	--sidebar-accent:            oklch(0.269 0 0);
-	--sidebar-accent-foreground:            oklch(0.985 0 0);
-	--sidebar-border:            oklch(1 0 0 / 10%);
-	--sidebar-ring:            oklch(0.556 0 0);
+  --background:           var(--lume-bg);
+  --foreground:           var(--lume-text);
+  --card:                 var(--lume-surface-raised);
+  --card-foreground:      var(--lume-text);
+  --popover:              var(--lume-surface-raised);
+  --popover-foreground:   var(--lume-text);
+  --primary:              var(--lume-button-accent-bg);
+  --primary-foreground:   var(--lume-button-accent-fg);
+  --secondary:            var(--lume-button-secondary-bg);
+  --secondary-foreground: var(--lume-button-secondary-fg);
+  --muted:                var(--color-neutral-800);
+  --muted-foreground:     var(--lume-text-muted);
+  --accent:               var(--color-neutral-800);
+  --accent-foreground:    var(--lume-text);
+  --destructive:          var(--lume-button-destructive-bg);
+  --border:               var(--lume-border);
+  --input:                var(--lume-border);
+  --ring:                 var(--lume-ring-focus);
+  --chart-1:              var(--color-brand-primary-400);
+  --chart-2:              var(--color-info-400);
+  --chart-3:              var(--color-success-400);
+  --chart-4:              var(--color-warning-400);
+  --chart-5:              var(--color-danger-400);
+  --sidebar:                           var(--lume-surface);
+  --sidebar-foreground:                var(--lume-text);
+  --sidebar-primary:                   var(--lume-button-accent-bg);
+  --sidebar-primary-foreground:        var(--lume-button-accent-fg);
+  --sidebar-accent:                    var(--color-neutral-800);
+  --sidebar-accent-foreground:         var(--lume-text);
+  --sidebar-border:                    var(--lume-border);
+  --sidebar-ring:                      var(--lume-ring-focus);
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
 
 * {
-	font-family: var(--font-sans, 'Inter', 'Helvetica Neue', sans-serif);
-	font-weight: 400;
+	font-family: var(--font-sans);
+	font-weight: var(--font-weight-regular);
 }
 
 .font-mono {
-	font-family: var(--font-mono, 'JetBrains Mono', 'Menlo', monospace);
+	font-family: var(--font-mono);
 }
 
 html, body {
@@ -172,11 +153,11 @@ button, a {
 ::view-transition-new(root) { z-index: 9999; }
 
 [data-theme='dark']::view-transition-new(root) {
-	animation: wipeRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	animation: wipeRight var(--duration-slow) var(--ease-in-out);
 }
 
 [data-theme='light']::view-transition-new(root) {
-	animation: wipeLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	animation: wipeLeft var(--duration-slow) var(--ease-in-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -203,18 +184,20 @@ button, a {
 	justify-content: center;
 	gap: 0.5rem;
 	padding: 0.625rem 1.25rem;
-	background: var(--lume-accent);
-	color: #fff;
-	font-size: 0.875rem;
-	font-weight: 500;
-	border-radius: 0.5rem;
+	background: var(--lume-button-accent-bg);
+	color: var(--lume-button-accent-fg);
+	font-size: var(--text-sm);
+	font-weight: var(--font-weight-medium);
+	border-radius: var(--radius-md);
 	border: none;
-	transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	transition: background var(--duration-base) var(--ease-in-out),
+	            transform var(--duration-base) var(--ease-in-out),
+	            box-shadow var(--duration-base) var(--ease-in-out);
 }
 .btn-primary:hover {
-	background: var(--lume-accent-dark);
+	background: var(--lume-button-accent-bg-hover);
 	transform: translateY(-1px);
-	box-shadow: 0 8px 24px -8px rgba(99, 102, 241, 0.45);
+	box-shadow: 0 8px 24px -8px var(--lume-accent-muted);
 }
 .btn-primary:active {
 	transform: translateY(0);
@@ -226,26 +209,23 @@ button, a {
 	justify-content: center;
 	gap: 0.5rem;
 	padding: 0.625rem 1.25rem;
-	background: var(--lume-surface-raised);
-	color: var(--lume-text);
-	font-size: 0.875rem;
-	font-weight: 500;
-	border-radius: 0.5rem;
+	background: var(--lume-button-secondary-bg);
+	color: var(--lume-button-secondary-fg);
+	font-size: var(--text-sm);
+	font-weight: var(--font-weight-medium);
+	border-radius: var(--radius-md);
 	border: 1px solid var(--lume-border);
-	transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+	transition: background var(--duration-base) var(--ease-in-out),
+	            border-color var(--duration-base) var(--ease-in-out),
+	            transform var(--duration-base) var(--ease-in-out);
 }
 .btn-secondary:hover {
-	background: var(--lume-surface);
-	border-color: #D4D4D8;
+	background: var(--lume-button-secondary-bg-hover);
+	border-color: var(--color-neutral-300);
 	transform: translateY(-1px);
 }
-.dark .btn-secondary {
-	background: var(--lume-surface);
-	border-color: var(--lume-border);
-}
 .dark .btn-secondary:hover {
-	background: var(--lume-surface-raised);
-	border-color: #3F3F46;
+	border-color: var(--color-neutral-700);
 }
 
 @media (max-width: 768px) {
@@ -255,32 +235,26 @@ button, a {
 /* ─── Cards & surfaces ────────────────────────────────────── */
 
 .glass-effect {
-	background: rgba(255, 255, 255, 0.85);
+	background: color-mix(in oklch, var(--lume-surface-raised) 85%, transparent);
 	backdrop-filter: blur(20px);
-	border: 1px solid rgba(255, 255, 255, 0.3);
+	border: 1px solid color-mix(in oklch, var(--lume-surface-raised) 30%, transparent);
 	box-shadow:
-		0 4px 24px rgba(0, 0, 0, 0.05),
-		inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		0 4px 24px var(--shadow-color),
+		inset 0 1px 0 color-mix(in oklch, var(--lume-surface-raised) 60%, transparent);
 }
 .dark .glass-effect {
-	background: rgba(24, 24, 27, 0.80);
-	border: 1px solid rgba(63, 63, 70, 0.5);
+	background: color-mix(in oklch, var(--lume-surface) 80%, transparent);
+	border: 1px solid color-mix(in oklch, var(--lume-border) 50%, transparent);
 	box-shadow:
-		0 4px 24px rgba(0, 0, 0, 0.3),
-		inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		0 4px 24px var(--shadow-color),
+		inset 0 1px 0 color-mix(in oklch, var(--lume-surface-raised) 4%, transparent);
 }
 
 .shadow-elegant {
-	box-shadow:
-		0 1px 3px rgba(0, 0, 0, 0.06),
-		0 1px 2px rgba(0, 0, 0, 0.04),
-		0 0 0 1px rgba(0, 0, 0, 0.03);
+	box-shadow: var(--shadow-sm);
 }
 .shadow-elegant-lg {
-	box-shadow:
-		0 4px 12px rgba(0, 0, 0, 0.08),
-		0 2px 4px rgba(0, 0, 0, 0.04),
-		0 0 0 1px rgba(0, 0, 0, 0.03);
+	box-shadow: var(--shadow-md);
 }
 
 /* ─── Marquee ─────────────────────────────────────────────── */
@@ -330,7 +304,12 @@ button, a {
 /* ─── Gradient text (accent) ──────────────────────────────── */
 
 .gradient-text {
-	background: linear-gradient(135deg, var(--lume-accent) 0%, #818CF8 50%, var(--lume-accent) 100%);
+	background: linear-gradient(
+		135deg,
+		var(--color-brand-primary-500) 0%,
+		var(--color-brand-primary-400) 50%,
+		var(--color-brand-primary-500) 100%
+	);
 	background-size: 200% 200%;
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
@@ -361,13 +340,15 @@ button, a {
 .feature-card {
 	background: var(--lume-surface-raised);
 	border: 1px solid var(--lume-border);
-	border-radius: 0.75rem;
+	border-radius: var(--radius-lg);
 	padding: 1.5rem;
-	transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+	transition: border-color var(--duration-base) var(--ease-in-out),
+	            box-shadow var(--duration-base) var(--ease-in-out),
+	            transform var(--duration-base) var(--ease-in-out);
 }
 .feature-card:hover {
 	border-color: var(--lume-accent);
-	box-shadow: 0 0 0 1px var(--lume-accent-muted), 0 8px 24px rgba(0,0,0,0.06);
+	box-shadow: 0 0 0 1px var(--lume-accent-muted), var(--shadow-md);
 	transform: translateY(-2px);
 }
 .dark .feature-card {
@@ -379,13 +360,13 @@ button, a {
 .pricing-card {
 	background: var(--lume-surface-raised);
 	border: 1px solid var(--lume-border);
-	border-radius: 1rem;
+	border-radius: var(--radius-xl);
 	padding: 2rem;
-	transition: box-shadow 0.2s ease;
+	transition: box-shadow var(--duration-base) var(--ease-in-out);
 }
 .pricing-card.featured {
 	border-color: var(--lume-accent);
-	box-shadow: 0 0 0 1px var(--lume-accent), 0 16px 40px -12px rgba(99, 102, 241, 0.2);
+	box-shadow: 0 0 0 1px var(--lume-accent), var(--shadow-xl);
 }
 .dark .pricing-card {
 	background: var(--lume-surface);
@@ -396,10 +377,10 @@ button, a {
 .grain-overlay {
 	position: absolute;
 	inset: 0;
-	opacity: 0.02;
+	opacity: var(--opacity-5);
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
 	pointer-events: none;
-	z-index: 1;
+	z-index: var(--z-base);
 }
 
 /* ─── Responsive helpers ──────────────────────────────────── */
@@ -412,52 +393,54 @@ button, a {
 }
 
 @media (max-width: 768px) {
-	.mobile-title   { font-size: 2.25rem; line-height: 1.1; }
-	.mobile-subtitle { font-size: 1.125rem; line-height: 1.5; }
+	.mobile-title   { font-size: var(--text-4xl); line-height: var(--leading-tight); }
+	.mobile-subtitle { font-size: var(--text-lg); line-height: var(--leading-normal); }
 	.mobile-section-py { padding-top: 4rem; padding-bottom: 4rem; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAILWIND UTILITY SURFACE
+   Exposes shadcn-style and sidebar tokens as Tailwind color utilities.
+   Semantic Lume tokens (bg-surface, text-body, border-flat, …) will be
+   added here progressively during Phase B of the token migration.
+   ═══════════════════════════════════════════════════════════════════════════ */
 @theme inline {
-	--font-heading:            'Inter', 'Helvetica Neue', 'Arial', sans-serif;
-	--font-sans:            'Inter', 'Helvetica Neue', 'Arial', sans-serif;
-	--color-sidebar-ring:            var(--sidebar-ring);
-	--color-sidebar-border:            var(--sidebar-border);
-	--color-sidebar-accent-foreground:            var(--sidebar-accent-foreground);
-	--color-sidebar-accent:            var(--sidebar-accent);
-	--color-sidebar-primary-foreground:            var(--sidebar-primary-foreground);
-	--color-sidebar-primary:            var(--sidebar-primary);
-	--color-sidebar-foreground:            var(--sidebar-foreground);
-	--color-sidebar:            var(--sidebar);
-	--color-chart-5:            var(--chart-5);
-	--color-chart-4:            var(--chart-4);
-	--color-chart-3:            var(--chart-3);
-	--color-chart-2:            var(--chart-2);
-	--color-chart-1:            var(--chart-1);
-	--color-ring:            var(--ring);
-	--color-input:            var(--input);
-	--color-border:            var(--border);
-	--color-destructive:            var(--destructive);
+	--color-sidebar-ring:                 var(--sidebar-ring);
+	--color-sidebar-border:               var(--sidebar-border);
+	--color-sidebar-accent-foreground:    var(--sidebar-accent-foreground);
+	--color-sidebar-accent:               var(--sidebar-accent);
+	--color-sidebar-primary-foreground:   var(--sidebar-primary-foreground);
+	--color-sidebar-primary:              var(--sidebar-primary);
+	--color-sidebar-foreground:           var(--sidebar-foreground);
+	--color-sidebar:                      var(--sidebar);
+	--color-chart-5:                      var(--chart-5);
+	--color-chart-4:                      var(--chart-4);
+	--color-chart-3:                      var(--chart-3);
+	--color-chart-2:                      var(--chart-2);
+	--color-chart-1:                      var(--chart-1);
+	--color-ring:                         var(--ring);
+	--color-input:                        var(--input);
+	--color-border:                       var(--border);
+	--color-destructive:                  var(--destructive);
 	--color-accent-foreground:            var(--accent-foreground);
-	--color-accent:            var(--accent);
-	--color-muted-foreground:            var(--muted-foreground);
-	--color-muted:            var(--muted);
-	--color-secondary-foreground:            var(--secondary-foreground);
-	--color-secondary:            var(--secondary);
-	--color-primary-foreground:            var(--primary-foreground);
-	--color-primary:            var(--primary);
-	--color-popover-foreground:            var(--popover-foreground);
-	--color-popover:            var(--popover);
-	--color-card-foreground:            var(--card-foreground);
-	--color-card:            var(--card);
-	--color-foreground:            var(--foreground);
-	--color-background:            var(--background);
-	--radius-sm:            calc(var(--radius) * 0.6);
-	--radius-md:            calc(var(--radius) * 0.8);
-	--radius-lg:            var(--radius);
-	--radius-xl:            calc(var(--radius) * 1.4);
-	--radius-2xl:            calc(var(--radius) * 1.8);
-	--radius-3xl:            calc(var(--radius) * 2.2);
-	--radius-4xl:            calc(var(--radius) * 2.6);
+	--color-accent:                       var(--accent);
+	--color-muted-foreground:             var(--muted-foreground);
+	--color-muted:                        var(--muted);
+	--color-secondary-foreground:         var(--secondary-foreground);
+	--color-secondary:                    var(--secondary);
+	--color-primary-foreground:           var(--primary-foreground);
+	--color-primary:                      var(--primary);
+	--color-popover-foreground:           var(--popover-foreground);
+	--color-popover:                      var(--popover);
+	--color-card-foreground:              var(--card-foreground);
+	--color-card:                         var(--card);
+	--color-foreground:                   var(--foreground);
+	--color-background:                   var(--background);
+
+	/* Lume-specific semantic utilities (extend as needed during migration) */
+	--color-receipt:                      var(--lume-receipt-bg);
+	--color-primary-hover:                var(--lume-button-accent-bg-hover);
+	--color-primary-active:               var(--lume-button-accent-bg-active);
 }
 
 @layer base {

@@ -11,6 +11,7 @@ import {
   UserCog,
   Warehouse,
   MessageSquare,
+  Star,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export const adminRoutes: {
     title: 'Community',
     routes: [
       { name: 'Feedback', icon: MessageSquare, url: 'feedback' },
+      { name: 'Recensione', icon: Star, url: 'recensioni' },
     ],
   },
 ];

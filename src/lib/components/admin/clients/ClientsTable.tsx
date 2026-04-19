@@ -106,7 +106,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
           return (
             <span
               data-no-row-click
-              className="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
               onClick={() => window.open(`mailto:${email}`, '_blank')}
             >
               {email}
@@ -123,7 +123,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
           return (
             <span
               data-no-row-click
-              className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
               onClick={() => {
                 const phone = `${phonePrefix}${phoneNumber}`.replace(/[^0-9]/g, '');
                 window.open(`https://wa.me/${phone}`, '_blank');
@@ -240,8 +240,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
                             <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
                             </span>
                           )}
                         </span>

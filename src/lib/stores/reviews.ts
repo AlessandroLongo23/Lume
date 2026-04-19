@@ -1,39 +1,65 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
-import { Review } from '@/lib/types/Review';
-import { useWorkspaceStore } from '@/lib/stores/workspace';
+import { Review, type ReviewRow } from '@/lib/types/Review';
 
 interface ReviewsState {
-  reviews: Review[];
+  myReview: Review | null;
   isLoading: boolean;
   error: string | null;
-  fetchReviews: () => Promise<void>;
-  addReview: (review: Partial<Review>) => Promise<Review>;
-  deleteReview: (id: string) => Promise<void>;
+  fetchMyReview: () => Promise<void>;
+  upsertMyReview: (data: { rating: number; message: string }) => Promise<Review>;
+  deleteMyReview: () => Promise<void>;
 }
 
 export const useReviewsStore = create<ReviewsState>((set) => ({
-  reviews: [],
+  myReview: null,
   isLoading: true,
   error: null,
 
-  fetchReviews: async () => {
+  fetchMyReview: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('reviews').select('*');
-    if (error) { set({ isLoading: false, error: error.message }); return; }
-    set({ reviews: data.map((r) => new Review(r)), isLoading: false, error: null });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      set({ myReview: null, isLoading: false, error: null });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('author_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      return;
+    }
+
+    set({
+      myReview: data ? new Review(data as ReviewRow) : null,
+      isLoading: false,
+      error: null,
+    });
   },
 
-  addReview: async (review) => {
-    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
-    if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
-    const { data, error } = await supabase.from('reviews').insert([{ ...review, salon_id: activeSalonId }]).select().single();
-    if (error) throw new Error('Impossibile aggiungere la recensione.');
-    return new Review(data);
+  upsertMyReview: async ({ rating, message }) => {
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, message }),
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error ?? 'Errore sconosciuto');
+    const review = new Review(result.review);
+    set({ myReview: review });
+    return review;
   },
 
-  deleteReview: async (id) => {
-    const { error } = await supabase.from('reviews').delete().eq('id', id);
-    if (error) throw new Error('Impossibile eliminare la recensione.');
+  deleteMyReview: async () => {
+    const res = await fetch('/api/reviews', { method: 'DELETE' });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error ?? 'Errore sconosciuto');
+    set({ myReview: null });
   },
 }));

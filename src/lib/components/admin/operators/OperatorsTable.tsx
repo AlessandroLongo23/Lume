@@ -71,7 +71,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       header: 'Email',
       cell: ({ row }) => (
         <span
-          className="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline"
+          className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
           onClick={() => window.open(`mailto:${row.original.email}`, '_blank')}
         >
           {row.original.email}
@@ -83,7 +83,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       header: 'Telefono',
       cell: ({ row }) => (
         <span
-          className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
           onClick={() => {
             const phone = row.original.phonePrefix.concat(row.original.phoneNumber).replace(/[^0-9]/g, '');
             window.open(`https://wa.me/${phone}`, '_blank');
@@ -171,8 +171,8 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
                             <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
                             </span>
                           )}
                         </span>
@@ -220,7 +220,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                           <>
                             <button
                               onClick={() => router.push(`/admin/operatori/${row.original.id}`)}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                              className="p-1.5 rounded-md text-zinc-400 hover:text-primary-hover dark:hover:text-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
                               title="Dettaglio"
                             >
                               <Info className="size-3.5" />

@@ -180,7 +180,7 @@ export function CustomSelect({
         tabIndex={disabled ? -1 : 0}
         className={`w-full px-3 py-2 text-left bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg
           transition-all flex items-center justify-between
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}
         onClick={openDropdown}
         onKeyDown={(e) => {
@@ -201,7 +201,7 @@ export function CustomSelect({
             <button
               type="button"
               aria-label="Rimuovi selezione"
-              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={(e) => { e.stopPropagation(); onChange(null); }}
             >
               <X className="h-4 w-4 text-zinc-500" />
@@ -230,7 +230,7 @@ export function CustomSelect({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-shadow"
+                className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
                 placeholder="Cerca..."
                 onKeyDown={handleKeyNavigation}
               />
@@ -251,7 +251,7 @@ export function CustomSelect({
                     aria-selected={isSelected}
                     className={`w-full p-2 cursor-pointer transition-colors text-left flex items-center justify-between
                       ${isSelected
-                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                        ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
                         : isHighlighted
                           ? 'bg-zinc-100 dark:bg-zinc-700'
                           : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
@@ -260,7 +260,7 @@ export function CustomSelect({
                     onMouseEnter={() => setHighlightedIndex(i)}
                   >
                     <span>{getLabel(option)}</span>
-                    {isSelected && <Check className="size-4 text-indigo-500" />}
+                    {isSelected && <Check className="size-4 text-primary" />}
                   </button>
                 );
               })

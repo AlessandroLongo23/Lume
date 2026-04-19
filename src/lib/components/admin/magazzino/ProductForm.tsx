@@ -42,7 +42,7 @@ export const emptyProductForm = (): ProductFormValue => ({
   quantity_ml: null,
 });
 
-const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
+const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
 const labelClass = 'text-sm font-medium text-zinc-700 dark:text-zinc-300';
 const errorClass = 'text-xs text-red-500 mt-1';
 

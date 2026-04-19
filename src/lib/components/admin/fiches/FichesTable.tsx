@@ -116,7 +116,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
               {names.map((name) => (
                 <span
                   key={name}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70 border border-primary/20"
                 >
                   {name}
                 </span>
@@ -195,8 +195,8 @@ export function FichesTable({ fiches }: FichesTableProps) {
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
                             <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-indigo-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
                             </span>
                           )}
                         </span>

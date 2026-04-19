@@ -135,7 +135,7 @@ export function CouponSuggestionsPanel({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="size-3.5 text-indigo-500" />
+        <Sparkles className="size-3.5 text-primary" />
         <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           Coupon disponibili
         </span>
@@ -157,10 +157,10 @@ export function CouponSuggestionsPanel({
 
           const Icon = isPromo ? Gift : CreditCard;
           const accent = isPromo
-            ? 'border-indigo-500/30 bg-indigo-500/5'
+            ? 'border-primary/30 bg-primary/5'
             : 'border-emerald-500/30 bg-emerald-500/5';
           const accentSelected = isPromo
-            ? 'border-indigo-500 bg-indigo-500/10'
+            ? 'border-primary bg-primary/10'
             : 'border-emerald-500 bg-emerald-500/10';
 
           return (
@@ -173,16 +173,16 @@ export function CouponSuggestionsPanel({
                 isSelected ? accentSelected : accent
               } ${blocked && !isSelected ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}`}
             >
-              <Icon className={`size-4 shrink-0 ${isPromo ? 'text-indigo-500' : 'text-emerald-500'}`} />
+              <Icon className={`size-4 shrink-0 ${isPromo ? 'text-primary' : 'text-emerald-500'}`} />
               <div className="flex flex-col min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {isPromo ? 'Coupon' : 'Gift card'} · {c.displayDiscount()}
                   </span>
                   {c.hasUnlimitedScope ? (
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400">tutto</span>
+                    <span className="text-2xs uppercase tracking-wider text-zinc-400">tutto</span>
                   ) : (
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400">scoped</span>
+                    <span className="text-2xs uppercase tracking-wider text-zinc-400">scoped</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -201,7 +201,7 @@ export function CouponSuggestionsPanel({
                   {previewAmount > 0 ? `− € ${previewAmount.toFixed(2)}` : '€ 0,00'}
                 </span>
                 {isSelected && (
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <span className="flex items-center gap-1 text-2xs text-emerald-600 dark:text-emerald-400">
                     <Check className="size-3" /> applicato
                   </span>
                 )}
@@ -211,7 +211,7 @@ export function CouponSuggestionsPanel({
         })}
       </div>
 
-      <p className="text-[10px] text-zinc-400">
+      <p className="text-2xs text-zinc-400">
         Massimo un coupon regalo + una gift card per fiche. Le gift card vengono applicate dopo gli altri sconti.
       </p>
     </div>

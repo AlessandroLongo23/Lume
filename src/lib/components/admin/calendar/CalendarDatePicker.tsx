@@ -161,7 +161,7 @@ export function CalendarDatePicker({
         className="px-3 py-1 rounded-md text-lg font-medium
           text-zinc-800 dark:text-zinc-100 select-none cursor-pointer
           hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         {label}
       </button>
@@ -227,7 +227,7 @@ export function CalendarDatePicker({
                 {weekDays.map((d) => (
                   <div
                     key={d}
-                    className="text-center text-[10px] font-medium uppercase tracking-wider
+                    className="text-center text-2xs font-medium uppercase tracking-wider
                       text-zinc-500 dark:text-zinc-400 py-1"
                   >
                     {d}
@@ -245,11 +245,11 @@ export function CalendarDatePicker({
                       onClick={() => handlePickDay(date)}
                       className={[
                         'h-8 text-sm rounded-md transition-colors',
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                         isSelected
-                          ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+                          ? 'bg-primary text-white hover:bg-primary-hover'
                           : isToday
-                            ? 'text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                            ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
                             : isCurrentMonth
                               ? 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                               : 'text-zinc-400 dark:text-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700/50',
@@ -278,11 +278,11 @@ export function CalendarDatePicker({
                     onClick={() => handlePickMonth(i)}
                     className={[
                       'py-2 text-sm rounded-md transition-colors',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       isActive
-                        ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+                        ? 'bg-primary text-white hover:bg-primary-hover'
                         : isCurrent
-                          ? 'text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                          ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
                           : 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700',
                     ].join(' ')}
                   >
@@ -306,11 +306,11 @@ export function CalendarDatePicker({
                     onClick={() => handlePickYear(year)}
                     className={[
                       'py-2 text-sm rounded-md transition-colors',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       isActive
-                        ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+                        ? 'bg-primary text-white hover:bg-primary-hover'
                         : isCurrent
-                          ? 'text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                          ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
                           : 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700',
                     ].join(' ')}
                   >
@@ -327,9 +327,9 @@ export function CalendarDatePicker({
               type="button"
               onClick={handleToday}
               className="w-full py-1.5 text-sm font-medium rounded-md
-                text-indigo-600 dark:text-indigo-400
-                hover:bg-indigo-500/10 transition-colors
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                text-primary-hover dark:text-primary/70
+                hover:bg-primary/10 transition-colors
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               Torna a oggi
             </button>

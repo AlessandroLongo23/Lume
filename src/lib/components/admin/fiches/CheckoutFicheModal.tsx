@@ -173,8 +173,8 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-5 border-b border-zinc-500/25 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-indigo-500/10">
-            <CreditCard className="size-5 text-indigo-500" />
+          <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
+            <CreditCard className="size-5 text-primary" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Chiudi Fiche</h2>
@@ -196,18 +196,18 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
         {/* ── LEFT: Receipt with torn-paper effect ── */}
         {/* text-zinc-50/zinc-800 sets currentColor for the SVG fill to match modal bg */}
         <div
-          className="text-[#FAFAF8] dark:text-zinc-950"
+          className="text-receipt"
           style={{ filter: 'drop-shadow(0 4px 20px rgb(0 0 0 / 0.13))' }}
         >
           <TornEdge kind="top" />
 
-          <div className="bg-[#FAFAF8] dark:bg-zinc-950 font-mono text-sm">
+          <div className="bg-receipt font-mono text-sm">
             {/* Salon name */}
             <div className="px-5 pt-5 pb-4 text-center">
               <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest leading-tight">
                 {salonName}
               </p>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5">
+              <p className="text-2xs text-zinc-400 dark:text-zinc-500 mt-1.5">
                 {new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
                 {' · '}
                 {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
@@ -217,11 +217,11 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
             {/* Client + receipt ID */}
             <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans grid grid-cols-2 gap-x-2">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
+                <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
                 <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 truncate">{clientName}</p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
+                <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
                 <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 font-mono">{fiche.id.slice(-8).toUpperCase()}</p>
               </div>
             </div>
@@ -231,7 +231,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
               <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Scissors className="size-3 text-zinc-400 dark:text-zinc-500" />
-                  <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
+                  <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
                 </div>
                 {ficheServices.map((fs) => {
                   const service = serviceMap.get(fs.service_id);
@@ -241,7 +241,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{service?.name ?? 'Servizio'}</span>
                       <span className="flex items-baseline gap-1.5 shrink-0">
                         {isDiscounted && (
-                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
+                          <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
                         )}
                         <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
                           € {fmt(fs.final_price)}
@@ -258,7 +258,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
               <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Package className="size-3 text-zinc-400 dark:text-zinc-500" />
-                  <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
+                  <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
                 </div>
                 {ficheProducts.map((fp) => {
                   const product = productMap.get(fp.product_id);
@@ -275,7 +275,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       </span>
                       <span className="flex items-baseline gap-1.5 shrink-0">
                         {isDiscounted && (
-                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
+                          <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
                         )}
                         <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
                           € {fmt(finalTotal)}
@@ -289,15 +289,15 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
 
             {/* Total */}
             <div className="mx-4 border-t border-zinc-200 dark:border-zinc-700 pt-3 pb-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-sans">Totale</span>
+              <span className="text-2xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-sans">Totale</span>
               <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">€ {fmt(total)}</span>
             </div>
 
             {/* Lume branding footer */}
             <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 py-3 flex items-center justify-center gap-1.5 font-sans">
-              <Lightbulb className="size-3 text-indigo-500" strokeWidth={2.25} />
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                Gestito con <span className="text-indigo-500 font-semibold">Lume.</span>
+              <Lightbulb className="size-3 text-primary" strokeWidth={2.25} />
+              <span className="text-2xs text-zinc-400 dark:text-zinc-500">
+                Gestito con <span className="text-primary font-semibold">Lume.</span>
               </span>
             </div>
           </div>
@@ -326,7 +326,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   className={[
                     'flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border text-xs font-medium transition-all',
                     view === key
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-500'
+                      ? 'border-primary bg-primary/10 dark:bg-primary/10 text-primary-hover dark:text-primary/70 ring-1 ring-primary'
                       : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600',
                   ].join(' ')}
                 >
@@ -396,7 +396,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       onChange={(e) => updateSplitMethod(i, e.target.value)}
                       className="flex-1 px-2.5 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
                         border-zinc-200 dark:border-zinc-700
-                        focus:border-indigo-400 dark:focus:border-indigo-500
+                        focus:border-primary/70 dark:focus:border-primary
                         text-zinc-900 dark:text-zinc-100 outline-none transition-colors"
                     >
                       <option value={FichePaymentMethod.CASH}>Contanti</option>
@@ -427,7 +427,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
 
                 <button
                   onClick={addSplit}
-                  className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors self-start"
+                  className="flex items-center gap-1.5 text-xs text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40 transition-colors self-start"
                 >
                   <Plus className="size-3.5" />
                   Aggiungi pagamento
@@ -474,7 +474,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
           onClick={handleSubmit}
           disabled={!canSubmit}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg
-            bg-indigo-500 text-white hover:bg-indigo-600
+            bg-primary text-white hover:bg-primary-hover
             disabled:opacity-40 disabled:cursor-not-allowed
             transition-all"
         >

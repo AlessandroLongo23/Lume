@@ -210,7 +210,7 @@ export default function ProductDetailPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-hover hover:bg-primary-active text-white rounded-md transition-colors disabled:opacity-50"
                 >
                   <Save className="size-4" />
                   {saving ? 'Salvando...' : 'Salva'}

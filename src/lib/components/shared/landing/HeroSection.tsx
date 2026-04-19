@@ -39,9 +39,9 @@ const appointments: Appt[][] = [
 
 const colorMap = {
   indigo: {
-    bg: 'bg-[#6366F1]/10',
-    border: 'border-[#6366F1]/20',
-    name: 'text-[#6366F1]',
+    bg: 'bg-primary/10',
+    border: 'border-primary/20',
+    name: 'text-primary',
     service: 'text-zinc-400',
   },
   emerald: {
@@ -64,38 +64,38 @@ function DashboardMockup() {
   return (
     <div className="relative w-full max-w-[580px] mx-auto lg:mx-0">
       {/* Glow behind the mockup */}
-      <div className="absolute -inset-4 bg-[#6366F1]/8 rounded-2xl blur-2xl pointer-events-none" />
+      <div className="absolute -inset-4 bg-primary/10 rounded-2xl blur-2xl pointer-events-none" />
 
       {/* Browser window */}
-      <div className="relative rounded-xl border border-[#E4E4E7] shadow-2xl overflow-hidden bg-white">
+      <div className="relative rounded-xl border border-border shadow-2xl overflow-hidden bg-white">
         {/* Browser chrome */}
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#E4E4E7] bg-[#FAFAFA]">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-background">
           <div className="flex gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
           </div>
-          <div className="flex-1 mx-3 h-5 rounded-md bg-[#E4E4E7] flex items-center px-2.5">
-            <span className="text-[10px] text-zinc-400">lumeapp.it/calendario</span>
+          <div className="flex-1 mx-3 h-5 rounded-md bg-border flex items-center px-2.5">
+            <span className="text-2xs text-zinc-400">lumeapp.it/calendario</span>
           </div>
         </div>
 
         {/* App UI */}
         <div className="flex h-[340px] overflow-hidden">
           {/* Sidebar */}
-          <div className="w-12 border-r border-[#E4E4E7] bg-[#FAFAFA] flex flex-col items-center py-3 gap-2.5 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-[#6366F1] flex items-center justify-center mb-1">
-              <span className="text-white text-[11px] font-bold leading-none">L</span>
+          <div className="w-12 border-r border-border bg-background flex flex-col items-center py-3 gap-2.5 shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center mb-1">
+              <span className="text-white text-2xs font-bold leading-none">L</span>
             </div>
             {navIcons.map((Icon, i) => (
               <div
                 key={i}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  i === 0 ? 'bg-[#EEF2FF]' : ''
+                  i === 0 ? 'bg-primary/10' : ''
                 }`}
               >
                 <Icon
-                  className={`w-4 h-4 ${i === 0 ? 'text-[#6366F1]' : 'text-zinc-300'}`}
+                  className={`w-4 h-4 ${i === 0 ? 'text-primary' : 'text-zinc-300'}`}
                 />
               </div>
             ))}
@@ -105,14 +105,14 @@ function DashboardMockup() {
           <div className="flex-1 p-3 overflow-hidden">
             {/* Header row */}
             <div className="flex items-center justify-between mb-2.5">
-              <span className="text-[11px] font-semibold text-[#09090B]">Martedì, 1 Aprile</span>
+              <span className="text-2xs font-semibold text-foreground">Martedì, 1 Aprile</span>
               <div className="flex gap-0.5">
                 {weekDays.map((d, i) => (
                   <div
                     key={d}
-                    className={`text-[9px] px-1.5 py-0.5 rounded-md font-medium ${
+                    className={`text-2xs px-1.5 py-0.5 rounded-md font-medium ${
                       i === 1
-                        ? 'bg-[#6366F1] text-white'
+                        ? 'bg-primary text-white'
                         : 'text-zinc-400'
                     }`}
                   >
@@ -125,7 +125,7 @@ function DashboardMockup() {
             {/* Operator columns header */}
             <div className="grid grid-cols-3 gap-1.5 mb-1.5">
               {['Marco', 'Elena', 'Luca'].map((op) => (
-                <div key={op} className="text-[9px] text-center text-zinc-400 font-medium">
+                <div key={op} className="text-2xs text-center text-zinc-400 font-medium">
                   {op}
                 </div>
               ))}
@@ -141,17 +141,17 @@ function DashboardMockup() {
                         key={ci}
                         className={`h-11 rounded-lg border p-1.5 ${colorMap[appt.color].bg} ${colorMap[appt.color].border}`}
                       >
-                        <div className={`text-[9px] font-semibold leading-tight ${colorMap[appt.color].name}`}>
+                        <div className={`text-2xs font-semibold leading-tight ${colorMap[appt.color].name}`}>
                           {appt.name}
                         </div>
-                        <div className={`text-[9px] leading-tight ${colorMap[appt.color].service}`}>
+                        <div className={`text-2xs leading-tight ${colorMap[appt.color].service}`}>
                           {appt.service}
                         </div>
                       </div>
                     ) : (
                       <div
                         key={ci}
-                        className="h-11 rounded-lg border border-dashed border-[#E4E4E7]"
+                        className="h-11 rounded-lg border border-dashed border-border"
                       />
                     )
                   )}
@@ -161,28 +161,28 @@ function DashboardMockup() {
           </div>
 
           {/* Client panel */}
-          <div className="w-40 border-l border-[#E4E4E7] p-3 bg-[#FAFAFA] shrink-0">
+          <div className="w-40 border-l border-border p-3 bg-background shrink-0">
             <div className="flex items-center gap-1.5 mb-3">
-              <div className="w-7 h-7 rounded-full bg-[#6366F1] flex items-center justify-center shrink-0">
-                <span className="text-white text-[9px] font-bold">MR</span>
+              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <span className="text-white text-2xs font-bold">MR</span>
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-semibold text-[#09090B] truncate">Marco R.</div>
-                <div className="text-[9px] text-zinc-400">Cliente da 3 anni</div>
+                <div className="text-2xs font-semibold text-foreground truncate">Marco R.</div>
+                <div className="text-2xs text-zinc-400">Cliente da 3 anni</div>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <div className="bg-white rounded-lg p-2 border border-[#E4E4E7]">
-                <div className="text-[9px] text-zinc-400 mb-0.5">Ultimo appuntamento</div>
-                <div className="text-[9px] font-medium text-[#09090B]">15 marzo — Taglio</div>
+              <div className="bg-white rounded-lg p-2 border border-border">
+                <div className="text-2xs text-zinc-400 mb-0.5">Ultimo appuntamento</div>
+                <div className="text-2xs font-medium text-foreground">15 marzo — Taglio</div>
               </div>
-              <div className="bg-white rounded-lg p-2 border border-[#E4E4E7]">
-                <div className="text-[9px] text-zinc-400 mb-0.5">Preferisce</div>
-                <div className="text-[9px] font-medium text-[#09090B]">Scalato ai lati</div>
+              <div className="bg-white rounded-lg p-2 border border-border">
+                <div className="text-2xs text-zinc-400 mb-0.5">Preferisce</div>
+                <div className="text-2xs font-medium text-foreground">Scalato ai lati</div>
               </div>
-              <div className="bg-[#EEF2FF] rounded-lg p-2">
-                <div className="text-[9px] text-[#6366F1] font-semibold">12 visite totali</div>
+              <div className="bg-primary/10 rounded-lg p-2">
+                <div className="text-2xs text-primary font-semibold">12 visite totali</div>
               </div>
             </div>
           </div>
@@ -211,9 +211,9 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E4E4E7] bg-white text-xs text-zinc-500 mb-8"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-white text-xs text-zinc-500 mb-8"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Gestionale per parrucchieri e barbieri
             </motion.div>
 
@@ -221,11 +221,11 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease, delay: 0.2 }}
-              className="text-5xl sm:text-6xl font-bold tracking-tight text-[#09090B] leading-[1.05] mb-6"
+              className="text-5xl sm:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-6"
             >
               Il gestionale che
               <br />
-              <span className="text-[#6366F1]">il tuo salone</span>
+              <span className="text-primary">il tuo salone</span>
               <br />
               merita.
             </motion.h1>
@@ -268,7 +268,7 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
             >
               {bullets.map((b) => (
                 <div key={b} className="flex items-center gap-1.5 text-sm text-zinc-500">
-                  <Check className="w-3.5 h-3.5 text-[#6366F1] shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-primary shrink-0" />
                   {b}
                 </div>
               ))}
