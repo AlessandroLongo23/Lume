@@ -16,6 +16,10 @@ export interface FeedbackEntryRow {
   author_last_name: string | null;
   author_salon_id: string | null;
   author_salon_name: string | null;
+  image_paths: string[] | null;
+  linked_branch: string | null;
+  linked_pr_url: string | null;
+  comment_count: number;
 }
 
 export class FeedbackEntry {
@@ -33,6 +37,10 @@ export class FeedbackEntry {
   author_last_name: string | null;
   author_salon_id: string | null;
   author_salon_name: string | null;
+  image_paths: string[];
+  linked_branch: string | null;
+  linked_pr_url: string | null;
+  comment_count: number;
 
   constructor(row: FeedbackEntryRow) {
     this.id = row.id;
@@ -49,6 +57,10 @@ export class FeedbackEntry {
     this.author_last_name = row.author_last_name ?? null;
     this.author_salon_id = row.author_salon_id ?? null;
     this.author_salon_name = row.author_salon_name ?? null;
+    this.image_paths = row.image_paths ?? [];
+    this.linked_branch = row.linked_branch ?? null;
+    this.linked_pr_url = row.linked_pr_url ?? null;
+    this.comment_count = row.comment_count ?? 0;
   }
 
   getAuthorName(): string {

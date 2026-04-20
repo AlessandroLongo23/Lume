@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase/client';
 import { FeedbackEntry, type FeedbackEntryRow, type FeedbackStatus, type FeedbackType } from '@/lib/types/FeedbackEntry';
 
 export type FeedbackFilter = 'all' | 'open' | 'in_progress' | 'completed';
+export type FeedbackTypeFilter = 'all' | FeedbackType;
+export type FeedbackSort = 'top' | 'recent';
 
 interface FeedbackState {
   entries: FeedbackEntry[];
@@ -10,14 +12,19 @@ interface FeedbackState {
   isLoading: boolean;
   error: string | null;
   filter: FeedbackFilter;
-  selected: FeedbackEntry | null;
+  typeFilter: FeedbackTypeFilter;
+  sort: FeedbackSort;
+  mineOnly: boolean;
   fetchEntries: () => Promise<void>;
-  addEntry: (data: { type: FeedbackType; title: string; description: string }) => Promise<FeedbackEntry>;
-  updateEntry: (id: string, patch: { status?: FeedbackStatus; title?: string; description?: string }) => Promise<void>;
+  addEntry: (data: { type: FeedbackType; title: string; description: string; image_paths?: string[] }) => Promise<FeedbackEntry>;
+  updateEntry: (id: string, patch: { status?: FeedbackStatus; title?: string; description?: string; image_paths?: string[] }) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   toggleUpvote: (id: string) => Promise<void>;
   setFilter: (f: FeedbackFilter) => void;
-  setSelected: (e: FeedbackEntry | null) => void;
+  setTypeFilter: (t: FeedbackTypeFilter) => void;
+  setSort: (s: FeedbackSort) => void;
+  setMineOnly: (b: boolean) => void;
+  getById: (id: string) => FeedbackEntry | null;
 }
 
 export const useFeedbackStore = create<FeedbackState>((set, get) => ({
@@ -26,7 +33,9 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
   isLoading: true,
   error: null,
   filter: 'open',
-  selected: null,
+  typeFilter: 'all',
+  sort: 'top',
+  mineOnly: false,
 
   fetchEntries: async () => {
     set((s) => ({ ...s, isLoading: true }));
@@ -102,7 +111,6 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
     const current = get().myUpvoteIds;
     const hasVoted = current.has(id);
 
-    // Optimistic update
     const nextUpvotes = new Set(current);
     if (hasVoted) nextUpvotes.delete(id);
     else nextUpvotes.add(id);
@@ -121,7 +129,6 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
       : await supabase.from('feedback_upvotes').insert({ feedback_id: id, user_id: user.id });
 
     if (error) {
-      // Roll back optimistic state on failure
       set((s) => ({
         myUpvoteIds: current,
         entries: s.entries.map((e) =>
@@ -135,5 +142,9 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
   },
 
   setFilter: (f) => set({ filter: f }),
-  setSelected: (e) => set({ selected: e }),
+  setTypeFilter: (t) => set({ typeFilter: t }),
+  setSort: (s) => set({ sort: s }),
+  setMineOnly: (b) => set({ mineOnly: b }),
+
+  getById: (id) => get().entries.find((e) => e.id === id) ?? null,
 }));

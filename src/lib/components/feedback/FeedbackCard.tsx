@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronUp } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronUp, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useFeedbackStore } from '@/lib/stores/feedback';
@@ -12,8 +13,7 @@ interface FeedbackCardProps {
   entry: FeedbackEntry;
   currentUserId: string | null;
   isAdmin: boolean;
-  onClick: () => void;
-  showSalonBadge?: boolean;
+  href: string;
   allowUpvote?: boolean;
 }
 
@@ -21,8 +21,7 @@ export function FeedbackCard({
   entry,
   currentUserId,
   isAdmin,
-  onClick,
-  showSalonBadge = false,
+  href,
   allowUpvote = true,
 }: FeedbackCardProps) {
   const hasVoted = useFeedbackStore((s) => s.myUpvoteIds.has(entry.id));
@@ -32,7 +31,8 @@ export function FeedbackCard({
   const isOwnEntry = currentUserId !== null && entry.author_id === currentUserId;
   const canVote = allowUpvote && (!isOwnEntry || isAdmin);
 
-  const handleVote = async (e: React.MouseEvent) => {
+  const handleVote = async (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!canVote) return;
     try {
@@ -48,9 +48,8 @@ export function FeedbackCard({
     : entry.description;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Link
+      href={href}
       className="group flex flex-row items-start gap-4 w-full text-left p-4 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
     >
       {/* Upvote column */}
@@ -60,7 +59,7 @@ export function FeedbackCard({
           tabIndex={0}
           onClick={handleVote}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleVote(e as unknown as React.MouseEvent); }
+            if (e.key === 'Enter' || e.key === ' ') handleVote(e);
           }}
           aria-label={hasVoted ? 'Rimuovi voto' : 'Vota'}
           aria-disabled={!canVote}
@@ -90,7 +89,7 @@ export function FeedbackCard({
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusMeta.badge}`}>
             {statusMeta.label}
           </span>
-          {showSalonBadge && entry.author_salon_name && (
+          {entry.author_salon_name && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
               {entry.author_salon_name}
             </span>
@@ -114,6 +113,15 @@ export function FeedbackCard({
           <span>{entry.getAuthorName()}</span>
           <span className="text-zinc-300 dark:text-zinc-600">·</span>
           <span>{format(new Date(entry.created_at), 'd MMM yyyy', { locale: it })}</span>
+          {entry.comment_count > 0 && (
+            <>
+              <span className="text-zinc-300 dark:text-zinc-600">·</span>
+              <span className="inline-flex items-center gap-1">
+                <MessageSquare className="size-3" />
+                <span className="tabular-nums">{entry.comment_count}</span>
+              </span>
+            </>
+          )}
           {entry.completed_at && (
             <>
               <span className="text-zinc-300 dark:text-zinc-600">·</span>
@@ -124,6 +132,6 @@ export function FeedbackCard({
           )}
         </div>
       </div>
-    </button>
+    </Link>
   );
 }

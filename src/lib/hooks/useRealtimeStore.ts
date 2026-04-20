@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 const DEBOUNCE_MS = 300;
 
 export function useRealtimeStore(table: string, onUpdate: () => void, salonId?: string | null) {
+  const instanceId = useId();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const channelName = salonId ? `${table}_changes_${salonId}` : `${table}_changes`;
+    const base = salonId ? `${table}_changes_${salonId}` : `${table}_changes`;
+    const channelName = `${base}_${instanceId}`;
     const filter = salonId
       ? { event: '*' as const, schema: 'public', table, filter: `salon_id=eq.${salonId}` }
       : { event: '*' as const, schema: 'public', table };
@@ -29,5 +31,5 @@ export function useRealtimeStore(table: string, onUpdate: () => void, salonId?: 
       if (timerRef.current) clearTimeout(timerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [table, onUpdate, salonId]);
+  }, [table, onUpdate, salonId, instanceId]);
 }

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { MessageSquare } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import type { FeedbackType } from '@/lib/types/FeedbackEntry';
+import { ImageUploader } from './ImageUploader';
 import { TYPE_META } from './feedback-meta';
 
 interface AddFeedbackModalProps {
@@ -14,6 +16,7 @@ interface AddFeedbackModalProps {
 }
 
 const TYPE_ORDER: FeedbackType[] = ['suggestion', 'bug', 'idea'];
+const BUCKET = 'feedback-attachments';
 
 export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
   const addEntry = useFeedbackStore((s) => s.addEntry);
@@ -21,6 +24,7 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
   const [type, setType] = useState<FeedbackType>('suggestion');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [imagePaths, setImagePaths] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -28,17 +32,31 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
       setType('suggestion');
       setTitle('');
       setDescription('');
+      setImagePaths([]);
       setIsSubmitting(false);
     }
   }, [isOpen]);
 
   const canSubmit = title.trim().length >= 3 && description.trim().length >= 1 && !isSubmitting;
 
+  const handleClose = async () => {
+    // Clean up any uploaded-but-not-posted attachments. Best-effort.
+    if (imagePaths.length > 0 && !isSubmitting) {
+      await supabase.storage.from(BUCKET).remove(imagePaths);
+    }
+    onClose();
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setIsSubmitting(true);
     try {
-      await addEntry({ type, title: title.trim(), description: description.trim() });
+      await addEntry({
+        type,
+        title: title.trim(),
+        description: description.trim(),
+        image_paths: imagePaths,
+      });
       messagePopup.getState().success('Feedback pubblicato. Grazie!');
       onClose();
     } catch (err) {
@@ -54,12 +72,13 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
   return (
     <AddModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       onSubmit={handleSubmit}
       title="Nuovo feedback"
       subtitle="Suggerisci una funzionalità, segnala un bug o condividi un'idea"
       icon={MessageSquare}
       classes="max-w-2xl"
+      contentClasses="overflow-y-auto"
       confirmText={isSubmitting ? 'Pubblicazione…' : 'Pubblica'}
       confirmDisabled={!canSubmit}
     >
@@ -106,7 +125,7 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Descrizione <span className="text-zinc-400 font-normal">({description.trim().length}/4000)</span>
+            Descrizione <span className="text-zinc-400 font-normal">({description.trim().length}/4000) · markdown supportato</span>
           </label>
           <textarea
             rows={8}
@@ -114,8 +133,13 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descrivi il contesto, cosa ti aspettavi, cosa è successo, qualsiasi dettaglio utile…"
-            className={`${inputClass} resize-none`}
+            className={`${inputClass} resize-none font-mono text-sm`}
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Allegati</label>
+          <ImageUploader kind="feedback" paths={imagePaths} onChange={setImagePaths} />
         </div>
       </div>
     </AddModal>
