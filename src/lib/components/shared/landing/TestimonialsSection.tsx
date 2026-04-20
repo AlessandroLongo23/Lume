@@ -35,6 +35,37 @@ function Stars({ count }: { count: number }) {
   );
 }
 
+const HTML_DETECTOR = /^\s*<[a-z!]/i;
+
+// Reviews stored pre-rich-text are plain strings; new ones are HTML already
+// sanitized by /api/reviews. We trust the server's sanitation on read and
+// render directly to avoid pulling sanitize-html into the landing bundle.
+const QUOTE_RICH_CLASSES =
+  'text-sm text-zinc-600 leading-relaxed break-words ' +
+  '[&_p]:m-0 [&_p+p]:mt-2 ' +
+  '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:my-1 [&_ol]:my-1 ' +
+  '[&_li]:mt-0.5 ' +
+  '[&_strong]:font-semibold [&_em]:italic [&_s]:line-through ' +
+  '[&_blockquote]:border-l-2 [&_blockquote]:border-zinc-200 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-500 [&_blockquote]:my-1 ' +
+  '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 ' +
+  '[&_code]:bg-zinc-100 [&_code]:px-1 [&_code]:rounded';
+
+function TestimonialQuote({ content }: { content: string }) {
+  if (HTML_DETECTOR.test(content)) {
+    return (
+      <blockquote
+        className={QUOTE_RICH_CLASSES}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+  return (
+    <blockquote className="text-sm text-zinc-600 leading-relaxed break-words whitespace-pre-line">
+      {content}
+    </blockquote>
+  );
+}
+
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   const initials = testimonial.name
     .split(' ')
@@ -56,9 +87,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           <Stars count={testimonial.stars} />
         </div>
 
-        <blockquote className="text-sm text-zinc-600 leading-relaxed">
-          &ldquo;{testimonial.quote}&rdquo;
-        </blockquote>
+        <TestimonialQuote content={testimonial.quote} />
       </div>
 
       {/* Bottom: author */}

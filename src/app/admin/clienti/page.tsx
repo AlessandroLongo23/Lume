@@ -50,6 +50,7 @@ export default function ClientiPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title={showArchived ? 'Clienti archiviati' : 'Clienti'}
+          subtitle="Ricorda ogni persona che entra nel tuo salone."
           icon={Users}
           actions={
             <>

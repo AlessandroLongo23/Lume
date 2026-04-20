@@ -83,6 +83,7 @@ export default function ServiziPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Servizi"
+          subtitle="Tutto quello che il tuo salone sa fare."
           icon={Scissors}
           actions={
             <>

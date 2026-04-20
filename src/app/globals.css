@@ -72,9 +72,12 @@
   --primary-foreground:   var(--lume-button-accent-fg);
   --secondary:            var(--lume-button-secondary-bg);
   --secondary-foreground: var(--lume-button-secondary-fg);
-  --muted:                var(--color-neutral-800);
+  /* Muted / accent are the hover/subtle-bg roles in shadcn. They must
+     contrast against the surface they sit on — the sidebar/cards now
+     live at L 0.232, so we push this up to ~0.295 for a clean hover. */
+  --muted:                oklch(0.295 0.010 265);
   --muted-foreground:     var(--lume-text-muted);
-  --accent:               var(--color-neutral-800);
+  --accent:               oklch(0.295 0.010 265);
   --accent-foreground:    var(--lume-text);
   --destructive:          var(--lume-button-destructive-bg);
   --border:               var(--lume-border);
@@ -89,7 +92,7 @@
   --sidebar-foreground:                var(--lume-text);
   --sidebar-primary:                   var(--lume-button-accent-bg);
   --sidebar-primary-foreground:        var(--lume-button-accent-fg);
-  --sidebar-accent:                    var(--color-neutral-800);
+  --sidebar-accent:                    oklch(0.295 0.010 265);
   --sidebar-accent-foreground:         var(--lume-text);
   --sidebar-border:                    var(--lume-border);
   --sidebar-ring:                      var(--lume-ring-focus);

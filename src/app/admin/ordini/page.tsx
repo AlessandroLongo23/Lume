@@ -42,6 +42,7 @@ export default function OrdiniPage() {
       <div className="flex flex-col gap-8">
         <PageHeader
           title="Ordini"
+          subtitle="Riordina prima che gli scaffali si svuotino."
           icon={ShoppingCart}
           actions={
             <>

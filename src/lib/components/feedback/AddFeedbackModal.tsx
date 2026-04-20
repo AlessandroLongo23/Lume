@@ -8,36 +8,45 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import type { FeedbackType } from '@/lib/types/FeedbackEntry';
 import { ImageUploader } from './ImageUploader';
+import { RichTextEditor } from './RichTextEditor';
 import { TYPE_META } from './feedback-meta';
 
 interface AddFeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialType?: FeedbackType;
 }
 
 const TYPE_ORDER: FeedbackType[] = ['suggestion', 'bug', 'idea'];
 const BUCKET = 'feedback-attachments';
 
-export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
+export function AddFeedbackModal({ isOpen, onClose, initialType }: AddFeedbackModalProps) {
   const addEntry = useFeedbackStore((s) => s.addEntry);
 
-  const [type, setType] = useState<FeedbackType>('suggestion');
+  const [type, setType] = useState<FeedbackType>(initialType ?? 'suggestion');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [descriptionLength, setDescriptionLength] = useState(0);
   const [imagePaths, setImagePaths] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setType('suggestion');
+      setType(initialType ?? 'suggestion');
       setTitle('');
       setDescription('');
+      setDescriptionLength(0);
       setImagePaths([]);
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialType]);
 
-  const canSubmit = title.trim().length >= 3 && description.trim().length >= 1 && !isSubmitting;
+  const canSubmit = title.trim().length >= 3 && descriptionLength >= 1 && descriptionLength <= 4000 && !isSubmitting;
+
+  const handleDescriptionChange = (html: string, plainText: string) => {
+    setDescription(html);
+    setDescriptionLength(plainText.trim().length);
+  };
 
   const handleClose = async () => {
     // Clean up any uploaded-but-not-posted attachments. Best-effort.
@@ -75,7 +84,7 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
       onClose={handleClose}
       onSubmit={handleSubmit}
       title="Nuovo feedback"
-      subtitle="Suggerisci una funzionalità, segnala un bug o condividi un'idea"
+      subtitle="Suggerisci una funzionalità, segnala un problema o condividi un'idea"
       icon={MessageSquare}
       classes="max-w-2xl"
       contentClasses="overflow-y-auto"
@@ -125,15 +134,13 @@ export function AddFeedbackModal({ isOpen, onClose }: AddFeedbackModalProps) {
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Descrizione <span className="text-zinc-400 font-normal">({description.trim().length}/4000) · markdown supportato</span>
+            Descrizione <span className={`font-normal ${descriptionLength > 4000 ? 'text-red-500' : 'text-zinc-400'}`}>({descriptionLength}/4000)</span>
           </label>
-          <textarea
-            rows={8}
-            maxLength={4000}
+          <RichTextEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={handleDescriptionChange}
             placeholder="Descrivi il contesto, cosa ti aspettavi, cosa è successo, qualsiasi dettaglio utile…"
-            className={`${inputClass} resize-none font-mono text-sm`}
+            minHeight={180}
           />
         </div>
 

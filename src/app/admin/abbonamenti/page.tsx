@@ -31,6 +31,7 @@ export default function AbbonamentiPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Abbonamenti"
+          subtitle="Pacchetti prepagati per chi torna spesso."
           icon={BadgePercent}
           actions={
             <button

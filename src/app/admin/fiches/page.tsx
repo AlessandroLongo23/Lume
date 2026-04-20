@@ -65,6 +65,7 @@ export default function FichesPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Fiches"
+          subtitle="La storia di ogni visita, dal check-in al saldo."
           icon={Ticket}
           actions={
             <>

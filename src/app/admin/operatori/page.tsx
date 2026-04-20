@@ -44,6 +44,7 @@ export default function OperatoriPage() {
       <div className="flex flex-col gap-8">
         <PageHeader
           title={showArchived ? 'Operatori archiviati' : 'Operatori'}
+          subtitle="Il tuo team, turni e permessi sotto controllo."
           icon={UserCog}
           actions={
             <>

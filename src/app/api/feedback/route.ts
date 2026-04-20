@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { normalizeProfileRole, isAdmin as roleIsAdmin, isSalonStaff } from '@/lib/auth/roles';
+import { sanitizeRichText } from '@/lib/utils/sanitizeRichText';
 
 const MAX_IMAGES = 4;
 const BUCKET = 'feedback-attachments';
@@ -78,6 +79,10 @@ export async function POST(request: NextRequest) {
     if (trimmedDesc.length < 1 || trimmedDesc.length > 4000) {
       return NextResponse.json({ success: false, error: 'La descrizione deve avere tra 1 e 4000 caratteri.' }, { status: 400 });
     }
+    const sanitizedDesc = sanitizeRichText(trimmedDesc);
+    if (sanitizedDesc.replace(/<[^>]*>/g, '').trim().length < 1) {
+      return NextResponse.json({ success: false, error: 'La descrizione non può essere vuota.' }, { status: 400 });
+    }
     const imgs = validateImagePaths(image_paths);
     if (imgs === null) {
       return NextResponse.json({ success: false, error: `Puoi allegare al massimo ${MAX_IMAGES} immagini.` }, { status: 400 });
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
         author_id: profile.id,
         type,
         title: trimmedTitle,
-        description: trimmedDesc,
+        description: sanitizedDesc,
         image_paths: imgs,
       })
       .select('id')
@@ -172,7 +177,11 @@ export async function PATCH(request: NextRequest) {
       if (d.length < 1 || d.length > 4000) {
         return NextResponse.json({ success: false, error: 'Descrizione non valida' }, { status: 400 });
       }
-      patch.description = d;
+      const sanitized = sanitizeRichText(d);
+      if (sanitized.replace(/<[^>]*>/g, '').trim().length < 1) {
+        return NextResponse.json({ success: false, error: 'La descrizione non può essere vuota.' }, { status: 400 });
+      }
+      patch.description = sanitized;
     }
 
     // image_paths: the entry's author may update them on an OPEN entry; admin any time.

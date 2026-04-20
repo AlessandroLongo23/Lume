@@ -20,7 +20,11 @@ export default function BilancioPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Bilancio" icon={Wallet} />
+      <PageHeader
+        title="Bilancio"
+        subtitle="Quanto entra, quanto esce, dove stai andando."
+        icon={Wallet}
+      />
 
       {/* Tab nav */}
       <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">

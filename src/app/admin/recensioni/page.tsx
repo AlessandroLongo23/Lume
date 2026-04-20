@@ -6,10 +6,20 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { RichTextEditor } from '@/lib/components/feedback/RichTextEditor';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { formatDateDisplay } from '@/lib/utils/format';
 
 const MAX_MESSAGE = 2000;
+
+function plainTextLength(html: string): number {
+  if (!html) return 0;
+  if (typeof window === 'undefined') {
+    return html.replace(/<[^>]*>/g, '').trim().length;
+  }
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return (doc.body.textContent ?? '').trim().length;
+}
 
 export default function ReviewsPage() {
   const myReview = useReviewsStore((s) => s.myReview);
@@ -21,6 +31,7 @@ export default function ReviewsPage() {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [message, setMessage] = useState('');
+  const [messageLength, setMessageLength] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -32,18 +43,30 @@ export default function ReviewsPage() {
   // Sync local form state with the loaded review (also re-syncs if the store
   // changes via realtime, e.g. the review is deleted in another session).
   useEffect(() => {
+    const nextMessage = myReview?.message ?? '';
     setRating(myReview?.rating ?? 0);
-    setMessage(myReview?.message ?? '');
+    setMessage(nextMessage);
+    setMessageLength(plainTextLength(nextMessage));
   }, [myReview]);
 
-  const trimmedLength = message.trim().length;
   const isEdit = myReview !== null;
   const isDirty =
     !isEdit
-      ? rating > 0 || trimmedLength > 0
-      : rating !== myReview.rating || message.trim() !== myReview.message;
-  const canSave = rating >= 1 && rating <= 5 && trimmedLength >= 1 && isDirty && !isSaving;
+      ? rating > 0 || messageLength > 0
+      : rating !== myReview.rating || message.trim() !== myReview.message.trim();
+  const canSave =
+    rating >= 1 &&
+    rating <= 5 &&
+    messageLength >= 1 &&
+    messageLength <= MAX_MESSAGE &&
+    isDirty &&
+    !isSaving;
   const displayedRating = hoverRating || rating;
+
+  const handleMessageChange = (html: string, plainText: string) => {
+    setMessage(html);
+    setMessageLength(plainText.trim().length);
+  };
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -73,8 +96,6 @@ export default function ReviewsPage() {
     }
   };
 
-  const inputClass = 'w-full p-3 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow';
-
   return (
     <>
       <DeleteModal
@@ -96,7 +117,7 @@ export default function ReviewsPage() {
         {isLoading ? (
           <TableSkeleton />
         ) : (
-          <div className="flex flex-col gap-6 max-w-2xl">
+          <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Voto</label>
               <div className="flex flex-row items-center gap-2">
@@ -129,15 +150,16 @@ export default function ReviewsPage() {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Messaggio <span className="text-zinc-400 font-normal">({trimmedLength}/{MAX_MESSAGE})</span>
+                Messaggio{' '}
+                <span className={`font-normal ${messageLength > MAX_MESSAGE ? 'text-red-500' : 'text-zinc-400'}`}>
+                  ({messageLength}/{MAX_MESSAGE})
+                </span>
               </label>
-              <textarea
-                rows={8}
-                maxLength={MAX_MESSAGE}
+              <RichTextEditor
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={handleMessageChange}
                 placeholder="Cosa funziona, cosa miglioreresti, a chi consiglieresti Lume…"
-                className={`${inputClass} resize-none`}
+                minHeight={220}
               />
             </div>
 

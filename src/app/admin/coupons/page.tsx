@@ -37,6 +37,7 @@ export default function CouponsPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Coupon e gift card"
+          subtitle="Sconti da attivare, regali da stampare."
           icon={Tag}
           actions={
             activeTab === 'gift' ? (

@@ -9,7 +9,7 @@ export const TYPE_META: Record<FeedbackType, { label: string; icon: LucideIcon; 
     dot: 'bg-indigo-500',
   },
   bug: {
-    label: 'Bug',
+    label: 'Problema',
     icon: Bug,
     badge: 'bg-red-500/10 text-red-600 dark:text-red-400',
     dot: 'bg-red-500',

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownWideNarrow, Clock, MessageSquare, Plus } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDownWideNarrow, Check, Clock, MessageSquare, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
@@ -53,6 +53,9 @@ export function FeedbackList({ mode }: FeedbackListProps) {
   const [mySalonIdResolved, setMySalonIdResolved] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Effective flags based on where this list is rendered.
   const isPlatformView = mode === 'platform';
@@ -75,6 +78,17 @@ export function FeedbackList({ mode }: FeedbackListProps) {
     });
   }, [fetchEntries]);
 
+  useEffect(() => {
+    if (!typeDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
+        setTypeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [typeDropdownOpen]);
+
   useRealtimeStore('feedback_entries', fetchEntries);
   useRealtimeStore('feedback_upvotes', fetchEntries);
 
@@ -87,6 +101,19 @@ export function FeedbackList({ mode }: FeedbackListProps) {
     if (typeFilter !== 'all') list = list.filter((e) => e.type === typeFilter);
     if (mineOnly && mySalonIdResolved) {
       list = list.filter((e) => e.author_salon_id === mySalonIdResolved);
+    }
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((e) => {
+        const author = `${e.author_first_name ?? ''} ${e.author_last_name ?? ''}`.trim().toLowerCase();
+        const salon = (e.author_salon_name ?? '').toLowerCase();
+        return (
+          e.title.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q) ||
+          author.includes(q) ||
+          salon.includes(q)
+        );
+      });
     }
     return [...list].sort((a, b) => {
       if (filter === 'completed' && sort === 'top') {
@@ -101,14 +128,27 @@ export function FeedbackList({ mode }: FeedbackListProps) {
       if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [entries, filter, typeFilter, mineOnly, mySalonIdResolved, sort]);
+  }, [entries, filter, typeFilter, mineOnly, mySalonIdResolved, sort, searchQuery]);
 
   const countFor = (status: FeedbackFilter) =>
     status === 'all' ? entries.length : entries.filter((e) => e.status === status).length;
 
+  const NEW_LABEL: Record<FeedbackTypeFilter, string> = {
+    all: 'Nuovo feedback',
+    suggestion: 'Nuovo suggerimento',
+    bug: 'Nuovo problema',
+    idea: 'Nuova idea',
+  };
+  const newLabel = NEW_LABEL[typeFilter];
+  const modalInitialType = typeFilter === 'all' ? undefined : typeFilter;
+
   return (
     <>
-      <AddFeedbackModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <AddFeedbackModal
+        isOpen={showAdd}
+        onClose={() => setShowAdd(false)}
+        initialType={modalInitialType}
+      />
 
       <div className="flex flex-col gap-6">
         <PageHeader
@@ -123,44 +163,142 @@ export function FeedbackList({ mode }: FeedbackListProps) {
               onClick={() => setShowAdd(true)}
             >
               <Plus className="size-5" />
-              <span>Nuovo feedback</span>
+              <span>{newLabel}</span>
             </button>
           ) : undefined}
         />
 
         {/* Status tabs */}
-        <div className="flex flex-row items-center flex-wrap gap-3">
-          <div className="flex flex-row items-center gap-1 p-1 rounded-lg border border-zinc-500/25 bg-zinc-100/50 dark:bg-zinc-800/50">
-            {STATUS_OPTIONS.map(({ value, label }) => {
-              const isActive = filter === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFilter(value)}
-                  className={`flex flex-row items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  <span>{label}</span>
-                  <span className={`text-xs tabular-nums ${isActive ? 'text-zinc-500 dark:text-zinc-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                    {countFor(value)}
+        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+          {STATUS_OPTIONS.map(({ value, label }) => {
+            const isActive = filter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  isActive
+                    ? 'border-primary text-primary-hover dark:text-primary/70'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
+                }`}
+              >
+                {label}
+                <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-zinc-400'}`}>
+                  {countFor(value)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex items-center flex-wrap gap-2">
+          <div className="relative flex items-center flex-1 max-w-sm min-w-[200px]">
+            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cerca feedback..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                border-zinc-200 dark:border-zinc-800
+                focus:border-zinc-300 dark:focus:border-zinc-700
+                text-zinc-900 dark:text-zinc-100
+                placeholder:text-zinc-400 outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div ref={typeDropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setTypeDropdownOpen((o) => !o)}
+              className={[
+                'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
+                typeFilter !== 'all'
+                  ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
+              ].join(' ')}
+            >
+              <SlidersHorizontal className="size-4" />
+              <span>Tipo</span>
+              {typeFilter !== 'all' && (
+                <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
+                  1
+                </span>
+              )}
+            </button>
+
+            {typeDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1.5 z-20 w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
+                <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                  <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                    Filtra per tipo
                   </span>
-                </button>
-              );
-            })}
+                </div>
+                <div className="py-1">
+                  {TYPE_ORDER.map((t) => {
+                    const meta = TYPE_META[t];
+                    const Icon = meta.icon;
+                    const checked = typeFilter === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setTypeFilter(checked ? 'all' : t);
+                          setTypeDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                      >
+                        <span
+                          className={[
+                            'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
+                            checked
+                              ? 'bg-primary border-primary'
+                              : 'border-zinc-300 dark:border-zinc-600',
+                          ].join(' ')}
+                        >
+                          {checked && <Check className="size-3 text-white" />}
+                        </span>
+                        <Icon className="size-3.5 text-zinc-500" />
+                        {meta.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {typeFilter !== 'all' && (
+                  <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => { setTypeFilter('all'); setTypeDropdownOpen(false); }}
+                      className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                    >
+                      Azzera filtri
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {mySalonIdResolved && !isPlatformView && (
             <button
               type="button"
               onClick={() => setMineOnly(!mineOnly)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
                 mineOnly
-                  ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
-                  : 'border-zinc-500/25 bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                  ? 'border-primary/30 bg-primary/10 text-primary-hover dark:text-primary/70'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
               }`}
             >
               Le mie
@@ -170,41 +308,80 @@ export function FeedbackList({ mode }: FeedbackListProps) {
           <button
             type="button"
             onClick={() => setSort(sort === 'top' ? 'recent' : 'top')}
-            className="ml-auto flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-zinc-500/25 bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400 transition-colors"
+            className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
           >
             {sort === 'top' ? <ArrowDownWideNarrow className="size-3.5" /> : <Clock className="size-3.5" />}
             {sort === 'top' ? 'Più votate' : 'Più recenti'}
           </button>
         </div>
 
-        {/* Type filter chips */}
-        <div className="flex flex-row items-center flex-wrap gap-2">
-          <TypeChip value="all" active={typeFilter === 'all'} onClick={() => setTypeFilter('all')} />
-          {TYPE_ORDER.map((t) => (
-            <TypeChip
-              key={t}
-              value={t}
-              active={typeFilter === t}
-              onClick={() => setTypeFilter(typeFilter === t ? 'all' : t)}
-            />
-          ))}
-        </div>
-
         {isLoading ? (
           <TableSkeleton />
         ) : visibleEntries.length === 0 ? (
-          <EmptyState
-            icon={MessageSquare}
-            title={filter === 'completed' ? 'Nessun feedback completato' : 'Nessun feedback'}
-            description={filter === 'completed'
-              ? 'Quando un feedback verrà completato, apparirà qui.'
-              : isPlatformView
+          searchQuery.trim() ? (
+            <EmptyState
+              icon={Search}
+              title="Nessun risultato"
+              description={`Nessun feedback corrisponde a "${searchQuery.trim()}".`}
+            />
+          ) : (() => {
+            const TYPE_INFO: Record<FeedbackType, {
+              noun: string;
+              nounPlural: string;
+              gender: 'm' | 'f';
+              vowelStart: boolean;
+              action: string;
+            }> = {
+              suggestion: { noun: 'suggerimento', nounPlural: 'suggerimenti', gender: 'm', vowelStart: false, action: 'condividere un suggerimento' },
+              bug: { noun: 'problema', nounPlural: 'problemi', gender: 'm', vowelStart: false, action: 'segnalare un problema' },
+              idea: { noun: 'idea', nounPlural: 'idee', gender: 'f', vowelStart: true, action: "proporre un'idea" },
+            };
+
+            const info = typeFilter !== 'all' ? TYPE_INFO[typeFilter] : null;
+            const emptyIcon = typeFilter !== 'all' ? TYPE_META[typeFilter].icon : MessageSquare;
+            const isFem = info?.gender === 'f';
+            const elide = isFem && info?.vowelStart;
+            const noun = info?.noun ?? 'feedback';
+            const nounPl = info?.nounPlural ?? 'feedback';
+
+            const nessunNoun = elide ? `Nessun'${noun}` : `Nessun ${noun}`;
+            const unNoun = elide ? `un'${noun}` : `un ${noun}`;
+            const aperto = isFem ? 'aperta' : 'aperto';
+            const apertiPl = isFem ? 'aperte' : 'aperti';
+            const completato = isFem ? 'completata' : 'completato';
+
+            let title: string;
+            let description: string;
+
+            if (filter === 'completed') {
+              title = `${nessunNoun} ${completato}`;
+              description = `Quando ${unNoun} verrà ${completato}, apparirà qui.`;
+            } else if (filter === 'in_progress') {
+              title = `${nessunNoun} in lavorazione`;
+              description = `Al momento non ci sono ${nounPl} in lavorazione.`;
+            } else if (filter === 'open') {
+              title = `${nessunNoun} ${aperto}`;
+              description = `Non ci sono ${nounPl} ${apertiPl} al momento.`;
+            } else {
+              title = nessunNoun;
+              description = isPlatformView
                 ? 'Nessun salone ha ancora inviato feedback.'
-                : 'Sii il primo a condividere un suggerimento, segnalare un bug o proporre un\'idea.'}
-            action={!isPlatformView && filter !== 'completed'
-              ? { label: 'Nuovo feedback', icon: Plus, onClick: () => setShowAdd(true) }
-              : undefined}
-          />
+                : info
+                  ? `Sii il primo a ${info.action}.`
+                  : "Sii il primo a condividere un suggerimento, segnalare un problema o proporre un'idea.";
+            }
+
+            return (
+              <EmptyState
+                icon={emptyIcon}
+                title={title}
+                description={description}
+                action={!isPlatformView && filter !== 'completed'
+                  ? { label: newLabel, icon: Plus, onClick: () => setShowAdd(true) }
+                  : undefined}
+              />
+            );
+          })()
         ) : (
           <div className="flex flex-col gap-3">
             {visibleEntries.map((entry) => (
@@ -224,42 +401,3 @@ export function FeedbackList({ mode }: FeedbackListProps) {
   );
 }
 
-interface TypeChipProps {
-  value: FeedbackTypeFilter;
-  active: boolean;
-  onClick: () => void;
-}
-
-function TypeChip({ value, active, onClick }: TypeChipProps) {
-  if (value === 'all') {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-          active
-            ? 'border-zinc-700 dark:border-zinc-300 bg-zinc-700/10 dark:bg-zinc-300/10 text-zinc-800 dark:text-zinc-200'
-            : 'border-zinc-500/25 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-        }`}
-      >
-        Tutti i tipi
-      </button>
-    );
-  }
-  const meta = TYPE_META[value];
-  const Icon = meta.icon;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-        active
-          ? meta.badge + ' border-current/40'
-          : 'border-zinc-500/25 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-      }`}
-    >
-      <Icon className="size-3.5" strokeWidth={2} />
-      {meta.label}
-    </button>
-  );
-}

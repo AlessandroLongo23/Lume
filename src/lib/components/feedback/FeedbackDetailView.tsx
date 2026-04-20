@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackEntry, FeedbackStatus, FeedbackType } from '@/lib/types/FeedbackEntry';
@@ -64,6 +65,8 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
   const addComment = useFeedbackCommentsStore((s) => s.add);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -97,14 +100,16 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Eliminare definitivamente questo feedback?')) return;
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
     try {
       await deleteEntry(entry.id);
       messagePopup.getState().success('Feedback eliminato');
+      setShowDeleteModal(false);
       router.push(backHref);
     } catch (err) {
       messagePopup.getState().error('Errore durante l\'eliminazione: ' + msgOf(err));
+      setIsDeleting(false);
     }
   };
 
@@ -351,7 +356,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
             {canDelete && (
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteModal(true)}
                 className="flex flex-row items-center gap-2.5 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-500/5 transition-colors text-left border-t border-zinc-100 dark:border-zinc-800"
               >
                 <Trash2 className="size-4" /> Elimina feedback
@@ -360,6 +365,32 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           </div>
         </aside>
       </div>
+
+      {canDelete && (
+        <DeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            if (!isDeleting) setShowDeleteModal(false);
+          }}
+          onConfirm={handleConfirmDelete}
+          title="Elimina feedback"
+          subtitle="Questa azione è irreversibile"
+          confirmText={isDeleting ? 'Eliminazione…' : 'Elimina'}
+        >
+          <div className="flex flex-col gap-3 text-sm">
+            <p>
+              Stai per eliminare definitivamente{' '}
+              <strong className="text-foreground">{entry.title}</strong>.
+            </p>
+            <p className="text-muted-foreground">
+              Verranno rimossi anche tutti i commenti, i voti e le immagini allegate
+              ({entry.comment_count} {entry.comment_count === 1 ? 'commento' : 'commenti'}
+              {entry.upvote_count > 0 ? `, ${entry.upvote_count} ${entry.upvote_count === 1 ? 'voto' : 'voti'}` : ''}
+              {entry.image_paths.length > 0 ? `, ${entry.image_paths.length} ${entry.image_paths.length === 1 ? 'immagine' : 'immagini'}` : ''}).
+            </p>
+          </div>
+        </DeleteModal>
+      )}
     </div>
   );
 }

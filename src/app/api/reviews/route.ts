@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { ReviewWithAuthor } from '@/lib/types/Review';
 import { isSalonStaff } from '@/lib/auth/roles';
+import { sanitizeRichText } from '@/lib/utils/sanitizeRichText';
 
 function getAdminClient() {
   return createClient(
@@ -124,7 +125,10 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (messageRaw.length < MIN_MESSAGE || messageRaw.length > MAX_MESSAGE) {
+
+    const messageSanitized = sanitizeRichText(messageRaw);
+    const messagePlainLen = messageSanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().length;
+    if (messagePlainLen < MIN_MESSAGE || messagePlainLen > MAX_MESSAGE) {
       return NextResponse.json(
         { success: false, error: `Il messaggio deve avere tra ${MIN_MESSAGE} e ${MAX_MESSAGE} caratteri.` },
         { status: 400 },
@@ -135,7 +139,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('reviews')
       .upsert(
-        { author_id: user.id, rating, message: messageRaw },
+        { author_id: user.id, rating, message: messageSanitized },
         { onConflict: 'author_id' },
       )
       .select('*')

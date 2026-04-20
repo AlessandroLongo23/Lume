@@ -102,6 +102,7 @@ export default function MagazzinoPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Magazzino"
+          subtitle="Sai sempre cosa c'è in scorta, e cosa sta finendo."
           icon={Warehouse}
           actions={
             <>
