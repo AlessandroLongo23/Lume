@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { ReviewWithAuthor } from '@/lib/types/Review';
+import { isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       .select('role')
       .eq('id', user.id)
       .maybeSingle();
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

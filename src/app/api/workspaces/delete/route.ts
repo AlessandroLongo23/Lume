@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { deleteSalonCascade, isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
+import { canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -36,7 +37,7 @@ export async function DELETE(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
     }
 

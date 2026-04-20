@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
 
     const result = await resolveWorkspace(data.user.id);
 
-    // Super-admins always land on /platform on a fresh login, regardless of
-    // any stale impersonation cookie — they must explicitly re-enter a salon.
-    if (result.isSuperAdmin) {
+    // Admins always land on /platform on a fresh login, regardless of any
+    // stale impersonation cookie — they must explicitly re-enter a salon.
+    if (result.isAdmin) {
       const response = NextResponse.redirect(`${origin}/platform`);
       response.cookies.delete('lume-active-salon-id');
       response.cookies.delete('lume-impersonating');

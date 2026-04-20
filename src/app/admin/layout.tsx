@@ -44,15 +44,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isLoading = useSubscriptionStore((s) => s.isLoading);
   const salonName = useSubscriptionStore((s) => s.salonName);
   const logoUrl = useSubscriptionStore((s) => s.logoUrl);
-  const isSuperAdmin = useSubscriptionStore((s) => s.isSuperAdmin);
+  const isAdmin = useSubscriptionStore((s) => s.isAdmin);
 
-  // Redirect expired users to subscribe page — super-admins (impersonating) bypass.
+  // Redirect expired users to subscribe page — admins (impersonating) bypass.
   useEffect(() => {
-    if (isSuperAdmin) return;
+    if (isAdmin) return;
     if (!isLoading && isExpired && pathname !== '/admin/subscribe') {
       router.replace('/admin/subscribe');
     }
-  }, [isSuperAdmin, isLoading, isExpired, pathname, router]);
+  }, [isAdmin, isLoading, isExpired, pathname, router]);
 
   // Soft session-expiry handler: silently redirect to /login with a friendly toast
   useEffect(() => {

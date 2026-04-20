@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
+import { normalizeProfileRole } from '@/lib/auth/roles';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -33,11 +34,14 @@ export async function POST(request: NextRequest) {
     const admin = getAdminSupabase();
     const { data: profile } = await admin
       .from('profiles')
-      .select('salon_id, is_super_admin')
+      .select('salon_id, role')
       .eq('id', user.id)
       .single();
 
-    const salonId = await getActiveSalonId(profile?.salon_id ?? 'N/A', profile?.is_super_admin ?? false);
+    const salonId = await getActiveSalonId(
+      profile?.salon_id ?? 'N/A',
+      normalizeProfileRole(profile) === 'admin',
+    );
     const timestamp = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
 
     const html = `

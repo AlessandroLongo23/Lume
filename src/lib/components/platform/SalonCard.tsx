@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowRight, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { ArrowRight, MoreVertical, Pencil, Trash2, Loader2, Users, Ticket, Euro } from 'lucide-react';
 import { DeletePlatformSalonModal } from './DeletePlatformSalonModal';
 
 export type SalonCardRow = {
@@ -17,6 +17,9 @@ export type SalonCardRow = {
   subscriptionEndsAt: string | null;
   trialEndsAt:        string;
   createdAt:          string;
+  clientsCount:       number;
+  fichesThisMonth:    number;
+  revenueThisMonth:   number;
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -53,6 +56,10 @@ function getInitials(name: string): string {
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatEur(value: number): string {
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
 }
 
 export function SalonCard({ row }: { row: SalonCardRow }) {
@@ -174,6 +181,30 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+            <Users className="size-3.5" strokeWidth={1.75} />
+            <span className="text-[10px] uppercase tracking-wider">Clienti</span>
+          </div>
+          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.clientsCount}</p>
+        </div>
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+            <Ticket className="size-3.5" strokeWidth={1.75} />
+            <span className="text-[10px] uppercase tracking-wider">Fiches/m</span>
+          </div>
+          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.fichesThisMonth}</p>
+        </div>
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+            <Euro className="size-3.5" strokeWidth={1.75} />
+            <span className="text-[10px] uppercase tracking-wider">Ricavi/m</span>
+          </div>
+          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white truncate">{formatEur(row.revenueThisMonth)}</p>
         </div>
       </div>
 

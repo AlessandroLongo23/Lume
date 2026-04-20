@@ -7,9 +7,10 @@ import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { useFeedbackStore, type FeedbackFilter } from '@/lib/stores/feedback';
-import { FeedbackCard } from '@/lib/components/admin/feedback/FeedbackCard';
-import { AddFeedbackModal } from '@/lib/components/admin/feedback/AddFeedbackModal';
-import { FeedbackDetailModal } from '@/lib/components/admin/feedback/FeedbackDetailModal';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { FeedbackCard } from '@/lib/components/feedback/FeedbackCard';
+import { AddFeedbackModal } from '@/lib/components/feedback/AddFeedbackModal';
+import { FeedbackDetailModal } from '@/lib/components/feedback/FeedbackDetailModal';
 import type { FeedbackEntry } from '@/lib/types/FeedbackEntry';
 
 const FILTER_OPTIONS: { value: FeedbackFilter; label: string }[] = [
@@ -24,6 +25,7 @@ export default function FeedbackPage() {
   const isLoading = useFeedbackStore((s) => s.isLoading);
   const filter = useFeedbackStore((s) => s.filter);
   const setFilter = useFeedbackStore((s) => s.setFilter);
+  const isAdmin = useSubscriptionStore((s) => s.isAdmin);
 
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -57,7 +59,12 @@ export default function FeedbackPage() {
   return (
     <>
       <AddFeedbackModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
-      <FeedbackDetailModal entry={selected} currentUserId={currentUserId} onClose={() => setSelectedId(null)} />
+      <FeedbackDetailModal
+        entry={selected}
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onClose={() => setSelectedId(null)}
+      />
 
       <div className="flex flex-col gap-6">
         <PageHeader
@@ -122,6 +129,7 @@ export default function FeedbackPage() {
                 key={entry.id}
                 entry={entry}
                 currentUserId={currentUserId}
+                isAdmin={isAdmin}
                 onClick={() => setSelectedId(entry.id)}
               />
             ))}

@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getStripe } from '@/lib/stripe/client';
 import { STRIPE_MONTHLY_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from '@/lib/stripe/config';
+import { canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ error: 'Solo il proprietario può gestire l\'abbonamento.' }, { status: 403 });
     }
 

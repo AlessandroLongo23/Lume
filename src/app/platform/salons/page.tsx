@@ -36,16 +36,54 @@ export default async function SalonsPage() {
     .order('created_at', { ascending: false })
     .returns<SalonRow[]>();
 
+  const salonIds = (salons ?? []).map((s) => s.id);
   const ownerIds = [...new Set((salons ?? []).map((s) => s.owner_id))];
-  const { data: owners } = ownerIds.length
-    ? await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name')
-        .in('id', ownerIds)
-        .returns<ProfileRow[]>()
-    : { data: [] as ProfileRow[] };
 
-  const ownerById = new Map((owners ?? []).map((o) => [o.id, o]));
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const [ownersRes, clientRows, monthlyFicheRows, ficheServiceRows, ficheProductRows] = await Promise.all([
+    ownerIds.length
+      ? supabase.from('profiles').select('id, email, first_name, last_name').in('id', ownerIds).returns<ProfileRow[]>()
+      : Promise.resolve({ data: [] as ProfileRow[] }),
+    salonIds.length
+      ? supabase.from('clients').select('salon_id').in('salon_id', salonIds).returns<{ salon_id: string }[]>()
+      : Promise.resolve({ data: [] as { salon_id: string }[] }),
+    salonIds.length
+      ? supabase.from('fiches').select('id, salon_id').in('salon_id', salonIds).gte('datetime', monthStart.toISOString()).returns<{ id: string; salon_id: string }[]>()
+      : Promise.resolve({ data: [] as { id: string; salon_id: string }[] }),
+    salonIds.length
+      ? supabase.from('fiche_services').select('salon_id, final_price').in('salon_id', salonIds).gte('start_time', monthStart.toISOString()).returns<{ salon_id: string; final_price: number }[]>()
+      : Promise.resolve({ data: [] as { salon_id: string; final_price: number }[] }),
+    salonIds.length
+      ? supabase.from('fiche_products').select('salon_id, final_price, quantity, fiche_id').in('salon_id', salonIds).returns<{ salon_id: string; final_price: number; quantity: number | null; fiche_id: string }[]>()
+      : Promise.resolve({ data: [] as { salon_id: string; final_price: number; quantity: number | null; fiche_id: string }[] }),
+  ]);
+
+  const ownerById = new Map((ownersRes.data ?? []).map((o) => [o.id, o]));
+
+  const clientsBySalon = new Map<string, number>();
+  for (const row of clientRows.data ?? []) {
+    clientsBySalon.set(row.salon_id, (clientsBySalon.get(row.salon_id) ?? 0) + 1);
+  }
+
+  const fichesThisMonthBySalon = new Map<string, number>();
+  const ficheIdsThisMonth = new Set<string>();
+  for (const row of monthlyFicheRows.data ?? []) {
+    fichesThisMonthBySalon.set(row.salon_id, (fichesThisMonthBySalon.get(row.salon_id) ?? 0) + 1);
+    ficheIdsThisMonth.add(row.id);
+  }
+
+  const revenueBySalon = new Map<string, number>();
+  for (const row of ficheServiceRows.data ?? []) {
+    revenueBySalon.set(row.salon_id, (revenueBySalon.get(row.salon_id) ?? 0) + (row.final_price ?? 0));
+  }
+  for (const row of ficheProductRows.data ?? []) {
+    if (!ficheIdsThisMonth.has(row.fiche_id)) continue;
+    const qty = row.quantity ?? 1;
+    revenueBySalon.set(row.salon_id, (revenueBySalon.get(row.salon_id) ?? 0) + (row.final_price ?? 0) * qty);
+  }
 
   const rows: SalonCardRow[] = (salons ?? []).map((s) => {
     const owner = ownerById.get(s.owner_id);
@@ -60,6 +98,9 @@ export default async function SalonsPage() {
       subscriptionEndsAt:   s.subscription_ends_at,
       trialEndsAt:          s.trial_ends_at,
       createdAt:            s.created_at,
+      clientsCount:         clientsBySalon.get(s.id) ?? 0,
+      fichesThisMonth:      fichesThisMonthBySalon.get(s.id) ?? 0,
+      revenueThisMonth:     revenueBySalon.get(s.id) ?? 0,
     };
   });
 

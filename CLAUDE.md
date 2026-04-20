@@ -101,7 +101,7 @@ src/
 
 ### Key patterns
 
-**Auth flow** — Supabase Auth with role stored in `user_metadata` (`operator` | `client`). The OAuth callback in `app/auth/callback/` redirects based on role. API routes read the role via the server client before processing requests. Admin routes are protected at the layout level.
+**Auth flow** — Supabase Auth + `public.profiles.role` for salon staff (`admin | owner | operator`). The four conceptual roles in the app are `admin | owner | operator | client`; `client` is NOT stored on `profiles.role` — clients are rows in `public.clients` linked by `user_id`, so a user is a "client" when `clients.user_id = auth.uid()`. Role constants and predicates (`isAdmin`, `canManageSalon`, `isSalonStaff`, …) live in `src/lib/auth/roles.ts`. Use them — never compare role strings inline. The OAuth callback in `app/auth/callback/` redirects based on role. Platform admins (`role='admin'`) have access to `/platform` and can impersonate any salon; the active salon during impersonation is tracked by the `super_admin_impersonation` table (RLS truth) and mirrored in httpOnly + non-httpOnly cookies (UI hints). API routes read the role via the server client before processing requests. Admin routes are protected at the layout + middleware level.
 
 **State** — Each entity (clients, operators, products, services, fiches, coupons, orders, …) has its own Zustand store in `src/lib/stores/`. Stores follow a consistent shape: `items`, `selected`, `fetch()`, `add()`, `update()`, `delete()`, `setSelected()`. Real-time DB changes are pushed into stores via `useRealtimeStore`.
 

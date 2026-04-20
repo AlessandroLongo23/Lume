@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { isSuperAdmin } from '@/lib/gateway/superAdmins';
+import { isAdmin } from '@/lib/gateway/admins';
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -36,9 +36,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Gate /platform: only super-admins may see it exists. 404 everyone else.
+  // Gate /platform: only platform admins may see it exists. 404 everyone else.
   if (request.nextUrl.pathname.startsWith('/platform')) {
-    if (!(await isSuperAdmin(user.id))) {
+    if (!(await isAdmin(user.id))) {
       return new NextResponse(null, { status: 404 });
     }
   }

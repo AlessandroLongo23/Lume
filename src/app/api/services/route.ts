@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { canManageSalon } from '@/lib/auth/roles';
+import { pickAllowed } from '@/lib/utils/pickAllowed';
+
+const SERVICE_WRITE_FIELDS = [
+  'name', 'duration', 'price', 'product_cost', 'category_id', 'description',
+] as const;
 
 function getAdminClient() {
   return createClient(
@@ -28,7 +34,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error: dbError } = await supabaseAdmin
       .from('services')
-      .insert({ ...service, salon_id: profile.salon_id })
+      .insert({ ...pickAllowed(service, SERVICE_WRITE_FIELDS), salon_id: profile.salon_id })
       .select()
       .single();
 
@@ -56,7 +62,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -83,7 +89,7 @@ export async function PATCH(request: NextRequest) {
     }
     const { data, error: dbError } = await supabaseAdmin
       .from('services')
-      .update(service)
+      .update(pickAllowed(service, SERVICE_WRITE_FIELDS))
       .eq('id', id)
       .eq('salon_id', profile.salon_id)
       .select()
@@ -102,7 +108,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { normalizeProfileRole, isAdmin as roleIsAdmin, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -16,11 +17,14 @@ async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServer
   const supabaseAdmin = getAdminClient();
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('id, role, is_super_admin')
+    .select('id, role')
     .eq('id', user.id)
     .single();
 
-  return profile as { id: string; role: string; is_super_admin: boolean } | null;
+  if (!profile) return null;
+  const role = normalizeProfileRole(profile);
+  if (!role) return null;
+  return { id: profile.id as string, role };
 }
 
 const VALID_TYPES = ['suggestion', 'bug', 'idea'] as const;
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -85,7 +89,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || !profile.is_super_admin) {
+    if (!profile || !roleIsAdmin(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -158,7 +162,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const isAuthorOfOpenEntry = entry.author_id === profile.id && entry.status === 'open';
-    if (!profile.is_super_admin && !isAuthorOfOpenEntry) {
+    if (!roleIsAdmin(profile.role) && !isAuthorOfOpenEntry) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

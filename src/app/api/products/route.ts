@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { canManageSalon } from '@/lib/auth/roles';
+import { pickAllowed } from '@/lib/utils/pickAllowed';
+
+const PRODUCT_WRITE_FIELDS = [
+  'name', 'manufacturer_id', 'supplier_id', 'product_category_id',
+  'price', 'sell_price', 'is_for_retail', 'stock_quantity', 'min_threshold',
+  'quantity_ml', 'description', 'imageUrl',
+] as const;
 
 function getAdminClient() {
   return createClient(
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -37,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error: dbError } = await supabaseAdmin
       .from('products')
-      .insert({ ...product, salon_id: profile.salon_id })
+      .insert({ ...pickAllowed(product, PRODUCT_WRITE_FIELDS), salon_id: profile.salon_id })
       .select()
       .single();
 
@@ -56,7 +64,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -82,7 +90,7 @@ export async function PATCH(request: NextRequest) {
     }
     const { data, error: dbError } = await supabaseAdmin
       .from('products')
-      .update(product)
+      .update(pickAllowed(product, PRODUCT_WRITE_FIELDS))
       .eq('id', id)
       .eq('salon_id', profile.salon_id)
       .select()
@@ -101,7 +109,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

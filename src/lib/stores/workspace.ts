@@ -37,11 +37,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
       redirect:         result.redirect,
       activeSalonId:    result.activeSalonId ?? null,
     });
-    // Non-super-admin multi-salon users persist their choice here. For
-    // super-admins the gateway itself resyncs the cookie from the
-    // super_admin_impersonation table, so this POST would 403 and is
-    // redundant.
-    if (result.activeSalonId && !result.isSuperAdmin) {
+    // Non-admin multi-salon users persist their choice here. For admins the
+    // gateway itself resyncs the cookie from the super_admin_impersonation
+    // table, so this POST would 403 and is redundant.
+    if (result.activeSalonId && !result.isAdmin) {
       await fetch('/api/gateway/set-salon', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },

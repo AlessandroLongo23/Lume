@@ -64,13 +64,14 @@ export async function deleteSalonCascade(
   await run('coupon_redemptions', admin.from('coupon_redemptions').delete().eq('salon_id', salonId));
   await run('fiches',             admin.from('fiches').delete().eq('salon_id', salonId));
 
-  // ── 3. Orders, spese, obiettivi, client_ratings, abbonamenti ──────────
+  // ── 3. Orders, spese, obiettivi, abbonamenti ──────────────────────────
   // Note: platform `reviews` are user-scoped (FK to auth.users), not salon-scoped,
   // so they are NOT deleted here — they cascade with the author's account instead.
+  // client_ratings is a derived view — its rows disappear automatically when the
+  // underlying clients/fiches/orders rows are deleted below.
   await run('orders',          admin.from('orders').delete().eq('salon_id', salonId));
   await run('spese',           admin.from('spese').delete().eq('salon_id', salonId));
   await run('obiettivi',       admin.from('obiettivi').delete().eq('salon_id', salonId));
-  await run('client_ratings',  admin.from('client_ratings').delete().eq('salon_id', salonId));
   await run('abbonamenti',     admin.from('abbonamenti').delete().eq('salon_id', salonId));
 
   // ── 4. Coupons (after coupon_redemptions / abbonamenti) ───────────────
@@ -112,7 +113,6 @@ export async function deleteSalonCascade(
         .filter((id): id is string => id !== null),
     ),
   ];
-  await run('client_categories', admin.from('client_categories').delete().eq('salon_id', salonId));
   await run('clients',           admin.from('clients').delete().eq('salon_id', salonId));
 
   // ── 8. Profiles for this salon (owner + operator profile rows) ────────

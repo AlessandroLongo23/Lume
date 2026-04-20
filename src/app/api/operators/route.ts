@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -104,7 +105,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -137,7 +138,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

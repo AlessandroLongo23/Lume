@@ -14,6 +14,8 @@ export interface FeedbackEntryRow {
   upvote_count: number;
   author_first_name: string | null;
   author_last_name: string | null;
+  author_salon_id: string | null;
+  author_salon_name: string | null;
 }
 
 export class FeedbackEntry {
@@ -29,6 +31,8 @@ export class FeedbackEntry {
   upvote_count: number;
   author_first_name: string | null;
   author_last_name: string | null;
+  author_salon_id: string | null;
+  author_salon_name: string | null;
 
   constructor(row: FeedbackEntryRow) {
     this.id = row.id;
@@ -43,6 +47,8 @@ export class FeedbackEntry {
     this.upvote_count = row.upvote_count ?? 0;
     this.author_first_name = row.author_first_name ?? null;
     this.author_last_name = row.author_last_name ?? null;
+    this.author_salon_id = row.author_salon_id ?? null;
+    this.author_salon_name = row.author_salon_name ?? null;
   }
 
   getAuthorName(): string {

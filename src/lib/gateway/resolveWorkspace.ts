@@ -1,5 +1,7 @@
+import 'server-only';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { normalizeProfileRole } from '@/lib/auth/roles';
 import type { GatewayResult, WorkspaceContext } from '@/lib/types/Workspace';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — mirrors /api/platform/enter-salon
@@ -25,14 +27,14 @@ function getAdminClient() {
 export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const supabaseAdmin = getAdminClient();
 
-  // Super-admin short-circuit: platform owners bypass tenant routing entirely.
+  // Admin short-circuit: platform admins bypass tenant routing entirely.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('is_super_admin')
+    .select('role')
     .eq('id', userId)
-    .maybeSingle();
+    .maybeSingle<{ role: string | null }>();
 
-  if (profile?.is_super_admin) {
+  if (normalizeProfileRole(profile) === 'admin') {
     // The super_admin_impersonation table is the source of truth for RLS. The
     // cookies are fast-path UI hints that should mirror it. If they disagree
     // (legacy cookies left over from before this table existed, a stale
@@ -80,7 +82,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
       clientContexts:   [],
       redirect:         isImpersonating ? '/admin/calendario' : '/platform',
       activeSalonId:    tableSalonId,
-      isSuperAdmin:     true,
+      isAdmin:          true,
     };
   }
 

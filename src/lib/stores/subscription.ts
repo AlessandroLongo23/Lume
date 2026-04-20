@@ -20,7 +20,7 @@ interface SubscriptionState {
   firstName:          string;
   lastName:           string;
   email:              string;
-  isSuperAdmin:       boolean;
+  isAdmin:            boolean;
   fetchSubscription:  () => Promise<void>;
 }
 
@@ -43,7 +43,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
   firstName:          '',
   lastName:           '',
   email:              '',
-  isSuperAdmin:       false,
+  isAdmin:            false,
 
   fetchSubscription: async () => {
     try {
@@ -72,7 +72,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
         firstName:          data.firstName ?? '',
         lastName:           data.lastName ?? '',
         email:              data.email ?? '',
-        isSuperAdmin:       data.isSuperAdmin ?? false,
+        isAdmin:            data.isAdmin ?? false,
       });
     } catch {
       set({ isLoading: false, isExpired: true });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
+import { normalizeProfileRole } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -21,7 +22,7 @@ export async function GET() {
     const supabaseAdmin = getAdminClient();
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('salon_id, role, first_name, last_name, email, is_super_admin')
+      .select('salon_id, role, first_name, last_name, email')
       .eq('id', user.id)
       .single();
 
@@ -29,8 +30,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
     }
 
+    const effectiveRole = normalizeProfileRole(profile);
+    const isAdmin = effectiveRole === 'admin';
+
     // Prefer the cookie-selected salon (multi-salon owners), fall back to profile default
-    const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
+    const salonId = await getActiveSalonId(profile.salon_id, isAdmin);
 
     const { data: salon } = await supabaseAdmin
       .from('salons')
@@ -78,11 +82,11 @@ export async function GET() {
       earnedCredits: earnedCredits ?? 0,
       salonName: salon.name,
       logoUrl: salon.logo_url ?? null,
-      role: profile.role,
+      role: effectiveRole ?? profile.role,
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
-      isSuperAdmin: profile.is_super_admin ?? false,
+      isAdmin,
     });
   } catch (error) {
     console.error('Subscription status error:', error);

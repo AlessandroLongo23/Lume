@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -102,7 +103,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -119,7 +120,7 @@ export async function PATCH(request: NextRequest) {
     if (typeof abbonamento.is_active === 'boolean') updates.is_active = abbonamento.is_active;
     if (abbonamento.notes !== undefined) updates.notes = abbonamento.notes?.trim() || null;
 
-    if (profile.role === 'owner') {
+    if (canManageSalon(profile.role)) {
       const allowed: (keyof IncomingAbbonamento)[] = [
         'scope_service_ids',
         'total_treatments',
@@ -175,7 +176,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

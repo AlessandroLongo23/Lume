@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -132,7 +133,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -144,8 +145,8 @@ export async function PATCH(request: NextRequest) {
     const updates: Record<string, unknown> = {};
     if (typeof coupon.is_active === 'boolean') updates.is_active = coupon.is_active;
     if (coupon.notes !== undefined) updates.notes = coupon.notes;
-    if (profile.role === 'owner') {
-      // Owner may also adjust scope/validity/etc.
+    if (canManageSalon(profile.role)) {
+      // Owners / admins may also adjust scope/validity/etc.
       const allowed = [
         'valid_from', 'valid_until',
         'scope_service_ids', 'scope_product_ids',
@@ -184,7 +185,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { BusinessType } from '@/lib/types/Salon';
-import { requireSuperAdmin } from '@/lib/gateway/requireSuperAdmin';
+import { requireAdmin } from '@/lib/gateway/requireAdmin';
 
 function getAdminClient() {
   return createClient(
@@ -17,7 +17,7 @@ function randomPassword(): string {
 }
 
 export async function POST(request: NextRequest) {
-  const guard = await requireSuperAdmin();
+  const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
   const body = await request.json().catch(() => ({}));

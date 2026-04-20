@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { requireSuperAdmin } from '@/lib/gateway/requireSuperAdmin';
+import { requireAdmin } from '@/lib/gateway/requireAdmin';
 
 function getAdminClient() {
   return createClient(
@@ -11,7 +11,7 @@ function getAdminClient() {
 }
 
 export async function POST() {
-  const guard = await requireSuperAdmin();
+  const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
   // Delete the RLS truth row first. Even if this fails we still clear the

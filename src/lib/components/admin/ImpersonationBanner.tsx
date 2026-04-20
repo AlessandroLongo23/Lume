@@ -14,7 +14,7 @@ const subscribeImpersonation = () => () => {};
 
 export function ImpersonationBanner() {
   const router = useRouter();
-  const isSuperAdmin = useSubscriptionStore((s) => s.isSuperAdmin);
+  const isAdmin = useSubscriptionStore((s) => s.isAdmin);
   const salonName = useSubscriptionStore((s) => s.salonName);
   const isImpersonating = useSyncExternalStore(
     subscribeImpersonation,
@@ -23,7 +23,7 @@ export function ImpersonationBanner() {
   );
   const [isExiting, setIsExiting] = useState(false);
 
-  if (!isSuperAdmin || !isImpersonating) return null;
+  if (!isAdmin || !isImpersonating) return null;
 
   async function handleExit() {
     setIsExiting(true);
@@ -42,7 +42,7 @@ export function ImpersonationBanner() {
         <div className="flex items-center gap-2 min-w-0">
           <Eye className="w-4 h-4 shrink-0" />
           <span className="truncate">
-            Stai visualizzando <span className="font-semibold">{salonName || 'questo salone'}</span> come super-admin
+            Stai visualizzando <span className="font-semibold">{salonName || 'questo salone'}</span> come admin
           </span>
         </div>
         <button

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
+import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -19,14 +20,17 @@ export async function PATCH(req: NextRequest) {
     const admin = getAdminClient();
     const { data: profile } = await admin
       .from('profiles')
-      .select('salon_id, role, is_super_admin')
+      .select('salon_id, role')
       .eq('id', user.id)
       .single();
 
     if (!profile) return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
-    if (profile.role !== 'owner') return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
+    const effectiveRole = normalizeProfileRole(profile);
+    if (!canManageSalon(effectiveRole)) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
+    }
 
-    const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
+    const salonId = await getActiveSalonId(profile.salon_id, effectiveRole === 'admin');
     const { logoUrl } = await req.json();
 
     if (typeof logoUrl !== 'string' && logoUrl !== null) {

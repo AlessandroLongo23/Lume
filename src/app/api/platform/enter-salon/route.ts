@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { requireSuperAdmin } from '@/lib/gateway/requireSuperAdmin';
+import { requireAdmin } from '@/lib/gateway/requireAdmin';
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — super-admin sessions
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — admin impersonation sessions
 
 function getAdminClient() {
   return createClient(
@@ -13,7 +13,7 @@ function getAdminClient() {
 }
 
 export async function POST(request: NextRequest) {
-  const guard = await requireSuperAdmin();
+  const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
   const { salonId } = await request.json().catch(() => ({ salonId: null }));

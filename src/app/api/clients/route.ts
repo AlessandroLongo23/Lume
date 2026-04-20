@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { toE164 } from '@/lib/utils/phone';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -172,7 +173,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || (profile.role !== 'owner' && profile.role !== 'operator')) {
+    if (!profile || !isSalonStaff(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -183,7 +184,7 @@ export async function PATCH(request: NextRequest) {
     const supabaseAdmin = getAdminClient();
 
     if (action === 'archive' || action === 'restore') {
-      if (profile.role !== 'owner') {
+      if (!canManageSalon(profile.role)) {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
       }
       const archived_at = action === 'archive' ? new Date().toISOString() : null;
@@ -289,7 +290,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createServerClient();
     const profile = await getCallerProfile(supabase);
 
-    if (!profile || profile.role !== 'owner') {
+    if (!profile || !canManageSalon(profile.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

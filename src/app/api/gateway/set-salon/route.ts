@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
-import { isSuperAdmin } from '@/lib/gateway/superAdmins';
+import { isAdmin } from '@/lib/gateway/admins';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
@@ -20,15 +20,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'salonId mancante' }, { status: 400 });
     }
 
-    const callerIsSuperAdmin = await isSuperAdmin(user.id);
-
-    if (callerIsSuperAdmin) {
-      // Super-admins must go through /api/platform/enter-salon to change their
+    if (await isAdmin(user.id)) {
+      // Admins must go through /api/platform/enter-salon to change their
       // active salon — that route writes the super_admin_impersonation row
       // atomically. set-salon is a blunt cookie-writer and would leave the
       // table out of sync with the cookie.
       return NextResponse.json(
-        { error: 'I super-admin devono usare /api/platform/enter-salon' },
+        { error: 'Gli admin devono usare /api/platform/enter-salon' },
         { status: 403 },
       );
     }

@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { useFeedbackStore } from '@/lib/stores/feedback';
-import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { FeedbackEntry, FeedbackStatus } from '@/lib/types/FeedbackEntry';
 import { TYPE_META, STATUS_META } from './feedback-meta';
@@ -13,25 +12,34 @@ import { TYPE_META, STATUS_META } from './feedback-meta';
 interface FeedbackDetailModalProps {
   entry: FeedbackEntry | null;
   currentUserId: string | null;
+  isAdmin: boolean;
   onClose: () => void;
+  allowUpvote?: boolean;
+  showSalonBadge?: boolean;
 }
 
 const STATUS_OPTIONS: FeedbackStatus[] = ['open', 'in_progress', 'completed', 'closed'];
 
-export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackDetailModalProps) {
+export function FeedbackDetailModal({
+  entry,
+  currentUserId,
+  isAdmin,
+  onClose,
+  allowUpvote = true,
+  showSalonBadge = false,
+}: FeedbackDetailModalProps) {
   const hasVoted = useFeedbackStore((s) => (entry ? s.myUpvoteIds.has(entry.id) : false));
   const toggleUpvote = useFeedbackStore((s) => s.toggleUpvote);
   const updateEntry = useFeedbackStore((s) => s.updateEntry);
   const deleteEntry = useFeedbackStore((s) => s.deleteEntry);
-  const isSuperAdmin = useSubscriptionStore((s) => s.isSuperAdmin);
 
   if (!entry) return null;
 
   const typeMeta = TYPE_META[entry.type];
   const statusMeta = STATUS_META[entry.status];
   const isOwnEntry = currentUserId !== null && entry.author_id === currentUserId;
-  const canVote = !isOwnEntry || isSuperAdmin;
-  const canDelete = isSuperAdmin || (isOwnEntry && entry.status === 'open');
+  const canVote = allowUpvote && (!isOwnEntry || isAdmin);
+  const canDelete = isAdmin || (isOwnEntry && entry.status === 'open');
 
   const handleVote = async () => {
     if (!canVote) return;
@@ -80,6 +88,11 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusMeta.badge}`}>
                 {statusMeta.label}
               </span>
+              {showSalonBadge && entry.author_salon_name && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                  {entry.author_salon_name}
+                </span>
+              )}
             </div>
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 break-words">
               {entry.title}
@@ -106,8 +119,8 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
           </p>
         </div>
 
-        {/* Super admin controls */}
-        {isSuperAdmin && (
+        {/* Admin controls */}
+        {isAdmin && (
           <div className="flex flex-col gap-2 px-6 py-4 border-t border-zinc-500/25 bg-primary/5">
             <label className="text-xs font-semibold uppercase tracking-wider text-primary-hover dark:text-primary/70">
               Stato (solo admin)
@@ -136,20 +149,28 @@ export function FeedbackDetailModal({ entry, currentUserId, onClose }: FeedbackD
 
         {/* Footer */}
         <div className="flex flex-row items-center justify-between gap-3 p-6 border-t border-zinc-500/25 shrink-0">
-          <button
-            type="button"
-            onClick={handleVote}
-            disabled={!canVote}
-            className={`flex flex-row items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors ${
-              hasVoted
-                ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
-                : 'border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-primary/70'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <ChevronUp className="size-4" strokeWidth={2.5} />
-            <span className="tabular-nums">{entry.upvote_count}</span>
-            <span>{hasVoted ? 'Votato' : 'Vota'}</span>
-          </button>
+          {allowUpvote ? (
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={!canVote}
+              className={`flex flex-row items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors ${
+                hasVoted
+                  ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
+                  : 'border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-primary/70'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <ChevronUp className="size-4" strokeWidth={2.5} />
+              <span className="tabular-nums">{entry.upvote_count}</span>
+              <span>{hasVoted ? 'Votato' : 'Vota'}</span>
+            </button>
+          ) : (
+            <div className="flex flex-row items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
+              <ChevronUp className="size-4" strokeWidth={2.5} />
+              <span className="tabular-nums">{entry.upvote_count}</span>
+              <span>{entry.upvote_count === 1 ? 'voto' : 'voti'}</span>
+            </div>
+          )}
 
           <div className="flex flex-row items-center gap-3">
             {canDelete && (

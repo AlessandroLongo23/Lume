@@ -12,6 +12,6 @@ export type GatewayResult = {
   redirect:        '/admin/calendario' | '/select-salon' | '/client-dashboard' | '/select-workspace' | '/platform';
   /** Non-null only when redirect === '/admin/calendario' (single unambiguous salon) */
   activeSalonId:   string | null;
-  /** True when the authenticated user is a platform super-admin */
-  isSuperAdmin?:   boolean;
+  /** True when the authenticated user is a platform admin (formerly super-admin) */
+  isAdmin?:        boolean;
 };

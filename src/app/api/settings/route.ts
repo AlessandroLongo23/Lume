@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
+import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
   return createClient(
@@ -18,14 +19,15 @@ async function getAuthContext() {
   const admin = getAdminClient();
   const { data: profile } = await admin
     .from('profiles')
-    .select('salon_id, role, is_super_admin')
+    .select('salon_id, role')
     .eq('id', user.id)
     .single();
 
   if (!profile) return null;
 
-  const salonId = await getActiveSalonId(profile.salon_id, profile.is_super_admin ?? false);
-  return { user, profile, salonId, admin };
+  const effectiveRole = normalizeProfileRole(profile);
+  const salonId = await getActiveSalonId(profile.salon_id, effectiveRole === 'admin');
+  return { user, profile: { ...profile, role: effectiveRole ?? profile.role }, salonId, admin };
 }
 
 export async function GET() {
@@ -47,7 +49,7 @@ export async function PATCH(req: NextRequest) {
   const ctx = await getAuthContext();
   if (!ctx) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
 
-  if (ctx.profile.role !== 'owner') {
+  if (!canManageSalon(ctx.profile.role as 'admin' | 'owner' | 'operator')) {
     return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
   }
 

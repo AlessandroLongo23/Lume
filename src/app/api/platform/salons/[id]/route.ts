@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { requireSuperAdmin } from '@/lib/gateway/requireSuperAdmin';
+import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import { deleteSalonCascade, isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
 
 function getAdminClient() {
@@ -14,7 +14,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const guard = await requireSuperAdmin();
+  const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
   const { id } = await params;
@@ -36,7 +36,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const guard = await requireSuperAdmin();
+  const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
   const { id } = await params;
