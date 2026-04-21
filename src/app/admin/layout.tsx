@@ -1,18 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
-import { X, Loader2, Settings } from 'lucide-react';
-import { adminRoutes } from '@/lib/const/data';
-import { AdminHeader } from '@/lib/components/admin/AdminHeader';
+import { Loader2, CreditCard, LogOut, User } from 'lucide-react';
+import { adminRoutes, adminSettingsRoute, pageTitleForPathname } from '@/lib/const/data';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
-import { ImpersonationBanner } from '@/lib/components/admin/ImpersonationBanner';
+import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
+import { SubscriptionCTA } from '@/lib/components/admin/SubscriptionCTA';
+import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
+import { AppShell } from '@/lib/components/shell/AppShell';
+import { Sidebar, type SidebarNavGroup } from '@/lib/components/shell/Sidebar';
+import { TopBar } from '@/lib/components/shell/TopBar';
+import { SidebarUserCard, type UserCardMenuItem } from '@/lib/components/shell/SidebarUserCard';
+import {
+  CommandMenu,
+  useCommandMenuController,
+  type CommandItem,
+} from '@/lib/components/shell/CommandMenu';
+import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { isOwner } from '@/lib/auth/roles';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '';
@@ -20,33 +32,48 @@ function getInitials(name: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-const routeNameMap: Record<string, string> = Object.fromEntries(
-  adminRoutes.flatMap((group) => group.routes.map((r) => [r.url, r.name]))
-);
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getTitle(pathname: string): string {
-  const segments = pathname.split('/').filter(Boolean);
-  for (let i = segments.length - 1; i >= 0; i--) {
-    const seg = segments[i];
-    if (routeNameMap[seg]) return routeNameMap[seg];
-  }
-  const adminIdx = segments.indexOf('admin');
-  const seg = adminIdx >= 0 ? segments[adminIdx + 1] : segments[segments.length - 1];
-  return seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : '';
+function SalonIdentityBlock() {
+  const salonName = useSubscriptionStore((s) => s.salonName);
+  const logoUrl = useSubscriptionStore((s) => s.logoUrl);
+  if (!salonName) return null;
+  return (
+    <div className="flex items-center gap-3 min-w-0 px-1 py-1">
+      {logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt={salonName}
+          width={32}
+          height={32}
+          className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0">
+          <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
+            {getInitials(salonName)}
+          </span>
+        </div>
+      )}
+      <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
+        {salonName}
+      </p>
+    </div>
+  );
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const isExpired = useSubscriptionStore((s) => s.isExpired);
   const isLoading = useSubscriptionStore((s) => s.isLoading);
-  const salonName = useSubscriptionStore((s) => s.salonName);
-  const logoUrl = useSubscriptionStore((s) => s.logoUrl);
+  const firstName = useSubscriptionStore((s) => s.firstName);
+  const lastName = useSubscriptionStore((s) => s.lastName);
+  const email = useSubscriptionStore((s) => s.email);
+  const role = useSubscriptionStore((s) => s.role);
   const isAdmin = useSubscriptionStore((s) => s.isAdmin);
+  const isImpersonating = useIsImpersonating();
 
-  // Redirect expired users to subscribe page — admins (impersonating) bypass.
+  const controller = useCommandMenuController();
+
   useEffect(() => {
     if (isAdmin) return;
     if (!isLoading && isExpired && pathname !== '/admin/subscribe') {
@@ -54,7 +81,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isAdmin, isLoading, isExpired, pathname, router]);
 
-  // Soft session-expiry handler: silently redirect to /login with a friendly toast
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
@@ -71,134 +97,134 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => subscription.unsubscribe();
   }, [router]);
 
+  const navGroups = useMemo<SidebarNavGroup[]>(
+    () =>
+      adminRoutes.map((group) => ({
+        title: group.title,
+        items: group.routes.map((r) => ({
+          name: r.name,
+          url: `/admin/${r.url}`,
+          icon: r.icon,
+        })),
+      })),
+    []
+  );
+
+  const commandItems = useMemo<CommandItem[]>(() => {
+    const items: CommandItem[] = [];
+    for (const group of adminRoutes) {
+      for (const r of group.routes) {
+        items.push({
+          type: 'nav',
+          label: r.name,
+          href: `/admin/${r.url}`,
+          icon: r.icon,
+          keywords: r.searchKeywords,
+          group: 'Vai a',
+        });
+      }
+    }
+    items.push({
+      type: 'nav',
+      label: adminSettingsRoute.name,
+      href: `/admin/${adminSettingsRoute.url}`,
+      icon: adminSettingsRoute.icon,
+      keywords: adminSettingsRoute.searchKeywords,
+      group: 'Vai a',
+    });
+    return items;
+  }, []);
+
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || email;
+  const roleLabel = role === 'owner' ? 'Titolare' : role === 'admin' ? 'Super admin' : 'Operatore';
+  const initials = [firstName, lastName]
+    .filter(Boolean)
+    .map((n) => n.charAt(0).toUpperCase())
+    .join('');
+
+  const userMenuItems = useMemo<UserCardMenuItem[]>(() => {
+    const items: UserCardMenuItem[] = [
+      { type: 'link', label: 'Profilo', href: '/admin/impostazioni', icon: User },
+    ];
+    if (isOwner(role)) {
+      items.push({
+        type: 'link',
+        label: 'Fatturazione e abbonamento',
+        href: '/admin/subscribe',
+        icon: CreditCard,
+      });
+    }
+    items.push({
+      type: 'button',
+      label: 'Esci',
+      loadingLabel: 'Uscendo…',
+      icon: LogOut,
+      danger: true,
+      onClick: async () => {
+        try {
+          await fetch('/auth/logout', { method: 'POST' });
+        } finally {
+          window.location.href = '/';
+        }
+      },
+    });
+    return items;
+  }, [role]);
+
+  const sidebar = (
+    <Sidebar
+      identity={<SalonIdentityBlock />}
+      primaryAction={<CommandMenuTrigger variant="sidebar" onOpen={controller.onOpen} />}
+      navGroups={navGroups}
+      pinnedLinks={[
+        {
+          name: adminSettingsRoute.name,
+          url: `/admin/${adminSettingsRoute.url}`,
+          icon: adminSettingsRoute.icon,
+        },
+      ]}
+      userCard={
+        <SidebarUserCard
+          name={displayName}
+          role={roleLabel}
+          avatarInitials={initials}
+          menuItems={userMenuItems}
+        />
+      }
+    />
+  );
+
+  const topBar = (
+    <TopBar
+      title={pageTitleForPathname(pathname)}
+      rightCluster={
+        <>
+          <CommandMenuTrigger variant="topbar" onOpen={controller.onOpen} />
+          <ThemeToggle />
+          {isOwner(role) && <SubscriptionCTA />}
+        </>
+      }
+    />
+  );
+
   return (
-    <div className="min-h-screen bg-background dark:bg-background text-foreground dark:text-white p-0 font-sans">
-      <div className="h-full">
-        <AdminHeader onMobileMenuOpen={() => setIsMobileSidebarOpen(true)} />
-
-        <div className="flex">
-          {/* Mobile Sidebar */}
-          {isMobileSidebarOpen && (
-            <>
-              <div className="md:hidden fixed top-16 bottom-0 left-0 bg-white dark:bg-card border-r border-border dark:border-border z-50 shadow-sm w-64">
-                <div className="p-6 space-y-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-base font-semibold tracking-tight truncate">{salonName || 'Menu'}</h2>
-                    <button
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted dark:hover:bg-muted"
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      aria-label="Chiudi menu"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {adminRoutes.map((section) => (
-                    <div key={section.title} className="flex flex-col gap-1">
-                      <h3 className="text-sm font-medium">{section.title}</h3>
-                      {section.routes.map((route) => {
-                        const isActive = pathname.includes(route.url);
-                        const Icon = route.icon;
-                        return (
-                          <Link
-                            key={route.url}
-                            href={`/admin/${route.url}`}
-                            onClick={() => setIsMobileSidebarOpen(false)}
-                            className={`flex items-center gap-3 font-medium transition-all duration-200 ease-in-out px-4 py-3 text-sm rounded-md ${isActive ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-white dark:hover:bg-muted'}`}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span>{route.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="md:hidden fixed inset-0 bg-black/40 z-40"
-                onClick={() => setIsMobileSidebarOpen(false)}
-                aria-label="Chiudi menu"
-              />
-            </>
-          )}
-
-          {/* Desktop Sidebar */}
-          <div className="hidden md:flex fixed top-16 bottom-0 left-0 bg-white dark:bg-card border-r border-border dark:border-border w-[72px] lg:w-[240px] shadow-sm flex-col overflow-y-auto">
-            <div className="px-4 pt-6 pb-4 flex flex-col flex-1 gap-1">
-              {salonName && (
-                <div className="hidden lg:flex items-center gap-3 mb-4 min-w-0">
-                  {logoUrl ? (
-                    <Image
-                      src={logoUrl}
-                      alt={salonName}
-                      width={32}
-                      height={32}
-                      className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
-                        {getInitials(salonName)}
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
-                    {salonName}
-                  </p>
-                </div>
-              )}
-              {adminRoutes.map((section) => (
-                <div key={section.title} className="flex flex-col gap-2 mb-4">
-                  <p className="text-xs font-regular uppercase text-zinc-500">{section.title}</p>
-                  <div className="flex flex-col gap-0.5">
-                    {section.routes.map((route) => {
-                      const isActive = pathname.includes(route.url);
-                      const Icon = route.icon;
-                      return (
-                        <Link
-                          key={route.url}
-                          href={`/admin/${route.url}`}
-                          className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md ${isActive ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-white dark:hover:bg-muted'}`}
-                        >
-                          <Icon className="w-5 h-5" strokeWidth={1.5} />
-                          <span className="hidden lg:inline">{route.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              <div className="mt-auto pt-2 flex flex-col gap-0.5">
-                <Link
-                  href="/admin/impostazioni"
-                  className={`flex items-center justify-center lg:justify-start gap-0 lg:gap-3 transition-all duration-200 ease-in-out px-0 lg:px-3 py-2 text-sm rounded-md ${pathname.includes('impostazioni') ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-white dark:hover:bg-muted'}`}
-                >
-                  <Settings className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                  <span className="hidden lg:inline">Impostazioni</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="ml-0 md:ml-[72px] lg:ml-[240px] min-h-screen w-full bg-background dark:bg-background">
-            <div className="px-4 md:p-6 pt-20 md:pt-24 min-h-screen">
-              <StoreInitializer />
-              {isLoading ? (
-                <div className="flex items-center justify-center py-24">
-                  <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-                </div>
-              ) : (
-                <>
-                  <ImpersonationBanner />
-                  <TrialWarningBanner />
-                  {children}
-                </>
-              )}
-            </div>
-          </div>
+    <AppShell
+      impersonationBanner={isImpersonating ? <ImpersonationBanner /> : null}
+      sidebar={sidebar}
+      topBar={topBar}
+    >
+      <StoreInitializer />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
         </div>
-      </div>
-    </div>
+      ) : (
+        <>
+          <TrialWarningBanner />
+          {children}
+        </>
+      )}
+      <CommandMenu open={controller.open} onClose={controller.onClose} items={commandItems} />
+    </AppShell>
   );
 }

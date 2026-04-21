@@ -8,23 +8,25 @@ interface WorkspaceState {
   activeWorkspace:  'business' | 'client' | null;
   activeSalonId:    string | null;
   redirect:         GatewayResult['redirect'] | null;
+  isAdmin:          boolean;
 
   /** Fetch contexts from /api/gateway and update store. Returns the full result. */
   resolve:         () => Promise<GatewayResult>;
-  /** POST to /api/gateway/set-salon and update activeSalonId in memory. */
+  /** POST to set/impersonate the active salon; branches on isAdmin. */
   setActiveSalon:  (salonId: string) => Promise<void>;
   /** Set the in-memory workspace selection (business or client). */
   selectWorkspace: (type: 'business' | 'client') => void;
   reset:           () => void;
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
+export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   isLoading:        false,
   businessContexts: [],
   clientContexts:   [],
   activeWorkspace:  null,
   activeSalonId:    null,
   redirect:         null,
+  isAdmin:          false,
 
   resolve: async () => {
     set({ isLoading: true });
@@ -36,6 +38,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
       clientContexts:   result.clientContexts,
       redirect:         result.redirect,
       activeSalonId:    result.activeSalonId ?? null,
+      isAdmin:          result.isAdmin ?? false,
     });
     // Non-admin multi-salon users persist their choice here. For admins the
     // gateway itself resyncs the cookie from the super_admin_impersonation
@@ -51,7 +54,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   },
 
   setActiveSalon: async (salonId) => {
-    await fetch('/api/gateway/set-salon', {
+    // Admins impersonate via /api/platform/enter-salon, which also writes the
+    // super_admin_impersonation row. /api/gateway/set-salon 403s for admins.
+    const endpoint = get().isAdmin ? '/api/platform/enter-salon' : '/api/gateway/set-salon';
+    await fetch(endpoint, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ salonId }),
@@ -68,5 +74,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
     activeWorkspace:  null,
     activeSalonId:    null,
     redirect:         null,
+    isAdmin:          false,
   }),
 }));

@@ -15,12 +15,14 @@ async function isAuthUserOrphaned(admin: Admin, userId: string): Promise<boolean
     { count: ownerCount },
     { count: operatorCount },
     { count: clientCount },
+    { count: profileCount },
   ] = await Promise.all([
     admin.from('salons').select('*', { count: 'exact', head: true }).eq('owner_id', userId),
     admin.from('operators').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     admin.from('clients').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    admin.from('profiles').select('*', { count: 'exact', head: true }).eq('id', userId),
   ]);
-  return ((ownerCount ?? 0) + (operatorCount ?? 0) + (clientCount ?? 0)) === 0;
+  return ((ownerCount ?? 0) + (operatorCount ?? 0) + (clientCount ?? 0) + (profileCount ?? 0)) === 0;
 }
 
 /**
@@ -115,8 +117,21 @@ export async function deleteSalonCascade(
   ];
   await run('clients',           admin.from('clients').delete().eq('salon_id', salonId));
 
-  // ── 8. Profiles for this salon (owner + operator profile rows) ────────
-  await run('profiles', admin.from('profiles').delete().eq('salon_id', salonId));
+  // ── 8. Profiles for this salon ─────────────────────────────────────────
+  // Preserve platform-admin identity by clearing the salon link instead of
+  // deleting the row. Non-admin profiles (owner, operator) are deleted.
+  await run(
+    'profiles.admin.detach',
+    admin.from('profiles').update({ salon_id: null })
+      .eq('salon_id', salonId)
+      .eq('role', 'admin'),
+  );
+  await run(
+    'profiles',
+    admin.from('profiles').delete()
+      .eq('salon_id', salonId)
+      .neq('role', 'admin'),
+  );
 
   // ── 9. Referral credits on either side ────────────────────────────────
   await run(

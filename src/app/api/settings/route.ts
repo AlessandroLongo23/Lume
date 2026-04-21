@@ -54,14 +54,26 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { operating_hours, track_inventory } = body;
+  const { name, operating_hours, track_inventory } = body;
 
   if (operating_hours !== undefined && (!Array.isArray(operating_hours) || operating_hours.length !== 7)) {
     return NextResponse.json({ error: 'Dati non validi' }, { status: 400 });
   }
 
+  let normalizedName: string | undefined;
+  if (name !== undefined) {
+    if (typeof name !== 'string') {
+      return NextResponse.json({ error: 'Dati non validi' }, { status: 400 });
+    }
+    normalizedName = name.trim();
+    if (normalizedName.length < 1 || normalizedName.length > 80) {
+      return NextResponse.json({ error: 'Il nome del salone deve contenere tra 1 e 80 caratteri' }, { status: 400 });
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates: Record<string, any> = {};
+  if (normalizedName !== undefined) updates.name = normalizedName;
   if (operating_hours !== undefined) updates.operating_hours = operating_hours;
   if (track_inventory !== undefined) updates.track_inventory = Boolean(track_inventory);
 

@@ -15,10 +15,14 @@ import {
   ChevronRight,
   TriangleAlert,
   Warehouse,
+  Settings as SettingsIcon,
+  Store,
 } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteWorkspaceModal } from '@/lib/components/admin/DeleteWorkspaceModal';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -37,7 +41,14 @@ const daySchema = z.object({
   shifts: z.array(shiftSchema),
 });
 
-const schema = z.object({ operating_hours: z.array(daySchema).length(7) });
+const schema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Il nome del salone è obbligatorio')
+    .max(80, 'Il nome del salone non può superare 80 caratteri'),
+  operating_hours: z.array(daySchema).length(7),
+});
 type Schema = z.infer<typeof schema>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -87,10 +98,10 @@ function SalonePanel() {
     handleSubmit,
     register,
     reset,
-    formState: { isDirty },
+    formState: { isDirty, errors },
   } = useForm<Schema>({
     resolver: zodResolver(schema),
-    defaultValues: { operating_hours: DEFAULT_HOURS },
+    defaultValues: { name: '', operating_hours: DEFAULT_HOURS },
   });
 
   const { fields, update } = useFieldArray({ control, name: 'operating_hours' });
@@ -99,14 +110,17 @@ function SalonePanel() {
     fetch('/api/settings')
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data.operating_hours)) {
-          const sorted = DAYS_ORDER.map(
-            (d) =>
-              data.operating_hours.find((h: { day: number }) => h.day === d) ??
-              DEFAULT_HOURS.find((h) => h.day === d)!,
-          );
-          reset({ operating_hours: sorted });
-        }
+        const sorted = Array.isArray(data.operating_hours)
+          ? DAYS_ORDER.map(
+              (d) =>
+                data.operating_hours.find((h: { day: number }) => h.day === d) ??
+                DEFAULT_HOURS.find((h) => h.day === d)!,
+            )
+          : DEFAULT_HOURS;
+        reset({
+          name: typeof data.name === 'string' ? data.name : '',
+          operating_hours: sorted,
+        });
         if (typeof data.track_inventory === 'boolean') {
           setTrackInventory(data.track_inventory);
         }
@@ -118,14 +132,17 @@ function SalonePanel() {
   const onSubmit = async (data: Schema) => {
     setSaving(true);
     try {
+      const trimmedName = data.name.trim();
+      const payload = { ...data, name: trimmedName, track_inventory: trackInventory };
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, track_inventory: trackInventory }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
       messagePopup.getState().success('Impostazioni salvate con successo');
-      reset(data);
+      useSubscriptionStore.setState({ salonName: trimmedName });
+      reset({ ...data, name: trimmedName });
       setTrackInventoryDirty(false);
     } catch {
       messagePopup.getState().error('Errore durante il salvataggio');
@@ -164,6 +181,32 @@ function SalonePanel() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      {/* Nome del Salone */}
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Store className="size-4 text-primary" />
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Nome del Salone</h2>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Il nome che identifica il tuo salone in Lume.
+          </p>
+        </div>
+        <div className="px-6 py-5">
+          <input
+            type="text"
+            maxLength={80}
+            autoComplete="off"
+            placeholder="Il nome del tuo salone"
+            {...register('name')}
+            className="w-full max-w-md rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+          />
+          {errors.name && (
+            <p className="mt-2 text-xs text-red-500">{errors.name.message}</p>
+          )}
+        </div>
+      </div>
+
       {/* Orari di Apertura */}
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -480,11 +523,11 @@ export default function ImpostazioniPage() {
 
   return (
     <div className="flex flex-col gap-6 h-full">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Impostazioni</h1>
-        <p className="mt-1 text-sm text-zinc-500">Gestisci le preferenze del tuo salone e account.</p>
-      </div>
+      <PageHeader
+        title="Impostazioni"
+        subtitle="Gestisci le preferenze del tuo salone e account."
+        icon={SettingsIcon}
+      />
 
       {/* 2-column layout */}
       <div className="flex gap-8 items-start">

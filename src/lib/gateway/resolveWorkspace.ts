@@ -27,64 +27,13 @@ function getAdminClient() {
 export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const supabaseAdmin = getAdminClient();
 
-  // Admin short-circuit: platform admins bypass tenant routing entirely.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('role')
     .eq('id', userId)
     .maybeSingle<{ role: string | null }>();
 
-  if (normalizeProfileRole(profile) === 'admin') {
-    // The super_admin_impersonation table is the source of truth for RLS. The
-    // cookies are fast-path UI hints that should mirror it. If they disagree
-    // (legacy cookies left over from before this table existed, a stale
-    // httpOnly cookie surviving a logout, direct DB edits, etc.), trust the
-    // table and resync the cookies to match.
-    const cookieStore = await cookies();
-    const cookieSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
-    const cookieImpersonating = cookieStore.get('lume-impersonating')?.value === '1';
-
-    const { data: imp } = await supabaseAdmin
-      .from('super_admin_impersonation')
-      .select('salon_id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const tableSalonId: string | null = imp?.salon_id ?? null;
-    const isImpersonating = !!tableSalonId;
-
-    if (isImpersonating) {
-      if (cookieSalonId !== tableSalonId) {
-        cookieStore.set('lume-active-salon-id', tableSalonId, {
-          httpOnly: true,
-          secure:   process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path:     '/',
-          maxAge:   COOKIE_MAX_AGE,
-        });
-      }
-      if (!cookieImpersonating) {
-        cookieStore.set('lume-impersonating', '1', {
-          httpOnly: false,
-          secure:   process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path:     '/',
-          maxAge:   COOKIE_MAX_AGE,
-        });
-      }
-    } else if (cookieSalonId || cookieImpersonating) {
-      cookieStore.delete('lume-active-salon-id');
-      cookieStore.delete('lume-impersonating');
-    }
-
-    return {
-      businessContexts: [],
-      clientContexts:   [],
-      redirect:         isImpersonating ? '/admin/calendario' : '/platform',
-      activeSalonId:    tableSalonId,
-      isAdmin:          true,
-    };
-  }
+  const isAdmin = normalizeProfileRole(profile) === 'admin';
 
   const [ownedResult, operatorResult, clientResult] = await Promise.all([
     supabaseAdmin
@@ -129,10 +78,72 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
     clientContexts.push({ type: 'client', salonId: salon.id, salonName: salon.name, role: 'client' });
   }
 
-  // --- Compute redirect ---
   const hasBusiness = businessContexts.length > 0;
   const hasClient   = clientContexts.length > 0;
 
+  if (isAdmin) {
+    // The super_admin_impersonation table is the source of truth for RLS. The
+    // cookies are fast-path UI hints that should mirror it. If they disagree
+    // (legacy cookies, a stale httpOnly cookie surviving a logout, direct DB
+    // edits, etc.), trust the table and resync the cookies to match.
+    const cookieStore = await cookies();
+    const cookieSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
+    const cookieImpersonating = cookieStore.get('lume-impersonating')?.value === '1';
+
+    const { data: imp } = await supabaseAdmin
+      .from('super_admin_impersonation')
+      .select('salon_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const tableSalonId: string | null = imp?.salon_id ?? null;
+    const isImpersonating = !!tableSalonId;
+
+    if (isImpersonating) {
+      if (cookieSalonId !== tableSalonId) {
+        cookieStore.set('lume-active-salon-id', tableSalonId, {
+          httpOnly: true,
+          secure:   process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path:     '/',
+          maxAge:   COOKIE_MAX_AGE,
+        });
+      }
+      if (!cookieImpersonating) {
+        cookieStore.set('lume-impersonating', '1', {
+          httpOnly: false,
+          secure:   process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path:     '/',
+          maxAge:   COOKIE_MAX_AGE,
+        });
+      }
+    } else if (cookieSalonId || cookieImpersonating) {
+      cookieStore.delete('lume-active-salon-id');
+      cookieStore.delete('lume-impersonating');
+    }
+
+    // Multi-role admin → show the picker so they can choose where to land.
+    if (hasBusiness || hasClient) {
+      return {
+        businessContexts,
+        clientContexts,
+        redirect:      '/select-workspace',
+        activeSalonId: null,
+        isAdmin:       true,
+      };
+    }
+
+    return {
+      businessContexts: [],
+      clientContexts:   [],
+      redirect:         isImpersonating ? '/admin/calendario' : '/platform',
+      activeSalonId:    tableSalonId,
+      isAdmin:          true,
+    };
+  }
+
+  // --- Non-admin routing ---
   let redirect: GatewayResult['redirect'];
   let activeSalonId: string | null = null;
 
