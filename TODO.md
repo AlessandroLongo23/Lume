@@ -1,3 +1,17 @@
+## Chiarimenti
+[ ] applicazione abbonamento e dettagli più chiaro
+[ ] pagina cliente più dettagliata, con storico e "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera)
+cambiare nota nel modale delle fiche
+
+## Bug
+[ ] merge valore gift card con importo incassato
+[ ] errore su gift card "Valore dello sconto non valido"
+[ ] messaggio fuori orario su chiusura fiche
+
+## Impostazioni
+[ ] Settare valore di default per validità buoni
+
+## Done
 [x] archiviare servizi e prodotti, clienti invece di cancellarli
 [x] spostare il bottone per chiudere le fiche dentro il modale
 [x] cambiare il totale direttamente senza aggiornare i prezzi delle singole cose
