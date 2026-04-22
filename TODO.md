@@ -1,11 +1,13 @@
-## Features
-[ ] notifica auguri sul gestionale
+## Bug
+[ ] avatar dropdown in sidebar
+[ ] Lume logo always fully visible in topbar
 
 ## Chiarimenti
 [ ] applicazione abbonamento e dettagli più chiaro
 [ ] pagina cliente più dettagliata, con storico e "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
 
-## Bug
+## Features
+[ ] notifica auguri sul gestionale
 
 ## Impostazioni
 [ ] Settare valore di default per validità buoni

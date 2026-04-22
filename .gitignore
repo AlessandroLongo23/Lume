@@ -43,3 +43,5 @@ next-env.d.ts
 .mcp.json
 
 data/
+
+.playwright-mcp/
