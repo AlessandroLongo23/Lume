@@ -56,7 +56,7 @@ function validatePayload(c: Partial<IncomingCoupon>): string | null {
     if (c.sale_amount == null) return 'Importo incassato mancante';
     if (!c.sale_payment_method) return 'Metodo di pagamento mancante';
   }
-  if (c.discount_type === 'fixed' && (c.discount_value == null || c.discount_value <= 0)) {
+  if (c.kind !== 'gift_card' && c.discount_type === 'fixed' && (c.discount_value == null || c.discount_value <= 0)) {
     return 'Valore dello sconto non valido';
   }
   if (c.discount_type === 'percent' && (c.discount_value == null || c.discount_value <= 0 || c.discount_value > 100)) {
@@ -123,7 +123,12 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ success: true, coupon: data });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
+    const msg =
+      error instanceof Error
+        ? error.message
+        : error && typeof error === 'object' && 'message' in error
+          ? String((error as { message: unknown }).message)
+          : 'Unknown error';
     console.error('Error creating coupon:', error);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }

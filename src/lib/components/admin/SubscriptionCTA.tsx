@@ -12,7 +12,7 @@ export function SubscriptionCTA() {
   return (
     <Link
       href="/admin/subscribe"
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-hover transition-colors"
+      className="inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-hover transition-colors"
     >
       <Sparkles className="w-4 h-4" />
       <span className="hidden sm:inline">Attiva abbonamento</span>

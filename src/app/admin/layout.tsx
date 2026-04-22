@@ -3,8 +3,10 @@
 import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, CreditCard, LogOut, User } from 'lucide-react';
-import { adminRoutes, adminSettingsRoute, pageTitleForPathname } from '@/lib/const/data';
+import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
+import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
@@ -35,27 +37,43 @@ function getInitials(name: string): string {
 function SalonIdentityBlock() {
   const salonName = useSubscriptionStore((s) => s.salonName);
   const logoUrl = useSubscriptionStore((s) => s.logoUrl);
+  const { collapsed } = useSidebarCollapseContext();
+  const forceExpanded = useSidebarForceExpanded();
+  const effectiveCollapsed = forceExpanded ? false : collapsed;
   if (!salonName) return null;
   return (
-    <div className="flex items-center gap-3 min-w-0 px-1 py-1">
-      {logoUrl ? (
-        <Image
-          src={logoUrl}
-          alt={salonName}
-          width={32}
-          height={32}
-          className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
-        />
-      ) : (
-        <div className="w-8 h-8 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0">
-          <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
-            {getInitials(salonName)}
+    <div className="flex items-center justify-start min-w-0 overflow-hidden">
+      <span className="flex items-center justify-center w-10 h-10 shrink-0">
+        {logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt={salonName}
+            width={32}
+            height={32}
+            className="rounded-md object-cover border border-zinc-200 dark:border-zinc-700"
+          />
+        ) : (
+          <span className="w-8 h-8 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center">
+            <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
+              {getInitials(salonName)}
+            </span>
           </span>
-        </div>
-      )}
-      <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
-        {salonName}
-      </p>
+        )}
+      </span>
+      <AnimatePresence initial={false}>
+        {!effectiveCollapsed && (
+          <motion.p
+            key="name"
+            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
+            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate whitespace-nowrap"
+          >
+            {salonName}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -174,7 +192,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const sidebar = (
     <Sidebar
       identity={<SalonIdentityBlock />}
-      primaryAction={<CommandMenuTrigger variant="sidebar" onOpen={controller.onOpen} />}
       navGroups={navGroups}
       pinnedLinks={[
         {
@@ -196,12 +213,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const topBar = (
     <TopBar
-      title={pageTitleForPathname(pathname)}
       rightCluster={
         <>
-          <CommandMenuTrigger variant="topbar" onOpen={controller.onOpen} />
-          <ThemeToggle />
           {isOwner(role) && <SubscriptionCTA />}
+          <CommandMenuTrigger onOpen={controller.onOpen} />
+          <ThemeToggle />
         </>
       }
     />

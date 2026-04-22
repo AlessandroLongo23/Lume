@@ -207,7 +207,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
   const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
-  const [pendingAction, setPendingAction] = useState<'submit' | 'pay' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'submit' | null>(null);
 
   // Payment state
   const [paymentView, setPaymentView] = useState<PaymentView>(FichePaymentMethod.CASH);
@@ -639,10 +639,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
     const payments = buildPayments(paymentView, effectiveTotal, cashGiven, splits);
     if (!payments) return;
     if (isSubmitting) return;
-    if (pendingAction !== 'pay' && isOutOfHours()) {
-      setPendingAction('pay');
-      return;
-    }
     setIsSubmitting(true);
     try {
       const ficheId = await persistFiche();
@@ -1252,7 +1248,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
       <DeleteModal
         isOpen={pendingAction !== null}
         onClose={() => setPendingAction(null)}
-        onConfirm={pendingAction === 'pay' ? handlePay : handleSubmit}
+        onConfirm={handleSubmit}
         title="Fuori orari di lavoro"
         subtitle="L'appuntamento è fuori dagli orari configurati"
         mainIcon={AlertTriangle}

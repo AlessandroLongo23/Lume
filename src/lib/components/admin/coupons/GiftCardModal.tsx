@@ -39,7 +39,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
   const [recipientId, setRecipientId] = useState('');
   const [forSelf, setForSelf] = useState(false);
   const [amount, setAmount] = useState<number | null>(null);
-  const [saleAmount, setSaleAmount] = useState<number | null>(null);
   const [salePaymentMethod, setSalePaymentMethod] = useState<CouponSalePaymentMethod>('cash');
   const [validFrom, setValidFrom] = useState<string>(new Date().toISOString().slice(0, 10));
   const [validUntil, setValidUntil] = useState<string>(defaultValidUntil());
@@ -49,8 +48,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
 
   const [createdCoupon, setCreatedCoupon] = useState<Coupon | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'pending' | 'sent' | 'failed' | 'no-email'>('pending');
-  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,7 +57,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     setRecipientId('');
     setForSelf(false);
     setAmount(null);
-    setSaleAmount(null);
     setSalePaymentMethod('cash');
     setValidFrom(new Date().toISOString().slice(0, 10));
     setValidUntil(defaultValidUntil());
@@ -69,8 +65,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     setErrorMessage('');
     setCreatedCoupon(null);
     setSuccessMessage('');
-    setEmailStatus('pending');
-    setEmailError(null);
   }, [isOpen]);
 
   const clientOptions = useMemo(
@@ -82,17 +76,11 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     return clients.find((c) => c.id === id) ?? null;
   }, [clients, recipientId, purchaserId, forSelf]);
 
-  // Default sale amount mirrors the gift-card value (the operator can override)
-  useEffect(() => {
-    if (amount != null && saleAmount == null) setSaleAmount(amount);
-  }, [amount, saleAmount]);
-
   function validate(): string | null {
     if (!purchaserId) return 'Seleziona un acquirente';
     const finalRecipient = forSelf ? purchaserId : recipientId;
     if (!finalRecipient) return 'Seleziona un destinatario';
     if (amount == null || amount <= 0) return 'Inserisci il valore della gift card';
-    if (saleAmount == null || saleAmount < 0) return 'Inserisci l\'importo incassato';
     if (!validFrom || !validUntil) return 'Seleziona le date di validità';
     if (new Date(validFrom) > new Date(validUntil)) return 'La data di inizio deve precedere la scadenza';
     return null;
@@ -114,7 +102,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
         discount_type: 'fixed',
         discount_value: null,
         original_value: amount!,
-        sale_amount: saleAmount!,
+        sale_amount: amount!,
         sale_payment_method: salePaymentMethod,
         valid_from: new Date(validFrom).toISOString(),
         valid_until: new Date(validUntil + 'T23:59:59').toISOString(),
@@ -132,14 +120,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
       setSuccessMessage(message);
       setView('success');
       messagePopup.getState().success('Gift card creata.');
-
-      if (!client.email) {
-        setEmailStatus('no-email');
-      } else {
-        const result = await sendCouponEmail({ recipient: client, coupon, salonName, message });
-        setEmailStatus(result.success ? 'sent' : 'failed');
-        if (!result.success) setEmailError(result.error ?? null);
-      }
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Errore sconosciuto');
       messagePopup.getState().error('Errore nella vendita della gift card.');
@@ -174,8 +154,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           coupon={createdCoupon}
           recipient={recipient}
           message={successMessage}
-          emailStatus={emailStatus}
-          emailError={emailError}
+          onSendEmail={() => sendCouponEmail({ recipient, coupon: createdCoupon, salonName, message: successMessage })}
         />
       ) : (
         <div className="flex flex-col gap-5">
@@ -218,31 +197,17 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
             <span className="text-sm text-zinc-700 dark:text-zinc-300">L&apos;acquirente la usa per sé</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Wallet className="size-3.5" />Valore della gift card *</label>
-              <CustomNumberInput
-                value={amount}
-                onChange={(v) => { setAmount(v); if (saleAmount == null && v != null) setSaleAmount(v); }}
-                min={0}
-                step={5}
-                decimals={2}
-                suffix="€"
-                size="lg"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Banknote className="size-3.5" />Importo incassato *</label>
-              <CustomNumberInput
-                value={saleAmount}
-                onChange={(v) => setSaleAmount(v)}
-                min={0}
-                step={5}
-                decimals={2}
-                suffix="€"
-                size="lg"
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass}><Wallet className="size-3.5" />Valore della gift card *</label>
+            <CustomNumberInput
+              value={amount}
+              onChange={setAmount}
+              min={0}
+              step={5}
+              decimals={2}
+              suffix="€"
+              size="lg"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useMobileMenu, useSidebarForceExpanded } from './sidebarContext';
 
@@ -19,7 +20,6 @@ export type SidebarNavGroup = {
 
 interface SidebarProps {
   identity?: React.ReactNode;
-  primaryAction?: React.ReactNode;
   navGroups: SidebarNavGroup[];
   pinnedLinks?: SidebarNavItem[];
   helpLinks?: { label: string; href: string }[];
@@ -40,19 +40,34 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
       href={item.url}
       onClick={onNavigate}
       title={collapsed ? item.name : undefined}
-      className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start gap-3'} transition-all duration-200 ease-in-out ${collapsed ? 'px-0' : 'px-3'} py-2 text-sm rounded-md ${
+      className={`flex items-center text-sm rounded-md overflow-hidden transition-colors ${
         isActive
           ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
           : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
       }`}
     >
-      <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-      {!collapsed && <span className="truncate">{item.name}</span>}
+      <span className="flex items-center justify-center w-10 h-10 shrink-0">
+        <Icon className="w-5 h-5" strokeWidth={1.5} />
+      </span>
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.span
+            key="label"
+            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
+            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="truncate whitespace-nowrap"
+          >
+            {item.name}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </Link>
   );
 }
 
-export function Sidebar({ identity, primaryAction, navGroups, pinnedLinks, helpLinks, userCard }: SidebarProps) {
+export function Sidebar({ identity, navGroups, pinnedLinks, helpLinks, userCard }: SidebarProps) {
   const { collapsed } = useSidebarCollapseContext();
   const { setOpen: setMobileOpen } = useMobileMenu();
   const forceExpanded = useSidebarForceExpanded();
@@ -60,17 +75,48 @@ export function Sidebar({ identity, primaryAction, navGroups, pinnedLinks, helpL
   const onNavigate = forceExpanded ? () => setMobileOpen(false) : undefined;
 
   return (
-    <div className={`flex flex-col flex-1 min-h-0 ${effectiveCollapsed ? 'px-2' : 'px-4'} pt-4 pb-3 gap-3`}>
+    <div className="flex flex-col flex-1 min-h-0 px-4 pt-4 pb-3 gap-3">
       {identity && <div className="shrink-0">{identity}</div>}
-      {primaryAction && <div className="shrink-0">{primaryAction}</div>}
 
-      <nav className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
         {navGroups.map((group, gi) => (
-          <div key={group.title ?? `group-${gi}`} className="flex flex-col gap-1.5">
-            {group.title && !effectiveCollapsed && (
-              <p className="text-xs font-regular uppercase tracking-wide text-zinc-500 px-1">
-                {group.title}
-              </p>
+          <div
+            key={group.title ?? `group-${gi}`}
+            className="flex flex-col gap-1.5"
+            role="group"
+            aria-label={group.title}
+          >
+            {group.title && (
+              <div className="relative h-4 mx-1">
+                <AnimatePresence initial={false}>
+                  {effectiveCollapsed
+                    ? gi > 0 && (
+                        <motion.div
+                          key="sep"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15, delay: 0.2 }}
+                          className="absolute inset-0 flex items-center"
+                          aria-hidden="true"
+                        >
+                          <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800" />
+                        </motion.div>
+                      )
+                    : (
+                        <motion.p
+                          key="title"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15, delay: 0.2 }}
+                          className="absolute inset-0 flex items-center text-xs font-regular uppercase tracking-wide text-zinc-500 leading-none whitespace-nowrap"
+                        >
+                          {group.title}
+                        </motion.p>
+                      )}
+                </AnimatePresence>
+              </div>
             )}
             <div className="flex flex-col gap-0.5">
               {group.items.map((item) => (

@@ -51,8 +51,6 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
 
   const [createdCoupon, setCreatedCoupon] = useState<Coupon | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'pending' | 'sent' | 'failed' | 'no-email'>('pending');
-  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -70,8 +68,6 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
     setErrorMessage('');
     setCreatedCoupon(null);
     setSuccessMessage('');
-    setEmailStatus('pending');
-    setEmailError(null);
   }, [isOpen]);
 
   const clientOptions = useMemo(
@@ -130,14 +126,6 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
       setSuccessMessage(message);
       setView('success');
       messagePopup.getState().success('Coupon creato.');
-
-      if (!client.email) {
-        setEmailStatus('no-email');
-      } else {
-        const result = await sendCouponEmail({ recipient: client, coupon, salonName, message });
-        setEmailStatus(result.success ? 'sent' : 'failed');
-        if (!result.success) setEmailError(result.error ?? null);
-      }
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Errore sconosciuto');
       messagePopup.getState().error("Errore nella creazione del coupon.");
@@ -172,8 +160,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
           coupon={createdCoupon}
           recipient={recipient}
           message={successMessage}
-          emailStatus={emailStatus}
-          emailError={emailError}
+          onSendEmail={() => sendCouponEmail({ recipient, coupon: createdCoupon, salonName, message: successMessage })}
         />
       ) : (
         <div className="flex flex-col gap-5">

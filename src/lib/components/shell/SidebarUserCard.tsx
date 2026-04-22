@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, Loader2, type LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from './sidebarContext';
 
@@ -50,23 +51,47 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center ${effectiveCollapsed ? 'justify-center' : 'justify-between gap-2'} px-2 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer`}
+        className="w-full flex items-center justify-between rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer overflow-hidden"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menu utente"
       >
-        <div className={`flex items-center ${effectiveCollapsed ? '' : 'gap-3'} min-w-0`}>
-          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold shrink-0">
-            {avatarInitials || '?'}
-          </span>
-          {!effectiveCollapsed && (
-            <span className="flex flex-col items-start min-w-0 leading-tight">
-              <span className="text-sm font-medium text-zinc-900 dark:text-white truncate max-w-[140px]">{name}</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">{role}</span>
+        <div className="flex items-center min-w-0">
+          <span className="flex items-center justify-center w-10 h-10 shrink-0">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold">
+              {avatarInitials || '?'}
             </span>
-          )}
+          </span>
+          <AnimatePresence initial={false}>
+            {!effectiveCollapsed && (
+              <motion.span
+                key="identity"
+                initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
+                exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="flex flex-col items-start min-w-0 leading-tight overflow-hidden whitespace-nowrap"
+              >
+                <span className="text-sm font-medium text-zinc-900 dark:text-white truncate max-w-[140px]">{name}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">{role}</span>
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
-        {!effectiveCollapsed && <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.5} />}
+        <AnimatePresence initial={false}>
+          {!effectiveCollapsed && (
+            <motion.span
+              key="chevron"
+              initial={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
+              animate={{ opacity: 1, width: 'auto', marginLeft: 8, marginRight: 8 }}
+              exit={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="shrink-0 overflow-hidden"
+            >
+              <ChevronDown className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
 
       {open && (

@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   Building2,
+  Lightbulb,
   LineChart,
   MessageSquare,
   LogOut,
@@ -21,6 +22,7 @@ import {
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 
 type PlatformLink = { href: string; label: string; icon: LucideIcon; keywords?: string[] };
 
@@ -30,18 +32,35 @@ const LINKS: PlatformLink[] = [
   { href: '/platform/feedback', label: 'Feedback', icon: MessageSquare,  keywords: ['roadmap', 'suggerimenti'] },
 ];
 
-function titleFor(pathname: string): string {
-  const match = LINKS.find((l) => pathname.startsWith(l.href));
-  return match?.label ?? 'Platform';
-}
-
 function PlatformIdentity() {
+  const { collapsed } = useSidebarCollapseContext();
+  const forceExpanded = useSidebarForceExpanded();
+  const effectiveCollapsed = forceExpanded ? false : collapsed;
   return (
-    <div className="flex items-center gap-2 px-1 py-1 min-w-0">
-      <LumeLogo size="sm" />
-      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-hover dark:bg-primary/20 dark:text-primary/70 uppercase tracking-wider shrink-0">
-        Platform
-      </span>
+    <div className="flex items-center justify-start min-w-0 overflow-hidden">
+      {effectiveCollapsed ? (
+        <span className="flex items-center justify-center w-10 h-10 shrink-0">
+          <Lightbulb size={20} className="text-primary" strokeWidth={2.25} />
+        </span>
+      ) : (
+        <span className="flex items-center justify-center h-10 shrink-0 pl-2.5">
+          <LumeLogo size="sm" />
+        </span>
+      )}
+      <AnimatePresence initial={false}>
+        {!effectiveCollapsed && (
+          <motion.span
+            key="badge"
+            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginLeft: 8 }}
+            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-hover dark:bg-primary/20 dark:text-primary/70 uppercase tracking-wider shrink-0 whitespace-nowrap"
+          >
+            Platform
+          </motion.span>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -54,7 +73,6 @@ interface PlatformShellProps {
 }
 
 export function PlatformShell({ firstName, lastName, email, children }: PlatformShellProps) {
-  const pathname = usePathname();
   const controller = useCommandMenuController();
 
   const navGroups = useMemo<SidebarNavGroup[]>(
@@ -105,7 +123,6 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
   const sidebar = (
     <Sidebar
       identity={<PlatformIdentity />}
-      primaryAction={<CommandMenuTrigger variant="sidebar" onOpen={controller.onOpen} />}
       navGroups={navGroups}
       userCard={
         <SidebarUserCard
@@ -120,10 +137,9 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
 
   const topBar = (
     <TopBar
-      title={titleFor(pathname)}
       rightCluster={
         <>
-          <CommandMenuTrigger variant="topbar" onOpen={controller.onOpen} />
+          <CommandMenuTrigger onOpen={controller.onOpen} />
           <ThemeToggle />
         </>
       }
