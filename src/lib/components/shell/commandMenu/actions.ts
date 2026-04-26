@@ -12,11 +12,24 @@ import {
   Tag,
   BadgePercent,
   FolderOpen,
+  Archive,
+  CheckCircle2,
+  Power,
   type LucideIcon,
 } from 'lucide-react';
 
 import type { ProfileRole } from '@/lib/auth/roles';
 import { canManageSalon } from '@/lib/auth/roles';
+import { useClientsStore } from '@/lib/stores/clients';
+import { useOperatorsStore } from '@/lib/stores/operators';
+import { useServicesStore } from '@/lib/stores/services';
+import { useProductsStore } from '@/lib/stores/products';
+import { useFichesStore } from '@/lib/stores/fiches';
+import { FicheStatus } from '@/lib/types/ficheStatus';
+import { useCouponsStore } from '@/lib/stores/coupons';
+import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+
 import { dispatchCommand } from './events';
 import type { CommandAction, EntitySummary, EntityType } from './types';
 
@@ -60,11 +73,16 @@ const openAction = (entity: EntitySummary, label: string): CommandAction => ({
   perform: (router) => router.push(entity.href),
 });
 
+// Modifica X: navigates with ?edit=<id>. The destination page (detail or list)
+// reads the query param on mount and opens its edit UI.
 const editAction = (entity: EntitySummary, label: string): CommandAction => ({
   id: `edit-${entity.type}-${entity.id}`,
   label,
   icon: Pencil,
-  perform: () => dispatchCommand({ kind: 'open-edit', entityType: entity.type, id: entity.id }),
+  perform: (router) => {
+    const sep = entity.href.includes('?') ? '&' : '?';
+    router.push(`${entity.href}${sep}edit=${entity.id}`);
+  },
   entity,
 });
 
@@ -76,6 +94,115 @@ const deleteAction = (entity: EntitySummary, label: string): CommandAction => ({
   perform: () => dispatchCommand({ kind: 'open-delete', entityType: entity.type, id: entity.id }),
   entity,
 });
+
+// Inline-confirm action: the palette transforms the row to a red "Conferma:"
+// state on the first activation; second activation runs `run()` directly.
+const inlineConfirmAction = (
+  id: string,
+  entity: EntitySummary,
+  label: string,
+  icon: LucideIcon,
+  run: () => Promise<unknown>,
+  successMessage: string,
+  failureMessage: string,
+): CommandAction => ({
+  id,
+  label,
+  icon,
+  danger: 'confirm-inline',
+  entity,
+  perform: async () => {
+    try {
+      await run();
+      messagePopup.getState().success(successMessage);
+    } catch {
+      messagePopup.getState().error(failureMessage);
+    }
+  },
+});
+
+const archiveClientAction = (entity: EntitySummary): CommandAction =>
+  inlineConfirmAction(
+    `archive-client-${entity.id}`,
+    entity,
+    `Archivia ${entity.label}`,
+    Archive,
+    () => useClientsStore.getState().archiveClient(entity.id),
+    'Cliente archiviato.',
+    'Errore durante l’archiviazione.',
+  );
+
+const archiveOperatorAction = (entity: EntitySummary): CommandAction =>
+  inlineConfirmAction(
+    `archive-operator-${entity.id}`,
+    entity,
+    `Archivia ${entity.label}`,
+    Archive,
+    () => useOperatorsStore.getState().archiveOperator(entity.id),
+    'Operatore archiviato.',
+    'Errore durante l’archiviazione.',
+  );
+
+const archiveServiceAction = (entity: EntitySummary): CommandAction =>
+  inlineConfirmAction(
+    `archive-service-${entity.id}`,
+    entity,
+    `Archivia ${entity.label}`,
+    Archive,
+    () => useServicesStore.getState().archiveService(entity.id),
+    'Servizio archiviato.',
+    'Errore durante l’archiviazione.',
+  );
+
+const archiveProductAction = (entity: EntitySummary): CommandAction =>
+  inlineConfirmAction(
+    `archive-product-${entity.id}`,
+    entity,
+    `Archivia ${entity.label}`,
+    Archive,
+    () => useProductsStore.getState().archiveProduct(entity.id),
+    'Prodotto archiviato.',
+    'Errore durante l’archiviazione.',
+  );
+
+const markFicheCompletedAction = (entity: EntitySummary): CommandAction =>
+  inlineConfirmAction(
+    `complete-fiche-${entity.id}`,
+    entity,
+    'Marca come completata',
+    CheckCircle2,
+    () => useFichesStore.getState().updateFiche(entity.id, { status: FicheStatus.COMPLETED }),
+    'Fiche completata.',
+    'Errore durante l’operazione.',
+  );
+
+const toggleCouponActiveAction = (entity: EntitySummary): CommandAction => {
+  const current = useCouponsStore.getState().coupons.find((c) => c.id === entity.id);
+  const isActive = current?.is_active ?? true;
+  return inlineConfirmAction(
+    `toggle-coupon-${entity.id}`,
+    entity,
+    isActive ? `Disattiva ${entity.label}` : `Riattiva ${entity.label}`,
+    Power,
+    () => useCouponsStore.getState().updateCoupon(entity.id, { is_active: !isActive }),
+    isActive ? 'Coupon disattivato.' : 'Coupon riattivato.',
+    'Errore durante l’operazione.',
+  );
+};
+
+const toggleAbbonamentoActiveAction = (entity: EntitySummary): CommandAction => {
+  const current = useAbbonamentiStore.getState().abbonamenti.find((a) => a.id === entity.id);
+  const isActive = current?.is_active ?? true;
+  return inlineConfirmAction(
+    `toggle-abbonamento-${entity.id}`,
+    entity,
+    isActive ? 'Disattiva abbonamento' : 'Riattiva abbonamento',
+    Power,
+    () => useAbbonamentiStore.getState().updateAbbonamento(entity.id, { is_active: !isActive }),
+    isActive ? 'Abbonamento disattivato.' : 'Abbonamento riattivato.',
+    'Errore durante l’operazione.',
+  );
+};
 
 const clientFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [
@@ -90,7 +217,10 @@ const clientFactory: EntityActionFactory = (entity, role) => {
       entity,
     },
   ];
-  if (canManageSalon(role)) actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  if (canManageSalon(role)) {
+    actions.push(archiveClientAction(entity));
+    actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  }
   return actions;
 };
 
@@ -99,7 +229,10 @@ const serviceFactory: EntityActionFactory = (entity, role) => {
     openAction(entity, 'Apri servizio'),
     editAction(entity, `Modifica ${entity.label}`),
   ];
-  if (canManageSalon(role)) actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  if (canManageSalon(role)) {
+    actions.push(archiveServiceAction(entity));
+    actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  }
   return actions;
 };
 
@@ -108,7 +241,10 @@ const productFactory: EntityActionFactory = (entity, role) => {
     openAction(entity, 'Apri prodotto'),
     editAction(entity, `Modifica ${entity.label}`),
   ];
-  if (canManageSalon(role)) actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  if (canManageSalon(role)) {
+    actions.push(archiveProductAction(entity));
+    actions.push(deleteAction(entity, `Elimina ${entity.label}`));
+  }
   return actions;
 };
 
@@ -116,6 +252,7 @@ const ficheFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [
     openAction(entity, 'Apri fiche'),
     editAction(entity, 'Modifica fiche'),
+    markFicheCompletedAction(entity),
   ];
   if (canManageSalon(role)) actions.push(deleteAction(entity, 'Elimina fiche'));
   return actions;
@@ -125,6 +262,7 @@ const operatorFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [openAction(entity, 'Apri profilo operatore')];
   if (canManageSalon(role)) {
     actions.push(editAction(entity, `Modifica ${entity.label}`));
+    actions.push(archiveOperatorAction(entity));
     actions.push(deleteAction(entity, `Elimina ${entity.label}`));
   }
   return actions;
@@ -134,6 +272,7 @@ const couponFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [openAction(entity, 'Apri coupon')];
   if (canManageSalon(role)) {
     actions.push(editAction(entity, 'Modifica coupon'));
+    actions.push(toggleCouponActiveAction(entity));
     actions.push(deleteAction(entity, 'Elimina coupon'));
   }
   return actions;
@@ -143,6 +282,7 @@ const abbonamentoFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [openAction(entity, 'Apri abbonamento')];
   if (canManageSalon(role)) {
     actions.push(editAction(entity, 'Modifica abbonamento'));
+    actions.push(toggleAbbonamentoActiveAction(entity));
     actions.push(deleteAction(entity, 'Elimina abbonamento'));
   }
   return actions;
