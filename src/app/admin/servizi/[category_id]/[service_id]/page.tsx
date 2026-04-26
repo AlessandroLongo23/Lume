@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart, Archive, ArchiveRestore, Save, X } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
@@ -25,6 +25,7 @@ function serviceToDraft(service: Service): ServiceFormValue {
 export default function ServiceDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const services = useServicesStore((s) => s.services);
   const isLoading = useServicesStore((s) => s.isLoading);
   const updateService = useServicesStore((s) => s.updateService);
@@ -79,6 +80,17 @@ export default function ServiceDetailPage() {
       href: `/admin/servizi/${service.category_id}/${service.id}`,
     });
   }, [service]);
+
+  // Auto-enter edit mode when arrived via "Modifica X" command (?edit=<id>).
+  useEffect(() => {
+    if (!service) return;
+    if (searchParams.get('edit') !== service.id) return;
+    setDraft(serviceToDraft(service));
+    setErrors({});
+    setIsEditing(true);
+    router.replace(`/admin/servizi/${service.category_id}/${service.id}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service, searchParams]);
 
   const handleEnterEdit = () => {
     if (!service) return;

@@ -12,6 +12,7 @@ import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServ
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
 
 type Tab = 'servizi' | 'categorie';
 
@@ -42,6 +43,15 @@ export default function ServiziPage() {
     fetchServices();
     fetchServiceCategories();
   }, [fetchServices, fetchServiceCategories]);
+
+  useEffect(() => {
+    return onCommand('service', (detail) => {
+      if (detail.kind === 'open-add') {
+        setActiveTab('servizi');
+        setShowAdd(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
