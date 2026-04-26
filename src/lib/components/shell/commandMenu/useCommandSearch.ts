@@ -135,7 +135,7 @@ export function useCommandSearch(
   isEmptyQuery: boolean;
 } {
   const recents = useRecents();
-  const navItems = useMemo(buildNavResults, []);
+  const navItems = useMemo(() => buildNavResults(), []);
   const standaloneItems = useMemo(() => makeStandaloneResults(role), [role]);
 
   const [entityResults, setEntityResults] = useState<EntityResult[]>([]);
@@ -152,6 +152,7 @@ export function useCommandSearch(
 
   useEffect(() => {
     if (isEmptyQuery) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- query becoming empty must drop in-flight UI state.
       setEntityResults([]);
       setStaleResults([]);
       setLoading(false);
