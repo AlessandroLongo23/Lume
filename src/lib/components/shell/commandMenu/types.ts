@@ -18,6 +18,7 @@ export type EntitySummary = {
   id: string;
   label: string;
   subtitle?: string;
+  href: string;
 };
 
 export type ActionDanger = 'none' | 'confirm-inline' | 'confirm-modal';
@@ -47,7 +48,6 @@ export type NavResult = {
 export type EntityResult = {
   kind: 'entity';
   entity: EntitySummary;
-  href: string;
   icon: LucideIcon;
   actions: CommandAction[];
 };
