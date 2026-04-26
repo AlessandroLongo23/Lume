@@ -8,6 +8,8 @@ import {
   LineChart,
   MessageSquare,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { AppShell } from '@/lib/components/shell/AppShell';
@@ -23,6 +25,8 @@ import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
+import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
+import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 
 type PlatformLink = { href: string; label: string; icon: LucideIcon; keywords?: string[] };
 
@@ -74,6 +78,7 @@ interface PlatformShellProps {
 
 export function PlatformShell({ firstName, lastName, email, children }: PlatformShellProps) {
   const controller = useCommandMenuController();
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
 
   const navGroups = useMemo<SidebarNavGroup[]>(
     () => [
@@ -85,16 +90,26 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
   );
 
   const commandItems = useMemo<CommandItem[]>(
-    () =>
-      LINKS.map((l) => ({
-        type: 'nav' as const,
+    () => [
+      ...LINKS.map<CommandItem>((l) => ({
+        type: 'nav',
         label: l.label,
         href: l.href,
         icon: l.icon,
         keywords: l.keywords,
         group: 'Vai a',
       })),
-    []
+      {
+        type: 'action',
+        label: sidebarCollapsed ? 'Espandi barra laterale' : 'Comprimi barra laterale',
+        icon: sidebarCollapsed ? PanelLeftOpen : PanelLeftClose,
+        kbd: sidebarToggleLabel(),
+        onSelect: toggleSidebar,
+        keywords: ['sidebar', 'menu', 'comprimi', 'espandi', 'nascondi', 'barra'],
+        group: 'Visualizzazione',
+      },
+    ],
+    [sidebarCollapsed, toggleSidebar]
   );
 
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || email;

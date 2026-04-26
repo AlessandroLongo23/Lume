@@ -62,7 +62,7 @@ export default function FichesPage() {
       <FicheModal mode="add" isOpen={showAdd} onClose={() => setShowAdd(false)} />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
         <PageHeader
           title="Fiches"
           subtitle="La storia di ogni visita, dal check-in al saldo."

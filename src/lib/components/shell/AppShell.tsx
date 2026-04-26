@@ -6,6 +6,7 @@ import { animate, motion, useMotionValue, useTransform } from 'motion/react';
 import { useSidebarCollapse } from './useSidebarCollapse';
 import { SidebarCollapseContext, MobileMenuContext, SidebarForceExpandedContext } from './sidebarContext';
 import { SidebarEdgeToggle } from './SidebarCollapseToggle';
+import { SidebarShortcutHint } from './SidebarShortcutHint';
 
 interface AppShellProps {
   impersonationBanner?: React.ReactNode;
@@ -16,19 +17,29 @@ interface AppShellProps {
 
 export function AppShell({ impersonationBanner, sidebar, topBar, children }: AppShellProps) {
   const collapseState = useSidebarCollapse();
-  const { collapsed } = collapseState;
+  const { collapsed, toggle } = collapseState;
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'b') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      toggle();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggle]);
 
   const hasBanner = Boolean(impersonationBanner);
   const bannerH = hasBanner ? 36 : 0;
-  const topBarH = 64;
-  const chromeH = bannerH + topBarH;
 
-  const sidebarW = useMotionValue(collapsed ? 72 : 240);
+  const sidebarW = useMotionValue(collapsed ? 64 : 240);
   const sidebarWPx = useTransform(sidebarW, (v) => `${v}px`);
 
   useEffect(() => {
-    const controls = animate(sidebarW, collapsed ? 72 : 240, {
+    const controls = animate(sidebarW, collapsed ? 64 : 240, {
       duration: 0.22,
       ease: 'easeOut',
     });
@@ -37,14 +48,13 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
 
   const staticVars: CSSProperties = {
     ['--shell-banner-h' as string]: `${bannerH}px`,
-    ['--shell-chrome-h' as string]: `${chromeH}px`,
   };
 
   return (
     <SidebarCollapseContext.Provider value={collapseState}>
       <MobileMenuContext.Provider value={{ open: mobileOpen, setOpen: setMobileOpen }}>
         <motion.div
-          className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-foreground dark:text-white font-sans"
+          className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-foreground dark:text-white font-sans"
           style={{ ...staticVars, ['--shell-sidebar-w' as string]: sidebarWPx }}
         >
           {hasBanner && (
@@ -53,25 +63,21 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             </div>
           )}
 
-          <div className="fixed left-0 right-0 z-50 top-[var(--shell-banner-h)] h-16 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-            {topBar}
-          </div>
-
-          <aside className="hidden md:flex fixed left-0 bottom-0 z-40 top-[var(--shell-chrome-h)] w-[var(--shell-sidebar-w)] bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-y-auto overflow-x-hidden">
+          <aside className="hidden md:flex fixed left-0 bottom-0 z-40 top-[var(--shell-banner-h)] w-[var(--shell-sidebar-w)] bg-zinc-50 dark:bg-zinc-950 flex-col overflow-y-auto overflow-x-hidden">
             <SidebarForceExpandedContext.Provider value={false}>
               {sidebar}
             </SidebarForceExpandedContext.Provider>
           </aside>
 
           <div
-            className="hidden md:block fixed z-[45] top-1/2 -translate-y-1/2 left-[var(--shell-sidebar-w)] -translate-x-1/2"
+            className="hidden md:block fixed z-[45] top-1/2 -translate-y-1/2 left-[calc(var(--shell-sidebar-w)+0.5rem)] -translate-x-1/2"
           >
             <SidebarEdgeToggle />
           </div>
 
           {mobileOpen && (
             <>
-              <aside className="md:hidden fixed left-0 bottom-0 z-[55] top-[var(--shell-chrome-h)] w-72 bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-y-auto">
+              <aside className="md:hidden fixed left-0 bottom-0 z-[55] top-[var(--shell-banner-h)] w-72 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
                 <div className="flex justify-end p-3">
                   <button
                     type="button"
@@ -95,9 +101,20 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             </>
           )}
 
-          <main className="min-h-screen bg-white dark:bg-zinc-900 pt-[var(--shell-chrome-h)] pl-0 md:pl-[var(--shell-sidebar-w)]">
-            <div className="px-4 md:px-6 py-6">{children}</div>
+          <main className="h-screen flex flex-col pt-[var(--shell-banner-h)] pl-0 md:pl-[var(--shell-sidebar-w)]">
+            <div className="flex-1 min-h-0 flex flex-col p-2">
+              <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <div className="sticky top-0 z-10 h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
+                  {topBar}
+                </div>
+                <div className="px-6 md:px-10 pb-10">
+                  {children}
+                </div>
+              </div>
+            </div>
           </main>
+
+          <SidebarShortcutHint />
         </motion.div>
       </MobileMenuContext.Provider>
     </SidebarCollapseContext.Provider>

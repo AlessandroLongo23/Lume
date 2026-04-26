@@ -4,9 +4,11 @@ import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, CreditCard, LogOut, User } from 'lucide-react';
+import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
+import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
+import { Breadcrumbs, type BreadcrumbItem } from '@/lib/components/shell/Breadcrumbs';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
@@ -22,6 +24,7 @@ import {
   type CommandItem,
 } from '@/lib/components/shell/CommandMenu';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
+import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { isOwner } from '@/lib/auth/roles';
 import { supabase } from '@/lib/supabase/client';
@@ -32,6 +35,33 @@ function getInitials(name: string): string {
   if (words.length === 0) return '';
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+function LumeLogoBlock() {
+  const { collapsed } = useSidebarCollapseContext();
+  const forceExpanded = useSidebarForceExpanded();
+  const effectiveCollapsed = forceExpanded ? false : collapsed;
+  return (
+    <div className="flex items-center justify-start min-w-0 overflow-hidden">
+      <span className="flex items-center justify-center w-10 h-10 shrink-0">
+        <Lightbulb className="w-5 h-5 text-primary" strokeWidth={2.25} />
+      </span>
+      <AnimatePresence initial={false}>
+        {!effectiveCollapsed && (
+          <motion.span
+            key="lume-text"
+            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginLeft: 6 }}
+            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="text-lg font-semibold tracking-tight text-foreground dark:text-white whitespace-nowrap"
+          >
+            Lume<span className="text-primary">.</span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 function SalonIdentityBlock() {
@@ -91,6 +121,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isImpersonating = useIsImpersonating();
 
   const controller = useCommandMenuController();
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
 
   useEffect(() => {
     if (isAdmin) return;
@@ -150,8 +181,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       keywords: adminSettingsRoute.searchKeywords,
       group: 'Vai a',
     });
+    items.push({
+      type: 'action',
+      label: sidebarCollapsed ? 'Espandi barra laterale' : 'Comprimi barra laterale',
+      icon: sidebarCollapsed ? PanelLeftOpen : PanelLeftClose,
+      kbd: sidebarToggleLabel(),
+      onSelect: toggleSidebar,
+      keywords: ['sidebar', 'menu', 'comprimi', 'espandi', 'nascondi', 'barra'],
+      group: 'Visualizzazione',
+    });
     return items;
-  }, []);
+  }, [sidebarCollapsed, toggleSidebar]);
 
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || email;
   const roleLabel = role === 'owner' ? 'Titolare' : role === 'admin' ? 'Super admin' : 'Operatore';
@@ -191,7 +231,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const sidebar = (
     <Sidebar
-      identity={<SalonIdentityBlock />}
+      identity={
+        <div className="flex flex-col gap-2">
+          <LumeLogoBlock />
+          <SalonIdentityBlock />
+        </div>
+      }
       navGroups={navGroups}
       pinnedLinks={[
         {
@@ -211,8 +256,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     />
   );
 
+  const breadcrumbItems = useMemo<BreadcrumbItem[]>(() => {
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments[0] !== 'admin' || !segments[1]) return [];
+    const slug = segments[1];
+    if (slug === adminSettingsRoute.url) {
+      return [{ label: adminSettingsRoute.name }];
+    }
+    for (const group of adminRoutes) {
+      const route = group.routes.find((r) => r.url === slug);
+      if (route) {
+        return [{ label: group.title }, { label: route.name }];
+      }
+    }
+    return [];
+  }, [pathname]);
+
   const topBar = (
     <TopBar
+      leftCluster={<Breadcrumbs items={breadcrumbItems} />}
       rightCluster={
         <>
           {isOwner(role) && <SubscriptionCTA />}

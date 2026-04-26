@@ -75,7 +75,7 @@ export function Sidebar({ identity, navGroups, pinnedLinks, helpLinks, userCard 
   const onNavigate = forceExpanded ? () => setMobileOpen(false) : undefined;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 px-4 pt-4 pb-3 gap-3">
+    <div className={`flex flex-col flex-1 min-h-0 pt-4 pb-3 gap-3 pl-4 ${effectiveCollapsed ? 'pr-2' : 'pr-3'}`}>
       {identity && <div className="shrink-0">{identity}</div>}
 
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-4">

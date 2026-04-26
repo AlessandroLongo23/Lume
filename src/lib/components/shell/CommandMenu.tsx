@@ -25,7 +25,8 @@ export function useCommandMenuController() {
 
 export type CommandItem =
   | { type: 'nav';    label: string; href: string; icon: LucideIcon; keywords?: string[]; group?: string }
-  | { type: 'create'; label: string; href: string; icon: LucideIcon; keywords?: string[]; group?: string };
+  | { type: 'create'; label: string; href: string; icon: LucideIcon; keywords?: string[]; group?: string }
+  | { type: 'action'; label: string; onSelect: () => void; icon: LucideIcon; kbd?: string; keywords?: string[]; group?: string };
 
 interface CommandMenuProps {
   open: boolean;
@@ -90,7 +91,8 @@ export function CommandMenu({ open, onClose, items, placeholder = 'Cerca o creaâ
         e.preventDefault();
         const item = filtered[activeIdx];
         if (item) {
-          router.push(item.href);
+          if (item.type === 'action') item.onSelect();
+          else router.push(item.href);
           onClose();
         }
       }
@@ -154,13 +156,15 @@ export function CommandMenu({ open, onClose, items, placeholder = 'Cerca o creaâ
                     const Icon = item.icon;
                     const myIdx = flatIdx++;
                     const isActive = myIdx === activeIdx;
+                    const itemKey = item.type === 'action' ? `action-${item.label}` : `${item.type}-${item.href}`;
                     return (
                       <button
-                        key={`${item.type}-${item.href}`}
+                        key={itemKey}
                         type="button"
                         onMouseEnter={() => setActiveIdx(myIdx)}
                         onClick={() => {
-                          router.push(item.href);
+                          if (item.type === 'action') item.onSelect();
+                          else router.push(item.href);
                           onClose();
                         }}
                         className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md text-left transition-colors ${
@@ -171,6 +175,11 @@ export function CommandMenu({ open, onClose, items, placeholder = 'Cerca o creaâ
                       >
                         <Icon className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.5} />
                         <span className="flex-1 truncate">{item.label}</span>
+                        {item.type === 'action' && item.kbd && (
+                          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500">
+                            {item.kbd}
+                          </kbd>
+                        )}
                         {isActive && <CornerDownLeft className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />}
                       </button>
                     );
