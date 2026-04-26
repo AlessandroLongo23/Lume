@@ -16,11 +16,11 @@ import { AppShell } from '@/lib/components/shell/AppShell';
 import { Sidebar, type SidebarNavGroup } from '@/lib/components/shell/Sidebar';
 import { TopBar } from '@/lib/components/shell/TopBar';
 import { SidebarUserCard, type UserCardMenuItem } from '@/lib/components/shell/SidebarUserCard';
+import { useCommandMenuController } from '@/lib/components/shell/CommandMenu';
 import {
-  CommandMenu,
-  useCommandMenuController,
-  type CommandItem,
-} from '@/lib/components/shell/CommandMenu';
+  BasicCommandMenu,
+  type BasicCommandItem,
+} from '@/lib/components/shell/BasicCommandMenu';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
@@ -89,9 +89,9 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
     []
   );
 
-  const commandItems = useMemo<CommandItem[]>(
+  const commandItems = useMemo<BasicCommandItem[]>(
     () => [
-      ...LINKS.map<CommandItem>((l) => ({
+      ...LINKS.map<BasicCommandItem>((l) => ({
         type: 'nav',
         label: l.label,
         href: l.href,
@@ -164,7 +164,7 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
   return (
     <AppShell sidebar={sidebar} topBar={topBar}>
       {children}
-      <CommandMenu open={controller.open} onClose={controller.onClose} items={commandItems} />
+      <BasicCommandMenu open={controller.open} onClose={controller.onClose} items={commandItems} />
     </AppShell>
   );
 }

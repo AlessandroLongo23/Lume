@@ -18,15 +18,12 @@ import { AppShell } from '@/lib/components/shell/AppShell';
 import { Sidebar, type SidebarNavGroup } from '@/lib/components/shell/Sidebar';
 import { TopBar } from '@/lib/components/shell/TopBar';
 import { SidebarUserCard, type UserCardMenuItem } from '@/lib/components/shell/SidebarUserCard';
-import {
-  CommandMenu,
-  useCommandMenuController,
-  type CommandItem,
-} from '@/lib/components/shell/CommandMenu';
+import { CommandMenu, useCommandMenuController } from '@/lib/components/shell/CommandMenu';
+import type { CommandAction } from '@/lib/components/shell/commandMenu/types';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
-import { isOwner } from '@/lib/auth/roles';
+import { isOwner, normalizeProfileRole } from '@/lib/auth/roles';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
@@ -159,39 +156,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     []
   );
 
-  const commandItems = useMemo<CommandItem[]>(() => {
-    const items: CommandItem[] = [];
-    for (const group of adminRoutes) {
-      for (const r of group.routes) {
-        items.push({
-          type: 'nav',
-          label: r.name,
-          href: `/admin/${r.url}`,
-          icon: r.icon,
-          keywords: r.searchKeywords,
-          group: 'Vai a',
-        });
-      }
-    }
-    items.push({
-      type: 'nav',
-      label: adminSettingsRoute.name,
-      href: `/admin/${adminSettingsRoute.url}`,
-      icon: adminSettingsRoute.icon,
-      keywords: adminSettingsRoute.searchKeywords,
-      group: 'Vai a',
-    });
-    items.push({
-      type: 'action',
-      label: sidebarCollapsed ? 'Espandi barra laterale' : 'Comprimi barra laterale',
-      icon: sidebarCollapsed ? PanelLeftOpen : PanelLeftClose,
-      kbd: sidebarToggleLabel(),
-      onSelect: toggleSidebar,
-      keywords: ['sidebar', 'menu', 'comprimi', 'espandi', 'nascondi', 'barra'],
-      group: 'Visualizzazione',
-    });
-    return items;
-  }, [sidebarCollapsed, toggleSidebar]);
+  const commandRole = useMemo(() => normalizeProfileRole({ role }), [role]);
+
+  const commandExtraActions = useMemo<CommandAction[]>(
+    () => [
+      {
+        id: 'toggle-sidebar',
+        label: sidebarCollapsed ? 'Espandi barra laterale' : 'Comprimi barra laterale',
+        icon: sidebarCollapsed ? PanelLeftOpen : PanelLeftClose,
+        kbd: sidebarToggleLabel(),
+        perform: () => toggleSidebar(),
+      },
+    ],
+    [sidebarCollapsed, toggleSidebar],
+  );
 
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || email;
   const roleLabel = role === 'owner' ? 'Titolare' : role === 'admin' ? 'Super admin' : 'Operatore';
@@ -302,7 +280,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </>
       )}
-      <CommandMenu open={controller.open} onClose={controller.onClose} items={commandItems} />
+      <CommandMenu
+        open={controller.open}
+        onClose={controller.onClose}
+        role={commandRole}
+        extraActions={commandExtraActions}
+      />
     </AppShell>
   );
 }

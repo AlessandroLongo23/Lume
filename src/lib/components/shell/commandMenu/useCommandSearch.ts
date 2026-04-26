@@ -27,6 +27,7 @@ import { useRecents } from './recents';
 import { score } from './score';
 import type {
   ActionResult,
+  CommandAction,
   CommandResult,
   EntityResult,
   EntitySummary,
@@ -108,12 +109,21 @@ function makeEntityResult(entity: EntitySummary, role: ProfileRole | null): Enti
   };
 }
 
-function makeStandaloneResults(role: ProfileRole | null): ActionResult[] {
-  return buildStandaloneActions(role).map((action) => ({
+function makeStandaloneResults(
+  role: ProfileRole | null,
+  extra: CommandAction[],
+): ActionResult[] {
+  const own = buildStandaloneActions(role).map<ActionResult>((action) => ({
     kind: 'action',
     action,
     group: 'Crea nuovo',
   }));
+  const extras = extra.map<ActionResult>((action) => ({
+    kind: 'action',
+    action,
+    group: 'Visualizzazione',
+  }));
+  return [...own, ...extras];
 }
 
 function rpcRowToEntity(row: RpcRow): EntitySummary {
@@ -129,6 +139,7 @@ function rpcRowToEntity(row: RpcRow): EntitySummary {
 export function useCommandSearch(
   query: string,
   role: ProfileRole | null,
+  extraActions: CommandAction[] = [],
 ): {
   results: CommandResult[];
   loading: boolean;
@@ -136,7 +147,10 @@ export function useCommandSearch(
 } {
   const recents = useRecents();
   const navItems = useMemo(() => buildNavResults(), []);
-  const standaloneItems = useMemo(() => makeStandaloneResults(role), [role]);
+  const standaloneItems = useMemo(
+    () => makeStandaloneResults(role, extraActions),
+    [role, extraActions],
+  );
 
   const [entityResults, setEntityResults] = useState<EntityResult[]>([]);
   const [staleResults, setStaleResults] = useState<EntityResult[]>([]);
