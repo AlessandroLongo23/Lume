@@ -8,10 +8,13 @@ import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImport
 import { useClientsStore } from '@/lib/stores/clients';
 import { useViewsStore } from '@/lib/stores/views';
 import { AddClientModal } from '@/lib/components/admin/clients/AddClientModal';
+import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientsTable } from '@/lib/components/admin/clients/ClientsTable';
 import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import type { Client } from '@/lib/types/Client';
 
 export default function ClientiPage() {
   const clients = useClientsStore((s) => s.clients);
@@ -24,7 +27,22 @@ export default function ClientiPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [commandDelete, setCommandDelete] = useState<Client | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Listen for command-palette events targeting 'client'.
+  useEffect(() => {
+    return onCommand('client', (detail) => {
+      if (detail.kind === 'open-add') {
+        setShowAdd(true);
+        return;
+      }
+      if (detail.kind === 'open-delete') {
+        const client = useClientsStore.getState().clients.find((c) => c.id === detail.id);
+        if (client) setCommandDelete(client);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -45,6 +63,11 @@ export default function ClientiPage() {
   return (
     <>
       <AddClientModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <DeleteClientModal
+        isOpen={commandDelete !== null}
+        onClose={() => setCommandDelete(null)}
+        selectedClient={commandDelete}
+      />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-6">

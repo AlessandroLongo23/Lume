@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Edit, Trash2, Mail, Phone, UserX, Archive, ArchiveRestore } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import type { Operator } from '@/lib/types/Operator';
@@ -49,6 +50,18 @@ export default function OperatorDetailPage() {
       else setError('Operatore non trovato');
     }
   }, [operators, operatorId, isLoading]);
+
+  useEffect(() => {
+    if (!operator) return;
+    const fullName = `${operator.firstName ?? ''} ${operator.lastName ?? ''}`.trim() || 'Operatore';
+    trackRecent({
+      type: 'operator',
+      id: operator.id,
+      label: fullName,
+      subtitle: operator.email ?? operator.phoneNumber ?? undefined,
+      href: `/admin/operatori/${operator.id}`,
+    });
+  }, [operator]);
 
   if (isLoading) {
     return (

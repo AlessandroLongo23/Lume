@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2, Mail, Phone, Copy, Contact2, FileHeart, Clipbo
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
+import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientRatingBadge } from '@/lib/components/admin/clients/ClientRatingBadge';
@@ -97,6 +98,18 @@ export default function ClientDetailPage() {
       }
     }
   }, [clients, clientId, isLoading]);
+
+  useEffect(() => {
+    if (!client) return;
+    const fullName = `${client.firstName ?? ''} ${client.lastName ?? ''}`.trim() || 'Cliente';
+    trackRecent({
+      type: 'client',
+      id: client.id,
+      label: fullName,
+      subtitle: client.email ?? client.phoneNumber ?? undefined,
+      href: `/admin/clienti/${client.id}`,
+    });
+  }, [client]);
 
   const handleEnterEdit = () => {
     if (!client) return;

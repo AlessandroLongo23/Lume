@@ -6,6 +6,7 @@ import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart, Archive, 
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { DeleteServiceModal } from '@/lib/components/admin/services/DeleteServiceModal';
 import { ServiceForm, type ServiceFormValue, type ServiceFormErrors } from '@/lib/components/admin/services/ServiceForm';
 import type { Service } from '@/lib/types/Service';
@@ -64,6 +65,20 @@ export default function ServiceDetailPage() {
       if (found) setService(found);
     }
   }, [services, serviceId, isLoading]);
+
+  useEffect(() => {
+    if (!service) return;
+    const subtitle = service.price
+      ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(service.price)
+      : undefined;
+    trackRecent({
+      type: 'service',
+      id: service.id,
+      label: service.name || 'Servizio',
+      subtitle,
+      href: `/admin/servizi/${service.category_id}/${service.id}`,
+    });
+  }, [service]);
 
   const handleEnterEdit = () => {
     if (!service) return;

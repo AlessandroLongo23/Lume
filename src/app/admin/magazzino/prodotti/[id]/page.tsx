@@ -9,6 +9,7 @@ import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteProductModal } from '@/lib/components/admin/magazzino/DeleteProductModal';
+import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { ProductForm, emptyProductForm, type ProductFormValue, type ProductFormErrors } from '@/lib/components/admin/magazzino/ProductForm';
 import type { Product } from '@/lib/types/Product';
 
@@ -82,6 +83,21 @@ export default function ProductDetailPage() {
       if (found) setProduct(found);
     }
   }, [products, productId, isLoading]);
+
+  useEffect(() => {
+    if (!product) return;
+    const sellPrice = product.sell_price != null ? Number(product.sell_price) : product.price;
+    const subtitle = sellPrice
+      ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(sellPrice)
+      : undefined;
+    trackRecent({
+      type: 'product',
+      id: product.id,
+      label: product.name || 'Prodotto',
+      subtitle,
+      href: `/admin/magazzino/prodotti/${product.id}`,
+    });
+  }, [product]);
 
   const handleEnterEdit = () => {
     if (!product) return;
