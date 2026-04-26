@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Tag, Gift, CreditCard, Plus } from 'lucide-react';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
@@ -8,6 +8,9 @@ import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { CouponsTable } from '@/lib/components/admin/coupons/CouponsTable';
 import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal';
 import { GiftCardModal } from '@/lib/components/admin/coupons/GiftCardModal';
+import { DeleteCouponModal } from '@/lib/components/admin/coupons/DeleteCouponModal';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import type { Coupon } from '@/lib/types/Coupon';
 
 type Tab = 'gift' | 'gift_card';
 
@@ -20,6 +23,7 @@ export default function CouponsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('gift');
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
+  const [commandTarget, setCommandTarget] = useState<Coupon | null>(null);
 
   const coupons = useCouponsStore((s) => s.coupons);
   const isLoading = useCouponsStore((s) => s.isLoading);
@@ -29,10 +33,29 @@ export default function CouponsPage() {
     [coupons, activeTab],
   );
 
+  useEffect(() => {
+    return onCommand('coupon', (detail) => {
+      if (detail.kind === 'open-add') {
+        setActiveTab('gift');
+        setGiftModalOpen(true);
+        return;
+      }
+      if (detail.kind === 'open-delete') {
+        const coupon = useCouponsStore.getState().coupons.find((c) => c.id === detail.id);
+        if (coupon) setCommandTarget(coupon);
+      }
+    });
+  }, []);
+
   return (
     <>
       <GiftCouponModal isOpen={giftModalOpen} onClose={() => setGiftModalOpen(false)} />
       <GiftCardModal isOpen={giftCardModalOpen} onClose={() => setGiftCardModalOpen(false)} />
+      <DeleteCouponModal
+        isOpen={commandTarget !== null}
+        onClose={() => setCommandTarget(null)}
+        coupon={commandTarget}
+      />
 
       <div className="flex flex-col gap-6">
         <PageHeader

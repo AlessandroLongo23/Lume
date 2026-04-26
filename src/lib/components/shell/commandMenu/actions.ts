@@ -269,9 +269,9 @@ const operatorFactory: EntityActionFactory = (entity, role) => {
 };
 
 const couponFactory: EntityActionFactory = (entity, role) => {
+  // Coupons are immutable once created (only enable/disable/delete) — no edit modal exists.
   const actions: CommandAction[] = [openAction(entity, 'Apri coupon')];
   if (canManageSalon(role)) {
-    actions.push(editAction(entity, 'Modifica coupon'));
     actions.push(toggleCouponActiveAction(entity));
     actions.push(deleteAction(entity, 'Elimina coupon'));
   }
