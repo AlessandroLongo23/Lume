@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ShoppingCart, TableProperties, CalendarDays, FileDown, ArrowDownToLine } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -9,11 +9,15 @@ import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImport
 import { useViewsStore } from '@/lib/stores/views';
 import { useSearchStore } from '@/lib/stores/search';
 import { AddOrderModal } from '@/lib/components/admin/orders/AddOrderModal';
+import { EditOrderModal } from '@/lib/components/admin/orders/EditOrderModal';
+import { DeleteOrderModal } from '@/lib/components/admin/orders/DeleteOrderModal';
 import { OrdersTable } from '@/lib/components/admin/orders/OrdersTable';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import type { Order } from '@/lib/types/Order';
 
 export default function OrdiniPage() {
   const orders = useOrdersStore((s) => s.orders);
@@ -23,6 +27,27 @@ export default function OrdiniPage() {
   const query = useSearchStore((s) => s.query);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [commandTarget, setCommandTarget] = useState<Order | null>(null);
+  const [editedOrder, setEditedOrder] = useState<Partial<Order>>({});
+  const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
+
+  useEffect(() => {
+    return onCommand('order', (detail) => {
+      if (detail.kind === 'open-add') {
+        setShowAdd(true);
+        return;
+      }
+      const order = useOrdersStore.getState().orders.find((o) => o.id === detail.id);
+      if (!order) return;
+      setCommandTarget(order);
+      if (detail.kind === 'open-edit') {
+        setEditedOrder(order);
+        setCommandMode('edit');
+      } else if (detail.kind === 'open-delete') {
+        setCommandMode('delete');
+      }
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query) return orders;
@@ -37,6 +62,18 @@ export default function OrdiniPage() {
   return (
     <>
       <AddOrderModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <EditOrderModal
+        isOpen={commandMode === 'edit'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        editedOrder={editedOrder}
+        onEditedOrderChange={setEditedOrder}
+        selectedOrder={commandTarget}
+      />
+      <DeleteOrderModal
+        isOpen={commandMode === 'delete'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        selectedOrder={commandTarget}
+      />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">
