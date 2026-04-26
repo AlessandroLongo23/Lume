@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Edit, Trash2, Tag, Factory, Truck, Euro, Droplets, FlaskConical, Archive, ArchiveRestore, Save, X, Package, ShoppingBag } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
@@ -31,6 +31,7 @@ function productToDraft(product: Product): ProductFormValue {
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const products = useProductsStore((s) => s.products);
   const isLoading = useProductsStore((s) => s.isLoading);
   const updateProduct = useProductsStore((s) => s.updateProduct);
@@ -98,6 +99,17 @@ export default function ProductDetailPage() {
       href: `/admin/magazzino/prodotti/${product.id}`,
     });
   }, [product]);
+
+  // Auto-enter edit mode when arrived via "Modifica X" command (?edit=<id>).
+  useEffect(() => {
+    if (!product) return;
+    if (searchParams.get('edit') !== product.id) return;
+    setDraft(productToDraft(product));
+    setErrors({});
+    setIsEditing(true);
+    router.replace(`/admin/magazzino/prodotti/${product.id}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product, searchParams]);
 
   const handleEnterEdit = () => {
     if (!product) return;

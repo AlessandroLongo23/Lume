@@ -13,6 +13,7 @@ import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
@@ -57,6 +58,15 @@ export default function MagazzinoPage() {
       })
       .catch(() => {});
   }, [fetchProducts, fetchProductCategories, fetchSuppliers, fetchManufacturers]);
+
+  useEffect(() => {
+    return onCommand('product', (detail) => {
+      if (detail.kind === 'open-add') {
+        setActiveTab('prodotti');
+        setModalOpen(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
