@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { BadgePercent, Plus, Search } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -8,6 +8,10 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { AbbonamentiTable } from '@/lib/components/admin/abbonamenti/AbbonamentiTable';
 import { AddAbbonamentoModal } from '@/lib/components/admin/abbonamenti/AddAbbonamentoModal';
+import { EditAbbonamentoModal } from '@/lib/components/admin/abbonamenti/EditAbbonamentoModal';
+import { DeleteAbbonamentoModal } from '@/lib/components/admin/abbonamenti/DeleteAbbonamentoModal';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import type { Abbonamento } from '@/lib/types/Abbonamento';
 
 export default function AbbonamentiPage() {
   const abbonamenti = useAbbonamentiStore((s) => s.abbonamenti);
@@ -16,6 +20,22 @@ export default function AbbonamentiPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [commandTarget, setCommandTarget] = useState<Abbonamento | null>(null);
+  const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
+
+  useEffect(() => {
+    return onCommand('abbonamento', (detail) => {
+      if (detail.kind === 'open-add') {
+        setAddOpen(true);
+        return;
+      }
+      const abb = useAbbonamentiStore.getState().abbonamenti.find((a) => a.id === detail.id);
+      if (!abb) return;
+      setCommandTarget(abb);
+      if (detail.kind === 'open-edit') setCommandMode('edit');
+      else if (detail.kind === 'open-delete') setCommandMode('delete');
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -27,6 +47,16 @@ export default function AbbonamentiPage() {
   return (
     <>
       <AddAbbonamentoModal isOpen={addOpen} onClose={() => setAddOpen(false)} />
+      <EditAbbonamentoModal
+        isOpen={commandMode === 'edit'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        abbonamento={commandTarget}
+      />
+      <DeleteAbbonamentoModal
+        isOpen={commandMode === 'delete'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        abbonamento={commandTarget}
+      />
 
       <div className="flex flex-col gap-6">
         <PageHeader
