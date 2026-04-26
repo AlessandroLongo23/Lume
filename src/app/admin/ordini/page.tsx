@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ShoppingCart, TableProperties, CalendarDays, FileDown, ArrowDownToLine } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -16,10 +17,11 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Order } from '@/lib/types/Order';
 
 export default function OrdiniPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const orders = useOrdersStore((s) => s.orders);
   const isLoading = useOrdersStore((s) => s.isLoading);
   const view = useViewsStore((s) => s.orders);
@@ -32,22 +34,26 @@ export default function OrdiniPage() {
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
-    return onCommand('order', (detail) => {
-      if (detail.kind === 'open-add') {
-        setShowAdd(true);
-        return;
-      }
-      const order = useOrdersStore.getState().orders.find((o) => o.id === detail.id);
-      if (!order) return;
-      setCommandTarget(order);
-      if (detail.kind === 'open-edit') {
-        setEditedOrder(order);
-        setCommandMode('edit');
-      } else if (detail.kind === 'open-delete') {
-        setCommandMode('delete');
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setShowAdd(true);
+      router.replace('/admin/ordini');
+      return;
+    }
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const order = useOrdersStore.getState().orders.find((o) => o.id === editId);
+      if (order) { setCommandTarget(order); setEditedOrder(order); setCommandMode('edit'); }
+      router.replace('/admin/ordini');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const order = useOrdersStore.getState().orders.find((o) => o.id === deleteId);
+      if (order) { setCommandTarget(order); setCommandMode('delete'); }
+      router.replace('/admin/ordini');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     if (!query) return orders;

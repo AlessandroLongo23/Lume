@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine, EllipsisVertical, Archive } from 'lucide-react';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
@@ -13,10 +14,11 @@ import { ClientsTable } from '@/lib/components/admin/clients/ClientsTable';
 import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Client } from '@/lib/types/Client';
 
 export default function ClientiPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const clients = useClientsStore((s) => s.clients);
   const isLoading = useClientsStore((s) => s.isLoading);
   const showArchived = useClientsStore((s) => s.showArchived);
@@ -30,19 +32,21 @@ export default function ClientiPage() {
   const [commandDelete, setCommandDelete] = useState<Client | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Listen for command-palette events targeting 'client'.
+  // Read command-palette query params: ?new=1 / ?delete=<id>.
   useEffect(() => {
-    return onCommand('client', (detail) => {
-      if (detail.kind === 'open-add') {
-        setShowAdd(true);
-        return;
-      }
-      if (detail.kind === 'open-delete') {
-        const client = useClientsStore.getState().clients.find((c) => c.id === detail.id);
-        if (client) setCommandDelete(client);
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setShowAdd(true);
+      router.replace('/admin/clienti');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const client = useClientsStore.getState().clients.find((c) => c.id === deleteId);
+      if (client) setCommandDelete(client);
+      router.replace('/admin/clienti');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (!menuOpen) return;

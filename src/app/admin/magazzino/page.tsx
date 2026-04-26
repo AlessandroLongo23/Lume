@@ -13,7 +13,7 @@ import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
@@ -25,6 +25,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function MagazzinoPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('prodotti');
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -60,13 +62,13 @@ export default function MagazzinoPage() {
   }, [fetchProducts, fetchProductCategories, fetchSuppliers, fetchManufacturers]);
 
   useEffect(() => {
-    return onCommand('product', (detail) => {
-      if (detail.kind === 'open-add') {
-        setActiveTab('prodotti');
-        setModalOpen(true);
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setActiveTab('prodotti');
+      setModalOpen(true);
+      router.replace('/admin/magazzino');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (!menuOpen) return;

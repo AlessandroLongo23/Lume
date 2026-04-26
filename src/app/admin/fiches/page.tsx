@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, Search, X, ArrowDownToLine } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -15,7 +16,6 @@ import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Fiche } from '@/lib/types/Fiche';
 
 type TabValue = 'active' | 'completed' | 'all';
@@ -27,6 +27,8 @@ const TABS: { value: TabValue; label: string }[] = [
 ];
 
 export default function FichesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const fiches = useFichesStore((s) => s.fiches);
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
@@ -41,22 +43,28 @@ export default function FichesPage() {
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
-    return onCommand('fiche', (detail) => {
-      if (detail.kind === 'open-add') {
-        const cid = detail.prefill && typeof detail.prefill.client_id === 'string'
-          ? (detail.prefill.client_id as string)
-          : null;
-        setPrefillClientId(cid);
-        setShowAdd(true);
-        return;
-      }
-      const fiche = useFichesStore.getState().fiches.find((f) => f.id === detail.id);
-      if (!fiche) return;
-      setCommandTarget(fiche);
-      if (detail.kind === 'open-edit') setCommandMode('edit');
-      else if (detail.kind === 'open-delete') setCommandMode('delete');
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      const clientId = searchParams.get('client');
+      setPrefillClientId(clientId);
+      setShowAdd(true);
+      router.replace('/admin/fiches');
+      return;
+    }
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const fiche = useFichesStore.getState().fiches.find((f) => f.id === editId);
+      if (fiche) { setCommandTarget(fiche); setCommandMode('edit'); }
+      router.replace('/admin/fiches');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const fiche = useFichesStore.getState().fiches.find((f) => f.id === deleteId);
+      if (fiche) { setCommandTarget(fiche); setCommandMode('delete'); }
+      router.replace('/admin/fiches');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
 

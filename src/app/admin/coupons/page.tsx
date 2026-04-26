@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Tag, Gift, CreditCard, Plus } from 'lucide-react';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
@@ -9,7 +10,6 @@ import { CouponsTable } from '@/lib/components/admin/coupons/CouponsTable';
 import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal';
 import { GiftCardModal } from '@/lib/components/admin/coupons/GiftCardModal';
 import { DeleteCouponModal } from '@/lib/components/admin/coupons/DeleteCouponModal';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Coupon } from '@/lib/types/Coupon';
 
 type Tab = 'gift' | 'gift_card';
@@ -20,6 +20,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function CouponsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('gift');
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
@@ -34,18 +36,20 @@ export default function CouponsPage() {
   );
 
   useEffect(() => {
-    return onCommand('coupon', (detail) => {
-      if (detail.kind === 'open-add') {
-        setActiveTab('gift');
-        setGiftModalOpen(true);
-        return;
-      }
-      if (detail.kind === 'open-delete') {
-        const coupon = useCouponsStore.getState().coupons.find((c) => c.id === detail.id);
-        if (coupon) setCommandTarget(coupon);
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setActiveTab('gift');
+      setGiftModalOpen(true);
+      router.replace('/admin/coupons');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const coupon = useCouponsStore.getState().coupons.find((c) => c.id === deleteId);
+      if (coupon) setCommandTarget(coupon);
+      router.replace('/admin/coupons');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <>

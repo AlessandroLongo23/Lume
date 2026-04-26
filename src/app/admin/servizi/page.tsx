@@ -12,7 +12,7 @@ import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServ
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Tab = 'servizi' | 'categorie';
 
@@ -22,6 +22,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function ServiziPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const services = useServicesStore((s) => s.services);
   const isLoading = useServicesStore((s) => s.isLoading);
   const fetchServices = useServicesStore((s) => s.fetchServices);
@@ -45,13 +47,13 @@ export default function ServiziPage() {
   }, [fetchServices, fetchServiceCategories]);
 
   useEffect(() => {
-    return onCommand('service', (detail) => {
-      if (detail.kind === 'open-add') {
-        setActiveTab('servizi');
-        setShowAdd(true);
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setActiveTab('servizi');
+      setShowAdd(true);
+      router.replace('/admin/servizi');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (!menuOpen) return;

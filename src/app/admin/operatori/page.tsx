@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UserPlus, EllipsisVertical, Archive, Users, ArrowDownToLine, UserCog } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -11,10 +12,11 @@ import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperator
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import { OperatorsTable } from '@/lib/components/admin/operators/OperatorsTable';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Operator } from '@/lib/types/Operator';
 
 export default function OperatoriPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const operators = useOperatorsStore((s) => s.operators);
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const showArchived = useOperatorsStore((s) => s.showArchived);
@@ -28,22 +30,26 @@ export default function OperatoriPage() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    return onCommand('operator', (detail) => {
-      if (detail.kind === 'open-add') {
-        setShowAdd(true);
-        return;
-      }
-      const op = useOperatorsStore.getState().operators.find((o) => o.id === detail.id);
-      if (!op) return;
-      setCommandTarget(op);
-      if (detail.kind === 'open-edit') {
-        setEditedOperator(op);
-        setCommandMode('edit');
-      } else if (detail.kind === 'open-delete') {
-        setCommandMode('delete');
-      }
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setShowAdd(true);
+      router.replace('/admin/operatori');
+      return;
+    }
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const op = useOperatorsStore.getState().operators.find((o) => o.id === editId);
+      if (op) { setCommandTarget(op); setEditedOperator(op); setCommandMode('edit'); }
+      router.replace('/admin/operatori');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const op = useOperatorsStore.getState().operators.find((o) => o.id === deleteId);
+      if (op) { setCommandTarget(op); setCommandMode('delete'); }
+      router.replace('/admin/operatori');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (!menuOpen) return;

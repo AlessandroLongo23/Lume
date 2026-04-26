@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { BadgePercent, Plus, Search } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -10,10 +11,11 @@ import { AbbonamentiTable } from '@/lib/components/admin/abbonamenti/Abbonamenti
 import { AddAbbonamentoModal } from '@/lib/components/admin/abbonamenti/AddAbbonamentoModal';
 import { EditAbbonamentoModal } from '@/lib/components/admin/abbonamenti/EditAbbonamentoModal';
 import { DeleteAbbonamentoModal } from '@/lib/components/admin/abbonamenti/DeleteAbbonamentoModal';
-import { onCommand } from '@/lib/components/shell/commandMenu/events';
 import type { Abbonamento } from '@/lib/types/Abbonamento';
 
 export default function AbbonamentiPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const abbonamenti = useAbbonamentiStore((s) => s.abbonamenti);
   const isLoading = useAbbonamentiStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
@@ -24,18 +26,26 @@ export default function AbbonamentiPage() {
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
-    return onCommand('abbonamento', (detail) => {
-      if (detail.kind === 'open-add') {
-        setAddOpen(true);
-        return;
-      }
-      const abb = useAbbonamentiStore.getState().abbonamenti.find((a) => a.id === detail.id);
-      if (!abb) return;
-      setCommandTarget(abb);
-      if (detail.kind === 'open-edit') setCommandMode('edit');
-      else if (detail.kind === 'open-delete') setCommandMode('delete');
-    });
-  }, []);
+    if (searchParams.get('new') === '1') {
+      setAddOpen(true);
+      router.replace('/admin/abbonamenti');
+      return;
+    }
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const abb = useAbbonamentiStore.getState().abbonamenti.find((a) => a.id === editId);
+      if (abb) { setCommandTarget(abb); setCommandMode('edit'); }
+      router.replace('/admin/abbonamenti');
+      return;
+    }
+    const deleteId = searchParams.get('delete');
+    if (deleteId) {
+      const abb = useAbbonamentiStore.getState().abbonamenti.find((a) => a.id === deleteId);
+      if (abb) { setCommandTarget(abb); setCommandMode('delete'); }
+      router.replace('/admin/abbonamenti');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -30,8 +30,33 @@ import { useCouponsStore } from '@/lib/stores/coupons';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
-import { dispatchCommand } from './events';
 import type { CommandAction, EntitySummary, EntityType } from './types';
+
+// List page each entity type opens for cmd=new / ?delete=<id> / ?edit=<id> on
+// list-edit entities. Detail-edit entities (cliente / servizio / prodotto)
+// route through their detail href instead — see editAction below.
+const ENTITY_LIST_HREF: Record<EntityType, string> = {
+  'client':           '/admin/clienti',
+  'service':          '/admin/servizi',
+  'product':          '/admin/magazzino',
+  'fiche':            '/admin/fiches',
+  'operator':         '/admin/operatori',
+  'order':            '/admin/ordini',
+  'coupon':           '/admin/coupons',
+  'abbonamento':      '/admin/abbonamenti',
+  'service-category': '/admin/servizi',
+  'product-category': '/admin/magazzino',
+};
+
+// Entities whose edit UI lives on the detail page (inline form). Everything
+// else opens an Edit modal at the list page.
+const EDIT_ON_DETAIL_PAGE = new Set<EntityType>(['client', 'service', 'product']);
+
+function appendQuery(url: string, params: Record<string, string>): string {
+  const sep = url.includes('?') ? '&' : '?';
+  const q = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return `${url}${sep}${q}`;
+}
 
 type StandaloneSpec = {
   id: string;
@@ -60,7 +85,7 @@ export function buildStandaloneActions(role: ProfileRole | null): CommandAction[
       id: spec.id,
       label: spec.label,
       icon: spec.icon,
-      perform: () => dispatchCommand({ kind: 'open-add', entityType: spec.entityType }),
+      perform: (router) => router.push(appendQuery(ENTITY_LIST_HREF[spec.entityType], { new: '1' })),
     }));
 }
 
@@ -73,15 +98,17 @@ const openAction = (entity: EntitySummary, label: string): CommandAction => ({
   perform: (router) => router.push(entity.href),
 });
 
-// Modifica X: navigates with ?edit=<id>. The destination page (detail or list)
-// reads the query param on mount and opens its edit UI.
+// Modifica X: navigates with ?edit=<id>. Detail-edit entities (cliente, servizio,
+// prodotto) route through entity.href; list-edit entities (operatore, fiche,
+// abbonamento, ordine) route through ENTITY_LIST_HREF, which mounts the page-level
+// Edit modal preloaded with the row.
 const editAction = (entity: EntitySummary, label: string): CommandAction => ({
   id: `edit-${entity.type}-${entity.id}`,
   label,
   icon: Pencil,
   perform: (router) => {
-    const sep = entity.href.includes('?') ? '&' : '?';
-    router.push(`${entity.href}${sep}edit=${entity.id}`);
+    const target = EDIT_ON_DETAIL_PAGE.has(entity.type) ? entity.href : ENTITY_LIST_HREF[entity.type];
+    router.push(appendQuery(target, { edit: entity.id }));
   },
   entity,
 });
@@ -91,7 +118,7 @@ const deleteAction = (entity: EntitySummary, label: string): CommandAction => ({
   label,
   icon: Trash2,
   danger: 'confirm-modal',
-  perform: () => dispatchCommand({ kind: 'open-delete', entityType: entity.type, id: entity.id }),
+  perform: (router) => router.push(appendQuery(ENTITY_LIST_HREF[entity.type], { delete: entity.id })),
   entity,
 });
 
@@ -212,8 +239,8 @@ const clientFactory: EntityActionFactory = (entity, role) => {
       id: `new-fiche-for-${entity.id}`,
       label: `Nuova fiche per ${entity.label}`,
       icon: Receipt,
-      perform: () =>
-        dispatchCommand({ kind: 'open-add', entityType: 'fiche', prefill: { client_id: entity.id } }),
+      perform: (router) =>
+        router.push(appendQuery(ENTITY_LIST_HREF['fiche'], { new: '1', client: entity.id })),
       entity,
     },
   ];
