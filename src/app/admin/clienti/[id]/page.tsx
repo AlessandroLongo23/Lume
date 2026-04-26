@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
 import { ArrowLeft, Edit, Trash2, Mail, Phone, Copy, Contact2, FileHeart, ClipboardList, UserX, Archive, ArchiveRestore, Sparkles, Tag, Gift, CreditCard, Save, X } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -49,6 +49,7 @@ function clientToDraft(client: Client): ClientFormValue {
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const clients = useClientsStore((s) => s.clients);
   const isLoading = useClientsStore((s) => s.isLoading);
   const updateClient = useClientsStore((s) => s.updateClient);
@@ -110,6 +111,17 @@ export default function ClientDetailPage() {
       href: `/admin/clienti/${client.id}`,
     });
   }, [client]);
+
+  // Auto-enter edit mode when arrived via "Modifica X" command (?edit=<id>).
+  useEffect(() => {
+    if (!client) return;
+    if (searchParams.get('edit') !== client.id) return;
+    setDraft(clientToDraft(client));
+    setErrors({});
+    setIsEditing(true);
+    router.replace(`/admin/clienti/${client.id}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only respond when client lands or query changes; intentionally excludes router.
+  }, [client, searchParams]);
 
   const handleEnterEdit = () => {
     if (!client) return;
