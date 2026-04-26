@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, Search, X, ArrowDownToLine } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -9,11 +9,14 @@ import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
+import { DeleteFicheModal } from '@/lib/components/admin/fiches/DeleteFicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
 import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { onCommand } from '@/lib/components/shell/commandMenu/events';
+import type { Fiche } from '@/lib/types/Fiche';
 
 type TabValue = 'active' | 'completed' | 'all';
 
@@ -33,6 +36,27 @@ export default function FichesPage() {
   const [showImport, setShowImport] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('active');
   const [globalFilter, setGlobalFilter] = useState('');
+  const [prefillClientId, setPrefillClientId] = useState<string | null>(null);
+  const [commandTarget, setCommandTarget] = useState<Fiche | null>(null);
+  const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
+
+  useEffect(() => {
+    return onCommand('fiche', (detail) => {
+      if (detail.kind === 'open-add') {
+        const cid = detail.prefill && typeof detail.prefill.client_id === 'string'
+          ? (detail.prefill.client_id as string)
+          : null;
+        setPrefillClientId(cid);
+        setShowAdd(true);
+        return;
+      }
+      const fiche = useFichesStore.getState().fiches.find((f) => f.id === detail.id);
+      if (!fiche) return;
+      setCommandTarget(fiche);
+      if (detail.kind === 'open-edit') setCommandMode('edit');
+      else if (detail.kind === 'open-delete') setCommandMode('delete');
+    });
+  }, []);
 
   const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
 
@@ -59,7 +83,23 @@ export default function FichesPage() {
 
   return (
     <>
-      <FicheModal mode="add" isOpen={showAdd} onClose={() => setShowAdd(false)} />
+      <FicheModal
+        mode="add"
+        isOpen={showAdd}
+        onClose={() => { setShowAdd(false); setPrefillClientId(null); }}
+        clientId={prefillClientId}
+      />
+      <FicheModal
+        mode="edit"
+        isOpen={commandMode === 'edit'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        fiche={commandTarget}
+      />
+      <DeleteFicheModal
+        isOpen={commandMode === 'delete'}
+        onClose={() => { setCommandMode(null); setCommandTarget(null); }}
+        selectedFiche={commandTarget}
+      />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-8">

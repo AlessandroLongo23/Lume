@@ -55,6 +55,8 @@ interface FicheModalProps {
   datetime?: Date;
   /** Add mode: pre-selected operator from a calendar slot */
   operator?: Operator | null;
+  /** Add mode: pre-selected client (e.g. from "Nuova fiche per X" command) */
+  clientId?: string | null;
   /** Edit mode: open the modal directly on the Pagamento tab (e.g. from the fiches grid checkout action) */
   initialView?: 'edit' | 'payment';
 }
@@ -173,7 +175,7 @@ function abbonamentoDraftCounts(
   return counts;
 }
 
-export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, initialView }: FicheModalProps) {
+export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, clientId: clientIdProp, initialView }: FicheModalProps) {
   const addFiche = useFichesStore((s) => s.addFiche);
   const updateFiche = useFichesStore((s) => s.updateFiche);
   const deleteFiche = useFichesStore((s) => s.deleteFiche);
@@ -258,7 +260,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, i
         }),
       );
     } else {
-      setClientId('');
+      setClientId(clientIdProp ?? '');
       setDatetimeStr(toDatetimeLocal(datetime));
       setNote('');
       setStatus(FicheStatus.CREATED);
