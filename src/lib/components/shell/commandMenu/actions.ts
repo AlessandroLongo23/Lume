@@ -252,8 +252,11 @@ const ficheFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [
     openAction(entity, 'Apri fiche'),
     editAction(entity, 'Modifica fiche'),
-    markFicheCompletedAction(entity),
   ];
+  const fiche = useFichesStore.getState().fiches.find((f) => f.id === entity.id);
+  if (fiche && fiche.status !== FicheStatus.COMPLETED) {
+    actions.push(markFicheCompletedAction(entity));
+  }
   if (canManageSalon(role)) actions.push(deleteAction(entity, 'Elimina fiche'));
   return actions;
 };
