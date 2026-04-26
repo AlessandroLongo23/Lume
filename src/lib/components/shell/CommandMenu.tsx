@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * VARIANT B — Flat list, entities + actions inline.
+ *
+ * One single scrollable list. Each entity match shows as a row, immediately
+ * followed by its bound actions (Modifica, Elimina, …) rendered as smaller,
+ * indented sub-rows. Standalone "Crea nuovo X" actions appear at the bottom
+ * separated by a thin divider. No drill-in, no section headers — closer to
+ * Raycast: discoverable but the lists get long.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CornerDownLeft, Loader2, Search } from 'lucide-react';
@@ -7,7 +17,10 @@ import { AlertTriangle, CornerDownLeft, Loader2, Search } from 'lucide-react';
 import type { ProfileRole } from '@/lib/auth/roles';
 
 import { useCommandSearch } from './commandMenu/useCommandSearch';
-import type { CommandAction, CommandResult } from './commandMenu/types';
+import type {
+  CommandAction,
+  CommandResult,
+} from './commandMenu/types';
 
 export function useCommandMenuController() {
   const [open, setOpen] = useState(false);
@@ -39,51 +52,43 @@ interface CommandMenuProps {
 const SPINNER_DELAY_MS = 250;
 const CONFIRM_TIMEOUT_MS = 4000;
 
-type Section = { title: string; items: CommandResult[] };
+type FlatItem =
+  | { kind: 'item'; result: CommandResult; nested: boolean; precededByDivider: boolean };
 
-function sectionTitleFor(result: CommandResult): string {
-  if (result.kind === 'nav') return result.group ?? 'Navigazione';
-  if (result.kind === 'action') return result.group ?? 'Azioni';
-  switch (result.entity.type) {
-    case 'client':           return 'Clienti';
-    case 'service':          return 'Servizi';
-    case 'product':          return 'Prodotti';
-    case 'fiche':            return 'Fiches';
-    case 'operator':         return 'Operatori';
-    case 'order':            return 'Ordini';
-    case 'coupon':           return 'Coupons';
-    case 'abbonamento':      return 'Abbonamenti';
-    case 'service-category': return 'Categorie servizi';
-    case 'product-category': return 'Categorie prodotti';
-  }
-}
-
-function groupResults(results: CommandResult[]): Section[] {
-  const out: Section[] = [];
+function flattenResults(results: CommandResult[]): FlatItem[] {
+  const out: FlatItem[] = [];
+  let standaloneStarted = false;
   for (const r of results) {
-    const title = sectionTitleFor(r);
-    const existing = out.find((s) => s.title === title);
-    if (existing) existing.items.push(r);
-    else out.push({ title, items: [r] });
+    const isStandalone =
+      r.kind === 'action' &&
+      (r.group === 'Crea nuovo' || r.group === 'Visualizzazione');
+    const precededByDivider = isStandalone && !standaloneStarted;
+    if (isStandalone) standaloneStarted = true;
+
+    if (r.kind === 'entity') {
+      out.push({ kind: 'item', result: r, nested: false, precededByDivider });
+      // Skip the first action: it's "Apri" which Enter on the entity row already runs.
+      for (let i = 1; i < r.actions.length; i++) {
+        const action = r.actions[i];
+        out.push({
+          kind: 'item',
+          result: { kind: 'action', action },
+          nested: true,
+          precededByDivider: false,
+        });
+      }
+      continue;
+    }
+    out.push({ kind: 'item', result: r, nested: false, precededByDivider });
   }
   return out;
 }
 
-function resultId(r: CommandResult): string {
+function flatItemId(item: FlatItem): string {
+  const r = item.result;
   if (r.kind === 'nav') return r.id;
-  if (r.kind === 'action') return r.action.id;
+  if (r.kind === 'action') return `action-${item.nested ? 'n' : 's'}-${r.action.id}`;
   return `entity-${r.entity.type}-${r.entity.id}`;
-}
-
-function resultLabel(r: CommandResult): string {
-  if (r.kind === 'nav') return r.label;
-  if (r.kind === 'action') return r.action.label;
-  return r.entity.label;
-}
-
-function resultSubtitle(r: CommandResult): string | undefined {
-  if (r.kind === 'entity') return r.entity.subtitle;
-  return undefined;
 }
 
 export function CommandMenu({
@@ -103,12 +108,14 @@ export function CommandMenu({
   const stableExtras = useMemo(() => extraActions ?? [], [extraActions]);
   const { results, loading, isEmptyQuery } = useCommandSearch(query, role, stableExtras);
 
-  // Skeleton rows are rendered when we're in flight and don't yet have results.
-  const showSkeletons = loading && !isEmptyQuery && results.every((r) => r.kind !== 'entity');
+  const flatItems = useMemo(() => flattenResults(results), [results]);
+  const showSkeletons =
+    loading && !isEmptyQuery && results.every((r) => r.kind !== 'entity');
 
   // Focus + reset on open.
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset palette state on every open.
     setQuery('');
     setActiveIdx(0);
     setPendingConfirmId(null);
@@ -116,15 +123,15 @@ export function CommandMenu({
     return () => window.clearTimeout(t);
   }, [open]);
 
-  // Reset active index + pending confirm when the visible result list changes.
   useEffect(() => {
-    setActiveIdx((i) => (i >= results.length ? 0 : i));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp active idx on result-list change.
+    setActiveIdx((i) => (i >= flatItems.length ? 0 : i));
     setPendingConfirmId(null);
-  }, [results]);
+  }, [flatItems]);
 
-  // Delayed spinner so fast queries don't flicker.
   useEffect(() => {
     if (!loading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear spinner when loading drops.
       setShowSpinner(false);
       return;
     }
@@ -132,7 +139,6 @@ export function CommandMenu({
     return () => window.clearTimeout(t);
   }, [loading]);
 
-  // Auto-cancel pending inline confirm after inactivity.
   useEffect(() => {
     if (!pendingConfirmId) return;
     const t = window.setTimeout(() => setPendingConfirmId(null), CONFIRM_TIMEOUT_MS);
@@ -168,23 +174,19 @@ export function CommandMenu({
     [pendingConfirmId, router, onClose],
   );
 
-  // Keyboard navigation.
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (pendingConfirmId) {
-          setPendingConfirmId(null);
-        } else {
-          onClose();
-        }
+        if (pendingConfirmId) setPendingConfirmId(null);
+        else onClose();
         return;
       }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setPendingConfirmId(null);
-        setActiveIdx((i) => Math.min(results.length - 1, i + 1));
+        setActiveIdx((i) => Math.min(flatItems.length - 1, i + 1));
         return;
       }
       if (e.key === 'ArrowUp') {
@@ -195,18 +197,15 @@ export function CommandMenu({
       }
       if (e.key === 'Enter') {
         e.preventDefault();
-        const item = results[activeIdx];
-        if (item) activate(item);
+        const item = flatItems[activeIdx];
+        if (item) activate(item.result);
       }
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [open, results, activeIdx, activate, onClose, pendingConfirmId]);
+  }, [open, flatItems, activeIdx, activate, onClose, pendingConfirmId]);
 
   if (!open) return null;
-
-  const sections = groupResults(results);
-  let flatIdx = 0;
 
   return (
     <>
@@ -238,38 +237,27 @@ export function CommandMenu({
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto p-2">
-          {results.length === 0 && !showSkeletons ? (
+          {flatItems.length === 0 && !showSkeletons ? (
             <div className="px-3 py-6 text-center text-sm text-zinc-500">
               {isEmptyQuery ? 'Inizia a digitare per cercare' : 'Nessun risultato'}
             </div>
           ) : (
-            <>
-              {sections.map((section) => (
-                <div key={section.title} className="mb-2 last:mb-0">
-                  <p className="px-3 pt-2 pb-1 text-xs uppercase tracking-wide text-zinc-500">
-                    {section.title}
-                  </p>
-                  <div className="flex flex-col">
-                    {section.items.map((item) => {
-                      const myIdx = flatIdx++;
-                      return (
-                        <ResultRow
-                          key={resultId(item)}
-                          result={item}
-                          active={myIdx === activeIdx}
-                          pendingConfirm={
-                            item.kind === 'action' && pendingConfirmId === item.action.id
-                          }
-                          onMouseEnter={() => setActiveIdx(myIdx)}
-                          onClick={() => activate(item)}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="flex flex-col">
+              {flatItems.map((item, idx) => (
+                <FlatRowWrapper
+                  key={flatItemId(item)}
+                  item={item}
+                  active={idx === activeIdx}
+                  pendingConfirm={
+                    item.result.kind === 'action' &&
+                    pendingConfirmId === item.result.action.id
+                  }
+                  onMouseEnter={() => setActiveIdx(idx)}
+                  onClick={() => activate(item.result)}
+                />
               ))}
-              {showSkeletons && <SkeletonSection />}
-            </>
+              {showSkeletons && <SkeletonRows />}
+            </div>
           )}
         </div>
 
@@ -280,7 +268,7 @@ export function CommandMenu({
           </span>
           <span className="flex items-center gap-1.5">
             <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">↵</kbd>
-            Apri
+            Esegui
           </span>
           <span className="flex items-center gap-1.5">
             <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">Esc</kbd>
@@ -292,25 +280,57 @@ export function CommandMenu({
   );
 }
 
-interface ResultRowProps {
-  result: CommandResult;
+interface FlatRowWrapperProps {
+  item: FlatItem;
   active: boolean;
   pendingConfirm: boolean;
   onMouseEnter: () => void;
   onClick: () => void;
 }
 
-function ResultRow({ result, active, pendingConfirm, onMouseEnter, onClick }: ResultRowProps) {
+function FlatRowWrapper({ item, active, pendingConfirm, onMouseEnter, onClick }: FlatRowWrapperProps) {
+  return (
+    <>
+      {item.precededByDivider && (
+        <div className="my-1 mx-2 h-px bg-zinc-200 dark:bg-zinc-800" />
+      )}
+      <FlatRow
+        result={item.result}
+        nested={item.nested}
+        active={active}
+        pendingConfirm={pendingConfirm}
+        onMouseEnter={onMouseEnter}
+        onClick={onClick}
+      />
+    </>
+  );
+}
+
+interface FlatRowProps {
+  result: CommandResult;
+  nested: boolean;
+  active: boolean;
+  pendingConfirm: boolean;
+  onMouseEnter: () => void;
+  onClick: () => void;
+}
+
+function FlatRow({ result, nested, active, pendingConfirm, onMouseEnter, onClick }: FlatRowProps) {
   const Icon =
     result.kind === 'nav' ? result.icon
     : result.kind === 'action' ? result.action.icon
     : result.icon;
-  const label = pendingConfirm ? `Conferma: ${resultLabel(result)}` : resultLabel(result);
-  const subtitle = resultSubtitle(result);
+  const baseLabel =
+    result.kind === 'nav'
+      ? result.label
+      : result.kind === 'action'
+      ? result.action.label
+      : result.entity.label;
+  const label = pendingConfirm ? `Conferma: ${baseLabel}` : baseLabel;
+  const subtitle = result.kind === 'entity' ? result.entity.subtitle : undefined;
   const danger =
     result.kind === 'action' && result.action.danger === 'confirm-inline' && pendingConfirm;
-  const isAction = result.kind === 'action';
-  const kbd = isAction ? result.action.kbd : undefined;
+  const kbd = result.kind === 'action' ? result.action.kbd : undefined;
 
   return (
     <button
@@ -318,11 +338,14 @@ function ResultRow({ result, active, pendingConfirm, onMouseEnter, onClick }: Re
       onMouseEnter={onMouseEnter}
       onClick={onClick}
       className={[
-        'flex items-center gap-3 px-3 py-2 text-sm rounded-md text-left transition-colors',
+        'flex items-center gap-3 rounded-md text-left transition-colors',
+        nested ? 'pl-9 pr-3 py-1.5 text-[13px]' : 'px-3 py-2 text-sm',
         danger
           ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
           : active
           ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white'
+          : nested
+          ? 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
           : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60',
       ].join(' ')}
     >
@@ -330,7 +353,11 @@ function ResultRow({ result, active, pendingConfirm, onMouseEnter, onClick }: Re
         <AlertTriangle className="w-4 h-4 shrink-0" strokeWidth={1.5} />
       ) : (
         <Icon
-          className={`w-4 h-4 shrink-0 ${active ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400'}`}
+          className={[
+            'shrink-0',
+            nested ? 'w-3.5 h-3.5' : 'w-4 h-4',
+            active ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400',
+          ].join(' ')}
           strokeWidth={1.5}
         />
       )}
@@ -350,15 +377,12 @@ function ResultRow({ result, active, pendingConfirm, onMouseEnter, onClick }: Re
   );
 }
 
-function SkeletonSection() {
+function SkeletonRows() {
   return (
-    <div className="mb-2">
-      <p className="px-3 pt-2 pb-1 text-xs uppercase tracking-wide text-zinc-500">Risultati</p>
-      <div className="flex flex-col">
-        <SkeletonRow />
-        <SkeletonRow />
-      </div>
-    </div>
+    <>
+      <SkeletonRow />
+      <SkeletonRow />
+    </>
   );
 }
 
