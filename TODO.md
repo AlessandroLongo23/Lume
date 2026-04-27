@@ -1,6 +1,4 @@
 ## Bug
-[ ] avatar dropdown in sidebar
-[ ] Lume logo always fully visible in topbar
 
 ## Chiarimenti
 [ ] applicazione abbonamento e dettagli più chiaro
@@ -13,6 +11,7 @@
 [ ] Settare valore di default per validità buoni
 
 ## Data
+[ ] Set up automatic import with claude API and Supabase MCP
 [ ] passare tutti i dati da Stiv
 
 =================================================================
@@ -36,6 +35,7 @@
 [x] combobox a due livelli per servizi e prodotti nella fiche
 
 ## Bug
+[x] avatar dropdown in sidebar
 [x] togliere categorie clienti
 [x] dropdown dell'abbonamento nella fiche nascosto
 [x] merge valore gift card con importo incassato

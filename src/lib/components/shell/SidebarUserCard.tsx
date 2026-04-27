@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, Loader2, type LucideIcon } from 'lucide-react';
@@ -21,6 +21,8 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
   const [open, setOpen] = useState(false);
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [fixedPos, setFixedPos] = useState<{ left: number; bottom: number } | null>(null);
   const { collapsed } = useSidebarCollapseContext();
   const forceExpanded = useSidebarForceExpanded();
   const effectiveCollapsed = forceExpanded ? false : collapsed;
@@ -34,6 +36,15 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !effectiveCollapsed || !buttonRef.current) {
+      setFixedPos(null);
+      return;
+    }
+    const rect = buttonRef.current.getBoundingClientRect();
+    setFixedPos({ left: rect.left, bottom: window.innerHeight - rect.top + 8 });
+  }, [open, effectiveCollapsed]);
 
   async function handleItem(item: UserCardMenuItem, idx: number) {
     if (item.type !== 'button') return;
@@ -49,6 +60,7 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
   return (
     <div ref={ref} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer overflow-hidden"
@@ -94,10 +106,19 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
         </AnimatePresence>
       </button>
 
-      {open && (
+      {open && (!effectiveCollapsed || fixedPos) && (
         <div
           role="menu"
-          className="absolute bottom-full mb-2 left-0 right-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-[70] py-1"
+          style={
+            effectiveCollapsed && fixedPos
+              ? { position: 'fixed', left: fixedPos.left, bottom: fixedPos.bottom }
+              : undefined
+          }
+          className={
+            effectiveCollapsed
+              ? 'w-56 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-[70] py-1'
+              : 'absolute bottom-full mb-2 left-0 right-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-[70] py-1'
+          }
         >
           {menuItems.map((item, idx) => {
             const Icon = item.icon;
