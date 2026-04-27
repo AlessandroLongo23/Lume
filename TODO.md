@@ -2,7 +2,7 @@
 
 ## Chiarimenti
 [ ] applicazione abbonamento e dettagli più chiaro
-[ ] pagina cliente più dettagliata, con storico e "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
+[*] pagina cliente più dettagliata, con storico e "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
 
 ## Features
 [ ] notifica auguri sul gestionale

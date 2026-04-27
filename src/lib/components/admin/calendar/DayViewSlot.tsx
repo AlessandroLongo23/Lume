@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { Plus } from 'lucide-react';
+import { it as itLocale } from 'date-fns/locale';
+import { Plus, Info } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { HoverPopover } from '@/lib/components/shared/ui/HoverPopover';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
+import type { Client } from '@/lib/types/Client';
 
 interface DayViewSlotProps {
   operator: Operator;
@@ -33,6 +37,7 @@ function withOpacity(hex: string, opacity: number): string {
 }
 
 export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFicheSelected, isDisabled = false, isExtendedHours = false }: DayViewSlotProps) {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const clients = useClientsStore((s) => s.clients);
   const services = useServicesStore((s) => s.services);
@@ -170,9 +175,17 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
                     }}
                   >
                     {index === 0 && (
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight mb-0.5">
-                        {client?.getFullName() ?? 'Cliente'}
-                      </p>
+                      <div className="flex items-center gap-1 mb-0.5 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight min-w-0">
+                          {client?.getFullName() ?? 'Cliente'}
+                        </p>
+                        {client && (
+                          <ClientSchedaIcon
+                            client={client}
+                            onOpen={() => router.push(`/admin/clienti/${client.id}#scheda`)}
+                          />
+                        )}
+                      </div>
                     )}
                     <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight">
                       {service?.name ?? 'Servizio'}
@@ -190,5 +203,45 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
         {!isOccupied && isHovered && !isBlocked && <Plus size={16} className="text-zinc-400" />}
       </button>
     </div>
+  );
+}
+
+function ClientSchedaIcon({ client, onOpen }: { client: Client; onOpen: () => void }) {
+  const last = client.getLastTreatment();
+  const lastLabel = last
+    ? format(new Date(last.datetime), 'd MMM yyyy', { locale: itLocale })
+    : null;
+
+  const popoverContent = last ? (
+    <div className="text-xs space-y-1.5">
+      <p className="font-semibold text-zinc-900 dark:text-zinc-100">{lastLabel}</p>
+      <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
+        <span className="text-zinc-500 dark:text-zinc-400">Miscela</span>
+        <span className="text-zinc-800 dark:text-zinc-100">{last.miscela?.trim() || '—'}</span>
+        <span className="text-zinc-500 dark:text-zinc-400">Tecnica</span>
+        <span className="text-zinc-800 dark:text-zinc-100">{last.tecnica?.trim() || '—'}</span>
+      </div>
+      {last.note?.trim() && (
+        <p className="text-zinc-600 dark:text-zinc-300 pt-1 border-t border-zinc-500/20 whitespace-pre-wrap">
+          {last.note}
+        </p>
+      )}
+      <p className="text-2xs text-zinc-400 pt-1">Clicca per la scheda completa</p>
+    </div>
+  ) : (
+    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+      Nessuno storico trattamenti
+    </div>
+  );
+
+  return (
+    <HoverPopover
+      placement="bottom"
+      align="start"
+      onTriggerClick={onOpen}
+      triggerClassName="shrink-0 inline-flex items-center cursor-pointer text-zinc-400 hover:text-primary transition-colors"
+      trigger={<Info className="size-3.5" />}
+      content={popoverContent}
+    />
   );
 }

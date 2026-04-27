@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore, NotebookText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -20,6 +20,8 @@ import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ClientRatingBadge } from './ClientRatingBadge';
 import { DeleteClientModal } from './DeleteClientModal';
+import { TreatmentHistory } from './TreatmentHistory';
+import { SidePanel } from '@/lib/components/shared/ui/SidePanel';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface ClientsTableProps {
@@ -42,6 +44,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
 
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [schedaClient, setSchedaClient] = useState<Client | null>(null);
 
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
@@ -291,6 +294,13 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSchedaClient(row.original); }}
+                          className="p-1.5 rounded-md text-zinc-400 hover:text-primary dark:hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors"
+                          title="Scheda trattamenti"
+                        >
+                          <NotebookText className="size-3.5" />
+                        </button>
                         {showArchived ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
@@ -331,6 +341,14 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         onClose={() => setShowDelete(false)}
         selectedClient={selectedClient}
       />
+
+      <SidePanel
+        isOpen={!!schedaClient}
+        onClose={() => setSchedaClient(null)}
+        title={schedaClient ? `Scheda — ${schedaClient.getFullName()}` : 'Scheda trattamenti'}
+      >
+        {schedaClient && <TreatmentHistory clientId={schedaClient.id} />}
+      </SidePanel>
     </>
   );
 }

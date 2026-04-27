@@ -16,8 +16,16 @@ export class Fiche {
   status: FicheStatus;
   note: string;
   total_override: number | null;
+  miscela: string | null;
+  tecnica: string | null;
 
-  constructor(fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'> & { total_override?: number | null }) {
+  constructor(
+    fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'> & {
+      total_override?: number | null;
+      miscela?: string | null;
+      tecnica?: string | null;
+    },
+  ) {
     this.id = fiche.id;
     this.salon_id = fiche.salon_id;
     this.client_id = fiche.client_id;
@@ -25,6 +33,12 @@ export class Fiche {
     this.status = fiche.status;
     this.note = fiche.note;
     this.total_override = fiche.total_override ?? null;
+    this.miscela = fiche.miscela ?? null;
+    this.tecnica = fiche.tecnica ?? null;
+  }
+
+  hasTreatmentData(): boolean {
+    return !!(this.miscela?.trim() || this.tecnica?.trim() || this.note?.trim());
   }
 
   getClient(): Client | null {

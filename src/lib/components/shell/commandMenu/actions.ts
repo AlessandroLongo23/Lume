@@ -15,6 +15,7 @@ import {
   Archive,
   CheckCircle2,
   Power,
+  NotebookText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -234,6 +235,13 @@ const toggleAbbonamentoActiveAction = (entity: EntitySummary): CommandAction => 
 const clientFactory: EntityActionFactory = (entity, role) => {
   const actions: CommandAction[] = [
     openAction(entity, 'Apri scheda cliente'),
+    {
+      id: `open-scheda-${entity.id}`,
+      label: 'Apri scheda trattamenti',
+      icon: NotebookText,
+      perform: (router) => router.push(`${entity.href}#scheda`),
+      entity,
+    },
     editAction(entity, `Modifica ${entity.label}`),
     {
       id: `new-fiche-for-${entity.id}`,

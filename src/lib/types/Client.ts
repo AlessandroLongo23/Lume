@@ -62,6 +62,16 @@ export class Client {
     return this.getFiches().at(-1)?.note || '';
   }
 
+  getTreatmentHistory(): Fiche[] {
+    return this.getFiches()
+      .filter((f) => f.hasTreatmentData())
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+  }
+
+  getLastTreatment(): Fiche | null {
+    return this.getTreatmentHistory()[0] ?? null;
+  }
+
   static dataColumns: DataColumn[] = [
     {
       label: 'Nome',

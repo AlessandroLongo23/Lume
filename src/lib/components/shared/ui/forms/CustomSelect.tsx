@@ -79,10 +79,15 @@ export function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Close on any scroll so the fixed dropdown doesn't drift from its trigger
+  // Close on any scroll so the fixed dropdown doesn't drift from its trigger.
+  // Ignore scrolls originating inside the dropdown itself (the options list
+  // scrolling, or scrollIntoView from hover/keyboard navigation) — those don't
+  // move the trigger and shouldn't close the dropdown.
   useEffect(() => {
     if (!isOpen) return;
-    const handleScroll = () => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as Node | null;
+      if (target && portalRef.current?.contains(target)) return;
       setIsOpen(false);
       setSearchQuery('');
       setHighlightedIndex(-1);

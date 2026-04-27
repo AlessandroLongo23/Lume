@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, Copy, Contact2, FileHeart, ClipboardList, UserX, Archive, ArchiveRestore, Sparkles, Tag, Gift, CreditCard, Save, X } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Copy, Contact2, FileHeart, ClipboardList, UserX, Archive, ArchiveRestore, Sparkles, Tag, Gift, CreditCard, Save, X, NotebookText } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
@@ -12,6 +12,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientRatingBadge } from '@/lib/components/admin/clients/ClientRatingBadge';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from '@/lib/components/admin/clients/ClientForm';
+import { TreatmentHistory } from '@/lib/components/admin/clients/TreatmentHistory';
 import type { Client } from '@/lib/types/Client';
 
 const STAR_TO_PERCENTILE: Record<number, string> = {
@@ -122,6 +123,14 @@ export default function ClientDetailPage() {
     router.replace(`/admin/clienti/${client.id}`);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- only respond when client lands or query changes; intentionally excludes router.
   }, [client, searchParams]);
+
+  // Scroll to the Scheda trattamenti section when arrived via #scheda anchor.
+  useEffect(() => {
+    if (!client || isEditing) return;
+    if (typeof window === 'undefined' || window.location.hash !== '#scheda') return;
+    const el = document.getElementById('scheda');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [client, isEditing]);
 
   const handleEnterEdit = () => {
     if (!client) return;
@@ -450,6 +459,18 @@ export default function ClientDetailPage() {
                       Nessuna visita negli ultimi 12 mesi.
                     </p>
                   )}
+                </div>
+              </div>
+
+              <div id="scheda" className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden scroll-mt-4">
+                <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <NotebookText className="size-5 text-zinc-600 dark:text-zinc-400" />
+                    Scheda trattamenti
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <TreatmentHistory clientId={client.id} />
                 </div>
               </div>
 

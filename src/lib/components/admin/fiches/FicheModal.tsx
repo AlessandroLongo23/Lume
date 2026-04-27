@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
   Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
+  FlaskConical, Sparkles,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -194,6 +195,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
   const [note, setNote] = useState('');
+  const [miscela, setMiscela] = useState('');
+  const [tecnica, setTecnica] = useState('');
   const [status, setStatus] = useState<FicheStatus>(FicheStatus.CREATED);
   const [ficheServices, setFicheServices] = useState<FicheServiceDraft[]>([]);
   const [ficheProducts, setFicheProducts] = useState<FicheProductDraft[]>([]);
@@ -229,6 +232,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setClientId(fiche.client_id);
       setDatetimeStr(toDatetimeLocal(new Date(fiche.datetime)));
       setNote(fiche.note ?? '');
+      setMiscela(fiche.miscela ?? '');
+      setTecnica(fiche.tecnica ?? '');
       setStatus(fiche.status);
       setTotalOverride(fiche.total_override ?? null);
       setFicheServices(
@@ -263,6 +268,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setClientId(clientIdProp ?? '');
       setDatetimeStr(toDatetimeLocal(datetime));
       setNote('');
+      setMiscela('');
+      setTecnica('');
       setStatus(FicheStatus.CREATED);
       setTotalOverride(null);
       setFicheServices([]);
@@ -515,7 +522,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
     if (mode === 'add') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride });
+      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
       await Promise.all(
         servicesWithTimes.map((svc) =>
           addFicheService({
@@ -545,7 +552,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
     if (!fiche) throw new Error('Fiche mancante');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride });
+    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
 
     const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
     for (const fs of fiche.getFicheServices()) {
@@ -843,6 +850,29 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Note per questo appuntamento…"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className={labelClass}><FlaskConical className="size-3.5" />Miscela</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={miscela}
+                      onChange={(e) => setMiscela(e.target.value)}
+                      placeholder="Codice colore…"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={labelClass}><Sparkles className="size-3.5" />Tecnica</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={tecnica}
+                      onChange={(e) => setTecnica(e.target.value)}
+                      placeholder="Es. balayage…"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
