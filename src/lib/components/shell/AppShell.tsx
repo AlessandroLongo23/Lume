@@ -107,7 +107,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
                 <div className="sticky top-0 z-10 h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
                 </div>
-                <div className="px-6 md:px-10 pb-10">
+                <div className="px-8 md:px-14 pt-10 pb-12">
                   {children}
                 </div>
               </div>

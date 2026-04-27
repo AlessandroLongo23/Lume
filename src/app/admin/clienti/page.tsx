@@ -139,14 +139,23 @@ export default function ClientiPage() {
 
         {isLoading ? (
           <TableSkeleton />
-        ) : clients.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="Nessun cliente trovato"
-            description="Aggiungi il tuo primo cliente per iniziare a gestire la tua lista."
-            secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
-            action={{ label: 'Nuovo cliente', icon: UserPlus, onClick: () => setShowAdd(true) }}
-          />
+        ) : visibleClients.length === 0 ? (
+          showArchived ? (
+            <EmptyState
+              icon={Archive}
+              title="Nessun cliente archiviato"
+              description="I clienti che archivierai compariranno qui. Potrai sempre ripristinarli."
+              action={{ label: 'Vedi clienti attivi', icon: Users, onClick: () => setShowArchived(false) }}
+            />
+          ) : (
+            <EmptyState
+              icon={Users}
+              title="Nessun cliente trovato"
+              description="Aggiungi il tuo primo cliente per iniziare a gestire la tua lista."
+              secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
+              action={{ label: 'Nuovo cliente', icon: UserPlus, onClick: () => setShowAdd(true) }}
+            />
+          )
         ) : view === 'table' ? (
           <ClientsTable clients={visibleClients} showArchived={showArchived} />
         ) : (

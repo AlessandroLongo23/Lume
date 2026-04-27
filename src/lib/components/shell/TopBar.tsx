@@ -13,7 +13,7 @@ export function TopBar({ rightCluster, leftCluster }: TopBarProps) {
   const { setOpen } = useMobileMenu();
 
   return (
-    <div className="h-full flex items-center justify-between gap-4 px-6 md:px-10 min-w-0">
+    <div className="h-full flex items-center justify-between gap-4 px-4 ps-6 min-w-0">
       <div className="flex items-center gap-3 min-w-0">
         <button
           className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
