@@ -297,7 +297,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                         <button
                           onClick={(e) => { e.stopPropagation(); setSchedaClient(row.original); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-primary dark:hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors"
-                          title="Scheda trattamenti"
+                          title="Scheda tecnica"
                         >
                           <NotebookText className="size-3.5" />
                         </button>
@@ -345,7 +345,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       <SidePanel
         isOpen={!!schedaClient}
         onClose={() => setSchedaClient(null)}
-        title={schedaClient ? `Scheda — ${schedaClient.getFullName()}` : 'Scheda trattamenti'}
+        title={schedaClient ? `Scheda — ${schedaClient.getFullName()}` : 'Scheda tecnica'}
       >
         {schedaClient && <TreatmentHistory clientId={schedaClient.id} />}
       </SidePanel>

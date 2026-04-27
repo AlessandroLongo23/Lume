@@ -237,7 +237,7 @@ const clientFactory: EntityActionFactory = (entity, role) => {
     openAction(entity, 'Apri scheda cliente'),
     {
       id: `open-scheda-${entity.id}`,
-      label: 'Apri scheda trattamenti',
+      label: 'Apri scheda tecnica',
       icon: NotebookText,
       perform: (router) => router.push(`${entity.href}#scheda`),
       entity,

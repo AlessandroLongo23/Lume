@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Star, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { StarRating } from '@/lib/components/shared/ui/StarRating';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -29,7 +30,6 @@ export default function ReviewsPage() {
   const deleteMyReview = useReviewsStore((s) => s.deleteMyReview);
 
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [message, setMessage] = useState('');
   const [messageLength, setMessageLength] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +61,6 @@ export default function ReviewsPage() {
     messageLength <= MAX_MESSAGE &&
     isDirty &&
     !isSaving;
-  const displayedRating = hoverRating || rating;
 
   const handleMessageChange = (html: string, plainText: string) => {
     setMessage(html);
@@ -120,34 +119,7 @@ export default function ReviewsPage() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Voto</label>
-              <div
-                className="flex flex-row items-center"
-                onMouseLeave={() => setHoverRating(0)}
-              >
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const filled = n <= displayedRating;
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      aria-label={`${n} stelle`}
-                      onMouseEnter={() => setHoverRating(n)}
-                      onClick={() => setRating(n)}
-                      className="px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                      <Star
-                        className={`size-9 transition-colors ${
-                          filled ? 'fill-amber-400 text-amber-400' : 'text-zinc-300 dark:text-zinc-600'
-                        }`}
-                        strokeWidth={1.5}
-                      />
-                    </button>
-                  );
-                })}
-                {rating > 0 && (
-                  <span className="ml-2 text-sm text-zinc-500 dark:text-zinc-400">{rating}/5</span>
-                )}
-              </div>
+              <StarRating value={rating} onChange={setRating} />
             </div>
 
             <div className="flex flex-col gap-2">

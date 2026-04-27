@@ -124,7 +124,7 @@ export default function ClientDetailPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- only respond when client lands or query changes; intentionally excludes router.
   }, [client, searchParams]);
 
-  // Scroll to the Scheda trattamenti section when arrived via #scheda anchor.
+  // Scroll to the Scheda tecnica section when arrived via #scheda anchor.
   useEffect(() => {
     if (!client || isEditing) return;
     if (typeof window === 'undefined' || window.location.hash !== '#scheda') return;
@@ -466,7 +466,7 @@ export default function ClientDetailPage() {
                 <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
                   <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                     <NotebookText className="size-5 text-zinc-600 dark:text-zinc-400" />
-                    Scheda trattamenti
+                    Scheda tecnica
                   </h3>
                 </div>
                 <div className="p-6">
