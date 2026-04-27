@@ -2,7 +2,7 @@
 
 ## Chiarimenti
 [ ] applicazione abbonamento e dettagli più chiaro
-[*] pagina cliente più dettagliata, con storico e "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
+[ ] restructure and redesign client info page 
 
 ## Features
 [ ] notifica auguri sul gestionale
@@ -19,6 +19,7 @@
 # Done
 
 ## Features
+[x] "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
 [x] archiviare servizi e prodotti, clienti invece di cancellarli
 [x] possibilità di segnare servizi come omaggio (quindi 0€)
 [x] creazione coupon (servizio/soldi)
