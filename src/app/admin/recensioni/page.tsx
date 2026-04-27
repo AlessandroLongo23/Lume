@@ -120,7 +120,10 @@ export default function ReviewsPage() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Voto</label>
-              <div className="flex flex-row items-center gap-2">
+              <div
+                className="flex flex-row items-center"
+                onMouseLeave={() => setHoverRating(0)}
+              >
                 {[1, 2, 3, 4, 5].map((n) => {
                   const filled = n <= displayedRating;
                   return (
@@ -129,9 +132,8 @@ export default function ReviewsPage() {
                       type="button"
                       aria-label={`${n} stelle`}
                       onMouseEnter={() => setHoverRating(n)}
-                      onMouseLeave={() => setHoverRating(0)}
                       onClick={() => setRating(n)}
-                      className="p-1 rounded-md transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <Star
                         className={`size-9 transition-colors ${

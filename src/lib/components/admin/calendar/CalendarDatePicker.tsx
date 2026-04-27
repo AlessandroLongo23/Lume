@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { isSameDay, isSameMonth, setMonth, setYear, startOfMonth } from 'date-fns';
+import { isSameDay, setMonth, setYear, startOfMonth } from 'date-fns';
 import { addMonths, subMonths, getMonthDays, formatDateString, weekDays } from '@/lib/utils/date';
 import { capitalize } from '@/lib/utils/string';
 
@@ -267,9 +267,7 @@ export function CalendarDatePicker({
           {mode === 'month' && (
             <div className="grid grid-cols-3 gap-1">
               {monthLabels.map((label, i) => {
-                const isActive = monthOnly
-                  ? isSameMonth(new Date(displayMonth.getFullYear(), i, 1), selectedDate)
-                  : i === displayMonth.getMonth();
+                const isActive = i === displayMonth.getMonth();
                 const isCurrent = today.getFullYear() === displayMonth.getFullYear() && today.getMonth() === i;
                 return (
                   <button

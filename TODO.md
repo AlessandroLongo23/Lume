@@ -6,6 +6,7 @@
 
 ## Features
 [ ] notifica auguri sul gestionale
+[ ] Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
 
 ## Impostazioni
 [ ] Settare valore di default per validità buoni
