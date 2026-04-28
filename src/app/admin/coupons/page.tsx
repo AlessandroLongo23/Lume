@@ -11,18 +11,25 @@ import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal'
 import { GiftCardModal } from '@/lib/components/admin/coupons/GiftCardModal';
 import { DeleteCouponModal } from '@/lib/components/admin/coupons/DeleteCouponModal';
 import type { Coupon } from '@/lib/types/Coupon';
+import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
+import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
 
 type Tab = 'gift' | 'gift_card';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'gift', label: 'Coupon regalo', icon: Gift },
-  { id: 'gift_card', label: 'Gift card', icon: CreditCard },
-];
+const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
+  gift: { label: 'Coupon regalo', icon: Gift },
+  gift_card: { label: 'Gift card', icon: CreditCard },
+};
+
+const DEFAULT_ORDER = TAB_DEFAULTS.coupons as readonly Tab[];
 
 export default function CouponsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>('gift');
+  const { visible } = useOrderedTabs<Tab>('coupons', DEFAULT_ORDER);
+  const [userTab, setUserTab] = useState<Tab | null>(null);
+  const activeTab: Tab = userTab && visible.includes(userTab) ? userTab : visible[0];
+  const setActiveTab = (t: Tab) => setUserTab(t);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
   const [commandTarget, setCommandTarget] = useState<Coupon | null>(null);
@@ -89,7 +96,8 @@ export default function CouponsPage() {
 
         {/* Tab nav */}
         <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
-          {TABS.map(({ id, label, icon: Icon }) => {
+          {visible.map((id) => {
+            const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
             const count = coupons.filter((c) => c.kind === id).length;
             return (

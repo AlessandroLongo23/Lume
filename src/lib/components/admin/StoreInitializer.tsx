@@ -19,6 +19,8 @@ import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { usePreferencesStore } from '@/lib/stores/preferences';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useSpeseStore } from '@/lib/stores/spese';
 import { useObiettiviStore } from '@/lib/stores/obiettivi';
@@ -45,6 +47,8 @@ export function StoreInitializer() {
   const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
   const fetchFichePayments = useFichePaymentsStore((s) => s.fetchFichePayments);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const fetchPreferences = usePreferencesStore((s) => s.fetchPreferences);
+  const fetchSalonSettings = useSalonSettingsStore((s) => s.fetchSettings);
   const fetchSpese = useSpeseStore((s) => s.fetchSpese);
   const fetchObiettivi = useObiettiviStore((s) => s.fetchObiettivi);
   const fetchFeedback = useFeedbackStore((s) => s.fetchEntries);
@@ -73,6 +77,8 @@ export function StoreInitializer() {
       fetchFicheProducts(),
       fetchFichePayments(),
       fetchSubscription(),
+      fetchPreferences(),
+      fetchSalonSettings(),
       fetchSpese(),
       fetchObiettivi(),
       fetchFeedback(),

@@ -6,17 +6,23 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { BilancioPanoramicaTab } from '@/lib/components/admin/bilancio/BilancioPanoramicaTab';
 import { BilancioSpeseTab } from '@/lib/components/admin/bilancio/BilancioSpeseTab';
 import { BilancioObiettiviTab } from '@/lib/components/admin/bilancio/BilancioObiettiviTab';
+import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
+import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
 
 type Tab = 'panoramica' | 'spese' | 'obiettivi';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'panoramica', label: 'Panoramica', icon: LayoutDashboard },
-  { id: 'spese', label: 'Spese', icon: Receipt },
-  { id: 'obiettivi', label: 'Obiettivi', icon: Target },
-];
+const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
+  panoramica: { label: 'Panoramica', icon: LayoutDashboard },
+  spese: { label: 'Spese', icon: Receipt },
+  obiettivi: { label: 'Obiettivi', icon: Target },
+};
+
+const DEFAULT_ORDER = TAB_DEFAULTS.bilancio as readonly Tab[];
 
 export default function BilancioPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('panoramica');
+  const { visible } = useOrderedTabs<Tab>('bilancio', DEFAULT_ORDER);
+  const [userTab, setUserTab] = useState<Tab | null>(null);
+  const activeTab: Tab = userTab && visible.includes(userTab) ? userTab : visible[0];
 
   return (
     <div className="flex flex-col gap-6">
@@ -26,15 +32,15 @@ export default function BilancioPage() {
         icon={Wallet}
       />
 
-      {/* Tab nav */}
       <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
-        {TABS.map(({ id, label, icon: Icon }) => {
+        {visible.map((id) => {
+          const { label, icon: Icon } = TAB_META[id];
           const isActive = activeTab === id;
           return (
             <button
               key={id}
               type="button"
-              onClick={() => setActiveTab(id)}
+              onClick={() => setUserTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 isActive
                   ? 'border-primary text-primary-hover dark:text-primary/70'

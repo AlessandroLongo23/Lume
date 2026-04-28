@@ -33,7 +33,7 @@ interface StackedAreaChartProps {
 
 export function StackedAreaChart({ data, height = 300, tension = 0.4, onHover, onMouseOut }: StackedAreaChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { theme } = useTheme();
+  const { resolvedTheme: theme } = useTheme();
 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return;

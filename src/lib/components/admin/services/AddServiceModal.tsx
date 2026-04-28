@@ -1,29 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useServicesStore } from '@/lib/stores/services';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { ServiceForm, type ServiceFormValue, type ServiceFormErrors } from './ServiceForm';
+import { useFormDefaults } from '@/lib/hooks/useFormDefaults';
 
 interface AddServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const emptyService = (): ServiceFormValue => ({
+const emptyService = (defaultDuration: number): ServiceFormValue => ({
   name: '',
   category_id: '',
   price: 0,
   product_cost: 0,
-  duration: 30,
+  duration: defaultDuration,
   description: '',
 });
 
 export function AddServiceModal({ isOpen, onClose }: AddServiceModalProps) {
   const addService = useServicesStore((s) => s.addService);
-  const [service, setService] = useState<ServiceFormValue>(emptyService());
+  const formDefaults = useFormDefaults();
+  const [service, setService] = useState<ServiceFormValue>(() => emptyService(formDefaults.service_duration_min));
   const [errors, setErrors] = useState<ServiceFormErrors>({});
+
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setService(emptyService(formDefaults.service_duration_min));
+      setErrors({});
+    }
+  }, [isOpen, formDefaults.service_duration_min]);
 
   const handleSubmit = async () => {
     const e: ServiceFormErrors = {};
@@ -36,7 +46,7 @@ export function AddServiceModal({ isOpen, onClose }: AddServiceModalProps) {
     try {
       await addService(service);
       messagePopup.getState().success('Servizio aggiunto con successo');
-      setService(emptyService());
+      setService(emptyService(formDefaults.service_duration_min));
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';

@@ -16,16 +16,11 @@ import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponS
 import { CouponNotifySuccess } from './CouponNotifySuccess';
 import { buildCouponMessage, sendCouponEmail } from '@/lib/utils/coupon-notify';
 import type { Coupon, CouponDiscountType, CouponFreeItemKind } from '@/lib/types/Coupon';
+import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
 
 interface GiftCouponModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-function defaultValidUntil(): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 1);
-  return d.toISOString().slice(0, 10);
 }
 
 export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
@@ -34,17 +29,18 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
   const services = useServicesStore((s) => s.services);
   const products = useProductsStore((s) => s.products);
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
+  const formDefaults = useFormDefaults();
 
   const [view, setView] = useState<'form' | 'success'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [recipientId, setRecipientId] = useState('');
-  const [discountType, setDiscountType] = useState<CouponDiscountType>('fixed');
+  const [discountType, setDiscountType] = useState<CouponDiscountType>(formDefaults.gift_coupon_discount_type);
   const [discountValue, setDiscountValue] = useState<number | null>(null);
   const [freeItemKind, setFreeItemKind] = useState<CouponFreeItemKind>('service');
   const [freeItemId, setFreeItemId] = useState<string>('');
   const [validFrom, setValidFrom] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [validUntil, setValidUntil] = useState<string>(defaultValidUntil());
+  const [validUntil, setValidUntil] = useState<string>(() => todayPlusMonthsISO(formDefaults.gift_coupon_validity_months));
   const [scope, setScope] = useState<CouponScopeValue>(EMPTY_SCOPE);
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -57,18 +53,18 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
     setView('form');
     setIsSubmitting(false);
     setRecipientId('');
-    setDiscountType('fixed');
+    setDiscountType(formDefaults.gift_coupon_discount_type);
     setDiscountValue(null);
     setFreeItemKind('service');
     setFreeItemId('');
     setValidFrom(new Date().toISOString().slice(0, 10));
-    setValidUntil(defaultValidUntil());
+    setValidUntil(todayPlusMonthsISO(formDefaults.gift_coupon_validity_months));
     setScope(EMPTY_SCOPE);
     setNotes('');
     setErrorMessage('');
     setCreatedCoupon(null);
     setSuccessMessage('');
-  }, [isOpen]);
+  }, [isOpen, formDefaults.gift_coupon_discount_type, formDefaults.gift_coupon_validity_months]);
 
   const clientOptions = useMemo(
     () => clients.filter((c) => !c.isArchived).map((c) => ({ ...c, fullName: c.getFullName() })),

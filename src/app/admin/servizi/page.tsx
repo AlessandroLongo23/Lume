@@ -13,13 +13,17 @@ import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
+import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
 
 type Tab = 'servizi' | 'categorie';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'servizi', label: 'Servizi', icon: Scissors },
-  { id: 'categorie', label: 'Categorie', icon: Tags },
-];
+const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
+  servizi: { label: 'Servizi', icon: Scissors },
+  categorie: { label: 'Categorie', icon: Tags },
+};
+
+const DEFAULT_ORDER = TAB_DEFAULTS.servizi as readonly Tab[];
 
 export default function ServiziPage() {
   const router = useRouter();
@@ -31,7 +35,10 @@ export default function ServiziPage() {
   const isCategoriesLoading = useServiceCategoriesStore((s) => s.isLoading);
   const fetchServiceCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
 
-  const [activeTab, setActiveTab] = useState<Tab>('servizi');
+  const { visible } = useOrderedTabs<Tab>('servizi', DEFAULT_ORDER);
+  const [userTab, setUserTab] = useState<Tab | null>(null);
+  const activeTab: Tab = userTab && visible.includes(userTab) ? userTab : visible[0];
+  const setActiveTab = (t: Tab) => setUserTab(t);
   const [showAdd, setShowAdd] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -153,7 +160,8 @@ export default function ServiziPage() {
 
         {/* Tab nav */}
         <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
-          {TABS.map(({ id, label, icon: Icon }) => {
+          {visible.map((id) => {
+            const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
             const archivedForTab = id === 'servizi' ? servicesShowArchived : categoriesShowArchived;
             const countForTab = id === 'servizi' ? servicesArchivedCount : categoriesArchivedCount;

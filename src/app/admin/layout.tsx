@@ -23,6 +23,8 @@ import type { CommandAction } from '@/lib/components/shell/commandMenu/types';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { useAppearanceSync } from '@/lib/hooks/useAppearanceSync';
+import { useViewsHydration } from '@/lib/hooks/useViewsHydration';
 import { isOwner, normalizeProfileRole } from '@/lib/auth/roles';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -119,6 +121,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const controller = useCommandMenuController();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
+  useAppearanceSync();
+  useViewsHydration();
 
   useEffect(() => {
     if (isAdmin) return;

@@ -45,3 +45,12 @@ next-env.d.ts
 data/
 
 .playwright-mcp/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.auth/
+
+# allow the staging template through (`.env*` above ignores it)
+!.env.test.example

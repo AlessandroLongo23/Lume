@@ -6,6 +6,7 @@ interface ViewsState {
   orders: 'table' | 'calendar';
   clients: 'table' | 'grid';
   operators: 'table' | 'grid';
+  fiches: 'table' | 'grid';
   setView: <K extends keyof Omit<ViewsState, 'setView'>>(
     key: K,
     value: ViewsState[K]
@@ -18,5 +19,6 @@ export const useViewsStore = create<ViewsState>((set) => ({
   orders: 'table',
   clients: 'table',
   operators: 'table',
+  fiches: 'table',
   setView: (key, value) => set({ [key]: value }),
 }));

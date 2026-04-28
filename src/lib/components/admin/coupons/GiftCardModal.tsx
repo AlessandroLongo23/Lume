@@ -15,22 +15,18 @@ import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponS
 import { CouponNotifySuccess } from './CouponNotifySuccess';
 import { buildCouponMessage, sendCouponEmail } from '@/lib/utils/coupon-notify';
 import type { Coupon, CouponSalePaymentMethod } from '@/lib/types/Coupon';
+import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
 
 interface GiftCardModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function defaultValidUntil(): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
 export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
   const addCoupon = useCouponsStore((s) => s.addCoupon);
   const clients = useClientsStore((s) => s.clients);
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
+  const formDefaults = useFormDefaults();
 
   const [view, setView] = useState<'form' | 'success'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +37,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
   const [amount, setAmount] = useState<number | null>(null);
   const [salePaymentMethod, setSalePaymentMethod] = useState<CouponSalePaymentMethod>('cash');
   const [validFrom, setValidFrom] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [validUntil, setValidUntil] = useState<string>(defaultValidUntil());
+  const [validUntil, setValidUntil] = useState<string>(() => todayPlusMonthsISO(formDefaults.gift_card_validity_months));
   const [scope, setScope] = useState<CouponScopeValue>(EMPTY_SCOPE);
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -59,13 +55,13 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     setAmount(null);
     setSalePaymentMethod('cash');
     setValidFrom(new Date().toISOString().slice(0, 10));
-    setValidUntil(defaultValidUntil());
+    setValidUntil(todayPlusMonthsISO(formDefaults.gift_card_validity_months));
     setScope(EMPTY_SCOPE);
     setNotes('');
     setErrorMessage('');
     setCreatedCoupon(null);
     setSuccessMessage('');
-  }, [isOpen]);
+  }, [isOpen, formDefaults.gift_card_validity_months]);
 
   const clientOptions = useMemo(
     () => clients.filter((c) => !c.isArchived).map((c) => ({ ...c, fullName: c.getFullName() })),

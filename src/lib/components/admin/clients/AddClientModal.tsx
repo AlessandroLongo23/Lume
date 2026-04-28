@@ -7,19 +7,20 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from './ClientForm';
 import { Gender } from '@/lib/types/Gender';
+import { useFormDefaults } from '@/lib/hooks/useFormDefaults';
 
 interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const emptyClient = (): ClientFormValue => ({
+const emptyClient = (defaults: { phonePrefix: string; gender: Gender }): ClientFormValue => ({
   firstName: '',
   lastName: '',
-  gender: Gender.MALE,
+  gender: defaults.gender,
   email: '',
   password: '',
-  phonePrefix: '+39',
+  phonePrefix: defaults.phonePrefix,
   phoneNumber: '',
   isTourist: false,
   birthDate: '',
@@ -29,17 +30,23 @@ const emptyClient = (): ClientFormValue => ({
 export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   const clients = useClientsStore((s) => s.clients);
   const addClient = useClientsStore((s) => s.addClient);
+  const formDefaults = useFormDefaults();
+  const seedDefaults = {
+    phonePrefix: formDefaults.client_phone_prefix,
+    gender: formDefaults.client_default_gender === 'F' ? Gender.FEMALE : Gender.MALE,
+  };
 
-  const [client, setClient] = useState<ClientFormValue>(emptyClient());
+  const [client, setClient] = useState<ClientFormValue>(() => emptyClient(seedDefaults));
   const [errors, setErrors] = useState<ClientFormErrors>({});
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setClient({ ...emptyClient(), password: String(clients.length + 1).padStart(6, '0') });
+      setClient({ ...emptyClient(seedDefaults), password: String(clients.length + 1).padStart(6, '0') });
       setErrors({});
     }
-  }, [isOpen, clients.length]);
+  // seedDefaults is rebuilt every render from primitives below; depend on those.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, clients.length, formDefaults.client_phone_prefix, formDefaults.client_default_gender]);
 
   const handleSubmit = async () => {
     const newErrors: ClientFormErrors = {};

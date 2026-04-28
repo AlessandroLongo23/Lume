@@ -17,14 +17,13 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import type { Fiche } from '@/lib/types/Fiche';
+import { useViewsStore } from '@/lib/stores/views';
+import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
+import { TAB_DEFAULTS, TAB_LABELS } from '@/lib/const/tab-defaults';
 
 type TabValue = 'active' | 'completed' | 'all';
 
-const TABS: { value: TabValue; label: string }[] = [
-  { value: 'active', label: 'In Corso' },
-  { value: 'completed', label: 'Completate' },
-  { value: 'all', label: 'Tutte' },
-];
+const DEFAULT_ORDER = TAB_DEFAULTS.fiches as readonly TabValue[];
 
 export default function FichesPage() {
   const router = useRouter();
@@ -33,10 +32,14 @@ export default function FichesPage() {
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
 
-  const [view, setView] = useState<'table' | 'grid'>('table');
+  const view = useViewsStore((s) => s.fiches);
+  const setView = (v: 'table' | 'grid') => useViewsStore.getState().setView('fiches', v);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabValue>('active');
+  const { visible } = useOrderedTabs<TabValue>('fiches', DEFAULT_ORDER);
+  const [userTab, setUserTab] = useState<TabValue | null>(null);
+  const activeTab: TabValue = userTab && visible.includes(userTab) ? userTab : visible[0];
+  const setActiveTab = (t: TabValue) => setUserTab(t);
   const [globalFilter, setGlobalFilter] = useState('');
   const [prefillClientId, setPrefillClientId] = useState<string | null>(null);
   const [commandTarget, setCommandTarget] = useState<Fiche | null>(null);
@@ -141,18 +144,18 @@ export default function FichesPage() {
         <div className="flex flex-col">
           {/* Status Tabs */}
           <div className="flex items-center gap-1 border-b border-border">
-            {TABS.map((tab) => (
+            {visible.map((id) => (
               <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
+                key={id}
+                onClick={() => setActiveTab(id)}
                 className={[
                   'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
-                  activeTab === tab.value
+                  activeTab === id
                     ? 'border-primary text-primary-hover dark:text-primary/70'
                     : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200',
                 ].join(' ')}
               >
-                {tab.label} ({counts[tab.value]})
+                {TAB_LABELS.fiches[id]} ({counts[id]})
               </button>
             ))}
           </div>

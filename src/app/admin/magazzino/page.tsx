@@ -14,20 +14,27 @@ import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
+import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'prodotti', label: 'Prodotti', icon: Package },
-  { id: 'categorie', label: 'Categorie', icon: Tags },
-  { id: 'fornitori', label: 'Fornitori', icon: Truck },
-  { id: 'marchi', label: 'Marchi', icon: Factory },
-];
+const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
+  prodotti: { label: 'Prodotti', icon: Package },
+  categorie: { label: 'Categorie', icon: Tags },
+  fornitori: { label: 'Fornitori', icon: Truck },
+  marchi: { label: 'Marchi', icon: Factory },
+};
+
+const DEFAULT_ORDER = TAB_DEFAULTS.magazzino as readonly Tab[];
 
 export default function MagazzinoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>('prodotti');
+  const { visible } = useOrderedTabs<Tab>('magazzino', DEFAULT_ORDER);
+  const [userTab, setUserTab] = useState<Tab | null>(null);
+  const activeTab: Tab = userTab && visible.includes(userTab) ? userTab : visible[0];
+  const setActiveTab = (t: Tab) => setUserTab(t);
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
@@ -183,7 +190,8 @@ export default function MagazzinoPage() {
 
         {/* Tab nav */}
         <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
-          {TABS.map(({ id, label, icon: Icon }) => {
+          {visible.map((id) => {
+            const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
             const archivedForTab =
               id === 'prodotti' ? productsShowArchived :

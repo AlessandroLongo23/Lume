@@ -56,7 +56,7 @@ function yTickFormatter(v: number): string {
 }
 
 export function RevenueChart({ data, isEmpty }: RevenueChartProps) {
-  const { theme } = useTheme();
+  const { resolvedTheme: theme } = useTheme();
 
   const colors = useMemo(
     () => ({

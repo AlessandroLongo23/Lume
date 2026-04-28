@@ -13,6 +13,7 @@ import { Switch } from '@/lib/components/shared/ui/Switch';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { ServicesMultiSelect } from './ServicesMultiSelect';
 import type { AbbonamentoPaymentMethod, AbbonamentoPricingMode } from '@/lib/types/Abbonamento';
+import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
 
 interface AddAbbonamentoModalProps {
   isOpen: boolean;
@@ -23,27 +24,22 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function defaultValidUntil(): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
 export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProps) {
   const addAbbonamento = useAbbonamentiStore((s) => s.addAbbonamento);
   const clients = useClientsStore((s) => s.clients);
   const services = useServicesStore((s) => s.services);
+  const formDefaults = useFormDefaults();
 
   const [clientId, setClientId] = useState('');
   const [scopeIds, setScopeIds] = useState<string[]>([]);
-  const [totalTreatments, setTotalTreatments] = useState<number | null>(5);
+  const [totalTreatments, setTotalTreatments] = useState<number | null>(formDefaults.abbonamento_treatments);
   const [pricingMode, setPricingMode] = useState<AbbonamentoPricingMode>('percent');
-  const [discountPercent, setDiscountPercent] = useState<number | null>(10);
+  const [discountPercent, setDiscountPercent] = useState<number | null>(formDefaults.abbonamento_discount_percent);
   const [totalPaid, setTotalPaid] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<AbbonamentoPaymentMethod>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<AbbonamentoPaymentMethod>(formDefaults.abbonamento_payment_method);
   const [validFrom, setValidFrom] = useState(todayISO());
   const [hasExpiry, setHasExpiry] = useState(false);
-  const [validUntil, setValidUntil] = useState(defaultValidUntil());
+  const [validUntil, setValidUntil] = useState(() => todayPlusMonthsISO(12));
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,18 +48,18 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
     if (!isOpen) return;
     setClientId('');
     setScopeIds([]);
-    setTotalTreatments(5);
+    setTotalTreatments(formDefaults.abbonamento_treatments);
     setPricingMode('percent');
-    setDiscountPercent(10);
+    setDiscountPercent(formDefaults.abbonamento_discount_percent);
     setTotalPaid(null);
-    setPaymentMethod('cash');
+    setPaymentMethod(formDefaults.abbonamento_payment_method);
     setValidFrom(todayISO());
     setHasExpiry(false);
-    setValidUntil(defaultValidUntil());
+    setValidUntil(todayPlusMonthsISO(12));
     setNotes('');
     setErrorMessage('');
     setIsSubmitting(false);
-  }, [isOpen]);
+  }, [isOpen, formDefaults.abbonamento_treatments, formDefaults.abbonamento_discount_percent, formDefaults.abbonamento_payment_method]);
 
   const clientOptions = useMemo(
     () =>
