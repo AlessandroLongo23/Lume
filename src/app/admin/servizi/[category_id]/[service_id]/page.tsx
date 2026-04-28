@@ -2,14 +2,36 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Clock, Euro, FileText, ShoppingCart, Archive, ArchiveRestore, Save, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Trash2, Scissors, Archive, ArchiveRestore, FileX } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import {
+  DetailHero,
+  DetailSection,
+  DetailHeroActions,
+  DetailChip,
+  HeroIconTile,
+  StatTile,
+} from '@/lib/components/shared/ui/detail';
 import { DeleteServiceModal } from '@/lib/components/admin/services/DeleteServiceModal';
 import { ServiceForm, type ServiceFormValue, type ServiceFormErrors } from '@/lib/components/admin/services/ServiceForm';
 import type { Service } from '@/lib/types/Service';
+
+function formatEur(amount: number): string {
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+}
+
+function formatDuration(minutes: number): string {
+  if (!minutes) return '—';
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
 
 function serviceToDraft(service: Service): ServiceFormValue {
   return {
@@ -34,11 +56,13 @@ export default function ServiceDetailPage() {
   const categories = useServiceCategoriesStore((s) => s.service_categories);
 
   const [service, setService] = useState<Service | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showDelete, setShowDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<ServiceFormValue>({});
   const [errors, setErrors] = useState<ServiceFormErrors>({});
   const [saving, setSaving] = useState(false);
+  const [discardConfirm, setDiscardConfirm] = useState<{ action: () => void } | null>(null);
 
   const categoryId = params.category_id as string;
   const serviceId = params.service_id as string;
@@ -64,6 +88,7 @@ export default function ServiceDetailPage() {
     if (!isLoading) {
       const found = services.find((s) => s.id === serviceId);
       if (found) setService(found);
+      else setError('Servizio non trovato');
     }
   }, [services, serviceId, isLoading]);
 
@@ -81,7 +106,6 @@ export default function ServiceDetailPage() {
     });
   }, [service]);
 
-  // Auto-enter edit mode when arrived via "Modifica X" command (?edit=<id>).
   useEffect(() => {
     if (!service) return;
     if (searchParams.get('edit') !== service.id) return;
@@ -99,16 +123,27 @@ export default function ServiceDetailPage() {
     setIsEditing(true);
   };
 
-  const handleCancel = () => {
-    if (isDirty && !window.confirm('Scartare le modifiche?')) return;
+  const exitEditMode = () => {
     setIsEditing(false);
     setDraft({});
     setErrors({});
   };
 
+  const handleCancel = () => {
+    if (isDirty) {
+      setDiscardConfirm({ action: exitEditMode });
+      return;
+    }
+    exitEditMode();
+  };
+
   const handleBack = () => {
-    if (isEditing && isDirty && !window.confirm('Scartare le modifiche?')) return;
-    router.push(`/admin/servizi/${categoryId}`);
+    const goBack = () => router.push(`/admin/servizi/${categoryId}`);
+    if (isEditing && isDirty) {
+      setDiscardConfirm({ action: goBack });
+      return;
+    }
+    goBack();
   };
 
   const handleSave = async () => {
@@ -131,8 +166,9 @@ export default function ServiceDetailPage() {
       setIsEditing(false);
       setDraft({});
       setErrors({});
-    } catch {
-      messagePopup.getState().error("Errore durante l'aggiornamento.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Errore durante l'aggiornamento.";
+      messagePopup.getState().error(msg);
     } finally {
       setSaving(false);
     }
@@ -155,117 +191,139 @@ export default function ServiceDetailPage() {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center p-12"><div className="w-12 h-12 border-4 border-zinc-500/25 border-t-blue-500 rounded-full animate-spin" /></div>;
-  }
-
-  if (!service) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <h2 className="text-xl font-bold">Servizio non trovato</h2>
-        <button className="mt-4 px-4 py-2 bg-zinc-200 rounded-md" onClick={() => router.push(`/admin/servizi/${categoryId}`)}>Torna indietro</button>
+        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
+        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+      </div>
+    );
+  }
+
+  if (error || !service) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12">
+        <FileX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
+        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Servizio non trovato</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il servizio non esiste o è stato rimosso.'}</p>
+        <button
+          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
+          onClick={() => router.push(`/admin/servizi/${categoryId}`)}
+        >
+          Torna ai servizi
+        </button>
       </div>
     );
   }
 
   const category = categories.find((c) => c.id === service.category_id);
+  const margin = (service.price ?? 0) - (service.product_cost ?? 0);
+  const marginPct = service.price ? Math.round((margin / service.price) * 100) : 0;
+  const marginTone = marginPct >= 70 ? 'emerald' : marginPct >= 40 ? 'sky' : marginPct >= 0 ? 'amber' : 'red';
 
   return (
     <>
-      <DeleteServiceModal isOpen={showDelete} onClose={() => setShowDelete(false)} selectedService={service} onDeleted={() => router.push(`/admin/servizi/${categoryId}`)} />
+      <DeleteServiceModal
+        isOpen={showDelete}
+        onClose={() => setShowDelete(false)}
+        selectedService={service}
+        onDeleted={() => router.push(`/admin/servizi/${categoryId}`)}
+      />
+      <ConfirmDialog
+        isOpen={discardConfirm !== null}
+        onClose={() => setDiscardConfirm(null)}
+        onConfirm={() => {
+          discardConfirm?.action();
+          setDiscardConfirm(null);
+        }}
+        title="Scartare le modifiche?"
+        description="Le modifiche non salvate andranno perse."
+        confirmLabel="Scarta"
+        tone="warning"
+      />
 
-      <div className="flex flex-col gap-4 max-w-2xl">
-        <div className="flex items-center gap-4">
-          <button onClick={handleBack} className="p-2 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors">
-            <ArrowLeft className="size-5 text-zinc-600 dark:text-zinc-300" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{service.name}</h1>
-              {service.isArchived && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Archiviato</span>
-              )}
-            </div>
-            <p className="text-sm text-zinc-500">{category?.name ?? 'Servizio'}</p>
-          </div>
-          <div className="ml-auto flex gap-2">
+      <div className="flex flex-col">
+        <DetailHero
+          onBack={handleBack}
+          avatar={<HeroIconTile icon={Scissors} tone="primary" />}
+          title={service.name}
+          chips={
+            <>
+              {service.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
+              {category && <DetailChip tone="zinc">{category.name}</DetailChip>}
+            </>
+          }
+          meta={<span>Servizio</span>}
+          actions={
+            <DetailHeroActions
+              isEditing={isEditing}
+              isLocked={service.isArchived}
+              saving={saving}
+              isDirty={isDirty}
+              onEdit={handleEnterEdit}
+              onCancel={handleCancel}
+              onSave={handleSave}
+              menuItems={[
+                {
+                  label: service.isArchived ? 'Ripristina' : 'Archivia',
+                  icon: service.isArchived ? ArchiveRestore : Archive,
+                  onClick: handleToggleArchive,
+                },
+                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true) },
+              ]}
+            />
+          }
+        />
+
+        <div className="px-6 lg:px-10 py-8 max-w-5xl w-full mx-auto">
+          <AnimatePresence mode="wait" initial={false}>
             {isEditing ? (
-              <>
-                <button
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors disabled:opacity-50"
-                >
-                  <X className="size-4" />
-                  Annulla
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-hover hover:bg-primary-active text-white rounded-md transition-colors disabled:opacity-50"
-                >
-                  <Save className="size-4" />
-                  {saving ? 'Salvando...' : 'Salva'}
-                </button>
-              </>
+              <motion.div
+                key="edit"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <DetailSection label="Modifica servizio">
+                  <ServiceForm value={draft} onChange={setDraft} errors={errors} />
+                </DetailSection>
+              </motion.div>
             ) : (
-              <>
-                {!service.isArchived && (
-                  <button onClick={handleEnterEdit} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md">
-                    <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
-                  </button>
-                )}
-                <button
-                  onClick={handleToggleArchive}
-                  className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
-                  title={service.isArchived ? 'Ripristina servizio' : 'Archivia servizio'}
-                >
-                  {service.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
-                </button>
-                <button onClick={() => setShowDelete(true)} className="p-2 bg-zinc-100 hover:bg-red-100 dark:bg-zinc-800 rounded-md">
-                  <Trash2 className="size-5 text-zinc-600 dark:text-zinc-300" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 p-6">
-          {isEditing ? (
-            <ServiceForm value={draft} onChange={setDraft} errors={errors} />
-          ) : (
-            <div className="grid grid-cols-2 gap-6">
-              <div className="flex items-center gap-3">
-                <Clock className="size-4 text-zinc-500" />
-                <div>
-                  <p className="text-xs text-zinc-500">Durata</p>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{service.duration} min</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Euro className="size-4 text-zinc-500" />
-                <div>
-                  <p className="text-xs text-zinc-500">Prezzo</p>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100">€ {service.price?.toFixed(2) ?? '0.00'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="size-4 text-zinc-500" />
-                <div>
-                  <p className="text-xs text-zinc-500">Costo prodotti</p>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100">€ {service.product_cost?.toFixed(2) ?? '0.00'}</p>
-                </div>
-              </div>
-              {service.description && (
-                <div className="col-span-2 flex items-start gap-3">
-                  <FileText className="size-4 text-zinc-500 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-zinc-500 mb-1">Descrizione</p>
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300">{service.description}</p>
+              <motion.div
+                key="view"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="flex flex-col gap-12"
+              >
+                <DetailSection index={0} label="Economics">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <StatTile label="Durata" value={formatDuration(service.duration)} />
+                    <StatTile label="Prezzo" value={formatEur(service.price ?? 0)} />
+                    <StatTile
+                      label="Margine"
+                      value={formatEur(margin)}
+                      accent={service.price ? { tone: marginTone, text: `${marginPct}%` } : undefined}
+                      hint={service.product_cost > 0 ? `Costo prodotti: ${formatEur(service.product_cost)}` : undefined}
+                    />
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                </DetailSection>
+
+                <DetailSection index={1} label="Descrizione">
+                  {service.description?.trim() ? (
+                    <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                      {service.description}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+                      Nessuna descrizione
+                    </p>
+                  )}
+                </DetailSection>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </>

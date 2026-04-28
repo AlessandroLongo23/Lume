@@ -3,14 +3,26 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, Copy, Contact2, FileHeart, ClipboardList, UserX, Archive, ArchiveRestore, Sparkles, Tag, Gift, CreditCard, Save, X, NotebookText } from 'lucide-react';
+import { it } from 'date-fns/locale';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import {
+  DetailHero,
+  DetailSection,
+  DetailHeroActions,
+  DetailChip,
+  HeroAvatar,
+  ContactRow,
+  StatTile,
+  SegmentedBar,
+} from '@/lib/components/shared/ui/detail';
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
-import { ClientRatingBadge } from '@/lib/components/admin/clients/ClientRatingBadge';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from '@/lib/components/admin/clients/ClientForm';
 import { TreatmentHistory } from '@/lib/components/admin/clients/TreatmentHistory';
 import type { Client } from '@/lib/types/Client';
@@ -67,6 +79,7 @@ export default function ClientDetailPage() {
   const [draft, setDraft] = useState<ClientFormValue>({});
   const [errors, setErrors] = useState<ClientFormErrors>({});
   const [saving, setSaving] = useState(false);
+  const [discardConfirm, setDiscardConfirm] = useState<{ action: () => void } | null>(null);
 
   const clientId = params.id as string;
 
@@ -139,16 +152,27 @@ export default function ClientDetailPage() {
     setIsEditing(true);
   };
 
-  const handleCancel = () => {
-    if (isDirty && !window.confirm('Scartare le modifiche?')) return;
+  const exitEditMode = () => {
     setIsEditing(false);
     setDraft({});
     setErrors({});
   };
 
+  const handleCancel = () => {
+    if (isDirty) {
+      setDiscardConfirm({ action: exitEditMode });
+      return;
+    }
+    exitEditMode();
+  };
+
   const handleBack = () => {
-    if (isEditing && isDirty && !window.confirm('Scartare le modifiche?')) return;
-    router.push('/admin/clienti');
+    const goBack = () => router.push('/admin/clienti');
+    if (isEditing && isDirty) {
+      setDiscardConfirm({ action: goBack });
+      return;
+    }
+    goBack();
   };
 
   const handleSave = async () => {
@@ -224,7 +248,7 @@ export default function ClientDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
       </div>
     );
@@ -232,12 +256,12 @@ export default function ClientDetailPage() {
 
   if (error || !client) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-        <UserX className="size-16 text-zinc-400 dark:text-zinc-500 mb-4" />
-        <h2 className="text-xl font-bold text-zinc-700 dark:text-zinc-300 mb-2">Cliente non trovato</h2>
-        <p className="text-zinc-600 dark:text-zinc-400">{error ?? 'Il cliente non esiste o è stato rimosso.'}</p>
+      <div className="flex flex-col items-center justify-center p-12">
+        <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
+        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Cliente non trovato</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il cliente non esiste o è stato rimosso.'}</p>
         <button
-          className="mt-6 px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-100 rounded-md transition-colors"
+          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
           onClick={() => router.push('/admin/clienti')}
         >
           Torna alla lista clienti
@@ -246,10 +270,14 @@ export default function ClientDetailPage() {
     );
   }
 
-  const isMale = client.gender === 'M';
-  const genderBg = isMale ? 'bg-blue-100 dark:bg-blue-900' : 'bg-pink-100 dark:bg-pink-900';
-  const genderText = isMale ? 'text-blue-600 dark:text-blue-300' : 'text-pink-600 dark:text-pink-300';
-  const genderBadge = isMale ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300';
+  const initials = `${client.firstName?.[0] ?? ''}${client.lastName?.[0] ?? ''}`.toUpperCase();
+  const genderLabel = client.gender === 'M' ? 'Uomo' : client.gender === 'F' ? 'Donna' : null;
+  const formattedBirth = client.birthDate
+    ? (() => {
+        const d = new Date(client.birthDate);
+        return isValid(d) ? format(d, 'd MMM yyyy', { locale: it }) : null;
+      })()
+    : null;
 
   return (
     <>
@@ -259,317 +287,237 @@ export default function ClientDetailPage() {
         selectedClient={client}
       />
 
-      <div className="flex h-full gap-0">
-        {/* Left column */}
-        <div className="w-1/3 p-4 flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="p-2 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
-              aria-label="Torna indietro"
-            >
-              <ArrowLeft className="size-5 text-zinc-600 dark:text-zinc-300" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{client.firstName} {client.lastName}</h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Dettagli cliente</p>
-            </div>
-          </div>
+      <ConfirmDialog
+        isOpen={discardConfirm !== null}
+        onClose={() => setDiscardConfirm(null)}
+        onConfirm={() => {
+          discardConfirm?.action();
+          setDiscardConfirm(null);
+        }}
+        title="Scartare le modifiche?"
+        description="Le modifiche non salvate andranno perse."
+        confirmLabel="Scarta"
+        tone="warning"
+      />
 
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden">
-            <div className="p-8 flex flex-col items-center">
-              <div className={`size-32 rounded-full ${genderBg} flex items-center justify-center mb-4`}>
-                <span className={`text-3xl font-bold ${genderText}`}>
-                  {client.firstName?.[0]}{client.lastName?.[0]}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{client.firstName} {client.lastName}</h2>
-                {client.isArchived && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Archiviato</span>
-                )}
-              </div>
-              {client.birthDate && (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Data di nascita: {new Date(client.birthDate).toLocaleDateString('it-IT')}
-                </p>
-              )}
-              <div className="flex flex-row justify-between items-center mt-6 w-full border-t border-zinc-500/25 pt-6">
-                <span className={`text-sm ${genderBadge} px-3 py-1 rounded-full`}>
-                  {isMale ? 'Uomo' : 'Donna'}
-                </span>
-                <div className="flex gap-2">
-                  {isEditing ? (
-                    <>
-                      <button
-                        onClick={handleCancel}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors disabled:opacity-50"
-                      >
-                        <X className="size-4" />
-                        Annulla
-                      </button>
-                      <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-hover hover:bg-primary-active text-white rounded-md transition-colors disabled:opacity-50"
-                      >
-                        <Save className="size-4" />
-                        {saving ? 'Salvando...' : 'Salva'}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {!client.isArchived && (
-                        <button
-                          onClick={handleEnterEdit}
-                          className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md transition-colors"
-                          aria-label="Modifica cliente"
-                        >
-                          <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
-                        </button>
-                      )}
-                      <button
-                        onClick={handleToggleArchive}
-                        className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
-                        title={client.isArchived ? 'Ripristina cliente' : 'Archivia cliente'}
-                      >
-                        {client.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
-                      </button>
-                      <button
-                        onClick={() => setShowDelete(true)}
-                        className="p-2 bg-zinc-100 hover:bg-red-100 dark:bg-zinc-800 dark:hover:bg-red-900/30 rounded-md transition-colors"
-                        aria-label="Elimina cliente"
-                      >
-                        <Trash2 className="size-5 text-zinc-600 dark:text-zinc-300 hover:text-red-600" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className="w-2/3 p-4 overflow-y-auto flex flex-col gap-8">
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <Contact2 className="size-5 text-zinc-600 dark:text-zinc-400" />
-                {isEditing ? 'Modifica dati' : 'Informazioni di contatto'}
-              </h3>
-            </div>
-            <div className="p-6">
-              {isEditing ? (
-                <ClientForm
-                  value={draft}
-                  onChange={setDraft}
-                  errors={errors}
-                  lockEmail={hadEmail}
-                  lockPhone={hadPhone}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Mail className="size-4 text-zinc-500 dark:text-zinc-400" />
-                      <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Email</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {client.email ? (
-                        <>
-                          <p className="text-base text-zinc-900 dark:text-zinc-100">{client.email}</p>
-                          <button
-                            className="p-1 text-zinc-400 hover:text-blue-500"
-                            onClick={() => { if (!client.email) return; navigator.clipboard.writeText(client.email); messagePopup.getState().success('Email copiata negli appunti'); }}
-                            title="Copia negli appunti"
-                          >
-                            <Copy className="size-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-base text-zinc-400 dark:text-zinc-500 italic">Nessuna email</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Phone className="size-4 text-zinc-500 dark:text-zinc-400" />
-                      <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Telefono</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {client.phonePrefix && client.phoneNumber ? (
-                        <>
-                          <p className="text-base text-zinc-900 dark:text-zinc-100">{client.phonePrefix} {client.phoneNumber}</p>
-                          <button
-                            className="p-1 text-zinc-400 hover:text-blue-500"
-                            onClick={() => { if (!client.phonePrefix || !client.phoneNumber) return; navigator.clipboard.writeText(client.phonePrefix + client.phoneNumber); messagePopup.getState().success('Numero copiato negli appunti'); }}
-                            title="Copia negli appunti"
-                          >
-                            <Copy className="size-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-base text-zinc-400 dark:text-zinc-500 italic">Nessun telefono</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {!isEditing && (
+      <div className="flex flex-col">
+        <DetailHero
+          onBack={handleBack}
+          avatar={<HeroAvatar initials={initials} />}
+          title={`${client.firstName} ${client.lastName}`}
+          chips={
             <>
-              <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden">
-                <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                    <Sparkles className="size-5 text-zinc-600 dark:text-zinc-400" />
-                    Valutazione (ultimi 12 mesi)
-                  </h3>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Spesa totale</p>
-                    <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-                      {rating ? formatEur(rating.total_spent) : '—'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <ClientRatingBadge stars={rating ? rating.spend_stars : null} kind="money" size="md" />
-                      {rating && (
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{STAR_TO_PERCENTILE[rating.spend_stars]}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Visite</p>
-                    <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-                      {rating ? rating.visit_count : '—'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <ClientRatingBadge stars={rating ? rating.visit_stars : null} kind="calendar" size="md" />
-                      {rating && (
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{STAR_TO_PERCENTILE[rating.visit_stars]}</span>
-                      )}
-                    </div>
+              {client.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
+              {client.isTourist && (
+                <DetailChip tone="sky" icon={Plane}>
+                  Turista
+                </DetailChip>
+              )}
+            </>
+          }
+          meta={
+            <>
+              {genderLabel && <span>{genderLabel}</span>}
+              {genderLabel && formattedBirth && <span aria-hidden>·</span>}
+              {formattedBirth && <span>nato il {formattedBirth}</span>}
+            </>
+          }
+          aside={
+            !isEditing && (
+              <div className="flex flex-col gap-1 max-w-[280px]">
+                <ContactRow
+                  icon={Mail}
+                  value={client.email}
+                  emptyLabel="Nessuna email"
+                  onCopy={(v) => {
+                    navigator.clipboard.writeText(v);
+                    messagePopup.getState().success('Email copiata negli appunti');
+                  }}
+                />
+                <ContactRow
+                  icon={Phone}
+                  value={client.phonePrefix && client.phoneNumber ? `${client.phonePrefix} ${client.phoneNumber}` : null}
+                  emptyLabel="Nessun telefono"
+                  onCopy={(v) => {
+                    navigator.clipboard.writeText(v.replace(/\s+/g, ''));
+                    messagePopup.getState().success('Numero copiato negli appunti');
+                  }}
+                />
+              </div>
+            )
+          }
+          actions={
+            <DetailHeroActions
+              isEditing={isEditing}
+              isLocked={client.isArchived}
+              saving={saving}
+              isDirty={isDirty}
+              onEdit={handleEnterEdit}
+              onCancel={handleCancel}
+              onSave={handleSave}
+              menuItems={[
+                {
+                  label: client.isArchived ? 'Ripristina' : 'Archivia',
+                  icon: client.isArchived ? ArchiveRestore : Archive,
+                  onClick: handleToggleArchive,
+                },
+                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true) },
+              ]}
+            />
+          }
+        />
+
+        <div className="px-6 lg:px-10 py-8 max-w-5xl w-full mx-auto">
+          <AnimatePresence mode="wait" initial={false}>
+            {isEditing ? (
+              <motion.div
+                key="edit"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <DetailSection label="Modifica dati">
+                  <ClientForm
+                    value={draft}
+                    onChange={setDraft}
+                    errors={errors}
+                    lockEmail={hadEmail}
+                    lockPhone={hadPhone}
+                  />
+                </DetailSection>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="view"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="flex flex-col gap-12"
+              >
+                <DetailSection index={0} label="Valutazione · ultimi 12 mesi">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <StatTile
+                      label="Spesa totale"
+                      value={rating ? formatEur(rating.total_spent) : '—'}
+                      accent={rating ? { tone: 'emerald', text: STAR_TO_PERCENTILE[rating.spend_stars] } : undefined}
+                    >
+                      <SegmentedBar filled={rating?.spend_stars ?? 0} tone="emerald" groupDelay={0} />
+                    </StatTile>
+                    <StatTile
+                      label="Visite"
+                      value={rating ? String(rating.visit_count) : '—'}
+                      accent={rating ? { tone: 'sky', text: STAR_TO_PERCENTILE[rating.visit_stars] } : undefined}
+                    >
+                      <SegmentedBar filled={rating?.visit_stars ?? 0} tone="sky" groupDelay={0.08} />
+                    </StatTile>
                   </div>
                   {!rating && (
-                    <p className="md:col-span-2 text-sm text-zinc-400 dark:text-zinc-500 italic">
+                    <p className="mt-4 text-sm text-zinc-400 dark:text-zinc-500 italic">
                       Nessuna visita negli ultimi 12 mesi.
                     </p>
                   )}
-                </div>
-              </div>
+                </DetailSection>
 
-              <div id="scheda" className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden scroll-mt-4">
-                <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                    <NotebookText className="size-5 text-zinc-600 dark:text-zinc-400" />
-                    Scheda tecnica
-                  </h3>
-                </div>
-                <div className="p-6">
+                <DetailSection index={1} label="Scheda tecnica" id="scheda">
                   <TreatmentHistory clientId={client.id} />
-                </div>
-              </div>
+                </DetailSection>
 
-              <ClientCouponsSection clientId={clientId} allCoupons={allCoupons} />
+                <DetailSection index={2} label="Coupon e gift card">
+                  <ClientCouponsList clientId={clientId} allCoupons={allCoupons} />
+                </DetailSection>
 
-              <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden">
-                <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                    <FileHeart className="size-5 text-zinc-600 dark:text-zinc-400" />
-                    Note
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ClipboardList className="size-4 text-zinc-500 dark:text-zinc-400" />
-                    <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Note sul cliente</span>
-                  </div>
+                <DetailSection index={3} label="Note">
                   {client.note ? (
-                    <div className="bg-zinc-50 dark:bg-zinc-800 rounded-md p-4 border border-zinc-500/25">
-                      <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">{client.note}</p>
-                    </div>
+                    <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                      {client.note}
+                    </p>
                   ) : (
-                    <div className="bg-zinc-50 dark:bg-zinc-800 rounded-md p-4 border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
-                      <p className="text-zinc-400 dark:text-zinc-500">Nessuna nota</p>
-                    </div>
+                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+                      Nessuna nota
+                    </p>
                   )}
-                </div>
-              </div>
-            </>
-          )}
+                </DetailSection>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </>
   );
 }
 
-function ClientCouponsSection({
+// ---------------------------------------------------------------------------
+// Coupons list
+// ---------------------------------------------------------------------------
+
+function ClientCouponsList({
   clientId,
   allCoupons,
 }: {
   clientId: string;
   allCoupons: ReturnType<typeof useCouponsStore.getState>['coupons'];
 }) {
-  const coupons = allCoupons
-    .filter((c) => c.recipient_client_id === clientId || c.purchaser_client_id === clientId)
-    .sort((a, b) => {
-      if (a.isUsable !== b.isUsable) return a.isUsable ? -1 : 1;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+  const reduceMotion = useReducedMotion();
+  const coupons = useMemo(
+    () =>
+      allCoupons
+        .filter((c) => c.recipient_client_id === clientId || c.purchaser_client_id === clientId)
+        .sort((a, b) => {
+          if (a.isUsable !== b.isUsable) return a.isUsable ? -1 : 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }),
+    [allCoupons, clientId],
+  );
+
+  if (coupons.length === 0) {
+    return (
+      <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+        Nessun coupon o gift card.
+      </p>
+    );
+  }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 overflow-hidden">
-      <div className="flex justify-between items-center p-6 border-b border-zinc-500/25">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <Tag className="size-5 text-zinc-600 dark:text-zinc-400" />
-          Coupon e gift card
-        </h3>
-        <span className="text-xs text-zinc-400">{coupons.length}</span>
-      </div>
-      <div className="p-6">
-        {coupons.length === 0 ? (
-          <div className="bg-zinc-50 dark:bg-zinc-800 rounded-md p-4 border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
-            <p className="text-zinc-400 dark:text-zinc-500">Nessun coupon o gift card.</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-zinc-500/10">
-            {coupons.map((c) => {
-              const isCard = c.kind === 'gift_card';
-              const Icon = isCard ? CreditCard : Gift;
-              const status = c.displayStatus();
-              const statusColor = status === 'attivo'
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : status === 'esaurito'
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-zinc-400';
-              const isAsRecipient = c.recipient_client_id === clientId;
-              return (
-                <li key={c.id} className="py-3 flex items-center gap-3">
-                  <Icon className={`size-4 shrink-0 ${isCard ? 'text-emerald-500' : 'text-primary'}`} />
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {isCard ? 'Gift card' : 'Coupon'} · {c.displayDiscount()}
-                      </span>
-                      <span className="text-2xs uppercase tracking-wider text-zinc-400">
-                        {isAsRecipient ? 'destinatario' : 'acquirente'}
-                      </span>
-                    </div>
-                    <span className="text-xs text-zinc-500">
-                      Valido fino al {new Date(c.valid_until).toLocaleDateString('it-IT')}
-                    </span>
-                  </div>
-                  <span className={`text-xs font-medium ${statusColor}`}>{status}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </div>
+    <ul className="divide-y divide-zinc-500/10 border-y border-zinc-500/10">
+      {coupons.map((c, i) => {
+        const isCard = c.kind === 'gift_card';
+        const Icon = isCard ? CreditCard : Gift;
+        const status = c.displayStatus();
+        const statusColor =
+          status === 'attivo'
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : status === 'esaurito'
+              ? 'text-amber-600 dark:text-amber-400'
+              : 'text-zinc-400';
+        const isAsRecipient = c.recipient_client_id === clientId;
+        return (
+          <motion.li
+            key={c.id}
+            className="py-3 flex items-center gap-3"
+            initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut', delay: i * 0.03 }}
+          >
+            <Icon className={`size-4 shrink-0 ${isCard ? 'text-emerald-500' : 'text-primary'}`} />
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {isCard ? 'Gift card' : 'Coupon'} · {c.displayDiscount()}
+                </span>
+                <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                  {isAsRecipient ? 'destinatario' : 'acquirente'}
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500">
+                Valido fino al {new Date(c.valid_until).toLocaleDateString('it-IT')}
+              </span>
+            </div>
+            <span className={`text-xs font-medium ${statusColor}`}>{status}</span>
+          </motion.li>
+        );
+      })}
+    </ul>
   );
 }

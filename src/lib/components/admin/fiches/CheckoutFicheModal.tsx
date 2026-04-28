@@ -191,7 +191,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
       </div>
 
       {/* Main two-column grid */}
-      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 p-6">
+      <div className="grid grid-cols-1 2xl:grid-cols-[320px_1fr] gap-6 2xl:gap-8 p-4 2xl:p-6">
 
         {/* ── LEFT: Receipt with torn-paper effect ── */}
         {/* text-zinc-50/zinc-800 sets currentColor for the SVG fill to match modal bg */}

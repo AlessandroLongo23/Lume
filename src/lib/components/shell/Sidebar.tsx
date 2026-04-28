@@ -75,19 +75,19 @@ export function Sidebar({ identity, navGroups, pinnedLinks, helpLinks, userCard 
   const onNavigate = forceExpanded ? () => setMobileOpen(false) : undefined;
 
   return (
-    <div className={`flex flex-col flex-1 min-h-0 pt-4 pb-3 gap-3 pl-4 ${effectiveCollapsed ? 'pr-2' : 'pr-3'}`}>
+    <div className={`flex flex-col flex-1 min-h-0 pt-3 pb-2 gap-2 pl-4 ${effectiveCollapsed ? 'pr-2' : 'pr-3'}`}>
       {identity && <div className="shrink-0">{identity}</div>}
 
-      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col gap-4">
         {navGroups.map((group, gi) => (
           <div
             key={group.title ?? `group-${gi}`}
-            className="flex flex-col gap-1.5"
+            className="flex flex-col gap-1"
             role="group"
             aria-label={group.title}
           >
             {group.title && (
-              <div className="relative h-4 mx-1">
+              <div className="relative h-3.5 mx-1">
                 <AnimatePresence initial={false}>
                   {effectiveCollapsed
                     ? gi > 0 && (

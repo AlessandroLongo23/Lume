@@ -210,6 +210,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [prodOpen, setProdOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
+  const [treatmentTab, setTreatmentTab] = useState<'new' | 'last'>('new');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
   const [pendingAction, setPendingAction] = useState<'submit' | null>(null);
@@ -283,6 +284,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     setProdOpen(false);
     setActiveTab('services');
     setActiveTopTab(initialView ?? 'edit');
+    setTreatmentTab('new');
     setPaymentView(FichePaymentMethod.CASH);
     setCashGiven(null);
     setSplits(INITIAL_SPLITS.map((s) => ({ ...s })));
@@ -373,7 +375,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     totalOverride !== null && Math.round(totalOverride * 100) !== Math.round(subtotalAfterCoupons * 100);
 
   const selectedClient = useMemo(() => clients.find((c) => c.id === clientId) ?? null, [clients, clientId]);
-  const lastNote = useMemo(() => selectedClient?.getLastNote() ?? '', [selectedClient]);
+  const lastTreatment = useMemo(() => selectedClient?.getLastTreatment() ?? null, [selectedClient]);
 
   const clientOptions = clients.filter((c) => !c.isArchived).map((c) => ({ ...c, fullName: c.getFullName() }));
   const operatorOptions = operators.filter((op) => !op.isArchived).map((op) => ({ ...op, fullName: op.getFullName() }));
@@ -676,6 +678,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   const inputClass =
     'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:border-primary/50 transition-shadow';
+  const readOnlyFieldClass =
+    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-700/30 text-sm whitespace-pre-wrap min-h-[4.75rem]';
   const labelClass =
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
@@ -713,7 +717,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             ? (activeTopTab === 'payment' ? ReceiptText : Pencil)
             : Plus
         }
-        classes="max-w-6xl h-[90vh]"
+        classes="max-w-7xl w-[95vw] h-[92vh]"
         confirmText={confirmText}
         confirmDisabled={confirmDisabled}
         footerContent={
@@ -800,92 +804,140 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
           {activeTopTab === 'edit' ? (
             /* ══ MODIFICA TAB ═══════════════════════════════════════════════ */
-            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '1fr 2fr' }}>
+            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 2xl:gap-8 flex-1 min-h-0 overflow-y-auto 2xl:overflow-visible">
 
               {/* ── LEFT: Dettagli ── */}
-              <div className="flex flex-col gap-5 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-5 2xl:overflow-y-auto 2xl:pr-1">
 
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
-                  <input
-                    type="datetime-local"
-                    className={inputClass}
-                    value={datetimeStr}
-                    onChange={(e) => setDatetimeStr(e.target.value)}
-                  />
-                  {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}><User className="size-3.5" />Cliente *</label>
-                  <CustomSelect
-                    options={clientOptions}
-                    labelKey="fullName"
-                    valueKey="id"
-                    value={clientId}
-                    onChange={setClientId}
-                    placeholder="Cerca cliente…"
-                    maxHeight="max-h-48"
-                  />
-                  {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}><FileText className="size-3.5" />Ultima nota tecnica</label>
-                  <textarea
-                    className={`${inputClass} resize-none bg-zinc-50 dark:bg-zinc-700/30 text-zinc-500 dark:text-zinc-400 cursor-default`}
-                    rows={3}
-                    value={lastNote}
-                    readOnly
-                    placeholder={selectedClient ? 'Nessuna nota precedente' : 'Seleziona un cliente…'}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}><FileText className="size-3.5" />Nota appuntamento</label>
-                  <textarea
-                    className={`${inputClass} resize-none`}
-                    rows={3}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Note per questo appuntamento…"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+                {/* Row 1: Data, Cliente, Stato — 3-col below 2xl when there's room, stacked at 2xl (narrow column) */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-5">
                   <div className="flex flex-col gap-1.5">
-                    <label className={labelClass}><FlaskConical className="size-3.5" />Miscela</label>
+                    <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
                     <input
-                      type="text"
+                      type="datetime-local"
                       className={inputClass}
-                      value={miscela}
-                      onChange={(e) => setMiscela(e.target.value)}
-                      placeholder="Codice colore…"
+                      value={datetimeStr}
+                      onChange={(e) => setDatetimeStr(e.target.value)}
                     />
+                    {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
                   </div>
+
                   <div className="flex flex-col gap-1.5">
-                    <label className={labelClass}><Sparkles className="size-3.5" />Tecnica</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={tecnica}
-                      onChange={(e) => setTecnica(e.target.value)}
-                      placeholder="Es. balayage…"
+                    <label className={labelClass}><User className="size-3.5" />Cliente *</label>
+                    <CustomSelect
+                      options={clientOptions}
+                      labelKey="fullName"
+                      valueKey="id"
+                      value={clientId}
+                      onChange={setClientId}
+                      placeholder="Cerca cliente…"
+                      maxHeight="max-h-48"
                     />
+                    {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className={labelClass}><Check className="size-3.5" />Stato</label>
+                    <select
+                      className={inputClass}
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as FicheStatus)}
+                    >
+                      <option value={FicheStatus.CREATED}>Creata</option>
+                      <option value={FicheStatus.PENDING}>In attesa</option>
+                      <option value={FicheStatus.COMPLETED}>Completata</option>
+                    </select>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}><Check className="size-3.5" />Stato</label>
-                  <select
-                    className={inputClass}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as FicheStatus)}
-                  >
-                    <option value={FicheStatus.CREATED}>Creata</option>
-                    <option value={FicheStatus.PENDING}>In attesa</option>
-                    <option value={FicheStatus.COMPLETED}>Completata</option>
-                  </select>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+                    {([
+                      { id: 'new', label: 'Scheda tecnica' },
+                      { id: 'last', label: 'Ultima scheda' },
+                    ] as { id: 'new' | 'last'; label: string }[]).map(({ id, label }) => {
+                      const isActive = treatmentTab === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setTreatmentTab(id)}
+                          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                            isActive
+                              ? 'border-primary text-zinc-900 dark:text-zinc-100'
+                              : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {treatmentTab === 'new' ? (
+                    <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-3 pt-1">
+                      <div className="flex flex-col gap-1.5">
+                        <label className={labelClass}><FlaskConical className="size-3.5" />Miscela</label>
+                        <textarea
+                          className={`${inputClass} resize-none`}
+                          rows={3}
+                          value={miscela}
+                          onChange={(e) => setMiscela(e.target.value)}
+                          placeholder="Codice colore…"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className={labelClass}><Sparkles className="size-3.5" />Tecnica</label>
+                        <textarea
+                          className={`${inputClass} resize-none`}
+                          rows={3}
+                          value={tecnica}
+                          onChange={(e) => setTecnica(e.target.value)}
+                          placeholder="Es. balayage…"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className={labelClass}><FileText className="size-3.5" />Nota appuntamento</label>
+                        <textarea
+                          className={`${inputClass} resize-none`}
+                          rows={3}
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
+                          placeholder="Note per questo appuntamento…"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3 pt-1">
+                      {lastTreatment && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {format(new Date(lastTreatment.datetime), "d MMMM yyyy", { locale: it })}
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-3">
+                        {(['miscela', 'tecnica', 'note'] as const).map((field) => {
+                          const config = {
+                            miscela: { icon: FlaskConical, label: 'Miscela', empty: 'Nessuna miscela precedente' },
+                            tecnica: { icon: Sparkles, label: 'Tecnica', empty: 'Nessuna tecnica precedente' },
+                            note: { icon: FileText, label: 'Nota appuntamento', empty: 'Nessuna nota precedente' },
+                          }[field];
+                          const Icon = config.icon;
+                          const value = lastTreatment?.[field] ?? '';
+                          const placeholder = selectedClient ? config.empty : 'Seleziona un cliente…';
+                          return (
+                            <div key={field} className="flex flex-col gap-1.5">
+                              <label className={labelClass}><Icon className="size-3.5" />{config.label}</label>
+                              <div
+                                className={`${readOnlyFieldClass} ${value ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500'}`}
+                              >
+                                {value || placeholder}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -964,7 +1016,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                       {errors.services && <p className="text-xs text-red-500 -mt-2">{errors.services}</p>}
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 2xl:flex-1 2xl:min-h-0">
                         {ficheServices.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
                             <Scissors className="size-8 opacity-20" />
@@ -988,7 +1040,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                               <span />
                             </div>
 
-                            <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
+                            <div className="divide-y divide-zinc-500/10 2xl:overflow-y-auto 2xl:overscroll-contain">
                               {servicesWithTimes.map((svc, i) => (
                                 <div
                                   key={svc.id ?? i}
@@ -1123,7 +1175,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         )}
                       </div>
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 flex-1 min-h-0">
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 2xl:flex-1 2xl:min-h-0">
                         {ficheProducts.length > 0 && (
                           <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
                             <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
@@ -1139,7 +1191,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                             <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-zinc-500/10 overflow-y-auto overscroll-contain">
+                          <div className="divide-y divide-zinc-500/10 2xl:overflow-y-auto 2xl:overscroll-contain">
                             {ficheProducts.map((prod) => (
                               <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                                 <div className="flex flex-col min-w-0 flex-1">

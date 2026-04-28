@@ -2,11 +2,21 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { Mail, Key, Shield, ShieldCheck, LogOut, Eye, EyeOff, Loader2, Save } from 'lucide-react';
+import { Mail, Key, Shield, ShieldCheck, ShieldOff, LogOut, Eye, EyeOff, Loader2, Save, type LucideIcon } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { supabase } from '@/lib/supabase/client';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+
+type PendingConfirm = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  tone: 'warning' | 'destructive' | 'default';
+  icon?: LucideIcon;
+  action: () => void | Promise<void>;
+};
 
 type MfaState =
   | { status: 'unknown' }
@@ -16,6 +26,9 @@ type MfaState =
 
 export function SicurezzaPanel() {
   const email = usePreferencesStore((s) => s.email);
+
+  // ── Confirm dialog ────────────────────────────────────────────────────────
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   // ── Email change ──────────────────────────────────────────────────────────
   const [newEmail, setNewEmail] = useState('');
@@ -172,21 +185,30 @@ export function SicurezzaPanel() {
     }
   };
 
-  const onDisableMfa = async () => {
+  const onDisableMfa = () => {
     if (mfa.status !== 'verified') return;
-    if (!confirm('Disattivare l\'autenticazione a due fattori?')) return;
-    setMfaBusy(true);
-    try {
-      const { error } = await supabase.auth.mfa.unenroll({ factorId: mfa.factorId });
-      if (error) throw error;
-      messagePopup.getState().success('2FA disattivata');
-      setMfa({ status: 'none' });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Errore durante la disattivazione';
-      messagePopup.getState().error(msg);
-    } finally {
-      setMfaBusy(false);
-    }
+    setPendingConfirm({
+      title: 'Disattivare l\'autenticazione a due fattori?',
+      description: 'Il tuo account perderà la protezione aggiuntiva del codice 2FA.',
+      confirmLabel: 'Disattiva',
+      tone: 'warning',
+      icon: ShieldOff,
+      action: async () => {
+        if (mfa.status !== 'verified') return;
+        setMfaBusy(true);
+        try {
+          const { error } = await supabase.auth.mfa.unenroll({ factorId: mfa.factorId });
+          if (error) throw error;
+          messagePopup.getState().success('2FA disattivata');
+          setMfa({ status: 'none' });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Errore durante la disattivazione';
+          messagePopup.getState().error(msg);
+        } finally {
+          setMfaBusy(false);
+        }
+      },
+    });
   };
 
   const onCancelEnroll = async () => {
@@ -199,17 +221,25 @@ export function SicurezzaPanel() {
   // ── Sessions ──────────────────────────────────────────────────────────────
   const [signoutBusy, setSignoutBusy] = useState(false);
 
-  const onSignOutEverywhere = async () => {
-    if (!confirm('Esci da tutti i dispositivi? Sarai disconnesso anche da questo.')) return;
-    setSignoutBusy(true);
-    try {
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      if (error) throw error;
-      window.location.href = '/login';
-    } catch {
-      messagePopup.getState().error('Errore durante la disconnessione');
-      setSignoutBusy(false);
-    }
+  const onSignOutEverywhere = () => {
+    setPendingConfirm({
+      title: 'Esci da tutti i dispositivi?',
+      description: 'Sarai disconnesso anche da questo dispositivo.',
+      confirmLabel: 'Esci ovunque',
+      tone: 'warning',
+      icon: LogOut,
+      action: async () => {
+        setSignoutBusy(true);
+        try {
+          const { error } = await supabase.auth.signOut({ scope: 'global' });
+          if (error) throw error;
+          window.location.href = '/login';
+        } catch {
+          messagePopup.getState().error('Errore durante la disconnessione');
+          setSignoutBusy(false);
+        }
+      },
+    });
   };
 
   return (
@@ -422,6 +452,21 @@ export function SicurezzaPanel() {
           </button>
         </div>
       </SettingsCard>
+
+      <ConfirmDialog
+        isOpen={pendingConfirm !== null}
+        onClose={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          const action = pendingConfirm?.action;
+          setPendingConfirm(null);
+          void action?.();
+        }}
+        title={pendingConfirm?.title ?? ''}
+        description={pendingConfirm?.description}
+        confirmLabel={pendingConfirm?.confirmLabel}
+        tone={pendingConfirm?.tone ?? 'warning'}
+        icon={pendingConfirm?.icon}
+      />
     </div>
   );
 }

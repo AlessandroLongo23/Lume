@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { TriangleAlert, Trash2, LogOut } from 'lucide-react';
 import { DeleteWorkspaceModal } from '@/lib/components/admin/DeleteWorkspaceModal';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { isOwner, isOperator } from '@/lib/auth/roles';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -16,6 +17,7 @@ const subscribeImpersonation = () => () => {};
 export function AccountPanel() {
   const role = useSubscriptionStore((s) => s.role);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [salonName, setSalonName] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const isImpersonating = useSyncExternalStore(
@@ -31,8 +33,8 @@ export function AccountPanel() {
       .catch(() => {});
   }, []);
 
-  const onLeaveSalon = async () => {
-    if (!confirm('Lasciare il salone? Perderai immediatamente l\'accesso al gestionale.')) return;
+  const performLeaveSalon = async () => {
+    setShowLeaveConfirm(false);
     setLeaving(true);
     try {
       const res = await fetch('/api/account/leave-salon', { method: 'POST' });
@@ -40,7 +42,6 @@ export function AccountPanel() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? 'Errore');
       }
-      // Clean sign-out so the next request sees a fresh state.
       await fetch('/auth/logout', { method: 'POST' });
       window.location.href = '/login';
     } catch (err) {
@@ -99,7 +100,7 @@ export function AccountPanel() {
                 </div>
                 <button
                   type="button"
-                  onClick={onLeaveSalon}
+                  onClick={() => setShowLeaveConfirm(true)}
                   disabled={leaving}
                   className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -119,6 +120,17 @@ export function AccountPanel() {
           salonName={salonName}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        onConfirm={performLeaveSalon}
+        title="Lasciare il salone?"
+        description="Perderai immediatamente l'accesso al gestionale."
+        confirmLabel="Esci dal salone"
+        tone="destructive"
+        icon={LogOut}
+      />
     </div>
   );
 }

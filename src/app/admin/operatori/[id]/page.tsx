@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, UserX, Archive, ArchiveRestore } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Link2 } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
+import {
+  DetailHero,
+  DetailSection,
+  DetailHeroActions,
+  DetailChip,
+  HeroAvatar,
+  ContactRow,
+} from '@/lib/components/shared/ui/detail';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import type { Operator } from '@/lib/types/Operator';
@@ -38,16 +46,19 @@ export default function OperatorDetailPage() {
         router.push('/admin/operatori');
       }
     } catch {
-      messagePopup.getState().error('Errore durante l\'operazione.');
+      messagePopup.getState().error("Errore durante l'operazione.");
     }
   };
 
   useEffect(() => {
     if (!isLoading) {
       const found = operators.find((o) => o.id === operatorId);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (found) setOperator(found);
-      else setError('Operatore non trovato');
+      if (found) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setOperator(found);
+      } else {
+        setError('Operatore non trovato');
+      }
     }
   }, [operators, operatorId, isLoading]);
 
@@ -66,7 +77,7 @@ export default function OperatorDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-teal-500 rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
       </div>
     );
@@ -74,76 +85,108 @@ export default function OperatorDetailPage() {
 
   if (error || !operator) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-        <UserX className="size-16 text-zinc-400 mb-4" />
-        <h2 className="text-xl font-bold text-zinc-700 dark:text-zinc-300 mb-2">Operatore non trovato</h2>
-        <button className="mt-6 px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 rounded-md" onClick={() => router.push('/admin/operatori')}>
+      <div className="flex flex-col items-center justify-center p-12">
+        <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
+        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Operatore non trovato</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? "L'operatore non esiste o è stato rimosso."}</p>
+        <button
+          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
+          onClick={() => router.push('/admin/operatori')}
+        >
           Torna alla lista operatori
         </button>
       </div>
     );
   }
 
+  const initials = `${operator.firstName?.[0] ?? ''}${operator.lastName?.[0] ?? ''}`.toUpperCase();
+  const linkedToUser = !!operator.user_id;
+  const hasEmail = !!operator.email;
+  const hasPhone = !!(operator.phonePrefix && operator.phoneNumber);
+
   return (
     <>
-      <EditOperatorModal isOpen={showEdit} onClose={() => setShowEdit(false)} selectedOperator={operator} editedOperator={editedOperator} onEditedOperatorChange={setEditedOperator} />
+      <EditOperatorModal
+        isOpen={showEdit}
+        onClose={() => setShowEdit(false)}
+        selectedOperator={operator}
+        editedOperator={editedOperator}
+        onEditedOperatorChange={setEditedOperator}
+      />
       <DeleteOperatorModal isOpen={showDelete} onClose={() => setShowDelete(false)} selectedOperator={operator} />
 
-      <div className="flex flex-col gap-4 max-w-2xl">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/admin/operatori')} className="p-2 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors">
-            <ArrowLeft className="size-5 text-zinc-600 dark:text-zinc-300" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{operator.firstName} {operator.lastName}</h1>
-            <p className="text-sm text-zinc-500">Dettagli operatore</p>
-          </div>
-        </div>
+      <div className="flex flex-col">
+        <DetailHero
+          onBack={() => router.push('/admin/operatori')}
+          avatar={<HeroAvatar initials={initials} />}
+          title={`${operator.firstName} ${operator.lastName}`}
+          chips={
+            <>
+              {operator.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
+              {linkedToUser && (
+                <DetailChip tone="primary" icon={Link2}>
+                  Account collegato
+                </DetailChip>
+              )}
+            </>
+          }
+          meta={<span>Operatore</span>}
+          actions={
+            <DetailHeroActions
+              isEditing={false}
+              isLocked={operator.isArchived}
+              onEdit={() => { setEditedOperator(operator); setShowEdit(true); }}
+              onCancel={() => {}}
+              onSave={() => {}}
+              menuItems={[
+                {
+                  label: operator.isArchived ? 'Ripristina' : 'Archivia',
+                  icon: operator.isArchived ? ArchiveRestore : Archive,
+                  onClick: handleToggleArchive,
+                },
+                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true) },
+              ]}
+            />
+          }
+        />
 
-        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-500/25 p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="size-20 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <span className="text-2xl font-bold text-teal-600 dark:text-teal-300">
-                {operator.firstName?.[0]}{operator.lastName?.[0]}
-              </span>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{operator.firstName} {operator.lastName}</h2>
-                {operator.isArchived && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Archiviato</span>
+        <div className="px-6 lg:px-10 py-8 max-w-5xl w-full mx-auto flex flex-col gap-12">
+          <DetailSection index={0} label="Contatti">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-zinc-500/15 bg-zinc-50/60 dark:bg-zinc-900/40 px-5 py-4 flex flex-col gap-2">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Email</span>
+                {hasEmail ? (
+                  <ContactRow
+                    icon={Mail}
+                    value={operator.email}
+                    emptyLabel="—"
+                    onCopy={(v) => {
+                      navigator.clipboard.writeText(v);
+                      messagePopup.getState().success('Email copiata negli appunti');
+                    }}
+                  />
+                ) : (
+                  <span className="text-sm text-zinc-400 dark:text-zinc-500 italic">Nessuna email</span>
+                )}
+              </div>
+              <div className="rounded-xl border border-zinc-500/15 bg-zinc-50/60 dark:bg-zinc-900/40 px-5 py-4 flex flex-col gap-2">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Telefono</span>
+                {hasPhone ? (
+                  <ContactRow
+                    icon={Phone}
+                    value={`${operator.phonePrefix} ${operator.phoneNumber}`}
+                    emptyLabel="—"
+                    onCopy={(v) => {
+                      navigator.clipboard.writeText(v.replace(/\s+/g, ''));
+                      messagePopup.getState().success('Numero copiato negli appunti');
+                    }}
+                  />
+                ) : (
+                  <span className="text-sm text-zinc-400 dark:text-zinc-500 italic">Nessun telefono</span>
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
-              {!operator.isArchived && (
-                <button onClick={() => { setEditedOperator(operator); setShowEdit(true); }} className="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 rounded-md transition-colors">
-                  <Edit className="size-5 text-zinc-600 dark:text-zinc-300" />
-                </button>
-              )}
-              <button
-                onClick={handleToggleArchive}
-                className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
-                title={operator.isArchived ? 'Ripristina operatore' : 'Archivia operatore'}
-              >
-                {operator.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
-              </button>
-              <button onClick={() => setShowDelete(true)} className="p-2 bg-zinc-100 hover:bg-red-100 dark:bg-zinc-800 dark:hover:bg-red-900/30 rounded-md transition-colors">
-                <Trash2 className="size-5 text-zinc-600 dark:text-zinc-300" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-              <Mail className="size-4 text-zinc-500" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">{operator.email || 'Nessuna email'}</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-              <Phone className="size-4 text-zinc-500" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">{operator.phonePrefix && operator.phoneNumber ? `${operator.phonePrefix} ${operator.phoneNumber}` : 'Nessun telefono'}</span>
-            </div>
-          </div>
+          </DetailSection>
         </div>
       </div>
     </>

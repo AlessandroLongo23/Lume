@@ -38,7 +38,7 @@ export function AddModal({
 }: AddModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
-      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[90vh]">
+      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
@@ -60,9 +60,9 @@ export function AddModal({
 
         <div className={`p-6 flex-1 min-h-0 overflow-hidden ${contentClasses}`}>{children}</div>
 
-        <div className="flex flex-row items-center justify-between p-6 border-t border-zinc-500/25 shrink-0">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-3 p-6 border-t border-zinc-500/25 shrink-0">
           <div>{footerContent}</div>
-          <div className="flex flex-row items-center gap-3">
+          <div className="flex flex-row flex-wrap items-center gap-3">
             {dangerAction}
             <button
               type="button"

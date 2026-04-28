@@ -64,11 +64,11 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  const gridCols = { gridTemplateColumns: `80px repeat(${columns.length}, minmax(120px, 1fr))` };
+  const gridCols = { gridTemplateColumns: `64px repeat(${columns.length}, minmax(96px, 1fr))` };
 
   return (
     <div className="border border-zinc-500/25 rounded-lg overflow-hidden">
-      <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-14rem)]">
+      <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-11rem)]">
         {/* Header — sticky so operator names stay visible while scrolling */}
         <div
           className="grid sticky top-0 z-20 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"

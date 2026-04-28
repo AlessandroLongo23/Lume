@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Bot, Pencil, Trash2 } from 'lucide-react';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackComment } from '@/lib/types/FeedbackComment';
 import { MarkdownBody } from './MarkdownBody';
@@ -20,6 +21,7 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
   const update = useFeedbackCommentsStore((s) => s.update);
   const remove = useFeedbackCommentsStore((s) => s.remove);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isOwn = currentUserId !== null && comment.author_id === currentUserId;
   const canEdit = isOwn && comment.isEditable;
@@ -39,8 +41,8 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Eliminare definitivamente questo commento?')) return;
+  const performDelete = async () => {
+    setShowDeleteConfirm(false);
     try {
       await remove(comment.id);
       messagePopup.getState().success('Commento eliminato');
@@ -112,7 +114,7 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
               {canDelete && (
                 <button
                   type="button"
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="flex items-center gap-1 px-2 py-0.5 rounded text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="size-3" /> Elimina
@@ -128,6 +130,17 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
           <ImageGallery paths={comment.image_paths} />
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => { void performDelete(); }}
+        title="Eliminare il commento?"
+        description="Il commento verrà rimosso definitivamente."
+        confirmLabel="Elimina"
+        tone="destructive"
+        icon={Trash2}
+      />
     </div>
   );
 }

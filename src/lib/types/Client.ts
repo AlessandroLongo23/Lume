@@ -58,10 +58,6 @@ export class Client {
     return useFichesStore.getState().fiches.filter((fiche: Fiche) => fiche.client_id === this.id);
   }
 
-  getLastNote(): string {
-    return this.getFiches().at(-1)?.note || '';
-  }
-
   getTreatmentHistory(): Fiche[] {
     return this.getFiches()
       .filter((f) => f.hasTreatmentData())

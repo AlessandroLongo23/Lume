@@ -2,11 +2,12 @@
 
 ## Chiarimenti
 [ ] applicazione abbonamento e dettagli più chiaro
-[ ] restructure and redesign client info page 
 
 ## Features
+[ ] spese ricorrenti
 [ ] notifica auguri sul gestionale
 [ ] Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
+[ ] calendario occupato
 
 ## Impostazioni
 [ ] double check all settings work as they should
@@ -16,6 +17,7 @@
 [ ] passare tutti i dati da Stiv
 
 ## Design
+[ ] responsive audit
 [ ] Audit the codebase to add animations using motion
 
 ## Codebase
@@ -43,6 +45,8 @@
 [x] togliere email obbligatoria per creare cliente
 
 ## Chiarimenti
+[x] restructure and redesign client info page
+[x] campi piu grandi
 [x] spostare il bottone per chiudere le fiche dentro il modale
 [x] cambiare il totale direttamente senza aggiornare i prezzi delle singole cose
 [x] calendario filtro operatori visualizzazione messe (aggiornare colore e parziale (contro il totale))
