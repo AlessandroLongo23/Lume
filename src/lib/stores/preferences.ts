@@ -8,6 +8,8 @@ interface PreferencesState {
   lastName: string;
   email: string;
   avatarUrl: string | null;
+  phonePrefix: string;
+  phoneNumber: string;
   preferences: ProfilePreferences;
   fetchPreferences: () => Promise<void>;
   /**
@@ -16,10 +18,16 @@ interface PreferencesState {
    */
   updatePreferences: (patch: ProfilePreferences) => Promise<void>;
   /**
-   * Update profile-level fields (first_name, last_name, avatar_url).
-   * Optimistic; reverts on error.
+   * Update profile-level fields. The server mirrors these onto the linked
+   * operator row so the operator card stays in sync with the account.
    */
-  updateProfile: (patch: { first_name?: string; last_name?: string; avatar_url?: string | null }) => Promise<void>;
+  updateProfile: (patch: {
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string | null;
+    phone_prefix?: string | null;
+    phone_number?: string | null;
+  }) => Promise<void>;
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -45,6 +53,8 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
   lastName: '',
   email: '',
   avatarUrl: null,
+  phonePrefix: '+39',
+  phoneNumber: '',
   preferences: {},
 
   fetchPreferences: async () => {
@@ -62,6 +72,8 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
         lastName: data.last_name ?? '',
         email: data.email ?? '',
         avatarUrl: data.avatar_url ?? null,
+        phonePrefix: data.phone_prefix ?? '+39',
+        phoneNumber: data.phone_number ?? '',
         preferences: data.preferences ?? {},
       });
     } catch {
@@ -91,11 +103,15 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
       firstName: get().firstName,
       lastName: get().lastName,
       avatarUrl: get().avatarUrl,
+      phonePrefix: get().phonePrefix,
+      phoneNumber: get().phoneNumber,
     };
     set({
       firstName: patch.first_name ?? previous.firstName,
       lastName: patch.last_name ?? previous.lastName,
       avatarUrl: patch.avatar_url === undefined ? previous.avatarUrl : patch.avatar_url,
+      phonePrefix: patch.phone_prefix === undefined ? previous.phonePrefix : (patch.phone_prefix ?? '+39'),
+      phoneNumber: patch.phone_number === undefined ? previous.phoneNumber : (patch.phone_number ?? ''),
     });
     try {
       const res = await fetch('/api/preferences', {

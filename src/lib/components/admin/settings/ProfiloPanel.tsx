@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { User, Camera, Save, Trash2, Loader2 } from 'lucide-react';
+import { User, Camera, Save, Trash2, Loader2, Phone } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { supabase } from '@/lib/supabase/client';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -26,18 +27,28 @@ export function ProfiloPanel() {
   const lastName = usePreferencesStore((s) => s.lastName);
   const email = usePreferencesStore((s) => s.email);
   const avatarUrl = usePreferencesStore((s) => s.avatarUrl);
+  const phonePrefix = usePreferencesStore((s) => s.phonePrefix);
+  const phoneNumber = usePreferencesStore((s) => s.phoneNumber);
   const updateProfile = usePreferencesStore((s) => s.updateProfile);
 
   const [first, setFirst] = useState(firstName);
   const [last, setLast] = useState(lastName);
+  const [prefix, setPrefix] = useState(phonePrefix);
+  const [phone, setPhone] = useState(phoneNumber);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setFirst(firstName); }, [firstName]);
   useEffect(() => { setLast(lastName); }, [lastName]);
+  useEffect(() => { setPrefix(phonePrefix); }, [phonePrefix]);
+  useEffect(() => { setPhone(phoneNumber); }, [phoneNumber]);
 
-  const isDirty = first.trim() !== firstName || last.trim() !== lastName;
+  const isDirty =
+    first.trim() !== firstName ||
+    last.trim() !== lastName ||
+    prefix !== phonePrefix ||
+    phone.trim() !== phoneNumber;
 
   const onSaveName = async () => {
     if (!isDirty) return;
@@ -49,7 +60,12 @@ export function ProfiloPanel() {
     }
     setSaving(true);
     try {
-      await updateProfile({ first_name: f, last_name: l });
+      await updateProfile({
+        first_name: f,
+        last_name: l,
+        phone_prefix: prefix,
+        phone_number: phone.trim(),
+      });
       // Mirror into the subscription store so the sidebar user card stays in sync.
       useSubscriptionStore.setState({ firstName: f, lastName: l });
       messagePopup.getState().success('Profilo aggiornato');
@@ -212,6 +228,17 @@ export function ProfiloPanel() {
             <p className="mt-1.5 text-xs text-zinc-500">
               {"Modifica l'email dalla sezione Account."}
             </p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <Phone className="size-3.5" /> Telefono
+            </label>
+            <PhoneNumber
+              prefixCode={prefix}
+              phoneNumber={phone}
+              onPrefixChange={setPrefix}
+              onPhoneChange={setPhone}
+            />
           </div>
         </div>
 

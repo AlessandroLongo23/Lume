@@ -8,6 +8,8 @@ import { Plus, Info } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { HoverPopover } from '@/lib/components/shared/ui/HoverPopover';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -42,6 +44,8 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
   const clients = useClientsStore((s) => s.clients);
   const services = useServicesStore((s) => s.services);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
+  const timeStep =
+    useSalonSettingsStore((s) => s.settings?.slot_granularity_min) ?? CALENDAR_CONFIG.daily.timeStep;
 
   // Fiches that involve this operator AND overlap this time slot
   const slotFiches = useMemo(() => {
@@ -65,9 +69,9 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
       const ficheServices = fiche.getFicheServices().filter((fs) => fs.operator_id === operator.id);
       if (ficheServices.length === 0) return false;
       const minStart = Math.min(...ficheServices.map((fs) => getTimeAsMinutes(new Date(fs.start_time))));
-      return minStart === slotMinutes;
+      return minStart >= slotMinutes && minStart < slotMinutes + timeStep;
     });
-  }, [slotFiches, operator.id, datetime]);
+  }, [slotFiches, operator.id, datetime, timeStep]);
 
   const ficheTotalMinutes = useMemo(() => {
     if (!isStartOfFiche || slotFiches.length === 0) return 0;
@@ -150,7 +154,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
                 isPast ? 'opacity-60' : ''
               }`}
               style={{
-                height: `${(ficheTotalMinutes / 15) * 2}rem`,
+                height: `${(ficheTotalMinutes / timeStep) * 2}rem`,
                 borderLeft: `3px solid ${accentColor}`,
               }}
             >
@@ -160,7 +164,7 @@ export function DayViewSlot({ operator, datetime, fiches, onSlotSelected, onFich
                   ? categories.find((c) => c.id === service.category_id)
                   : null;
                 const color = category?.color ?? DEFAULT_CATEGORY_COLOR;
-                const blockHeightRem = (fs.duration / 15) * 2;
+                const blockHeightRem = (fs.duration / timeStep) * 2;
                 const startTime = format(new Date(fs.start_time), 'HH:mm');
                 const endTime = format(new Date(fs.end_time), 'HH:mm');
 

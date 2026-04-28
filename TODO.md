@@ -9,7 +9,7 @@
 [ ] Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
 
 ## Impostazioni
-[ ] Settare valore di default per validità buoni
+[ ] double check all settings work as they should
 
 ## Data
 [ ] Set up automatic import with claude API and Supabase MCP
@@ -17,6 +17,15 @@
 
 ## Design
 [ ] Audit the codebase to add animations using motion
+
+## Codebase
+[ ] Playwright automated testing
+[ ] create staging environment for more robustness, testing and safety measure 
+[ ] create staging database for testing
+
+## Admin page
+[ ] Potential client list (phone numbers and which ones are already been called, where they're from, etc.)
+[ ] Goal to 1% market coverage component (custom circular progress bar)
 
 =================================================================
 
@@ -48,5 +57,10 @@
 [x] messaggio fuori orario su chiusura fiche
 
 ## Impostazioni
+[x] Settare valore di default per validità buoni
 
 ## Data
+
+## Design
+
+## Codebase

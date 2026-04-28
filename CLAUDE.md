@@ -125,6 +125,17 @@ src/
 
 Path alias `@/*` maps to `./src/*`.
 
+## Project skills
+
+Project-level Claude Code skills live in `.claude/skills/`. Marketing skills:
+
+- **`/competitor-research [name-or-url]`** — profile a competitor (company basics, pricing, target market, tone of voice, branding, features/UVP, UI screenshots) and produce a Markdown report at `output/marketing/competitor-research/<slug>/report.md`. Auto-fetches via WebFetch and Playwright. See [.claude/skills/competitor-research/SKILL.md](.claude/skills/competitor-research/SKILL.md).
+- **`/prospect-outreach [city-or-region] [hair|barber]`** — build a scored list of Italian salon prospects in a given area and produce an Italian cold-call template. Outputs to `output/marketing/prospects/<area>-YYYY-MM-DD.md` and `output/marketing/prospects/cold-call-template-it.md`. See [.claude/skills/prospect-outreach/SKILL.md](.claude/skills/prospect-outreach/SKILL.md).
+
+Both skills hard-code Lume's positioning constants (€49/mo · €490/yr, indigo accent, Geist Sans, Italian salon vertical, €60/mo incumbent). If those change, update them in this file's "Product" section AND in each skill's frontmatter together.
+
+Generated reports/screenshots in `output/marketing/` are gitignored (see `.gitignore`).
+
 Start implementing only if you have 95% confidence in the code you're writing. Ask questions to reach that confidence.
 When you're done, always check for lint errors by running the command.
 Whenever I express architectural choices or styling choices, you should, if it's important, put it in this file for future reference, but ask me before editing it.

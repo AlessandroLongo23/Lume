@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, Loader2, type LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from './sidebarContext';
@@ -14,10 +15,11 @@ interface SidebarUserCardProps {
   name: string;
   role: string;
   avatarInitials: string;
+  avatarUrl?: string | null;
   menuItems: UserCardMenuItem[];
 }
 
-export function SidebarUserCard({ name, role, avatarInitials, menuItems }: SidebarUserCardProps) {
+export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuItems }: SidebarUserCardProps) {
   const [open, setOpen] = useState(false);
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -70,9 +72,21 @@ export function SidebarUserCard({ name, role, avatarInitials, menuItems }: Sideb
       >
         <div className="flex items-center min-w-0">
           <span className="flex items-center justify-center w-10 h-10 shrink-0">
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold">
-              {avatarInitials || '?'}
-            </span>
+            {avatarUrl ? (
+              <span className="relative w-8 h-8 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                <Image
+                  src={avatarUrl}
+                  alt={name}
+                  fill
+                  sizes="32px"
+                  className="object-cover"
+                />
+              </span>
+            ) : (
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold">
+                {avatarInitials || '?'}
+              </span>
+            )}
           </span>
           <AnimatePresence initial={false}>
             {!effectiveCollapsed && (

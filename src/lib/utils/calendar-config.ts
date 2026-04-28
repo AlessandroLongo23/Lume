@@ -13,8 +13,8 @@ export const CALENDAR_CONFIG: CalendarConfig = {
 export function generateTimeSlots(
   date: Date,
   bounds?: { startHour: number; endHour: number },
+  timeStep: number = CALENDAR_CONFIG.daily.timeStep,
 ): Date[] {
-  const { timeStep } = CALENDAR_CONFIG.daily;
   const startHour = bounds?.startHour ?? CALENDAR_CONFIG.daily.startHour;
   const endHour = bounds?.endHour ?? CALENDAR_CONFIG.daily.endHour;
   const slots: Date[] = [];

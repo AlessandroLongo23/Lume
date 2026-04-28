@@ -23,6 +23,7 @@ import type { CommandAction } from '@/lib/components/shell/commandMenu/types';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { usePreferencesStore } from '@/lib/stores/preferences';
 import { useAppearanceSync } from '@/lib/hooks/useAppearanceSync';
 import { useViewsHydration } from '@/lib/hooks/useViewsHydration';
 import { isOwner, normalizeProfileRole } from '@/lib/auth/roles';
@@ -117,6 +118,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const email = useSubscriptionStore((s) => s.email);
   const role = useSubscriptionStore((s) => s.role);
   const isAdmin = useSubscriptionStore((s) => s.isAdmin);
+  const avatarUrl = usePreferencesStore((s) => s.avatarUrl);
   const isImpersonating = useIsImpersonating();
 
   const controller = useCommandMenuController();
@@ -232,6 +234,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           name={displayName}
           role={roleLabel}
           avatarInitials={initials}
+          avatarUrl={avatarUrl}
           menuItems={userMenuItems}
         />
       }

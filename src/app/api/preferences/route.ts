@@ -23,7 +23,7 @@ export async function GET() {
   const admin = getAdminClient();
   const { data, error } = await admin
     .from('profiles')
-    .select('first_name, last_name, email, avatar_url, preferences')
+    .select('first_name, last_name, email, avatar_url, phone_prefix, phone_number, preferences')
     .eq('id', user.id)
     .single();
 
@@ -36,6 +36,8 @@ export async function GET() {
     last_name: data.last_name,
     email: data.email,
     avatar_url: data.avatar_url,
+    phone_prefix: data.phone_prefix,
+    phone_number: data.phone_number,
     preferences: (data.preferences ?? {}) as ProfilePreferences,
   });
 }
@@ -94,6 +96,12 @@ export async function PATCH(req: NextRequest) {
   if (body.avatar_url === null || typeof body.avatar_url === 'string') {
     profileUpdates.avatar_url = body.avatar_url;
   }
+  if (body.phone_prefix === null || typeof body.phone_prefix === 'string') {
+    profileUpdates.phone_prefix = body.phone_prefix;
+  }
+  if (body.phone_number === null || typeof body.phone_number === 'string') {
+    profileUpdates.phone_number = body.phone_number;
+  }
 
   // ── Preferences merge ────────────────────────────────────────────────────
   let mergedPrefs: ProfilePreferences | undefined;
@@ -134,6 +142,29 @@ export async function PATCH(req: NextRequest) {
   if (updateErr) {
     console.error('Preferences update error:', updateErr);
     return NextResponse.json({ error: 'Errore durante il salvataggio' }, { status: 500 });
+  }
+
+  // ── Mirror identity onto the linked operator row, if any ────────────────
+  // Profilo is the single source of truth. When a user with an operator row
+  // edits their identity here, the operator card visible to clients follows.
+  // No-op for users without an operator row (admins, owners w/o operator card).
+  const operatorUpdates: Record<string, unknown> = {};
+  if ('first_name' in profileUpdates) operatorUpdates.firstName = profileUpdates.first_name;
+  if ('last_name' in profileUpdates) operatorUpdates.lastName = profileUpdates.last_name;
+  if ('avatar_url' in profileUpdates) operatorUpdates.avatar_url = profileUpdates.avatar_url;
+  if ('phone_prefix' in profileUpdates) operatorUpdates.phonePrefix = profileUpdates.phone_prefix;
+  if ('phone_number' in profileUpdates) operatorUpdates.phoneNumber = profileUpdates.phone_number;
+
+  if (Object.keys(operatorUpdates).length > 0) {
+    const { error: opErr } = await admin
+      .from('operators')
+      .update(operatorUpdates)
+      .eq('user_id', user.id);
+    if (opErr) {
+      console.error('Operator mirror update error:', opErr);
+      // Don't fail the whole request — profile already saved. The next save
+      // will reconcile, and admins/users without an operator row are expected.
+    }
   }
 
   return NextResponse.json({ success: true, preferences: mergedPrefs });

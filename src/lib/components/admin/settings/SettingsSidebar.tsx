@@ -4,10 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   User,
-  Palette,
+  Sparkles,
   CreditCard,
-  Eye,
-  LayoutList,
   Building2,
   ImagePlus,
   Clock,
@@ -19,13 +17,17 @@ import {
   Mail,
   Shield,
   TriangleAlert,
-  Scissors,
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
-import { canManageSalon, isSalonStaff, isAdmin } from '@/lib/auth/roles';
+import { canManageSalon } from '@/lib/auth/roles';
 
 type Item = { href: string; label: string; icon: React.ElementType };
-type Group = { title: string; items: Item[]; gated?: boolean };
+type Group = { title: string; items: Item[]; hint?: string; gated?: boolean };
+
+const PREFERENZE_ITEMS: Item[] = [
+  { href: '/admin/impostazioni/personalizzazione', label: 'Personalizzazione', icon: Sparkles },
+  { href: '/admin/impostazioni/notifiche', label: 'Notifiche', icon: Bell },
+];
 
 const SALONE_ITEMS: Item[] = [
   { href: '/admin/impostazioni/salone/anagrafica', label: 'Anagrafica', icon: Building2 },
@@ -38,38 +40,26 @@ const SALONE_ITEMS: Item[] = [
   { href: '/admin/impostazioni/salone/fatturazione', label: 'Fatturazione', icon: Receipt },
 ];
 
+const ACCOUNT_ITEMS: Item[] = [
+  { href: '/admin/impostazioni/profilo', label: 'Profilo', icon: User },
+  { href: '/admin/impostazioni/account/sicurezza', label: 'Sicurezza', icon: Shield },
+  { href: '/admin/impostazioni/abbonamento', label: 'Abbonamento', icon: CreditCard },
+  { href: '/admin/impostazioni/account/elimina', label: 'Zona pericolosa', icon: TriangleAlert },
+];
+
 export function SettingsSidebar() {
   const pathname = usePathname();
   const role = useSubscriptionStore((s) => s.role);
   const canManage = canManageSalon(role);
-  // Show "Mio profilo operatore" to salon staff only — super-admins have no operator row.
-  const showOperatorProfile = isSalonStaff(role) && !isAdmin(role);
-
-  const personaliItems: Item[] = [
-    { href: '/admin/impostazioni/profilo', label: 'Profilo', icon: User },
-    { href: '/admin/impostazioni/aspetto', label: 'Aspetto', icon: Palette },
-    { href: '/admin/impostazioni/viste', label: 'Default vista', icon: Eye },
-    { href: '/admin/impostazioni/schede', label: 'Ordine schede', icon: LayoutList },
-    { href: '/admin/impostazioni/notifiche', label: 'Notifiche', icon: Bell },
-    ...(showOperatorProfile
-      ? [{ href: '/admin/impostazioni/mio-profilo-operatore', label: 'Mio profilo operatore', icon: Scissors }]
-      : []),
-  ];
-
-  const accountItems: Item[] = [
-    { href: '/admin/impostazioni/account/sicurezza', label: 'Sicurezza', icon: Shield },
-    { href: '/admin/impostazioni/abbonamento', label: 'Abbonamento', icon: CreditCard },
-    { href: '/admin/impostazioni/account/elimina', label: 'Zona pericolosa', icon: TriangleAlert },
-  ];
 
   const groups: Group[] = [
-    { title: 'Personali', items: personaliItems },
-    { title: 'Salone', items: SALONE_ITEMS, gated: !canManage },
-    { title: 'Account', items: accountItems },
+    { title: 'Preferenze', items: PREFERENZE_ITEMS },
+    { title: 'Salone', items: SALONE_ITEMS, hint: 'Solo titolari', gated: !canManage },
+    { title: 'Account', items: ACCOUNT_ITEMS, hint: 'Tuo accesso' },
   ];
 
   return (
-    <nav className="w-52 shrink-0">
+    <nav className="w-52 shrink-0 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto">
       <ul className="flex flex-col gap-5">
         {groups
           .filter((g) => !g.gated)
@@ -77,6 +67,11 @@ export function SettingsSidebar() {
             <li key={group.title}>
               <p className="px-3 mb-1.5 text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                 {group.title}
+                {group.hint && (
+                  <span className="ml-1.5 normal-case tracking-normal text-zinc-400 dark:text-zinc-500/80 font-normal">
+                    · {group.hint}
+                  </span>
+                )}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {group.items.map(({ href, label, icon: Icon }) => {

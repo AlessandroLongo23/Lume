@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { generateTimeSlots, formatTimeSlot, CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 
 export interface TimeGridColumn {
   key: string;
@@ -20,10 +21,12 @@ interface TimeGridProps {
 }
 
 export function TimeGrid({ columns, date, renderSlot, startHour, endHour, scheduleBounds }: TimeGridProps) {
+  const timeStep =
+    useSalonSettingsStore((s) => s.settings?.slot_granularity_min) ?? CALENDAR_CONFIG.daily.timeStep;
   const effectiveStartHour = startHour ?? CALENDAR_CONFIG.daily.startHour;
   const effectiveEndHour = endHour ?? CALENDAR_CONFIG.daily.endHour;
   const bounds = startHour !== undefined && endHour !== undefined ? { startHour, endHour } : undefined;
-  const timeSlots = generateTimeSlots(new Date(date), bounds);
+  const timeSlots = generateTimeSlots(new Date(date), bounds, timeStep);
 
   // Now line — updates every 60 seconds
   const [nowMinutes, setNowMinutes] = useState<number>(() => {
@@ -46,8 +49,8 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
 
   const gridStartMinutes = effectiveStartHour * 60;
   const gridEndMinutes = effectiveEndHour * 60;
-  // Each slot is h-8 = 2rem, spanning 15 minutes
-  const nowTopRem = ((nowMinutes - gridStartMinutes) / 15) * 2;
+  // Each slot row is h-8 = 2rem and spans `timeStep` minutes
+  const nowTopRem = ((nowMinutes - gridStartMinutes) / timeStep) * 2;
   const showNowLine = isToday && nowMinutes >= gridStartMinutes && nowMinutes <= gridEndMinutes;
 
   // Auto-scroll to center the Now Line on mount (today only)

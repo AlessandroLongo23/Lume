@@ -46,6 +46,10 @@ data/
 
 .playwright-mcp/
 
+# generated marketing artifacts (competitor reports, prospect lists, screenshots)
+output/marketing/*
+!output/marketing/.gitkeep
+
 # playwright
 /test-results/
 /playwright-report/

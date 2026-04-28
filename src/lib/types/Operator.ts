@@ -11,6 +11,7 @@ export class Operator {
   email: string;
   phonePrefix: string;
   phoneNumber: string;
+  avatar_url: string | null;
   archived_at: string | null;
 
   constructor(operator: Operator) {
@@ -23,6 +24,7 @@ export class Operator {
     this.email = operator.email;
     this.phonePrefix = operator.phonePrefix;
     this.phoneNumber = operator.phoneNumber;
+    this.avatar_url = operator.avatar_url ?? null;
     this.archived_at = operator.archived_at ?? null;
   }
 
