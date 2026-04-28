@@ -7,8 +7,8 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import type { FeedbackType } from '@/lib/types/FeedbackEntry';
+import { RichTextEditor } from '@/lib/components/shared/ui/RichTextEditor';
 import { ImageUploader } from './ImageUploader';
-import { RichTextEditor } from './RichTextEditor';
 import { TYPE_META } from './feedback-meta';
 
 interface AddFeedbackModalProps {

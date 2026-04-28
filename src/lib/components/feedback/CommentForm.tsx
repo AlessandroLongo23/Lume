@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Send } from 'lucide-react';
-import { RichTextEditor } from './RichTextEditor';
+import { RichTextEditor } from '@/lib/components/shared/ui/RichTextEditor';
 import { ImageUploader } from './ImageUploader';
 
 interface CommentFormProps {

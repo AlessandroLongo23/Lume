@@ -15,6 +15,9 @@
 [ ] Set up automatic import with claude API and Supabase MCP
 [ ] passare tutti i dati da Stiv
 
+## Design
+[ ] Audit the codebase to add animations using motion
+
 =================================================================
 
 # Done

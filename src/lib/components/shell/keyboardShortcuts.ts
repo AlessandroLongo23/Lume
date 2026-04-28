@@ -1,7 +1,6 @@
-export function isMacPlatform(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
-}
+import { isMacPlatform } from '@/lib/utils/platform';
+
+export { isMacPlatform };
 
 export function sidebarToggleLabel(): string {
   return isMacPlatform() ? '⌘B' : 'Ctrl+B';

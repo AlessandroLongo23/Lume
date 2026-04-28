@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { useCallback, useEffect, useMemo } from 'react';
+import type { Editor } from '@tiptap/core';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
@@ -15,6 +16,8 @@ import {
   Strikethrough,
   Unlink,
 } from 'lucide-react';
+import { Tooltip } from './Tooltip';
+import { formatShortcut } from '@/lib/utils/platform';
 
 interface RichTextEditorProps {
   value: string;
@@ -27,6 +30,29 @@ interface RichTextEditorProps {
 const EDITOR_CLASSNAME =
   'prose prose-sm prose-zinc dark:prose-invert max-w-none focus:outline-none px-3 py-2.5';
 
+function promptLinkOnEditor(editor: Editor): void {
+  const previous = editor.getAttributes('link').href as string | undefined;
+  const input = window.prompt('URL del link', previous ?? 'https://');
+  if (input === null) return;
+  if (input === '') {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    return;
+  }
+  const href = /^(https?:|mailto:)/i.test(input) ? input : `https://${input}`;
+  editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+}
+
+const LinkWithShortcut = Link.extend({
+  addKeyboardShortcuts() {
+    return {
+      'Mod-k': () => {
+        promptLinkOnEditor(this.editor);
+        return true;
+      },
+    };
+  },
+});
+
 export function RichTextEditor({
   value,
   onChange,
@@ -34,6 +60,19 @@ export function RichTextEditor({
   disabled = false,
   minHeight = 120,
 }: RichTextEditorProps) {
+  const shortcuts = useMemo(
+    () => ({
+      bold: formatShortcut({ mod: true, key: 'B' }),
+      italic: formatShortcut({ mod: true, key: 'I' }),
+      strike: formatShortcut({ mod: true, shift: true, key: 'S' }),
+      bulletList: formatShortcut({ mod: true, shift: true, key: '8' }),
+      orderedList: formatShortcut({ mod: true, shift: true, key: '7' }),
+      blockquote: formatShortcut({ mod: true, shift: true, key: 'B' }),
+      link: formatShortcut({ mod: true, key: 'K' }),
+    }),
+    [],
+  );
+
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
@@ -45,7 +84,7 @@ export function RichTextEditor({
         link: false,
       }),
       Placeholder.configure({ placeholder }),
-      Link.configure({
+      LinkWithShortcut.configure({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
@@ -64,6 +103,27 @@ export function RichTextEditor({
     },
   });
 
+  const toolbarState = useEditorState({
+    editor,
+    selector: ({ editor }) => ({
+      isBold: editor?.isActive('bold') ?? false,
+      isItalic: editor?.isActive('italic') ?? false,
+      isStrike: editor?.isActive('strike') ?? false,
+      isBulletList: editor?.isActive('bulletList') ?? false,
+      isOrderedList: editor?.isActive('orderedList') ?? false,
+      isBlockquote: editor?.isActive('blockquote') ?? false,
+      isLink: editor?.isActive('link') ?? false,
+    }),
+  }) ?? {
+    isBold: false,
+    isItalic: false,
+    isStrike: false,
+    isBulletList: false,
+    isOrderedList: false,
+    isBlockquote: false,
+    isLink: false,
+  };
+
   useEffect(() => {
     if (!editor) return;
     const current = editor.isEmpty ? '' : editor.getHTML();
@@ -81,15 +141,7 @@ export function RichTextEditor({
 
   const promptLink = useCallback(() => {
     if (!editor) return;
-    const previous = editor.getAttributes('link').href as string | undefined;
-    const input = window.prompt('URL del link', previous ?? 'https://');
-    if (input === null) return;
-    if (input === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-    const href = /^(https?:|mailto:)/i.test(input) ? input : `https://${input}`;
-    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    promptLinkOnEditor(editor);
   }, [editor]);
 
   const unsetLink = useCallback(() => {
@@ -104,8 +156,6 @@ export function RichTextEditor({
       />
     );
   }
-
-  const hasLink = editor.isActive('link');
 
   return (
     <div
@@ -157,24 +207,27 @@ export function RichTextEditor({
       <div className="flex flex-row items-center gap-0.5 flex-wrap px-2 py-1.5 border-b border-zinc-500/15 bg-zinc-50/50 dark:bg-zinc-800/40">
         <ToolbarButton
           label="Grassetto"
+          shortcut={shortcuts.bold}
           onClick={() => editor.chain().focus().toggleBold().run()}
-          active={editor.isActive('bold')}
+          active={toolbarState.isBold}
           disabled={disabled}
         >
           <Bold className="size-3.5" strokeWidth={2.25} />
         </ToolbarButton>
         <ToolbarButton
           label="Corsivo"
+          shortcut={shortcuts.italic}
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          active={editor.isActive('italic')}
+          active={toolbarState.isItalic}
           disabled={disabled}
         >
           <Italic className="size-3.5" strokeWidth={2.25} />
         </ToolbarButton>
         <ToolbarButton
           label="Barrato"
+          shortcut={shortcuts.strike}
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          active={editor.isActive('strike')}
+          active={toolbarState.isStrike}
           disabled={disabled}
         >
           <Strikethrough className="size-3.5" strokeWidth={2.25} />
@@ -184,24 +237,27 @@ export function RichTextEditor({
 
         <ToolbarButton
           label="Elenco puntato"
+          shortcut={shortcuts.bulletList}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          active={editor.isActive('bulletList')}
+          active={toolbarState.isBulletList}
           disabled={disabled}
         >
           <List className="size-3.5" strokeWidth={2.25} />
         </ToolbarButton>
         <ToolbarButton
           label="Elenco numerato"
+          shortcut={shortcuts.orderedList}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          active={editor.isActive('orderedList')}
+          active={toolbarState.isOrderedList}
           disabled={disabled}
         >
           <ListOrdered className="size-3.5" strokeWidth={2.25} />
         </ToolbarButton>
         <ToolbarButton
           label="Citazione"
+          shortcut={shortcuts.blockquote}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          active={editor.isActive('blockquote')}
+          active={toolbarState.isBlockquote}
           disabled={disabled}
         >
           <Quote className="size-3.5" strokeWidth={2.25} />
@@ -210,14 +266,15 @@ export function RichTextEditor({
         <div className="mx-1 h-4 w-px bg-zinc-500/20" />
 
         <ToolbarButton
-          label={hasLink ? 'Modifica link' : 'Inserisci link'}
+          label={toolbarState.isLink ? 'Modifica link' : 'Inserisci link'}
+          shortcut={shortcuts.link}
           onClick={promptLink}
-          active={hasLink}
+          active={toolbarState.isLink}
           disabled={disabled}
         >
           <LinkIcon className="size-3.5" strokeWidth={2.25} />
         </ToolbarButton>
-        {hasLink && (
+        {toolbarState.isLink && (
           <ToolbarButton label="Rimuovi link" onClick={unsetLink} disabled={disabled}>
             <Unlink className="size-3.5" strokeWidth={2.25} />
           </ToolbarButton>
@@ -231,32 +288,35 @@ export function RichTextEditor({
 
 function ToolbarButton({
   label,
+  shortcut,
   onClick,
   active = false,
   disabled = false,
   children,
 }: {
   label: string;
+  shortcut?: string;
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      className={`flex items-center justify-center size-7 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-        active
-          ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
-          : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/60'
-      }`}
-    >
-      {children}
-    </button>
+    <Tooltip label={label} shortcut={shortcut} side="bottom" sideOffset={6}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={label}
+        className={`flex items-center justify-center size-7 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+          active
+            ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
+            : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/60'
+        }`}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }

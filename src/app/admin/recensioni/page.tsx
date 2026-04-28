@@ -7,7 +7,7 @@ import { StarRating } from '@/lib/components/shared/ui/StarRating';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { RichTextEditor } from '@/lib/components/feedback/RichTextEditor';
+import { RichTextEditor } from '@/lib/components/shared/ui/RichTextEditor';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { formatDateDisplay } from '@/lib/utils/format';
 

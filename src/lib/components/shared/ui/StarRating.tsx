@@ -9,10 +9,23 @@ interface StarRatingProps {
   onChange: (value: number) => void;
 }
 
+const digitVariants = {
+  enter: (dir: number) => ({ opacity: 0, y: dir > 0 ? '100%' : '-100%', filter: 'blur(2px)' }),
+  center: { opacity: 1, y: 0, filter: 'blur(0px)' },
+  exit: (dir: number) => ({ opacity: 0, y: dir > 0 ? '-100%' : '100%', filter: 'blur(2px)' }),
+};
+
 export function StarRating({ value, onChange }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState(0);
   const [justClicked, setJustClicked] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
+
+  const [prevValue, setPrevValue] = useState(value);
+  const [direction, setDirection] = useState(1);
+  if (value !== prevValue) {
+    setDirection(value > prevValue ? 1 : -1);
+    setPrevValue(value);
+  }
 
   const displayedRating = hoverRating || value;
 
@@ -60,20 +73,32 @@ export function StarRating({ value, onChange }: StarRatingProps) {
           </motion.button>
         );
       })}
-      <AnimatePresence mode="popLayout">
-        {value > 0 && (
-          <motion.span
-            key={value}
-            initial={reduceMotion ? false : { opacity: 0, x: -6, filter: 'blur(2px)' }}
-            animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 6, filter: 'blur(2px)' }}
-            transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
-            className="ml-2 text-sm text-zinc-500 dark:text-zinc-400 tabular-nums"
-          >
-            {value}/5
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {value > 0 && (
+        <motion.span
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="ml-2 text-sm text-zinc-500 dark:text-zinc-400 tabular-nums inline-flex items-center"
+        >
+          <span className="relative inline-block h-[1.25em] w-[1ch] overflow-hidden">
+            <AnimatePresence mode="popLayout" custom={direction}>
+              <motion.span
+                key={value}
+                custom={direction}
+                variants={reduceMotion ? undefined : digitVariants}
+                initial={reduceMotion ? false : 'enter'}
+                animate={reduceMotion ? { opacity: 1 } : 'center'}
+                exit={reduceMotion ? { opacity: 0 } : 'exit'}
+                transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                {value}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+          <span>/5</span>
+        </motion.span>
+      )}
     </div>
   );
 }
