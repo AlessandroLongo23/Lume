@@ -7,7 +7,7 @@ import type { SalonFormDefaults } from '@/lib/types/Salon';
  */
 export const FACTORY_PREFERENCES = {
   appearance: {
-    theme: 'system' as Theme,
+    theme: 'light' as Theme,
     density: 'comfortable' as Density,
     sidebarDefault: 'open' as SidebarDefault,
   },
