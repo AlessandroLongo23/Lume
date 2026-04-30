@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/lib/types/Subscription';
 
+export type ReferralStatus = 'pending' | 'earned' | 'applied';
+
+export interface Referral {
+  id:        string;
+  salonName: string;
+  status:    ReferralStatus;
+  createdAt: string;
+  earnedAt:  string | null;
+}
+
 interface SubscriptionState {
   isLoading:          boolean;
   isTrialing:         boolean;
@@ -14,6 +24,7 @@ interface SubscriptionState {
   referralCode:       string;
   pendingCredits:     number;
   earnedCredits:      number;
+  referrals:          Referral[];
   salonName:          string;
   logoUrl:            string | null;
   role:               string;
@@ -37,6 +48,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
   referralCode:       '',
   pendingCredits:     0,
   earnedCredits:      0,
+  referrals:          [],
   salonName:          '',
   logoUrl:            null,
   role:               '',
@@ -66,6 +78,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
         referralCode:       data.referralCode,
         pendingCredits:     data.pendingCredits,
         earnedCredits:      data.earnedCredits,
+        referrals:          data.referrals ?? [],
         salonName:          data.salonName ?? '',
         logoUrl:            data.logoUrl ?? null,
         role:               data.role,

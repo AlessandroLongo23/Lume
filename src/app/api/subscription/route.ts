@@ -46,18 +46,34 @@ export async function GET() {
       return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
     }
 
-    // Count referral credits
-    const { count: pendingCredits } = await supabaseAdmin
+    // Fetch referrals with the referred salon name
+    const { data: referralRows } = await supabaseAdmin
       .from('referral_credits')
-      .select('id', { count: 'exact', head: true })
+      .select('id, status, created_at, earned_at, referred_salon:referred_salon_id(name)')
       .eq('referrer_salon_id', salonId)
-      .eq('status', 'pending');
+      .order('created_at', { ascending: false });
 
-    const { count: earnedCredits } = await supabaseAdmin
-      .from('referral_credits')
-      .select('id', { count: 'exact', head: true })
-      .eq('referrer_salon_id', salonId)
-      .in('status', ['earned', 'applied']);
+    type ReferralRow = {
+      id: string;
+      status: 'pending' | 'earned' | 'applied';
+      created_at: string;
+      earned_at: string | null;
+      referred_salon: { name: string } | { name: string }[] | null;
+    };
+
+    const referrals = ((referralRows ?? []) as unknown as ReferralRow[]).map((r) => {
+      const salon = Array.isArray(r.referred_salon) ? r.referred_salon[0] : r.referred_salon;
+      return {
+        id:        r.id,
+        salonName: salon?.name ?? 'Salone',
+        status:    r.status,
+        createdAt: r.created_at,
+        earnedAt:  r.earned_at,
+      };
+    });
+
+    const pendingCredits = referrals.filter((r) => r.status === 'pending').length;
+    const earnedCredits  = referrals.filter((r) => r.status === 'earned' || r.status === 'applied').length;
 
     const now = new Date();
     const trialEnd = new Date(salon.trial_ends_at);
@@ -78,8 +94,9 @@ export async function GET() {
       subscriptionPlan: salon.subscription_plan,
       subscriptionEndsAt: salon.subscription_ends_at,
       referralCode: salon.referral_code,
-      pendingCredits: pendingCredits ?? 0,
-      earnedCredits: earnedCredits ?? 0,
+      pendingCredits,
+      earnedCredits,
+      referrals,
       salonName: salon.name,
       logoUrl: salon.logo_url ?? null,
       role: effectiveRole ?? profile.role,

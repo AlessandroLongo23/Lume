@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertTriangle, Check, Copy, CreditCard, Gift, Loader2, Crown } from 'lucide-react';
-import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { AlertTriangle, Check, Copy, CreditCard, Gift, Loader2, Crown, Clock3, Sparkles, Store } from 'lucide-react';
+import { useSubscriptionStore, type Referral } from '@/lib/stores/subscription';
+import { formatDateDisplay } from '@/lib/utils/format';
 import { PLANS } from '@/lib/stripe/config';
 
 function StatusBadge() {
@@ -208,10 +209,28 @@ function PlanCard({
   );
 }
 
+function ReferralStatusBadge({ status }: { status: Referral['status'] }) {
+  if (status === 'pending') {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+        <Clock3 className="w-3 h-3" />
+        In attesa
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+      <Check className="w-3 h-3" />
+      Riscattato
+    </span>
+  );
+}
+
 function ReferralSection() {
   const referralCode = useSubscriptionStore((s) => s.referralCode);
   const pendingCredits = useSubscriptionStore((s) => s.pendingCredits);
   const earnedCredits = useSubscriptionStore((s) => s.earnedCredits);
+  const referrals = useSubscriptionStore((s) => s.referrals);
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -226,45 +245,103 @@ function ReferralSection() {
     copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
+  const total = referrals.length;
+  const cap = 6;
+
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Gift className="w-5 h-5 text-primary" />
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Invita un collega</h3>
+    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+      <div className="relative bg-gradient-to-br from-primary/[0.06] via-transparent to-transparent dark:from-primary/[0.08] p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Gift className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Invita un collega</h3>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 max-w-md">
+                Quando un collega si abbona, ricevi un mese gratuito. Loro ottengono 15 giorni extra di prova.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center gap-2">
+          <div className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2.5 font-mono text-sm font-medium tracking-wider text-zinc-900 dark:text-white">
+            {referralCode}
+          </div>
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            aria-label="Copia codice"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span className="text-emerald-600 dark:text-emerald-400">Copiato</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span>Copia</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">Inviti totali</div>
+            <div className="mt-0.5 text-lg font-semibold text-zinc-900 dark:text-white">{total}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">In attesa</div>
+            <div className="mt-0.5 text-lg font-semibold text-amber-600 dark:text-amber-400">{pendingCredits}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">Riscattati</div>
+            <div className="mt-0.5 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+              {earnedCredits}<span className="text-sm font-normal text-zinc-400 dark:text-zinc-500">/{cap}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-        Condividi il tuo codice con altri professionisti. Quando si abbonano, ricevi
-        un mese gratuito. Loro ottengono 15 giorni extra di prova!
-      </p>
-
-      <div className="flex items-center gap-2">
-        <div className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-4 py-2.5 font-mono text-sm tracking-wider text-zinc-900 dark:text-white">
-          {referralCode}
-        </div>
-        <button
-          onClick={handleCopy}
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2.5 text-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          aria-label="Copia codice"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <Copy className="w-4 h-4 text-zinc-500" />
-          )}
-        </button>
+      <div className="border-t border-zinc-200 dark:border-zinc-800">
+        {referrals.length === 0 ? (
+          <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Nessun invito ancora
+            </p>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 max-w-xs">
+              Condividi il tuo codice per iniziare a guadagnare mesi gratuiti.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {referrals.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 px-6 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-zinc-900 dark:text-white">
+                      {r.salonName}
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Invitato il {formatDateDisplay(r.createdAt)}
+                    </div>
+                  </div>
+                </div>
+                <ReferralStatusBadge status={r.status} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
-      {(pendingCredits > 0 || earnedCredits > 0) && (
-        <div className="mt-4 flex gap-4 text-sm text-zinc-500 dark:text-zinc-400">
-          {pendingCredits > 0 && (
-            <span>{pendingCredits} referral in attesa</span>
-          )}
-          {earnedCredits > 0 && (
-            <span>{earnedCredits}/6 crediti guadagnati</span>
-          )}
-        </div>
-      )}
     </div>
   );
 }
