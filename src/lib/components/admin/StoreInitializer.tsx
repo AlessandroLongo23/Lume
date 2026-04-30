@@ -11,6 +11,7 @@ import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
+import { useClientStatsStore } from '@/lib/stores/client_stats';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { useReviewsStore } from '@/lib/stores/reviews';
@@ -25,6 +26,7 @@ import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useSpeseStore } from '@/lib/stores/spese';
 import { useObiettiviStore } from '@/lib/stores/obiettivi';
 import { useFeedbackStore } from '@/lib/stores/feedback';
+import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
@@ -38,6 +40,7 @@ export function StoreInitializer() {
   const fetchServices = useServicesStore((s) => s.fetchServices);
   const fetchServiceCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
   const fetchClientRatings = useClientRatingsStore((s) => s.fetchClientRatings);
+  const fetchClientStats = useClientStatsStore((s) => s.fetchClientStats);
   const fetchManufacturers = useManufacturersStore((s) => s.fetchManufacturers);
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const fetchMyReview = useReviewsStore((s) => s.fetchMyReview);
@@ -68,6 +71,7 @@ export function StoreInitializer() {
       fetchServices(),
       fetchServiceCategories(),
       fetchClientRatings(),
+      fetchClientStats(),
       fetchManufacturers(),
       fetchSuppliers(),
       fetchMyReview(),
@@ -85,10 +89,24 @@ export function StoreInitializer() {
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Ratings are a view over fiches/fiche_services/fiche_products — piggyback on their channels.
-  const onFichesChange = useCallback(() => { fetchFiches(); fetchClientRatings(); }, [fetchFiches, fetchClientRatings]);
-  const onFicheServicesChange = useCallback(() => { fetchFicheServices(); fetchClientRatings(); }, [fetchFicheServices, fetchClientRatings]);
-  const onFicheProductsChange = useCallback(() => { fetchFicheProducts(); fetchClientRatings(); }, [fetchFicheProducts, fetchClientRatings]);
+  // Skip the realtime refetch while the calendar drag is active OR while we
+  // have pending optimistic mutations on this table — prevents the optimistic
+  // update from being clobbered by the server echo before persistence settles.
+  const onFichesChange = useCallback(() => {
+    if (useCalendarDragStore.getState().active) return;
+    if (useFichesStore.getState().pendingMutationIds.size > 0) return;
+    fetchFiches();
+    fetchClientRatings();
+    fetchClientStats();
+  }, [fetchFiches, fetchClientRatings, fetchClientStats]);
+  const onFicheServicesChange = useCallback(() => {
+    if (useCalendarDragStore.getState().active) return;
+    if (useFicheServicesStore.getState().pendingMutationIds.size > 0) return;
+    fetchFicheServices();
+    fetchClientRatings();
+    fetchClientStats();
+  }, [fetchFicheServices, fetchClientRatings, fetchClientStats]);
+  const onFicheProductsChange = useCallback(() => { fetchFicheProducts(); fetchClientRatings(); fetchClientStats(); }, [fetchFicheProducts, fetchClientRatings, fetchClientStats]);
 
   // Realtime subscriptions — re-fetch store when any row changes (filtered to current salon)
   useRealtimeStore('clients', fetchClients, activeSalonId);

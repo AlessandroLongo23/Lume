@@ -24,7 +24,6 @@ export function CalendarToolbar() {
   const operators = useOperatorsStore((s) => s.operators);
 
   const activeOperators = operators.filter((op) => !op.isArchived);
-  const weekDisabled = !selectedOperatorId;
 
   function navigatePrev() {
     if (currentView === 'day') setSelectedDate(subDays(selectedDate, 1));
@@ -58,7 +57,6 @@ export function CalendarToolbar() {
   }
 
   function handleViewChange(view: CalendarView) {
-    if (view === 'week' && weekDisabled) return;
     setView(view);
   }
 
@@ -123,58 +121,31 @@ export function CalendarToolbar() {
       {/* Right: view toggle */}
       <div className="flex items-center gap-3">
 
-        {/* View toggle — Settimana is disabled without a selected operator */}
         <div
           role="radiogroup"
           className="flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25"
         >
           {VIEW_OPTIONS.map(({ value, label }, i) => {
             const isActive = currentView === value;
-            const isDisabled = value === 'week' && weekDisabled;
 
-            const button = (
+            return (
               <button
                 key={value}
                 type="button"
                 role="radio"
                 aria-checked={isActive}
-                disabled={isDisabled}
                 onClick={() => handleViewChange(value)}
                 className={[
                   'flex items-center justify-center px-3 py-2 text-sm transition-all',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-10',
                   i > 0 ? 'border-l border-zinc-500/25' : '',
-                  isDisabled
-                    ? 'cursor-not-allowed opacity-40 bg-white dark:bg-zinc-800 text-zinc-400'
-                    : isActive
-                      ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700',
+                  isActive
+                    ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
+                    : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700',
                 ].join(' ')}
               >
                 {label}
               </button>
-            );
-
-            if (!isDisabled) return button;
-
-            // Wrap disabled Settimana in a Tailwind tooltip
-            return (
-              <span key={value} className="relative group">
-                {button}
-                <span
-                  role="tooltip"
-                  className={[
-                    'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
-                    'w-64 rounded-md px-3 py-2 text-xs text-white bg-zinc-800 dark:bg-zinc-700 shadow-lg',
-                    'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
-                    'whitespace-normal text-center',
-                  ].join(' ')}
-                >
-                  Seleziona un singolo operatore per attivare la vista settimanale
-                  {/* arrow */}
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700" />
-                </span>
-              </span>
             );
           })}
         </div>

@@ -112,8 +112,8 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
               >
                 {/* Time gutter */}
                 <div
-                  className={`p-2 h-8 text-xs border-r border-zinc-500/25 flex items-center justify-center gap-1 border-t ${
-                    isHourMark ? 'border-zinc-500/50' : 'border-zinc-500/25'
+                  className={`p-2 h-8 text-xs border-r border-r-zinc-500/25 flex items-center justify-center gap-1 border-t ${
+                    isHourMark ? 'border-t-zinc-500/50' : 'border-t-zinc-500/25'
                   } ${
                     isExtended ? 'bg-amber-500/8 text-amber-700 dark:text-amber-400' : ''
                   }`}

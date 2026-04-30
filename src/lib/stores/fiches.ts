@@ -14,6 +14,8 @@ interface FichesState {
   isLoading: boolean;
   error: string | null;
   selectedFiche: Fiche | null;
+  /** Fiche ids whose realtime echo should be ignored (we just wrote them locally). */
+  pendingMutationIds: Set<string>;
   fetchFiches: () => Promise<void>;
   addFiche: (fiche: Partial<Fiche>) => Promise<Fiche>;
   updateFiche: (ficheId: string, updatedFiche: Partial<Fiche>) => Promise<Fiche>;
@@ -27,6 +29,7 @@ export const useFichesStore = create<FichesState>((set) => ({
   isLoading: true,
   error: null,
   selectedFiche: null,
+  pendingMutationIds: new Set<string>(),
 
   fetchFiches: async () => {
     set((s) => ({ ...s, isLoading: true }));
