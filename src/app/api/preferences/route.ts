@@ -46,6 +46,7 @@ const ALLOWED_KEYS = new Set([
   'appearance',
   'defaultViews',
   'tabs',
+  'tableColumns',
   'calendar',
   'notifications',
 ]);

@@ -14,6 +14,11 @@ export interface TabsPreference {
   hidden: string[];
 }
 
+export interface TableColumnsPreference {
+  order: string[];
+  hidden: string[];
+}
+
 export interface ProfilePreferences {
   appearance?: {
     theme?: Theme;
@@ -27,6 +32,7 @@ export interface ProfilePreferences {
     calendario?: CalendarioView;
   };
   tabs?: Partial<Record<TabsPageKey, TabsPreference>>;
+  tableColumns?: Partial<Record<string, TableColumnsPreference>>;
   calendar?: {
     defaultOperatorId?: string;
     weekStartsOn?: 0 | 1;

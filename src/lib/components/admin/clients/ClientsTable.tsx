@@ -15,9 +15,13 @@ import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
+import { useClientStatsStore } from '@/lib/stores/client_stats';
 import { Client } from '@/lib/types/Client';
+import { formatCurrency } from '@/lib/utils/format';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { ClientRatingBadge } from './ClientRatingBadge';
 import { DeleteClientModal } from './DeleteClientModal';
 import { TreatmentHistory } from './TreatmentHistory';
@@ -41,6 +45,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const isLoading = useClientsStore((s) => s.isLoading);
   const restoreClient = useClientsStore((s) => s.restoreClient);
   const ratings = useClientRatingsStore((s) => s.ratings);
+  const stats = useClientStatsStore((s) => s.stats);
 
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -73,6 +78,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       {
         id: 'rating',
         header: 'Valutazione',
+        accessorFn: (row) => ratings[row.id]?.spend_stars ?? 0,
         cell: ({ row }) => {
           const r = ratings[row.original.id];
           return (
@@ -82,11 +88,6 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
             </div>
           );
         },
-        sortingFn: (a, b) => {
-          const ra = ratings[a.original.id]?.spend_stars ?? 0;
-          const rb = ratings[b.original.id]?.spend_stars ?? 0;
-          return ra - rb;
-        },
       },
       {
         accessorKey: 'firstName',
@@ -94,11 +95,13 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         cell: ({ getValue }) => (
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'lastName',
         header: 'Cognome',
         cell: ({ getValue }) => <span>{getValue() as string}</span>,
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'email',
@@ -147,6 +150,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
           if (g === 'F') return <span className="text-sm font-semibold text-pink-500">F</span>;
           return <span className="text-zinc-400">—</span>;
         },
+        meta: { pickerLabel: 'Genere' },
       },
       {
         accessorKey: 'birthDate',
@@ -157,21 +161,122 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         },
       },
       {
+        id: 'visit_count',
+        header: 'Visite',
+        accessorFn: (row) => stats[row.id]?.visit_count ?? 0,
+        cell: ({ row }) => {
+          const n = stats[row.original.id]?.visit_count ?? 0;
+          return <span className="tabular-nums">{n}</span>;
+        },
+      },
+      {
+        id: 'total_spent',
+        header: 'Speso',
+        accessorFn: (row) => stats[row.id]?.total_spent ?? 0,
+        cell: ({ row }) => {
+          const v = stats[row.original.id]?.total_spent ?? 0;
+          return <span className="tabular-nums">{formatCurrency(v)}</span>;
+        },
+      },
+      {
+        id: 'avg_ticket',
+        header: 'Scontrino medio',
+        accessorFn: (row) => stats[row.id]?.avg_ticket ?? 0,
+        cell: ({ row }) => {
+          const s = stats[row.original.id];
+          if (!s || s.visit_count === 0) return <span className="text-zinc-400">—</span>;
+          return <span className="tabular-nums">{formatCurrency(s.avg_ticket)}</span>;
+        },
+      },
+      {
+        id: 'first_visit',
+        header: 'Prima visita',
+        accessorFn: (row) => stats[row.id]?.first_visit?.getTime() ?? 0,
+        cell: ({ row }) => {
+          const d = stats[row.original.id]?.first_visit;
+          if (!d) return <span className="text-zinc-400">—</span>;
+          return <span className="tabular-nums">{d.toLocaleDateString('it-IT')}</span>;
+        },
+      },
+      {
+        id: 'last_visit',
+        header: 'Ultima visita',
+        accessorFn: (row) => stats[row.id]?.last_visit?.getTime() ?? 0,
+        cell: ({ row }) => {
+          const s = stats[row.original.id];
+          if (!s?.last_visit) return <span className="text-zinc-400">—</span>;
+          const days = s.daysSinceLastVisit() ?? 0;
+          const color =
+            days < 30
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : days < 90
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-red-600 dark:text-red-400';
+          return (
+            <div className="flex flex-col leading-tight">
+              <span className="tabular-nums">{s.last_visit.toLocaleDateString('it-IT')}</span>
+              <span className={`text-xs tabular-nums ${color}`}>
+                {days === 0 ? 'oggi' : `${days}g fa`}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'top_service',
+        header: 'Servizio preferito',
+        accessorFn: (row) => stats[row.id]?.top_service_name ?? '',
+        sortingFn: (a, b) =>
+          (stats[a.original.id]?.top_service_name ?? '').localeCompare(
+            stats[b.original.id]?.top_service_name ?? ''
+          ),
+        cell: ({ row }) => {
+          const name = stats[row.original.id]?.top_service_name;
+          if (!name) return <span className="text-zinc-400">—</span>;
+          return <span className="truncate max-w-[10rem] inline-block">{name}</span>;
+        },
+      },
+      {
+        id: 'top_operator',
+        header: 'Operatore preferito',
+        accessorFn: (row) => stats[row.id]?.top_operator_name ?? '',
+        sortingFn: (a, b) =>
+          (stats[a.original.id]?.top_operator_name ?? '').localeCompare(
+            stats[b.original.id]?.top_operator_name ?? ''
+          ),
+        cell: ({ row }) => {
+          const name = stats[row.original.id]?.top_operator_name;
+          if (!name) return <span className="text-zinc-400">—</span>;
+          return <span className="truncate max-w-[10rem] inline-block">{name}</span>;
+        },
+      },
+      {
         accessorKey: 'isTourist',
         header: '',
         cell: ({ getValue }) =>
           getValue() ? <Plane className="size-4 text-zinc-500" /> : null,
         enableSorting: false,
+        meta: { pickerLabel: 'Turista' },
       },
     ],
-    [ratings]
+    [ratings, stats]
   );
+
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('clients', columns);
 
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    state: {
+      sorting,
+      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
+    },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -219,6 +324,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
             )}
           </div>
           <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
+          <ColumnPicker tableId="clients" columns={columns} className="ml-auto" />
         </div>
 
         {/* Table */}

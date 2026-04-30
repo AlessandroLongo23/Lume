@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { JetBrains_Mono, Geist } from 'next/font/google';
 import './globals.css';
+import '@/lib/types/tableMeta';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/MessagePopupContainer';
 import { cn } from "@/lib/utils";
