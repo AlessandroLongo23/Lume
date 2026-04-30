@@ -2,7 +2,7 @@
 name: prospect-outreach
 description: Use when the user wants to build a prospect list of Italian salons or generate a cold-call/cold-email template for Lume sales outreach. Triggers on phrases like "find prospects in Milano", "build a salon list for Bologna", "draft a cold call script", "give me an outreach template", "trova clienti potenziali", "lista saloni a [città]". Outputs a list of candidate salons with contact info plus a localized Italian cold-call template with variable slots ready to personalize.
 argument-hint: [city-or-region] [hair|barber]
-allowed-tools: WebFetch, WebSearch, Read, Write, Bash(mkdir *), Bash(date *)
+allowed-tools: WebFetch, WebSearch, Read, Write, Edit, Bash(mkdir *), Bash(date *), Bash(/Applications/Google Chrome.app/*), Bash(open *)
 ---
 
 # Prospect outreach
@@ -132,9 +132,11 @@ Use this Italian B2B cold-call structure (formal "Lei"):
 - Mai promettere funzionalità non ancora rilasciate.
 ```
 
-### 6. Write the prospect list
+### 6. Write the prospect list (Markdown)
 
 Path: `output/marketing/prospects/<area>-YYYY-MM-DD.md`. Slugify the area: lowercase, hyphens, ASCII (`Emilia-Romagna` → `emilia-romagna`).
+
+This Markdown is the working copy — fast to scan, easy to edit. The styled HTML/PDF in the next steps is the deliverable for sales.
 
 Template:
 
@@ -172,6 +174,89 @@ Per ogni salone in top tier, suggerire `{{variabile_pain}}` da usare nella chiam
 - **<name salone>:** "ho notato che il sito è solo una pagina Instagram"
 ```
 
+### 7. Render the HTML report (Lume-branded)
+
+Path: `output/marketing/prospects/<area>-YYYY-MM-DD.html`.
+
+The styling, layout, charts, and section structure are all defined in `templates/report.html` (sibling to this skill). **Read that template first.** It uses Lume brand colors (indigo `#6366F1`, zinc neutrals), Geist Sans via Google Fonts, A4 page sizing, page-break controls.
+
+To produce the report:
+
+1. **Read** `templates/report.html`.
+2. **Write** the filled report to the output path. Substitute every `{{PLACEHOLDER}}` with computed values:
+
+   | Placeholder | What to compute |
+   |---|---|
+   | `{{AREA_DISPLAY}}` | Human area name as given (`Grosseto`, `Milano`, …) |
+   | `{{COUNT}}` | Total prospects in top + mid tier (typically 10) |
+   | `{{DATE_HUMAN}}` | Italian long-form date, e.g. `29 aprile 2026` |
+   | `{{DATE_ISO}}` | `YYYY-MM-DD` |
+   | `{{FILTER}}` | `Parrucchieri`, `Barbieri`, or `Misto` |
+   | `{{N_5}} {{N_4}} {{N_3}} {{N_2}}` | Prospect count at each score |
+   | `{{PCT_5}} {{PCT_4}} {{PCT_3}} {{PCT_2}}` | Bar width 0–100. Compute as `count / max_count * 100`, rounded to int. The largest bar must reach 100. |
+   | `{{TOOLING_BARS}}` | One `.bar-row` per tooling category present in the data — same shape as score bars. Categories typically include: "Telefono / WhatsApp", "Treatwell / Fresha", "Gestionale identificato", "Sito + form contatti", "Nessun online". Drop a category if its count is 0. |
+   | `{{TOP_TIER_ROWS}}` | One `<tr>` per score-4-or-5 prospect (see row template below). |
+   | `{{MID_TIER_ROWS}}` | Same shape, score-3 prospects. |
+   | `{{LOW_TIER_BLOCK}}` | If any score-1-or-2 candidates exist, emit a full `<h2>` + table for them. Otherwise empty string. |
+   | `{{PAIN_CARDS}}` | One `.pain-card` per top-tier prospect with the Italian `{{variabile_pain}}` and (optional) competitor line. |
+   | `{{EXCLUDED_LIST}}` | One `<li>` per excluded salon with `<span class="name">` + `<span class="reason">`. |
+   | `{{SOURCES_LIST}}` | One `<li>` per primary source domain consulted (PagineGialle, Treatwell, Fresha, etc.). |
+
+   **Row template** for `{{TOP_TIER_ROWS}}` and `{{MID_TIER_ROWS}}`:
+
+   ```html
+   <tr>
+     <td><span class="pill score-5">5</span></td>
+     <td>
+       <div class="strong">Salone Name</div>
+       <div class="tiny">@instagram_handle · website.it</div>
+     </td>
+     <td class="muted">Via Indirizzo 1, Città</td>
+     <td class="mono">0564 12345</td>
+     <td>Owner Name</td>
+     <td class="muted">Gestionale o booking attuale</td>
+     <td>Riga di pain in italiano</td>
+   </tr>
+   ```
+
+   **Pain card template:**
+
+   ```html
+   <div class="pain-card">
+     <div class="salon">Nome Salone</div>
+     <div class="pain">ho visto che le prenotazioni passano solo via WhatsApp</div>
+     <div class="competitor">Concorrente: Salone Digitale</div>  <!-- omit this div if not identified -->
+   </div>
+   ```
+
+3. The HTML must remain a single self-contained file. Don't link external CSS — keep the `<style>` block intact.
+
+### 8. Render the PDF (Chrome headless)
+
+Path: `output/marketing/prospects/<area>-YYYY-MM-DD.pdf`.
+
+Run from `Bash`:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new \
+  --disable-gpu \
+  --no-pdf-header-footer \
+  --print-to-pdf="$ABS_PDF_PATH" \
+  --virtual-time-budget=10000 \
+  "file://$ABS_HTML_PATH"
+```
+
+- Use **absolute paths** for both the HTML input (`file://…`) and the `--print-to-pdf` output. Chrome silently ignores relative paths.
+- `--virtual-time-budget=10000` gives Google Fonts time to load.
+- `--no-pdf-header-footer` removes the URL/timestamp Chrome would otherwise inject.
+- After the command completes, verify the file exists and is non-empty (`ls -lh`). If size is < 50 KB, the render likely failed silently — re-check the HTML for malformed markup.
+- Optionally `open <pdf>` at the end so the user sees it immediately.
+
+### 9. Tell the user what was produced
+
+Summarise (in 2–3 lines): paths to the `.md`, `.html`, `.pdf`; counts at each score; the top-tier highlights. Surface the PDF as the primary deliverable.
+
 ## Edge cases & guardrails
 
 - **No website / no IG:** still include if phone is public and the listing is recent. Note "phone-only outreach".
@@ -192,6 +277,10 @@ Per ogni salone in top tier, suggerire `{{variabile_pain}}` da usare nella chiam
 
 ```
 output/marketing/prospects/
-  <area>-YYYY-MM-DD.md          # the prospect list
+  <area>-YYYY-MM-DD.md           # working copy (Markdown)
+  <area>-YYYY-MM-DD.html         # styled HTML (Lume-branded, self-contained)
+  <area>-YYYY-MM-DD.pdf          # primary deliverable for sales (A4, charts, tables)
   cold-call-template-it.md       # the reusable Italian template (one-time)
 ```
+
+The PDF is the deliverable handed to the sales team. The HTML is its source of truth and can be re-printed if pricing/positioning changes. The Markdown is for review/editing only.
