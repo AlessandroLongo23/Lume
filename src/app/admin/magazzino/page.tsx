@@ -13,6 +13,7 @@ import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -53,6 +54,8 @@ export default function MagazzinoPage() {
   const products = useProductsStore((s) => s.products);
   const isProductsLoading = useProductsStore((s) => s.isLoading);
   const categories = useProductCategoriesStore((s) => s.product_categories);
+  const suppliers = useSuppliersStore((s) => s.suppliers);
+  const manufacturers = useManufacturersStore((s) => s.manufacturers);
 
   useEffect(() => {
     fetchProducts();
@@ -196,9 +199,14 @@ export default function MagazzinoPage() {
             const archivedForTab =
               id === 'prodotti' ? productsShowArchived :
               id === 'categorie' ? categoriesShowArchived : false;
-            const countForTab =
+            const archivedCountForTab =
               id === 'prodotti' ? productsArchivedCount :
               id === 'categorie' ? categoriesArchivedCount : 0;
+            const totalForTab =
+              id === 'prodotti' ? (productsShowArchived ? productsArchivedCount : products.length - productsArchivedCount) :
+              id === 'categorie' ? (categoriesShowArchived ? categoriesArchivedCount : categories.length - categoriesArchivedCount) :
+              id === 'fornitori' ? suppliers.length :
+              manufacturers.length;
             const displayLabel = archivedForTab ? `${label} archiviati` : label;
             return (
               <button
@@ -213,11 +221,14 @@ export default function MagazzinoPage() {
               >
                 <Icon className="size-4" />
                 {displayLabel}
-                {archivedForTab && countForTab > 0 && (
-                  <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                    {countForTab}
-                  </span>
-                )}
+                {archivedForTab
+                  ? archivedCountForTab > 0 && (
+                      <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        {archivedCountForTab}
+                      </span>
+                    )
+                  : <NumberBadge value={totalForTab} variant={isActive ? 'primary' : 'neutral'} size="md" />
+                }
               </button>
             );
           })}

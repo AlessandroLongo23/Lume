@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import {
   useFeedbackStore,
@@ -184,9 +185,7 @@ export function FeedbackList({ mode }: FeedbackListProps) {
                 }`}
               >
                 {label}
-                <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-zinc-400'}`}>
-                  {countFor(value)}
-                </span>
+                <NumberBadge value={countFor(value)} variant={isActive ? 'primary' : 'neutral'} size="md" />
               </button>
             );
           })}
@@ -232,9 +231,7 @@ export function FeedbackList({ mode }: FeedbackListProps) {
               <SlidersHorizontal className="size-4" />
               <span>Tipo</span>
               {typeFilter !== 'all' && (
-                <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
-                  1
-                </span>
+                <NumberBadge value={1} variant="solid" size="md" />
               )}
             </button>
 

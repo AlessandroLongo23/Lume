@@ -18,6 +18,7 @@ import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { DeleteProductModal } from './DeleteProductModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -82,9 +83,7 @@ function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProp
         <SlidersHorizontal className="size-4" />
         <span>{label}</span>
         {selected.length > 0 && (
-          <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
-            {selected.length}
-          </span>
+          <NumberBadge value={selected.length} variant="solid" size="md" />
         )}
       </button>
 

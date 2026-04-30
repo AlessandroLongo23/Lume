@@ -16,6 +16,7 @@ import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import type { Fiche } from '@/lib/types/Fiche';
 import { useViewsStore } from '@/lib/stores/views';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
@@ -149,13 +150,14 @@ export default function FichesPage() {
                 key={id}
                 onClick={() => setActiveTab(id)}
                 className={[
-                  'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+                  'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
                   activeTab === id
                     ? 'border-primary text-primary-hover dark:text-primary/70'
                     : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200',
                 ].join(' ')}
               >
-                {TAB_LABELS.fiches[id]} ({counts[id]})
+                {TAB_LABELS.fiches[id]}
+                <NumberBadge value={counts[id]} variant={activeTab === id ? 'primary' : 'neutral'} size="md" />
               </button>
             ))}
           </div>

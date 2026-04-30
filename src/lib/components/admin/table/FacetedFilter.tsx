@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { SlidersHorizontal, Check } from 'lucide-react';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 
 export interface FacetedFilterOption {
   value: string;
@@ -45,9 +46,7 @@ export function FacetedFilter({ label, options, selected, onChange }: FacetedFil
         <SlidersHorizontal className="size-4" />
         <span>{label}</span>
         {selected.length > 0 && (
-          <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
-            {selected.length}
-          </span>
+          <NumberBadge value={selected.length} variant="solid" size="md" />
         )}
       </button>
 

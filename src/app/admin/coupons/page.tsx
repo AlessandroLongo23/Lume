@@ -6,6 +6,7 @@ import { Tag, Gift, CreditCard, Plus } from 'lucide-react';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { CouponsTable } from '@/lib/components/admin/coupons/CouponsTable';
 import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal';
 import { GiftCardModal } from '@/lib/components/admin/coupons/GiftCardModal';
@@ -114,9 +115,7 @@ export default function CouponsPage() {
                 <Icon className="size-4" />
                 {label}
                 {count > 0 && (
-                  <span className="inline-flex items-center justify-center size-5 rounded-full text-2xs font-semibold bg-primary/15 text-primary">
-                    {count}
-                  </span>
+                  <NumberBadge value={count} variant={isActive ? 'primary' : 'neutral'} size="md" />
                 )}
               </button>
             );
