@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Scissors, Tags, Plus, ArrowDownToLine, FileDown, EllipsisVertical, Archive } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { supabase } from '@/lib/supabase/client';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
@@ -12,6 +13,7 @@ import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServ
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -47,11 +49,38 @@ export default function ServiziPage() {
   const [categoriesShowArchived, setCategoriesShowArchived] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [usageCounts, setUsageCounts] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     fetchServices();
     fetchServiceCategories();
   }, [fetchServices, fetchServiceCategories]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const counts = new Map<string, number>();
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('fiche_services')
+          .select('service_id')
+          .range(from, from + PAGE - 1);
+        if (error || !data) break;
+        for (const row of data) {
+          const id = (row as { service_id: string | null }).service_id;
+          if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      if (!cancelled) setUsageCounts(counts);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -164,7 +193,10 @@ export default function ServiziPage() {
             const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
             const archivedForTab = id === 'servizi' ? servicesShowArchived : categoriesShowArchived;
-            const countForTab = id === 'servizi' ? servicesArchivedCount : categoriesArchivedCount;
+            const archivedCountForTab = id === 'servizi' ? servicesArchivedCount : categoriesArchivedCount;
+            const totalForTab = id === 'servizi'
+              ? (servicesShowArchived ? servicesArchivedCount : services.length - servicesArchivedCount)
+              : (categoriesShowArchived ? categoriesArchivedCount : categories.length - categoriesArchivedCount);
             const displayLabel = archivedForTab ? `${label} archiviati` : label;
             return (
               <button
@@ -179,11 +211,14 @@ export default function ServiziPage() {
               >
                 <Icon className="size-4" />
                 {displayLabel}
-                {archivedForTab && countForTab > 0 && (
-                  <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                    {countForTab}
-                  </span>
-                )}
+                {archivedForTab
+                  ? archivedCountForTab > 0 && (
+                      <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        {archivedCountForTab}
+                      </span>
+                    )
+                  : <NumberBadge value={totalForTab} variant={isActive ? 'primary' : 'neutral'} size="md" />
+                }
               </button>
             );
           })}
@@ -202,7 +237,7 @@ export default function ServiziPage() {
               action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
             />
           ) : (
-            <ServicesTable services={visibleServices} showArchived={servicesShowArchived} />
+            <ServicesTable services={visibleServices} showArchived={servicesShowArchived} usageCounts={usageCounts} />
           )
         )}
         {activeTab === 'categorie' && (

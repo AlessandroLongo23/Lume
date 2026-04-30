@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { Service } from '@/lib/types/Service';
 import { CategoryBadge } from './CategoryBadge';
 import { DeleteServiceModal } from './DeleteServiceModal';
@@ -24,11 +25,12 @@ import { cardStyle } from '@/lib/const/appearance';
 interface ServicesTableProps {
   services: Service[];
   showArchived?: boolean;
+  usageCounts?: Map<string, number>;
 }
 
 const PAGE_SIZE = 10;
 
-export function ServicesTable({ services, showArchived = false }: ServicesTableProps) {
+export function ServicesTable({ services, showArchived = false, usageCounts }: ServicesTableProps) {
   const router = useRouter();
   const isLoading = useServicesStore((s) => s.isLoading);
   const restoreService = useServicesStore((s) => s.restoreService);
@@ -120,8 +122,16 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
           <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
         ),
       },
+      {
+        id: 'usage_count',
+        accessorFn: (row) => usageCounts?.get(row.id) ?? 0,
+        header: () => <span className="block w-full text-right">Esecuzioni</span>,
+        cell: ({ getValue }) => (
+          <span className="block text-right tabular-nums">{getValue() as number}</span>
+        ),
+      },
     ],
-    [categories]
+    [categories, usageCounts]
   );
 
   const table = useReactTable({
@@ -205,9 +215,7 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
               <SlidersHorizontal className="size-4" />
               <span>Categoria</span>
               {selectedCategories.length > 0 && (
-                <span className="bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-medium">
-                  {selectedCategories.length}
-                </span>
+                <NumberBadge value={selectedCategories.length} variant="solid" size="md" />
               )}
             </button>
 
@@ -270,7 +278,7 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
-                    const isNumeric = header.column.id === 'duration' || header.column.id === 'price' || header.column.id === 'product_cost';
+                    const isNumeric = header.column.id === 'duration' || header.column.id === 'price' || header.column.id === 'product_cost' || header.column.id === 'usage_count';
                     return (
                       <th
                         key={header.id}
@@ -340,7 +348,7 @@ export function ServicesTable({ services, showArchived = false }: ServicesTableP
                     className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     {row.getVisibleCells().map((cell) => {
-                      const isNumeric = cell.column.id === 'duration' || cell.column.id === 'price' || cell.column.id === 'product_cost';
+                      const isNumeric = cell.column.id === 'duration' || cell.column.id === 'price' || cell.column.id === 'product_cost' || cell.column.id === 'usage_count';
                       return (
                         <td
                           key={cell.id}
