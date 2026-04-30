@@ -3,6 +3,7 @@ export class FicheService {
   salon_id: string;
   fiche_id: string;
   service_id: string;
+  name: string;
   operator_id: string;
   start_time: Date;
   end_time: Date;
@@ -16,6 +17,7 @@ export class FicheService {
     this.salon_id = ficheService.salon_id;
     this.fiche_id = ficheService.fiche_id;
     this.service_id = ficheService.service_id;
+    this.name = ficheService.name ?? '';
     this.operator_id = ficheService.operator_id;
     this.start_time = ficheService.start_time;
     this.end_time = ficheService.end_time;

@@ -132,7 +132,7 @@ export function FicheReceipt({
               const isGift = !isAbbonamento && fs.final_price === 0 && fs.list_price > 0;
               return (
                 <div key={fs.id ?? `svc-${i}`} className="flex items-baseline justify-between gap-2 py-0.5">
-                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{service?.name ?? fs.name ?? 'Servizio'}</span>
+                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{fs.name || service?.name || 'Servizio'}</span>
                   <span className="flex items-baseline gap-1.5 shrink-0">
                     {isDiscounted && (
                       <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>

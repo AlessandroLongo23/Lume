@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
   Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
-  FlaskConical, Sparkles,
+  FlaskConical, Sparkles, RotateCcw,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -21,6 +21,7 @@ import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
@@ -243,7 +244,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           return {
             id: fs.id,
             service_id: fs.service_id,
-            name: svc?.name ?? 'Servizio',
+            name: fs.name || svc?.name || 'Servizio',
             operator_id: fs.operator_id ?? '',
             duration: fs.duration,
             list_price: fs.list_price,
@@ -458,6 +459,20 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, final_price } : s)));
   }
 
+  function updateServiceName(index: number, name: string) {
+    setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, name } : s)));
+  }
+
+  function resetServiceName(index: number) {
+    setFicheServices((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        const original = services.find((cat) => cat.id === s.service_id)?.name ?? s.name;
+        return { ...s, name: original };
+      }),
+    );
+  }
+
   function addProductToList(prod: Product) {
     setFicheProducts((prev) => {
       if (prev.some((p) => p.product_id === prod.id)) return prev;
@@ -530,6 +545,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           addFicheService({
             fiche_id: newFiche.id,
             service_id: svc.service_id,
+            name: svc.name,
             operator_id: svc.operator_id || undefined,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             start_time: svc.start_time as any,
@@ -563,6 +579,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     for (const svc of servicesWithTimes) {
       if (svc.id) {
         await updateFicheService(svc.id, {
+          name: svc.name,
           operator_id: svc.operator_id || undefined,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           start_time: svc.start_time as any,
@@ -577,6 +594,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         await addFicheService({
           fiche_id: fiche.id,
           service_id: svc.service_id,
+          name: svc.name,
           operator_id: svc.operator_id || undefined,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           start_time: svc.start_time as any,
@@ -966,9 +984,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                           <Icon className="size-4" />
                           {label}
                           {count > 0 && (
-                            <span className="inline-flex items-center justify-center size-4 rounded-full text-2xs font-semibold bg-primary/15 text-primary">
-                              {count}
-                            </span>
+                            <NumberBadge value={count} variant={isActive ? 'primary' : 'neutral'} size="md" />
                           )}
                         </button>
                       );
@@ -1047,7 +1063,32 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   className="grid items-center px-3 py-2.5"
                                   style={{ gridTemplateColumns: TABLE_COLS }}
                                 >
-                                  <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate pr-2">{svc.name}</span>
+                                  {(() => {
+                                    const catalogName = services.find((cat) => cat.id === svc.service_id)?.name ?? '';
+                                    const isOverridden = catalogName !== '' && svc.name !== catalogName;
+                                    return (
+                                      <div className="flex items-center gap-1 pr-2 min-w-0">
+                                        <input
+                                          type="text"
+                                          value={svc.name}
+                                          onChange={(e) => updateServiceName(i, e.target.value)}
+                                          className="w-full min-w-0 px-2 py-1 rounded-md border border-transparent hover:border-zinc-500/25 focus:border-primary/50 focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:outline-none bg-transparent text-sm text-zinc-900 dark:text-zinc-100 transition-colors"
+                                          aria-label="Nome servizio"
+                                        />
+                                        {isOverridden && (
+                                          <button
+                                            type="button"
+                                            onClick={() => resetServiceName(i)}
+                                            className="shrink-0 p-1 rounded-md text-zinc-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                                            title="Ripristina nome originale"
+                                            aria-label="Ripristina nome originale"
+                                          >
+                                            <RotateCcw className="size-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
 
                                   <div className="pr-2">
                                     <CustomSelect

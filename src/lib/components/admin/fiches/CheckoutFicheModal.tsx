@@ -238,7 +238,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   const isDiscounted = fs.final_price < fs.list_price;
                   return (
                     <div key={fs.id} className="flex items-baseline justify-between gap-2 py-0.5">
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{service?.name ?? 'Servizio'}</span>
+                      <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{fs.name || service?.name || 'Servizio'}</span>
                       <span className="flex items-baseline gap-1.5 shrink-0">
                         {isDiscounted && (
                           <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
