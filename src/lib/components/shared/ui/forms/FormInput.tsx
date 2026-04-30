@@ -1,6 +1,7 @@
 'use client';
 
-import { useId, type InputHTMLAttributes } from 'react';
+import { useId, useState, type InputHTMLAttributes } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -8,11 +9,15 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-export function FormInput({ label, error, icon, className = '', ...props }: FormInputProps) {
+export function FormInput({ label, error, icon, className = '', type, ...props }: FormInputProps) {
   const hasError = !!error;
   const hasValue = !!props.value;
   const generatedId = useId();
   const id = props.id || generatedId;
+
+  const isPassword = type === 'password';
+  const [isVisible, setIsVisible] = useState(false);
+  const inputType = isPassword ? (isVisible ? 'text' : 'password') : type;
 
   return (
     <div className="space-y-2">
@@ -32,7 +37,8 @@ export function FormInput({ label, error, icon, className = '', ...props }: Form
 
         <input
           id={id}
-          className={`w-full px-4 py-3 ${icon ? 'pl-12' : ''} rounded-xl border-2 transition-all duration-300
+          type={inputType}
+          className={`w-full px-4 py-3 ${icon ? 'pl-12' : ''} ${isPassword ? 'pr-12' : ''} rounded-xl border-2 transition-all duration-300
             bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100
             placeholder-zinc-500 dark:placeholder-zinc-500 focus:outline-none
             ${hasError
@@ -45,6 +51,18 @@ export function FormInput({ label, error, icon, className = '', ...props }: Form
             ${className}`}
           {...props}
         />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setIsVisible((v) => !v)}
+            tabIndex={-1}
+            aria-label={isVisible ? 'Nascondi password' : 'Mostra password'}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors focus:outline-none"
+          >
+            {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {hasError && (
