@@ -19,6 +19,8 @@ import { ProductCategory } from '@/lib/types/ProductCategory';
 import { AddCategoryModal } from './AddCategoryModal';
 import { DeleteCategorieModal } from './DeleteCategorieModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 
 const PAGE_SIZE = 10;
@@ -56,6 +58,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
         cell: ({ getValue }) => (
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'description',
@@ -68,14 +71,21 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
     []
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('product-categories', columns);
+
   const table = useReactTable({
     data: categories,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -132,6 +142,10 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
+          <div className="flex items-center gap-2">
+            <ColumnPicker tableId="product-categories" columns={columns} className="ml-auto" />
+          </div>
+
           <div className={`w-full overflow-auto ${cardStyle}`}>
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">

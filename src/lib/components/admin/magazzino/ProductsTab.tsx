@@ -22,6 +22,8 @@ import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { DeleteProductModal } from './DeleteProductModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 import type { Product } from '@/lib/types/Product';
 
@@ -208,6 +210,7 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
         cell: ({ getValue }) => (
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'manufacturer_id',
@@ -284,14 +287,21 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
     return base;
   }, [trackInventory, manufacturers, categories, suppliers]);
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('products', columns);
+
   const table = useReactTable({
     data: filteredData,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -387,6 +397,8 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
             selected={selectedSuppliers}
             onChange={setSelectedSuppliers}
           />
+
+          <ColumnPicker tableId="products" columns={columns} className="ml-auto" />
         </div>
 
         {/* Table */}

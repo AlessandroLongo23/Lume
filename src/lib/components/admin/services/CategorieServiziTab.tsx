@@ -16,6 +16,8 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddServiceCategoryModal } from './AddServiceCategoryModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
@@ -53,6 +55,7 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
         accessorKey: 'name',
         header: 'Nome',
         cell: ({ row }) => <ColorNameCell color={row.original.color} name={row.original.name} />,
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'description',
@@ -72,14 +75,21 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
     []
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('service-categories', columns);
+
   const table = useReactTable({
     data: categories,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -126,6 +136,10 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
       />
 
       <div className="flex flex-col gap-4 w-full">
+        <div className="flex items-center gap-2">
+          <ColumnPicker tableId="service-categories" columns={columns} className="ml-auto" />
+        </div>
+
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">

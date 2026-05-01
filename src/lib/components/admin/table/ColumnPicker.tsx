@@ -96,7 +96,7 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
             axis="y"
             values={visibleIds}
             onReorder={onReorder}
-            className="py-1 max-h-80 overflow-y-auto"
+            className="py-1 max-h-80 overflow-y-auto overflow-x-hidden"
           >
             {visibleIds.map((id) => {
               const info = metaById.get(id);

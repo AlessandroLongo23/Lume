@@ -162,31 +162,33 @@ export default function FichesPage() {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="py-4">
-            <div className="relative flex items-center max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca fiche..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <button
-                  onClick={() => setGlobalFilter('')}
-                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
+          {/* Search (grid view only — table view embeds the search in its toolbar) */}
+          {view === 'grid' && (
+            <div className="py-4">
+              <div className="relative flex items-center max-w-sm">
+                <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Cerca fiche..."
+                  value={globalFilter}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                    border-zinc-200 dark:border-zinc-800
+                    focus:border-zinc-300 dark:focus:border-zinc-700
+                    text-zinc-900 dark:text-zinc-100
+                    placeholder:text-zinc-400 outline-none transition-colors"
+                />
+                {globalFilter && (
+                  <button
+                    onClick={() => setGlobalFilter('')}
+                    className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Content */}
           {isLoading ? (
@@ -200,7 +202,13 @@ export default function FichesPage() {
               action={{ label: 'Nuova fiche', icon: Ticket, onClick: () => setShowAdd(true) }}
             />
           ) : view === 'table' ? (
-            <FichesTable fiches={filteredFiches} />
+            <div className="pt-4">
+              <FichesTable
+                fiches={filteredFiches}
+                globalFilter={globalFilter}
+                onGlobalFilterChange={setGlobalFilter}
+              />
+            </div>
           ) : (
             <FichesGrid fiches={filteredFiches} />
           )}

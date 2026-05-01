@@ -19,6 +19,8 @@ import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImport
 import { Supplier } from '@/lib/types/Supplier';
 import { AddFornitoreModal } from './AddFornitoreModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 
 const PAGE_SIZE = 10;
@@ -53,6 +55,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
         cell: ({ getValue }) => (
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'city',
@@ -80,14 +83,21 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     []
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('suppliers', columns);
+
   const table = useReactTable({
     data: suppliers,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -161,6 +171,10 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
+          <div className="flex items-center gap-2">
+            <ColumnPicker tableId="suppliers" columns={columns} className="ml-auto" />
+          </div>
+
           <div className={`w-full overflow-auto ${cardStyle}`}>
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">

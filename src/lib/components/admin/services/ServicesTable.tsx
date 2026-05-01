@@ -20,6 +20,8 @@ import { Service } from '@/lib/types/Service';
 import { CategoryBadge } from './CategoryBadge';
 import { DeleteServiceModal } from './DeleteServiceModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface ServicesTableProps {
@@ -100,6 +102,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         cell: ({ getValue }) => (
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'duration',
@@ -134,14 +137,21 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     [categories, usageCounts]
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('services', columns);
+
   const table = useReactTable({
     data: filteredData,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -267,6 +277,8 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
               </div>
             )}
           </div>
+
+          <ColumnPicker tableId="services" columns={columns} className="ml-auto" />
         </div>
 
         {/* Table */}

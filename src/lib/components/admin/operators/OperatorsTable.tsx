@@ -10,13 +10,14 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Info, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Trash2, ArchiveRestore } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Operator } from '@/lib/types/Operator';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
-import { EditOperatorModal } from './EditOperatorModal';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { DeleteOperatorModal } from './DeleteOperatorModal';
 import { cardStyle } from '@/lib/const/appearance';
 
@@ -32,10 +33,8 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const restoreOperator = useOperatorsStore((s) => s.restoreOperator);
 
-  const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
-  const [editedOperator, setEditedOperator] = useState<Partial<Operator>>({});
 
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -60,19 +59,25 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       cell: ({ getValue }) => (
         <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
       ),
+      meta: { requiredVisible: true },
     },
     {
       accessorKey: 'lastName',
       header: 'Cognome',
       cell: ({ getValue }) => <span>{getValue() as string}</span>,
+      meta: { requiredVisible: true },
     },
     {
       accessorKey: 'email',
       header: 'Email',
       cell: ({ row }) => (
         <span
+          data-no-row-click
           className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
-          onClick={() => window.open(`mailto:${row.original.email}`, '_blank')}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(`mailto:${row.original.email}`, '_blank');
+          }}
         >
           {row.original.email}
         </span>
@@ -83,8 +88,10 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       header: 'Telefono',
       cell: ({ row }) => (
         <span
+          data-no-row-click
           className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             const phone = row.original.phonePrefix.concat(row.original.phoneNumber).replace(/[^0-9]/g, '');
             window.open(`https://wa.me/${phone}`, '_blank');
           }}
@@ -96,11 +103,16 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
     },
   ], []);
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('operators', columns);
+
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -147,6 +159,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
               </button>
             )}
           </div>
+          <ColumnPicker tableId="operators" columns={columns} className="ml-auto" />
         </div>
 
         {/* Table */}
@@ -200,7 +213,21 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <tr
+                    key={row.id}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button, a, [data-no-row-click]')) return;
+                      router.push(`/admin/operatori/${row.original.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target === e.currentTarget) {
+                        router.push(`/admin/operatori/${row.original.id}`);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -208,34 +235,17 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        {showArchived ? (
+                        {showArchived && (
                           <button
-                            onClick={() => handleRestore(row.original)}
+                            onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
                             className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                             title="Ripristina"
                           >
                             <ArchiveRestore className="size-3.5" />
                           </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => router.push(`/admin/operatori/${row.original.id}`)}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-primary-hover dark:hover:text-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
-                              title="Dettaglio"
-                            >
-                              <Info className="size-3.5" />
-                            </button>
-                            <button
-                              onClick={() => { setSelectedOperator(row.original); setEditedOperator(new Operator(row.original)); setShowEdit(true); }}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                              title="Modifica"
-                            >
-                              <Pencil className="size-3.5" />
-                            </button>
-                          </>
                         )}
                         <button
-                          onClick={() => { setSelectedOperator(row.original); setShowDelete(true); }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedOperator(row.original); setShowDelete(true); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           title="Elimina"
                         >
@@ -259,13 +269,6 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
         />
       </div>
 
-      <EditOperatorModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        editedOperator={editedOperator}
-        onEditedOperatorChange={setEditedOperator}
-        selectedOperator={selectedOperator}
-      />
       <DeleteOperatorModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}

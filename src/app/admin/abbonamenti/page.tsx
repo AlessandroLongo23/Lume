@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BadgePercent, Plus, Search } from 'lucide-react';
+import { BadgePercent, Plus } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
-import { useClientsStore } from '@/lib/stores/clients';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { AbbonamentiTable } from '@/lib/components/admin/abbonamenti/AbbonamentiTable';
@@ -18,10 +17,8 @@ export default function AbbonamentiPage() {
   const searchParams = useSearchParams();
   const abbonamenti = useAbbonamentiStore((s) => s.abbonamenti);
   const isLoading = useAbbonamentiStore((s) => s.isLoading);
-  const clients = useClientsStore((s) => s.clients);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [query, setQuery] = useState('');
   const [commandTarget, setCommandTarget] = useState<Abbonamento | null>(null);
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
 
@@ -46,13 +43,6 @@ export default function AbbonamentiPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return abbonamenti;
-    const clientNames = new Map(clients.map((c) => [c.id, `${c.firstName} ${c.lastName}`.toLowerCase()]));
-    return abbonamenti.filter((a) => (clientNames.get(a.client_id) ?? '').includes(q));
-  }, [abbonamenti, clients, query]);
 
   return (
     <>
@@ -84,18 +74,7 @@ export default function AbbonamentiPage() {
           }
         />
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cerca per cliente…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-
-        {isLoading ? <TableSkeleton /> : <AbbonamentiTable abbonamenti={filtered} />}
+        {isLoading ? <TableSkeleton /> : <AbbonamentiTable abbonamenti={abbonamenti} />}
       </div>
     </>
   );

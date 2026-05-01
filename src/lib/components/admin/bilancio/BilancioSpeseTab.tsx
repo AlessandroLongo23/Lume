@@ -17,6 +17,8 @@ import { BilancioSpeseSkeleton } from '@/lib/components/admin/bilancio/BilancioS
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 import { formatCurrency, formatDateDisplay } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -103,6 +105,7 @@ export function BilancioSpeseTab() {
     {
       accessorKey: 'fornitore',
       header: 'Fornitore',
+      meta: { requiredVisible: true },
     },
     {
       accessorKey: 'categoria',
@@ -126,11 +129,16 @@ export function BilancioSpeseTab() {
     },
   ], []);
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('expenses', columns);
+
   const table = useReactTable({
     data: spese,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -225,7 +233,8 @@ export function BilancioSpeseTab() {
         />
       ) : (
       <div className="flex flex-col gap-4 w-full">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
+          <ColumnPicker tableId="expenses" columns={columns} />
           <button
             className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
             onClick={openDialog}

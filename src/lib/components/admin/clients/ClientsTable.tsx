@@ -213,7 +213,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                 ? 'text-amber-600 dark:text-amber-400'
                 : 'text-red-600 dark:text-red-400';
           return (
-            <div className="flex flex-col leading-tight">
+            <div className="flex flex-row items-baseline gap-1.5">
               <span className="tabular-nums">{s.last_visit.toLocaleDateString('it-IT')}</span>
               <span className={`text-xs tabular-nums ${color}`}>
                 {days === 0 ? 'oggi' : `${days}g fa`}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,11 +10,13 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pencil, Trash2, Search, X } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { EditAbbonamentoModal } from './EditAbbonamentoModal';
 import { DeleteAbbonamentoModal } from './DeleteAbbonamentoModal';
 import { Abbonamento, type AbbonamentoStatus } from '@/lib/types/Abbonamento';
@@ -51,6 +53,15 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selected, setSelected] = useState<Abbonamento | null>(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  useEffect(() => { setPageIndex(0); }, [globalFilter]);
+
+  const filteredData = useMemo(() => {
+    if (!globalFilter.trim()) return abbonamenti;
+    const q = globalFilter.toLowerCase();
+    return abbonamenti.filter((a) => clientName(a.client_id).toLowerCase().includes(q));
+  }, [abbonamenti, globalFilter, clientName]);
 
   const columns = useMemo<ColumnDef<Abbonamento>[]>(() => [
     {
@@ -62,6 +73,7 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
         </span>
       ),
       sortingFn: (a, b) => clientName(a.original.client_id).localeCompare(clientName(b.original.client_id), 'it'),
+      meta: { requiredVisible: true },
     },
     {
       id: 'services',
@@ -137,11 +149,16 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
     },
   ], [clientName, servicesMap]);
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('subscriptions', columns);
+
   const table = useReactTable({
-    data: abbonamenti,
+    data: filteredData,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -154,6 +171,33 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
   return (
     <>
       <div className="flex flex-col gap-4 w-full">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex items-center flex-1 max-w-sm">
+            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cerca per cliente..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                border-zinc-200 dark:border-zinc-800
+                focus:border-zinc-300 dark:focus:border-zinc-700
+                text-zinc-900 dark:text-zinc-100
+                placeholder:text-zinc-400 outline-none transition-colors"
+            />
+            {globalFilter && (
+              <button
+                onClick={() => setGlobalFilter('')}
+                className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+          <ColumnPicker tableId="subscriptions" columns={columns} className="ml-auto" />
+        </div>
+
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
@@ -241,7 +285,7 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
-          totalItems={abbonamenti.length}
+          totalItems={filteredData.length}
           itemsPerPage={PAGE_SIZE}
           labelPlural="abbonamenti"
         />

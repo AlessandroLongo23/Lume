@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Search, X } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
@@ -18,12 +18,16 @@ import { useServicesStore } from '@/lib/stores/services';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface FichesTableProps {
   fiches: Fiche[];
+  globalFilter?: string;
+  onGlobalFilterChange?: (value: string) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -40,7 +44,7 @@ const STATUS_LABELS: Record<string, string> = {
   [FicheStatus.COMPLETED]: 'Completata',
 };
 
-export function FichesTable({ fiches }: FichesTableProps) {
+export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: FichesTableProps) {
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
@@ -84,6 +88,7 @@ export function FichesTable({ fiches }: FichesTableProps) {
           const nb = cb ? `${cb.firstName} ${cb.lastName}` : '';
           return na.localeCompare(nb, 'it');
         },
+        meta: { requiredVisible: true },
       },
       {
         id: 'date',
@@ -155,11 +160,16 @@ export function FichesTable({ fiches }: FichesTableProps) {
     [clientMap, ficheServicesByFiche, serviceMap]
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('fiches', columns);
+
   const table = useReactTable({
     data: fiches,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
+    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -170,9 +180,40 @@ export function FichesTable({ fiches }: FichesTableProps) {
     manualFiltering: true,
   });
 
+  const showSearch = onGlobalFilterChange !== undefined;
+
   return (
     <>
       <div className="flex flex-col gap-4 w-full">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2">
+          {showSearch && (
+            <div className="relative flex items-center flex-1 max-w-sm">
+              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cerca fiche..."
+                value={globalFilter ?? ''}
+                onChange={(e) => onGlobalFilterChange?.(e.target.value)}
+                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                  border-zinc-200 dark:border-zinc-800
+                  focus:border-zinc-300 dark:focus:border-zinc-700
+                  text-zinc-900 dark:text-zinc-100
+                  placeholder:text-zinc-400 outline-none transition-colors"
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => onGlobalFilterChange?.('')}
+                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+          <ColumnPicker tableId="fiches" columns={columns} className="ml-auto" />
+        </div>
+
         {/* Table */}
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">

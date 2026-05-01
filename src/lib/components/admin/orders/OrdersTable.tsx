@@ -16,6 +16,8 @@ import { useOrdersStore } from '@/lib/stores/orders';
 import { EditOrderModal } from './EditOrderModal';
 import { DeleteOrderModal } from './DeleteOrderModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 import type { Order } from '@/lib/types/Order';
 
@@ -44,6 +46,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
         cell: ({ getValue }) => (
           <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{getValue() as string}</span>
         ),
+        meta: { requiredVisible: true },
       },
       {
         accessorKey: 'datetime',
@@ -62,14 +65,21 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     []
   );
 
+  const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
+    useTableColumnPrefs('orders', columns);
+
   const table = useReactTable({
     data: orders,
     columns,
     state: {
       sorting,
       pagination: { pageIndex, pageSize: PAGE_SIZE },
+      columnVisibility,
+      columnOrder,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
       setPageIndex(next.pageIndex);
@@ -96,6 +106,10 @@ export function OrdersTable({ orders }: OrdersTableProps) {
   return (
     <>
       <div className="flex flex-col gap-4 w-full">
+        <div className="flex items-center gap-2">
+          <ColumnPicker tableId="orders" columns={columns} className="ml-auto" />
+        </div>
+
         <div className={`w-full overflow-auto ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
