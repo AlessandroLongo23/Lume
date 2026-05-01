@@ -1,121 +1,190 @@
 # TODO
 
-## Bug
+**Sizes** — `(S)` <1d · `(M)` 1–3d · `(L)` ~1 week · `(XL)` >1 week
+**Tags** — `[bug] [ux] [feat] [design] [infra] [data] [billing] [legal] [admin] [integ] [landing] [exp]`
 
-## UX 
-[*] (M) Add # appointments for clients, qty. of products sold, and other stats to tables
-[ ] (M) applicazione abbonamento e dove trovare i dettagli
-[ ] (L) Set up a "patch notes" system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
+Items marked _(proposed)_ are gaps flagged in review — keep, drop, or move as you like.
 
-## Personalization
+---
 
-## Features
-[ ] (L) recurrent expenses (spotify, services, etc.)
-[ ] (M) notifica auguri sul gestionale
-[ ] (L) Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
-[ ] (L) white labeling online booking platform (service list, choose operator and time), with one time setup and editing page for service list, whether or not is possible to choose operator, and whether or not confirmation is necessary
-[ ] (L) tessera cliente
-[ ] (XL) GDPR audit and look for "deliberatorie" and other necessary documents for ready to print, already filled forms (ask Ulisse about those)
-[ ] (XL) AI for speech to speech queries and actions (possibly free integrations)
-[ ] (L) AI Image generation for products and services
-[ ] (M) Add multi-salon owner with salon selection on login and salon dropdown selection where we now have the salon name
+## Now
+Currently in flight. Keep this section short; promote items here only when starting them.
 
-## Impostazioni
+- [ ] [ux] (M) Sessioni + quantità prodotti venduti + altre stats per cliente nelle tabelle delle entità
 
-## Data
-[ ] (XL) Set up automatic import with Anthropic API and Supabase MCP
-  [ ] (M) passare tutti i dati da Stiv
-  [ ] (L) when it detects if there's already data for that salon, it should ask if it wants to add (blind adding), overwrite (clean slate), or merge (smart adding)
-[ ] (M) add step to onboarding to load all your data
+---
 
-## Design
-[ ] (L) design all pages to be responsive and design intuitive phone interactions, especially for tables and the calendar page
-[ ] (L) Audit the codebase to add animations using motion
-[ ] (M) Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
-[ ] (S) dropdown below three dots button has the same spacing between btn and dropdown than between btn and other btn
-[ ] (S) animate archive and delete icons in the clients' card
-[ ] (S) Replace default dropdown selections with our custom one
+## Pre-launch must-haves
+**Block onboarding paying salons safely.** A miss here means data loss, silent billing leakage, legal exposure, or production debugging without a safety net.
 
-## Codebase
-[ ] (L) Playwright automated testing
-[ ] (L) create staging environment for more robustness, testing and safety measure 
-[ ] (L) create staging database for testing
-[ ] (M) revisit client_stats / client_ratings aggregates once real salons have ~10k+ fiches — currently re-runs on every fiche/fiche_services/fiche_products realtime change; consider materialized view, debounce, or per-client RPC
+### Multi-tenancy
+- [ ] [infra] (XL) `salons` table + Supabase RLS for `salon_id` scoping on every tenant table _(CLAUDE.md flags this as planned-not-built — single biggest unfinished piece of infra)_
+- [ ] [feat] (M) Multi-salon owner: salon picker on login + dropdown replacing static salon name in nav
 
-## Admin page
-[ ] (M) Goal to 1% market coverage component (custom circular progress bar)
-[ ] (M) statistics about the settings chosen by business
+### Billing & subscriptions _(proposed)_
+- [ ] [billing] (?) Stripe lifecycle end-to-end — trial expiry, failed-payment dunning, plan switch (€49/mo ↔ €490/yr), cancellation, reactivation
+- [ ] [ux] (M) Subscription page — current plan, next charge, invoice history, change/cancel
+
+### Trust & safety
+- [ ] [infra] (L) Staging environment (separate Vercel project)
+- [ ] [infra] (L) Staging Supabase database
+- [ ] [infra] (L) Playwright automated tests against staging
+- [ ] [infra] (M) Automated DB backups + documented restore runbook _(proposed)_
+- [ ] [infra] (S) Sentry (or equivalent) error monitoring _(proposed)_
+- [ ] [infra] (S) Uptime monitoring + public status page _(proposed)_
+
+### Legal & compliance
+- [ ] [legal] (XL) GDPR audit + pre-filled deliberatorie / consent forms (ask Ulisse)
+- [ ] [legal] (M) Cookie consent banner — EU requirement before charging EU customers _(proposed)_
+- [ ] [legal] (M) Account deletion + data export endpoints — GDPR Art. 15 (portability) + Art. 17 (erasure) _(proposed)_
+- [ ] [legal] (S) Public Privacy Policy + Terms of Service pages — linked from footer _(proposed)_
+
+---
+
+## Launch leverage
+**Drives conversion, retention, and word-of-mouth.** Determines whether a salon stays past month two.
+
+### Client-facing booking
+- [ ] [feat] (L) White-label online booking — service list, operator choice (toggleable), time slot, optional confirmation; one-time setup + edit page. **Largest moat vs. €60/mo incumbent**
+
+### Communication & reminders _(proposed)_
+**The single highest-leverage feature category in salon software** — one prevented no-show (≈€40–60) pays a month's subscription.
+- [ ] [feat] (L) Promemoria appuntamento via WhatsApp/SMS — auto-send 24h before, optional confirmation reply
+- [ ] [integ] (L) WhatsApp Business integration — bigger than Instagram in Italy for salon ↔ client comms
+- [ ] [feat] (M) No-show tracking + reliability score per client — surfaces serial no-shows; tied to reminders
+
+### Italian compliance & daily workflow _(proposed)_
+- [ ] [feat] (XL) Fatturazione elettronica / SDI integration — required above forfettario threshold; absorbs another tool salons currently pay for
+- [ ] [feat] (M) Chiusura cassa giornaliera + fondo cassa — standard end-of-day workflow
+
+### Onboarding
+- [ ] [feat] (M) End-to-end onboarding flow design — signup → first appointment booked _(proposed)_
+- [ ] [feat] (L) First-run tutorial — pick format (video, step-and-highlight, modern overlay)
+- [ ] [data] (M) Onboarding step to bulk-load salon data
+- [ ] [data] (XL) Automatic import via Anthropic API + Supabase MCP
+  - [ ] [data] (M) Passare tutti i dati da Stiv
+  - [ ] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
+
+### Mobile
+- [ ] [design] (L) Responsive pass on every page; intuitive phone interactions especially for tables and calendar
+
+---
+
+## Polish backlog
+**Useful, not urgent.** Pull from here only when must-haves and leverage are empty.
+
+### UX
+- [ ] [ux] (M) Applicazione abbonamento e dove trovare i dettagli
+- [ ] [ux] (L) Patch-notes overlay on login, auto-generated from commits; pulsating badge for new tutorials and features
+
+### Features
+- [ ] [feat] (L) Spese ricorrenti (Spotify, servizi, …)
+- [ ] [feat] (M) Notifica auguri sul gestionale
+- [ ] [feat] (L) Tessera cliente
+- [ ] [feat] (L) AI image generation for products and services
+- [ ] [feat] (M) Recurring appointments — clients on "every 4 weeks" rhythm without manual rebooking _(proposed)_
+- [ ] [feat] (S) Buffer time between appointments — clean-up minutes after color services _(proposed)_
+- [ ] [feat] (M) Wait list / lista d'attesa — capture demand when slots are full, auto-offer cancellations _(proposed)_
+- [ ] [feat] (S) Codice fiscale field on client — needed for invoicing _(proposed)_
+- [ ] [feat] (M) Foto cliente before/after on profile — high engagement, retention driver _(proposed)_
+- [ ] [feat] (M) Re-engagement trigger — "non si vede da 60 giorni" surfacing, optional auto-WhatsApp _(proposed)_
+- [ ] [feat] (M) In-product free-trial gating — countdown banner, paywall after expiry, upgrade flow _(proposed)_
+- [ ] [feat] (L) Referral program — "give a month, get a month", tracked in-product _(proposed)_
+
+### Design
+- [ ] [design] (L) Audit codebase to add Motion animations where they help
+- [ ] [design] (M) Page fly-in for nested dynamic routes (à la Cursum AI)
+- [ ] [design] (S) Three-dots dropdown — match btn-to-dropdown spacing with btn-to-btn spacing
+- [ ] [design] (S) Animate archive / delete icons on client cards
+- [ ] [design] (S) Replace native `<select>` with custom dropdown component
+
+### Admin / dashboard
+- [ ] [admin] (M) "1% market coverage" component — custom circular progress bar
+- [ ] [admin] (M) Aggregate stats on settings chosen by businesses
+- [ ] [admin] (M) Per-operator commission reports _(proposed)_
+- [ ] [admin] (M) Revenue dashboards — per service, per operator, year-over-year comparisons _(proposed)_
+- [ ] [admin] (L) Export IVA / report mensile per il commercialista _(proposed)_
+
+### Landing page
+- [ ] [landing] (S) Make scroll affordance clear
+- [ ] [landing] (S) Scroll-progress bar
+- [ ] [landing] (M) Screenshots + GIFs from a populated demo salon
+- [ ] [landing] (M) Demo booking — Calendly-style "book a 15-min demo" CTA; B2B salon owners want to see it before signing up _(proposed)_
+
+### Integrations
+- [ ] [integ] (M) Instagram
+
+### Codebase health
+- [ ] [infra] (M) Revisit `client_stats` / `client_ratings` aggregates once a real salon hits ~10k+ fiches — currently re-runs on every fiche / fiche_services / fiche_products realtime change. Options: materialized view, debounce, per-client RPC
+- [ ] [infra] (S) Product analytics (PostHog / Mixpanel) — can't optimize churn or conversion blind _(proposed)_
+
+---
 
 ## Exploration
-[ ] (M) Do some market research and understand how to structure a broader scope once the CMS is out of development phase
-[ ] (L) Potential client list (phone numbers and which ones are already been called, where they're from, etc.)
-[ ] (L) Create an automation that takes a voice recording/video recording, extracts the transcript (with speakers) and calls anthropic API with some context on the task to give back a report
-and create an interface for it for managing the interviews and inspect the aggregated results
+**No commitment.** Research and validate before promoting out of this section.
 
-## Integrations
-[ ] (M) instagram
+- [ ] [exp] (M) Market research — how to structure a broader scope once the CMS exits dev phase
+- [ ] [exp] (L) Potential-client tracker (numbers, call status, geography)
+- [ ] [exp] (L) Voice/video → speaker-labelled transcript → Anthropic-API report pipeline + management & inspection UI
+- [ ] [exp] (XL) Speech-to-speech AI for queries and actions (free integrations preferred)
+- [ ] [exp] (M) Operator time-clock / shift tracking _(proposed)_
+- [ ] [exp] (M) Light inventory — stock alerts, supplier orders, cost-of-goods _(proposed)_
+- [ ] [exp] (M) Accessibility audit — keyboard nav, screen reader labels, calendar focus order _(proposed)_
+- [ ] [exp] (L) i18n scaffolding (locale string extraction) — only if going beyond Italy _(proposed)_
 
-## Landing page
-[ ] (S) Make scrolling clear
-[ ] (S) Add scrolling progress bar
-[ ] (M) Add screenshots and gif (from a populated fake salon) showcasing the features
-
-=================================================================
+---
+---
 
 # Done
 
 ## Bug
-[x] (S) Fix the z-index on the dropdown in the client's detail page
-[x] (S) Make so that the unavailability slot in the calendar stays during the confirmation modal
-[x] (S) In settings, every time you change section the animation triggers, and it shouldn't
-[x] theme always applying on refresh, instead, it should stay the same
-[x] avatar dropdown in sidebar
-[x] togliere categorie clienti
-[x] dropdown dell'abbonamento nella fiche nascosto
-[x] merge valore gift card con importo incassato
-[x] errore su gift card "Valore dello sconto non valido"
-[x] messaggio fuori orario su chiusura fiche
-
-## Personalization
-[x] different working hours for each operator
-[x] Add column selection and sorting to all tables
-
-## Features
-[x] add vacation to calendar
-[x] compact vs default table density, wired to settings
-[x] change service names at checkout
-[x] easier drag and drop calendar actions
-[x] "Scheda tecnica" con campi (data, miscela, tecnica, note) accessibile da tutte le parti (hover solo l'ultima e click per pagina intera). Cambiare nota nel modale delle fiche
-[x] archiviare servizi e prodotti, clienti invece di cancellarli
-[x] possibilità di segnare servizi come omaggio (quindi 0€)
-[x] creazione coupon (servizio/soldi)
-  [x] omaggi dal negozio
-  [x] buono regalo
-[x] feedback page con up/down
-[x] pagina abbonamento
-[x] togliere email obbligatoria per creare cliente
-[x] (M) Add a bug button fixed to the bottom right corner (down aligned with the theme button) to take a screenshot of the current page, and when the screenshot is taken, it automatically opens the feedback modal with bug preselected and the screenshot already uploaded
+- [x] (S) Z-index on dropdown in client detail page
+- [x] (S) Unavailability slot in calendar persists during confirmation modal
+- [x] (S) Settings — animation no longer re-triggers on section change
+- [x] Theme persists on refresh (instead of always re-applying)
+- [x] Avatar dropdown in sidebar
+- [x] Togliere categorie clienti
+- [x] Dropdown abbonamento nella fiche più visibile
+- [x] Merge valore gift card con importo incassato
+- [x] Errore "Valore dello sconto non valido" su gift card
+- [x] Messaggio fuori orario su chiusura fiche
 
 ## UX
-[x] (S) Add drag icon (six dots) to service blocks in calendar on hovering (animation pushing the text)
-[x] (S) Add breadcrumb navigation and add entity details page to the list
-[x] (S) Click abbonamento row to open edit modal
-[x] Time preview on calendar cell hover
-[x] week calendar is always clickable, but one of the operator is forced
-[x] add eye icon for login modal password
-[x] restructure and redesign client info page
-[x] campi piu grandi
-[x] spostare il bottone per chiudere le fiche dentro il modale
-[x] cambiare il totale direttamente senza aggiornare i prezzi delle singole cose
-[x] calendario filtro operatori visualizzazione messe (aggiornare colore e parziale (contro il totale))
-[x] combobox a due livelli per servizi e prodotti nella fiche
+- [x] (M) Bug button bottom-right (aligned with theme button) — screenshots current page, opens feedback modal with bug preselected and screenshot uploaded
+- [x] (S) Drag handle (six dots) on calendar service blocks on hover (animation pushes text)
+- [x] (S) Breadcrumb navigation + entity detail pages in trail
+- [x] (S) Click subscription row to open edit modal
+- [x] Time preview on calendar cell hover
+- [x] Week calendar always clickable; one operator forced
+- [x] Eye icon for password on login modal
+- [x] Restructure + redesign client info page
+- [x] Campi più grandi
+- [x] Spostare il bottone di chiusura fiche dentro il modale
+- [x] Cambiare il totale direttamente senza aggiornare i prezzi singoli
+- [x] Calendario — filtro operatori, visualizzazione messe, colori e parziali su totale
+- [x] Combobox a due livelli per servizi e prodotti nella fiche
+
+## Personalization
+- [x] Different working hours per operator
+- [x] Column selection + sorting on all tables
+
+## Features
+- [x] Vacation in calendar
+- [x] Compact vs default table density (wired to settings)
+- [x] Change service names at checkout
+- [x] Easier drag-and-drop calendar actions
+- [x] Scheda tecnica (data, miscela, tecnica, note) accessibile da tutte le parti — hover solo l'ultima, click per pagina intera; cambio nota nel modale fiche
+- [x] Archiviare servizi, prodotti, clienti invece di cancellarli
+- [x] Servizi a omaggio (0 €)
+- [x] Creazione coupon (servizio / soldi)
+  - [x] Omaggi dal negozio
+  - [x] Buono regalo
+- [x] Feedback page con up/down
+- [x] Pagina abbonamento
+- [x] Email non più obbligatoria per creare cliente
 
 ## Impostazioni
-[x] Settare valore di default per validità buoni
+- [x] Default validità buoni
 
 ## Data
-[x] (S) add "Importa dati" option to all three dots dropdown in every page
-
-## Design
-
-## Codebase
+- [x] (S) "Importa dati" option in three-dots menu of every page
