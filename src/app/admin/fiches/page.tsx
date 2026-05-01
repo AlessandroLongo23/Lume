@@ -136,6 +136,7 @@ export default function FichesPage() {
                 <span>Nuova fiche</span>
               </button>
               <DropdownMenu items={[
+                { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
                 { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
               ]} />
             </>

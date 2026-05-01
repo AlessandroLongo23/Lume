@@ -160,7 +160,7 @@ export default function ServiziPage() {
                   <EllipsisVertical className="size-4 text-zinc-500" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-20 py-1">
+                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
                     <button
                       className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
                       onClick={() => { toggleTabShowArchived(); setMenuOpen(false); }}
@@ -172,6 +172,13 @@ export default function ServiziPage() {
                           {tabArchivedCount}
                         </span>
                       )}
+                    </button>
+                    <button
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      onClick={() => { setShowImport(true); setMenuOpen(false); }}
+                    >
+                      <ArrowDownToLine className="size-4 text-zinc-400" />
+                      Importa dati
                     </button>
                     <button
                       className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"

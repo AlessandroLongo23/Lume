@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Warehouse, Package, Tags, Truck, Factory, Plus, EllipsisVertical, Archive } from 'lucide-react';
+import { Warehouse, Package, Tags, Truck, Factory, Plus, EllipsisVertical, Archive, ArrowDownToLine } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -14,6 +14,7 @@ import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -38,6 +39,7 @@ export default function MagazzinoPage() {
   const setActiveTab = (t: Tab) => setUserTab(t);
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
   const [fornitoriAddTrigger, setFornitoriAddTrigger] = useState(0);
   const [marchiAddTrigger, setMarchiAddTrigger] = useState(0);
@@ -120,6 +122,7 @@ export default function MagazzinoPage() {
         onClose={() => setModalOpen(false)}
         trackInventory={trackInventory}
       />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
 
       <div className="flex flex-col gap-6">
         <PageHeader
@@ -161,16 +164,16 @@ export default function MagazzinoPage() {
                   Nuovo Marchio
                 </button>
               )}
-              {archivableTab && (
-                <div className="relative" ref={menuRef}>
-                  <button
-                    className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                    onClick={() => setMenuOpen((v) => !v)}
-                  >
-                    <EllipsisVertical className="size-4 text-zinc-500" />
-                  </button>
-                  {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-20 py-1">
+              <div className="relative" ref={menuRef}>
+                <button
+                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                  onClick={() => setMenuOpen((v) => !v)}
+                >
+                  <EllipsisVertical className="size-4 text-zinc-500" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
+                    {archivableTab && (
                       <button
                         className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
                         onClick={() => { toggleTabShowArchived(); setMenuOpen(false); }}
@@ -183,10 +186,17 @@ export default function MagazzinoPage() {
                           </span>
                         )}
                       </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    <button
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      onClick={() => { setShowImport(true); setMenuOpen(false); }}
+                    >
+                      <ArrowDownToLine className="size-4 text-zinc-400" />
+                      Importa dati
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           }
         />
