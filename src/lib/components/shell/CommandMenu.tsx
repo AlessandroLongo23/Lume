@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CornerDownLeft, Loader2, Search } from 'lucide-react';
 
@@ -103,7 +104,11 @@ export function CommandMenu({
   const [activeIdx, setActiveIdx] = useState(0);
   const [pendingConfirmId, setPendingConfirmId] = useState<string | null>(null);
   const [showSpinner, setShowSpinner] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- portal target only exists client-side.
+  useEffect(() => setMounted(true), []);
 
   const stableExtras = useMemo(() => extraActions ?? [], [extraActions]);
   const { results, loading, isEmptyQuery } = useCommandSearch(query, role, stableExtras);
@@ -205,9 +210,9 @@ export function CommandMenu({
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, flatItems, activeIdx, activate, onClose, pendingConfirmId]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <>
       <button
         type="button"
@@ -275,7 +280,8 @@ export function CommandMenu({
           </span>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
 
