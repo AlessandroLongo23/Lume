@@ -1,0 +1,212 @@
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  background: var(--lume-surface-raised);
+  border: 1px solid var(--lume-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px lab(4.5% 0 0 / 0.06);
+  transition: box-shadow 200ms ease-out, border-color 200ms ease-out;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  min-height: 13.75rem;
+}
+
+.card:hover {
+  border-color: var(--lume-border-flat);
+  box-shadow: 0 6px 18px lab(4.5% 0 0 / 0.1);
+}
+
+.portrait {
+  background: var(--gender-fill, var(--lume-accent-muted));
+  color: var(--gender-ink, var(--lume-accent));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.40625rem 0.9375rem;
+  border-right: 1px solid var(--lume-border-subtle);
+}
+
+.initials {
+  font: 700 2.34375rem / 1 var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.genderMark {
+  font: 600 0.625rem / 1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  padding: 1.40625rem 1.5625rem;
+  gap: 1.09375rem;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.name {
+  font: 600 1.328125rem / 1.2 var(--font-sans);
+  color: var(--lume-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font: 400 0.75rem / 1.2 var(--font-sans);
+  color: var(--lume-text-muted);
+}
+
+.tourist {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--lume-warning-bg);
+  color: var(--lume-warning-fg);
+  font-weight: 500;
+  font-size: 0.6875rem;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1.125rem minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  font: 400 0.8125rem / 1.3 var(--font-sans);
+  color: var(--lume-text-secondary);
+}
+
+.field svg {
+  color: var(--lume-text-muted);
+}
+
+.fieldValue {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foot {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.9375rem;
+  border-top: 1px solid var(--lume-border-subtle);
+  gap: 14px;
+}
+
+.ratings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 0.4375rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.125rem 4.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.row svg {
+  color: var(--row-tone, var(--lume-text-muted));
+  width: 14px;
+  height: 14px;
+}
+
+.rowEmerald {
+  --row-tone: lab(50% -38 30);
+}
+
+.rowSky {
+  --row-tone: lab(48% -8 -45);
+}
+
+.label {
+  font: 500 0.75rem / 1 var(--font-sans);
+  color: var(--lume-text-secondary);
+  letter-spacing: 0.005em;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: lab(89% 0 -1.5);
+  transition: background 200ms ease-out;
+}
+
+.segOnEmerald {
+  background: lab(63% -45 35);
+}
+
+.segOnSky {
+  background: lab(66% -8 -42);
+}
+
+.btn {
+  width: 30px;
+  height: 30px;
+  align-self: flex-end;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--lume-surface);
+  color: var(--lume-text-muted);
+  border: 1px solid var(--lume-border-subtle);
+  cursor: pointer;
+  transition: background 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.card:hover .btn {
+  opacity: 1;
+}
+
+.btnDelete:hover {
+  background: var(--lume-danger-bg);
+  color: var(--lume-danger-fg);
+  border-color: var(--lume-danger-border);
+}
+
+.btnRestore:hover {
+  background: var(--lume-success-bg);
+  color: var(--lume-success-fg);
+  border-color: var(--lume-success-border);
+}

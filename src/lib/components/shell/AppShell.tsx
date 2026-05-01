@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { animate, motion, useMotionValue, useTransform } from 'motion/react';
 import { useSidebarCollapse } from './useSidebarCollapse';
@@ -19,6 +20,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
   const collapseState = useSidebarCollapse();
   const { collapsed, toggle } = collapseState;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -107,7 +109,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
                 <div className="sticky top-0 z-10 h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
                 </div>
-                <div className="px-8 md:px-14 pt-10 pb-12">
+                <div key={pathname} className="px-8 md:px-14 pt-10 pb-12 shell-page-enter">
                   {children}
                 </div>
               </div>
