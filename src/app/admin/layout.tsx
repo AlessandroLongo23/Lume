@@ -8,7 +8,8 @@ import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeft
 import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
-import { Breadcrumbs, type BreadcrumbItem } from '@/lib/components/shell/Breadcrumbs';
+import { Breadcrumbs } from '@/lib/components/shell/Breadcrumbs';
+import { useAdminBreadcrumbs } from '@/lib/components/shell/useAdminBreadcrumbs';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
 import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
@@ -29,6 +30,7 @@ import { useViewsHydration } from '@/lib/hooks/useViewsHydration';
 import { isOwner, normalizeProfileRole } from '@/lib/auth/roles';
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { version as appVersion } from '../../../package.json';
 
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -54,9 +56,14 @@ function LumeLogoBlock() {
             animate={{ opacity: 1, width: 'auto', marginLeft: 6 }}
             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="text-lg font-semibold tracking-tight text-foreground dark:text-white whitespace-nowrap"
+            className="flex items-baseline gap-1.5 whitespace-nowrap"
           >
-            Lume<span className="text-primary">.</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground dark:text-white">
+              Lume<span className="text-primary">.</span>
+            </span>
+            <span className="text-[10px] font-medium tabular-nums text-muted-foreground tracking-tight">
+              v{appVersion}
+            </span>
           </motion.span>
         )}
       </AnimatePresence>
@@ -241,21 +248,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     />
   );
 
-  const breadcrumbItems = useMemo<BreadcrumbItem[]>(() => {
-    const segments = pathname.split('/').filter(Boolean);
-    if (segments[0] !== 'admin' || !segments[1]) return [];
-    const slug = segments[1];
-    if (slug === adminSettingsRoute.url) {
-      return [{ label: adminSettingsRoute.name }];
-    }
-    for (const group of adminRoutes) {
-      const route = group.routes.find((r) => r.url === slug);
-      if (route) {
-        return [{ label: group.title }, { label: route.name }];
-      }
-    }
-    return [];
-  }, [pathname]);
+  const breadcrumbItems = useAdminBreadcrumbs(pathname);
 
   const topBar = (
     <TopBar
