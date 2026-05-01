@@ -52,6 +52,10 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
     ['--shell-banner-h' as string]: `${bannerH}px`,
   };
 
+  const pageAnimationKey = pathname.startsWith('/admin/impostazioni')
+    ? '/admin/impostazioni'
+    : pathname;
+
   return (
     <SidebarCollapseContext.Provider value={collapseState}>
       <MobileMenuContext.Provider value={{ open: mobileOpen, setOpen: setMobileOpen }}>
@@ -109,7 +113,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
                 <div className="sticky top-0 z-10 h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
                 </div>
-                <div key={pathname} className="px-8 md:px-14 pt-10 pb-12 shell-page-enter">
+                <div key={pageAnimationKey} className="px-8 md:px-14 pt-10 pb-12 shell-page-enter">
                   {children}
                 </div>
               </div>

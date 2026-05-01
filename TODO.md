@@ -1,69 +1,74 @@
 # TODO
 
 ## Bug
+[*] (S) Fix the z-index on the dropdown in the client's detail page
 
-## UX
-[*] Add # appointments for clients, qty. of products sold, and other stats to tables
-[ ] applicazione abbonamento e dove trovare i dettagli
-[ ] Set up a "patch notes" system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
-[ ] Make so that the unavailability slot in the calendar stays during the confirmation modal
+## UX 
+[*] (M) Add # appointments for clients, qty. of products sold, and other stats to tables
+[ ] (M) applicazione abbonamento e dove trovare i dettagli
+[ ] (L) Set up a "patch notes" system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
+[*] (S) Add drag icon (six dots) to service blocks in calendar on hovering (animation pushing the text)
 
 ## Personalization
 
 ## Features
-[ ] recurrent expenses (spotify, services, etc.)
-[ ] notifica auguri sul gestionale
-[ ] Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
-[ ] white labeling online booking platform (service list, choose operator and time), with one time setup and editing page for service list, whether or not is possible to choose operator, and whether or not confirmation is necessary
-[ ] tessera cliente
-
-[ ] AI for speech to speech queries and actions (possibly free integrations)
-[ ] AI Image generation for products and services
+[ ] (L) recurrent expenses (spotify, services, etc.)
+[ ] (M) notifica auguri sul gestionale
+[ ] (L) Tutorial for onboarding with the most important features (we should decide whether to have a video page tutorial, a classic steps with highlights or something more modern and advanced)
+[ ] (L) white labeling online booking platform (service list, choose operator and time), with one time setup and editing page for service list, whether or not is possible to choose operator, and whether or not confirmation is necessary
+[ ] (L) tessera cliente
+[ ] (XL) GDPR audit and look for "deliberatorie" and other necessary documents for ready to print, already filled forms (ask Ulisse about those)
+[ ] (XL) AI for speech to speech queries and actions (possibly free integrations)
+[ ] (L) AI Image generation for products and services
+[ ] (M) Add a bug button fixed to the bottom right corner (down aligned with the theme button) to take a screenshot of the current page, and when the screenshot is taken, it automatically opens the feedback modal with bug preselected and the screenshot already uploaded
 
 ## Impostazioni
 
 ## Data
-[ ] Set up automatic import with Anthropic API and Supabase MCP
-[ ] passare tutti i dati da Stiv
-[ ] add step to onboarding to load all your data
-[ ] add "Importa dati" option to all three dots dropdown in every page
-[ ] when it detects if there's already data for that salon, it should ask if it wants to add (blind adding), overwrite (clean slate), or merge (smart adding)
+[ ] (XL) Set up automatic import with Anthropic API and Supabase MCP
+  [ ] (M) passare tutti i dati da Stiv
+  [ ] (L) when it detects if there's already data for that salon, it should ask if it wants to add (blind adding), overwrite (clean slate), or merge (smart adding)
+[ ] (M) add step to onboarding to load all your data
+[ ] (S) add "Importa dati" option to all three dots dropdown in every page
 
 ## Design
-[ ] design all pages to be responsive and design intuitive phone interactions, especially for tables and the calendar page
-[ ] Audit the codebase to add animations using motion
-  [ ] Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
-[ ] dropdown below three dots button has the same spacing between btn and dropdown than between btn and other btn
+[ ] (L) design all pages to be responsive and design intuitive phone interactions, especially for tables and the calendar page
+[ ] (L) Audit the codebase to add animations using motion
+  [ ] (M) Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
+[ ] (S) dropdown below three dots button has the same spacing between btn and dropdown than between btn and other btn
+[ ] (S) animate archive and delete icons in the clients' card
 
 ## Codebase
-[ ] Playwright automated testing
-[ ] create staging environment for more robustness, testing and safety measure 
-[ ] create staging database for testing
-[ ] revisit client_stats / client_ratings aggregates once real salons have ~10k+ fiches — currently re-runs on every fiche/fiche_services/fiche_products realtime change; consider materialized view, debounce, or per-client RPC
+[ ] (L) Playwright automated testing
+[ ] (L) create staging environment for more robustness, testing and safety measure 
+[ ] (L) create staging database for testing
+[ ] (M) revisit client_stats / client_ratings aggregates once real salons have ~10k+ fiches — currently re-runs on every fiche/fiche_services/fiche_products realtime change; consider materialized view, debounce, or per-client RPC
 
 ## Admin page
-[ ] Goal to 1% market coverage component (custom circular progress bar)
-[ ] statistics about the settings chosen by business
+[ ] (M) Goal to 1% market coverage component (custom circular progress bar)
+[ ] (M) statistics about the settings chosen by business
 
 ## Exploration
-[ ] Do some market research and understand how to structure a broader scope once the CMS is out of development phase
-[ ] Potential client list (phone numbers and which ones are already been called, where they're from, etc.)
-[ ] Create an automation that takes a voice recording/video recording, extracts the transcript (with speakers) and calls anthropic API with some context on the task to give back a report
+[ ] (M) Do some market research and understand how to structure a broader scope once the CMS is out of development phase
+[ ] (L) Potential client list (phone numbers and which ones are already been called, where they're from, etc.)
+[ ] (L) Create an automation that takes a voice recording/video recording, extracts the transcript (with speakers) and calls anthropic API with some context on the task to give back a report
 and create an interface for it for managing the interviews and inspect the aggregated results
 
 ## Integrations
-[ ] instagram
+[ ] (M) instagram
 
 ## Landing page
-[ ] Make scrolling clear
-[ ] Add scrolling progress bar
-[ ] Add screenshots and gif (from a populated fake salon) showcasing the features
+[ ] (S) Make scrolling clear
+[ ] (S) Add scrolling progress bar
+[ ] (M) Add screenshots and gif (from a populated fake salon) showcasing the features
 
 =================================================================
 
 # Done
 
 ## Bug
+[x] (S) Make so that the unavailability slot in the calendar stays during the confirmation modal
+[x] (S) In settings, every time you change section the animation triggers, and it shouldn't
 [x] theme always applying on refresh, instead, it should stay the same
 [x] avatar dropdown in sidebar
 [x] togliere categorie clienti
@@ -92,6 +97,7 @@ and create an interface for it for managing the interviews and inspect the aggre
 [x] togliere email obbligatoria per creare cliente
 
 ## UX
+[x] (S) Click abbonamento row to open edit modal
 [x] Time preview on calendar cell hover
 [x] week calendar is always clickable, but one of the operator is forced
 [x] add eye icon for login modal password

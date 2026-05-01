@@ -235,7 +235,9 @@ export function FicheBlock({
                 style={{ backgroundColor: withOpacity(color, 0.10) }}
               >
                 {!isLocked && isBlockDragEligible && (
-                  <GripVertical className="size-3 text-zinc-400 opacity-0 group-hover/seg:opacity-100 transition-opacity shrink-0" />
+                  <div className="overflow-hidden flex shrink-0 w-0 -mr-1 group-hover/seg:w-3 group-hover/seg:mr-0 transition-[width,margin] duration-200 ease-out">
+                    <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/seg:translate-x-0 transition-transform duration-200 ease-out" />
+                  </div>
                 )}
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight min-w-0">
                   {headerLabel}
@@ -259,11 +261,16 @@ export function FicheBlock({
                 }
               }}
               title={bodyTitle}
-              className={`flex-1 min-h-0 overflow-hidden px-2 py-1 text-left ${
+              className={`group/body flex-1 min-h-0 overflow-hidden px-2 py-1 flex items-start ${
                 isLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
               }`}
             >
-              <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight">
+              {!isLocked && (
+                <div className="overflow-hidden flex shrink-0 w-0 mr-0 group-hover/body:w-3 group-hover/body:mr-1 transition-[width,margin] duration-200 ease-out mt-px">
+                  <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/body:translate-x-0 transition-transform duration-200 ease-out" />
+                </div>
+              )}
+              <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight min-w-0">
                 {service?.name ?? 'Servizio'}
                 {blockHeightRem >= 2 && (
                   <span className="text-zinc-500 dark:text-zinc-400"> • {startTime}–{endTime}</span>

@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Pencil, Trash2, Search, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Search, X } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
@@ -250,7 +250,8 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    onClick={() => { setSelected(row.original); setShowEdit(true); }}
+                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
@@ -260,14 +261,7 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
                         <button
-                          onClick={() => { setSelected(row.original); setShowEdit(true); }}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-primary-hover dark:hover:text-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={() => { setSelected(row.original); setShowDelete(true); }}
+                          onClick={(e) => { e.stopPropagation(); setSelected(row.original); setShowDelete(true); }}
                           className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           title="Elimina"
                         >

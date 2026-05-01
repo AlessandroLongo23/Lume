@@ -16,6 +16,7 @@ import { ConfirmAppointmentChangeModal } from './ConfirmAppointmentChangeModal';
 import { CalendarDragContext } from './CalendarDragContext';
 import { UnavailabilityModal } from './UnavailabilityModal';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
+import { useUnavailabilityCreateStore } from '@/lib/stores/unavailabilityCreate';
 import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import { useCalendarDrag, type DropResult } from '@/lib/hooks/useCalendarDrag';
 import {
@@ -252,6 +253,7 @@ export function Calendar() {
           setIsUnavailModalOpen(false);
           setUnavailModalPrefill(null);
           setUnavailModalEditing(null);
+          useUnavailabilityCreateStore.getState().end();
         }}
         operator={unavailModalOperator}
         prefill={unavailModalPrefill}

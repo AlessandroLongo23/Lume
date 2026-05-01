@@ -257,15 +257,18 @@ export function DayViewSlot({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       const finalPreview = useUnavailabilityCreateStore.getState().preview;
-      endCreate();
 
       if (dragged && finalPreview) {
         draggedRef.current = true;
+        // Keep the preview band painted while the modal is open; it'll be
+        // cleared when the modal closes (Cancel or Confirm).
         onCreateUnavailability({
           operator,
           start: finalPreview.start,
           end: finalPreview.end,
         });
+      } else {
+        endCreate();
       }
     };
 
