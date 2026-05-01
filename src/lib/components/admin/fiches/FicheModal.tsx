@@ -1000,7 +1000,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         </div>
 
                         {svcOpen && (
-                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
+                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-popover overflow-hidden">
                             <CategoryDropdown
                               groups={groupedServices}
                               query={svcQuery}
@@ -1187,7 +1187,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         </div>
 
                         {prodOpen && (
-                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-100 overflow-hidden">
+                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-popover overflow-hidden">
                             <CategoryDropdown
                               groups={groupedProducts}
                               query={prodQuery}

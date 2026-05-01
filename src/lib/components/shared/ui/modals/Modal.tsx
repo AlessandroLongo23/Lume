@@ -59,7 +59,7 @@ export function Modal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className={`fixed inset-0 bg-black/25 ${blurClasses[backgroundBlur]} z-50`}
+          className={`fixed inset-0 bg-black/25 ${blurClasses[backgroundBlur]} z-modal-backdrop`}
           onClick={handleBackdropClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -9,6 +9,7 @@ import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailab
 import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { FicheBlock } from './FicheBlock';
 import { UnavailabilityBlock } from './UnavailabilityBlock';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheService } from '@/lib/types/FicheService';
 import type { Operator } from '@/lib/types/Operator';
@@ -294,7 +295,10 @@ export function DayViewSlot({
           ? 'bg-zinc-50 dark:bg-zinc-800/50'
           : 'bg-white dark:bg-zinc-900';
 
+  const slotTooltip = isPast ? 'Questo orario è passato' : isExtendedHours ? 'Fuori orari di apertura' : undefined;
+
   return (
+    <Tooltip label={slotTooltip}>
     <div
       data-cal-slot
       data-cal-operator={operator.id}
@@ -306,17 +310,16 @@ export function DayViewSlot({
       onMouseEnter={() => !isBlocked && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...(!isBlocked && !isOccupied && { role: 'button', tabIndex: 0 })}
-      title={isPast ? 'Questo orario è passato' : isExtendedHours ? 'Fuori orari di apertura' : undefined}
     >
       {/* Invalid drop highlight overlay */}
       {isInvalidPreviewZone && (
-        <div className="absolute inset-0 bg-red-500/15 pointer-events-none z-20" />
+        <div className="absolute inset-0 bg-red-500/15 pointer-events-none z-content-floating" />
       )}
 
       {/* Live preview band while the user click-drags an unavailability */}
       {isInCreatePreview && (
         <div
-          className="absolute inset-0 pointer-events-none z-10"
+          className="absolute inset-0 pointer-events-none z-content-floating"
           style={{
             backgroundImage:
               'repeating-linear-gradient(-45deg, rgba(99,102,241,0.18), rgba(99,102,241,0.18) 4px, transparent 4px, transparent 8px)',
@@ -356,5 +359,6 @@ export function DayViewSlot({
         {!isOccupied && isHovered && !isBlocked && <Plus size={16} className="text-zinc-400" />}
       </div>
     </div>
+    </Tooltip>
   );
 }

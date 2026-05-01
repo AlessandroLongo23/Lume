@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { NotebookText } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 interface TreatmentHistoryProps {
   clientId: string;
@@ -62,9 +63,11 @@ export function TreatmentHistory({ clientId }: TreatmentHistoryProps) {
               <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100">
                 {f.tecnica?.trim() || <span className="text-zinc-400">—</span>}
               </td>
-              <td className="py-2 text-zinc-600 dark:text-zinc-300 max-w-[260px] truncate" title={f.note || undefined}>
-                {f.note?.trim() || <span className="text-zinc-400">—</span>}
-              </td>
+              <Tooltip label={f.note || undefined}>
+                <td className="py-2 text-zinc-600 dark:text-zinc-300 max-w-[260px] truncate">
+                  {f.note?.trim() || <span className="text-zinc-400">—</span>}
+                </td>
+              </Tooltip>
             </tr>
           ))}
         </tbody>

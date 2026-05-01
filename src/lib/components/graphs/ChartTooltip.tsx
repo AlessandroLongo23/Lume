@@ -38,7 +38,7 @@ export function ChartTooltip({ visible, x, y, position = 'top', children }: Char
 
   return (
     <div
-      className={`${translate} absolute flex flex-col z-50 bg-card min-w-52 border border-border rounded-lg shadow-md pointer-events-none transform transition-all duration-100`}
+      className={`${translate} absolute flex flex-col z-tooltip bg-card min-w-52 border border-border rounded-lg shadow-md pointer-events-none transform transition-all duration-100`}
       style={style as React.CSSProperties}
     >
       {children}

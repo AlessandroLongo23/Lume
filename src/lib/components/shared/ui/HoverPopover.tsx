@@ -117,7 +117,7 @@ export function HoverPopover({
             left: coords?.left ?? -9999,
             visibility: coords ? 'visible' : 'hidden',
           }}
-          className={`z-50 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 shadow-lg rounded-md border border-zinc-200 dark:border-zinc-700 p-3 min-w-[220px] ${contentClassName}`}
+          className={`z-popover bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 shadow-lg rounded-md border border-zinc-200 dark:border-zinc-700 p-3 min-w-[220px] ${contentClassName}`}
           onMouseEnter={cancelClose}
           onMouseLeave={scheduleClose}
         >

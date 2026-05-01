@@ -16,6 +16,7 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { EditAbbonamentoModal } from './EditAbbonamentoModal';
 import { DeleteAbbonamentoModal } from './DeleteAbbonamentoModal';
@@ -83,9 +84,11 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
         if (ids.length === 0) return <span className="text-zinc-400">—</span>;
         if (ids.length === 1) return <span>{servicesMap.get(ids[0]) ?? '—'}</span>;
         return (
-          <span title={ids.map((id) => servicesMap.get(id) ?? '—').join(', ')} className="text-zinc-700 dark:text-zinc-300">
-            {ids.length} servizi
-          </span>
+          <Tooltip label={ids.map((id) => servicesMap.get(id) ?? '—').join(', ')}>
+            <span className="text-zinc-700 dark:text-zinc-300">
+              {ids.length} servizi
+            </span>
+          </Tooltip>
         );
       },
     },

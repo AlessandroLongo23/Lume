@@ -2,6 +2,7 @@
 
 import { Palette, Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { useTheme, type Theme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -42,22 +43,22 @@ function SegmentedRow<T extends string>({
       {options.map(({ value: v, label, icon: Icon, hint }) => {
         const selected = v === value;
         return (
-          <button
-            key={v}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(v)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              selected
-                ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
-                : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-            }`}
-            title={hint}
-          >
-            <Icon className="size-4" />
-            {label}
-          </button>
+          <Tooltip key={v} label={hint}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(v)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                selected
+                  ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
+                  : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+              }`}
+            >
+              <Icon className="size-4" />
+              {label}
+            </button>
+          </Tooltip>
         );
       })}
     </div>

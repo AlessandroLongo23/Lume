@@ -230,7 +230,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
             </button>
 
             {categoryDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 z-20 w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
+              <div className="absolute top-full left-0 mt-1.5 z-dropdown w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
                 <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
                   <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Filtra per categoria

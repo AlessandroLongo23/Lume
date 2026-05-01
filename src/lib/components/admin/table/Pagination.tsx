@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 interface PaginationProps {
   currentPage: number;
@@ -56,21 +57,29 @@ export function Pagination({
 
       {totalPages > 1 && (
         <div className="flex items-center gap-1">
-          <button onClick={() => goToPage(1)} disabled={currentPage === 1} className={btnClass} title="Prima pagina">
-            <ChevronsLeft className="size-4" />
-          </button>
-          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className={btnClass} title="Pagina precedente">
-            <ChevronLeft className="size-4" />
-          </button>
+          <Tooltip label="Prima pagina">
+            <button onClick={() => goToPage(1)} disabled={currentPage === 1} className={btnClass}>
+              <ChevronsLeft className="size-4" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Pagina precedente">
+            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className={btnClass}>
+              <ChevronLeft className="size-4" />
+            </button>
+          </Tooltip>
           <span className="text-xs text-zinc-700 dark:text-zinc-300 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg">
             {currentPage} / {totalPages}
           </span>
-          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className={btnClass} title="Pagina successiva">
-            <ChevronRight className="size-4" />
-          </button>
-          <button onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} className={btnClass} title="Ultima pagina">
-            <ChevronsRight className="size-4" />
-          </button>
+          <Tooltip label="Pagina successiva">
+            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className={btnClass}>
+              <ChevronRight className="size-4" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Ultima pagina">
+            <button onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} className={btnClass}>
+              <ChevronsRight className="size-4" />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

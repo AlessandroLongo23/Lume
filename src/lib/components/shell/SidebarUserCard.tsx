@@ -130,8 +130,8 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
           }
           className={
             effectiveCollapsed
-              ? 'w-56 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-[70] py-1'
-              : 'absolute bottom-full mb-2 left-0 right-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-[70] py-1'
+              ? 'w-56 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-dropdown py-1'
+              : 'absolute bottom-full mb-2 left-0 right-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-dropdown py-1'
           }
         >
           {menuItems.map((item, idx) => {

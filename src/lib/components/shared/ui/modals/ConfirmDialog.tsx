@@ -81,7 +81,7 @@ export function ConfirmDialog({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-modal-backdrop flex items-center justify-center px-4"
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

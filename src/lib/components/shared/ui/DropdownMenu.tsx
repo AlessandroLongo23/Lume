@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { EllipsisVertical } from 'lucide-react';
+import { Portal } from './Portal';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface DropdownMenuItem {
@@ -18,40 +19,67 @@ interface DropdownMenuProps {
 
 export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const update = () => {
+      const r = triggerRef.current!.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={triggerRef}
         className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
         onClick={() => setOpen((v) => !v)}
         aria-label="Altre opzioni"
       >
         <EllipsisVertical className="size-4 text-zinc-500" />
       </button>
-      {open && (
-        <div className={`absolute right-0 top-full mt-1 ${width} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-20 py-1`}>
-          {items.map((item) => (
-            <button
-              key={item.label}
-              className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
-              onClick={() => { item.onClick(); setOpen(false); }}
-            >
-              <item.icon className="size-4 text-zinc-400" />
-              {item.label}
-            </button>
-          ))}
-        </div>
+      {open && pos && (
+        <Portal>
+          <div
+            ref={panelRef}
+            className={`fixed ${width} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1`}
+            style={{ top: pos.top, right: pos.right }}
+          >
+            {items.map((item) => (
+              <button
+                key={item.label}
+                className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                onClick={() => { item.onClick(); setOpen(false); }}
+              >
+                <item.icon className="size-4 text-zinc-400" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </Portal>
       )}
-    </div>
+    </>
   );
 }

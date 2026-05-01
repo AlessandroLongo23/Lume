@@ -87,7 +87,7 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1.5 z-20 w-72 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
+        <div className="absolute top-full right-0 mt-1.5 z-dropdown w-72 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
           <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
             <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Colonne visibili</span>
           </div>

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { isWarningReason } from '@/lib/utils/calendar-conflicts';
+import { Portal } from '@/lib/components/shared/ui/Portal';
 
 interface CalendarDragGhostProps {
   /** Pixels per slot row (32 today). */
@@ -123,28 +124,30 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
   void tick;
 
   return (
-    <div
-      className="fixed z-[60] pointer-events-none rounded-md shadow-lg"
-      style={{
-        left: rect.left + 2,
-        top: topPx,
-        width: rect.width - 4,
-        height: heightPx,
-        background: bg,
-        border: `2px solid ${accent}`,
-      }}
-    >
+    <Portal>
       <div
-        className="absolute -top-7 left-0 px-2 py-1 rounded text-[11px] font-semibold whitespace-nowrap shadow"
+        className="fixed z-drag pointer-events-none rounded-md shadow-lg"
         style={{
-          background: accent,
-          color: 'white',
+          left: rect.left + 2,
+          top: topPx,
+          width: rect.width - 4,
+          height: heightPx,
+          background: bg,
+          border: `2px solid ${accent}`,
         }}
       >
-        {format(first.start, 'HH:mm')}–{format(last.end, 'HH:mm')}
-        {operatorName && <> · {operatorName}</>}
-        {reasonLabel && <> · {reasonLabel}</>}
+        <div
+          className="absolute -top-7 left-0 px-2 py-1 rounded text-[11px] font-semibold whitespace-nowrap shadow"
+          style={{
+            background: accent,
+            color: 'white',
+          }}
+        >
+          {format(first.start, 'HH:mm')}–{format(last.end, 'HH:mm')}
+          {operatorName && <> · {operatorName}</>}
+          {reasonLabel && <> · {reasonLabel}</>}
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

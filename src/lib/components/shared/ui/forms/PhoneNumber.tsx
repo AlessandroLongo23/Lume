@@ -137,7 +137,7 @@ export function PhoneNumber({
         </button>
 
         {showDropdown && (
-          <div className="absolute max-h-72 overflow-hidden top-full left-0 mt-1 w-60 bg-white dark:bg-zinc-900 border border-zinc-500/25 rounded-lg shadow-lg z-50">
+          <div className="absolute max-h-72 overflow-hidden top-full left-0 mt-1 w-60 bg-white dark:bg-zinc-900 border border-zinc-500/25 rounded-lg shadow-lg z-popover">
             <div className="p-2 border-b border-zinc-500/25">
               <input
                 ref={searchInputRef}

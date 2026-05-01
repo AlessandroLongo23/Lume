@@ -37,7 +37,7 @@ export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black/25 z-50"
+          className="fixed inset-0 bg-black/25 z-modal-backdrop"
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

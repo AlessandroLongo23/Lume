@@ -224,9 +224,8 @@ export function CustomSelect({
             top: dropdownPos.top,
             left: dropdownPos.left,
             width: dropdownPos.width,
-            zIndex: 9999,
           }}
-          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden"
+          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden z-popover"
         >
           {searchable && (
             <div className="p-2 border-b border-zinc-500/25">

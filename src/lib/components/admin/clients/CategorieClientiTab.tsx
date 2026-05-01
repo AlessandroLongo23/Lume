@@ -16,6 +16,7 @@ import { AddClientCategoryModal } from './AddClientCategoryModal';
 import { DeleteClientCategoryModal } from './DeleteClientCategoryModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { cardStyle } from '@/lib/const/appearance';
 import type { ClientCategory } from '@/lib/types/ClientCategory';
@@ -187,20 +188,22 @@ export function CategorieClientiTab() {
                     })}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={(e) => handleEditClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        <Tooltip label="Modifica">
+                          <button
+                            onClick={(e) => handleEditClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Elimina">
+                          <button
+                            onClick={(e) => handleDeleteClick(e, row.original)}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>

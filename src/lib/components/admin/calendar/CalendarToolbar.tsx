@@ -132,7 +132,7 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
                 onClick={() => handleViewChange(value)}
                 className={[
                   'flex items-center justify-center px-3 py-2 text-sm transition-all',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-10',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-content-floating',
                   i > 0 ? 'border-l border-zinc-500/25' : '',
                   isActive
                     ? 'bg-primary/10 text-primary-hover dark:text-primary/70'

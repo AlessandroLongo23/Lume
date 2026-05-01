@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Plane, Mail, Phone, Calendar, Trash, ArchiveRestore, Wallet, CalendarDays } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import styles from './ClientCard.module.css';
 
 interface ClientCardProps {
@@ -63,7 +64,9 @@ export function ClientCard({ client, onDelete, onRestore, showArchived = false }
           {client.email && (
             <div className={styles.field}>
               <Mail className="w-3.5 h-3.5" />
-              <span className={styles.fieldValue} title={client.email}>{client.email}</span>
+              <Tooltip label={client.email}>
+                <span className={styles.fieldValue}>{client.email}</span>
+              </Tooltip>
             </div>
           )}
           {client.phonePrefix && client.phoneNumber && (
@@ -108,17 +111,19 @@ export function ClientCard({ client, onDelete, onRestore, showArchived = false }
             </div>
           </div>
           {showArchived ? (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRestore?.(client); }}
-              className={`${styles.btn} ${styles.btnRestore}`}
-              title="Ripristina cliente"
-            ><ArchiveRestore className="w-3.5 h-3.5" /></button>
+            <Tooltip label="Ripristina cliente">
+              <button
+                onClick={(e) => { e.stopPropagation(); onRestore?.(client); }}
+                className={`${styles.btn} ${styles.btnRestore}`}
+              ><ArchiveRestore className="w-3.5 h-3.5" /></button>
+            </Tooltip>
           ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(client); }}
-              className={`${styles.btn} ${styles.btnDelete}`}
-              title="Elimina cliente"
-            ><Trash className="w-3.5 h-3.5" /></button>
+            <Tooltip label="Elimina cliente">
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(client); }}
+                className={`${styles.btn} ${styles.btnDelete}`}
+              ><Trash className="w-3.5 h-3.5" /></button>
+            </Tooltip>
           )}
         </div>
       </div>

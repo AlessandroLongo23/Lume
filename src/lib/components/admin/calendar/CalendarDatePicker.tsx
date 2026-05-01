@@ -171,8 +171,8 @@ export function CalendarDatePicker({
           ref={portalRef}
           role="dialog"
           aria-label="Seleziona data"
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 288, zIndex: 9999 }}
-          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg p-3"
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 288 }}
+          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg p-3 z-popover"
         >
           {/* Header: prev / (clickable label) / next */}
           <div className="flex items-center justify-between mb-2">

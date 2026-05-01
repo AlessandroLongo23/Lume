@@ -140,7 +140,7 @@ export function FilterDropdown({
   const dropdown = open && mounted ? createPortal(
     <div
       ref={dropdownRef}
-      className="bg-white dark:bg-zinc-900 shadow-md rounded-md p-3 border border-zinc-200 dark:border-zinc-800 z-[200]"
+      className="bg-white dark:bg-zinc-900 shadow-md rounded-md p-3 border border-zinc-200 dark:border-zinc-800 z-popover"
       style={{
         position: 'absolute',
         top: position.top,

@@ -16,7 +16,7 @@ export function MessagePopupContainer() {
   if (messages.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-72">
+    <div className="fixed top-4 right-4 z-toast flex flex-col gap-2 w-72">
       {messages.map((msg) => (
         <div
           key={msg.id}

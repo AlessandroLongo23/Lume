@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { generateTimeSlots, formatTimeSlot, CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 export interface TimeGridColumn {
   key: string;
@@ -73,7 +74,7 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
       <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-11rem)]">
         {/* Header — sticky so operator names stay visible while scrolling */}
         <div
-          className="grid sticky top-0 z-20 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
+          className="grid sticky top-0 z-sticky bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
           style={gridCols}
         >
           <div className="p-2 font-medium border-r border-zinc-500/25 text-center text-sm">
@@ -93,7 +94,7 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
         <div className="relative">
           {showNowLine && (
             <div
-              className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+              className="absolute left-0 right-0 z-content-floating pointer-events-none flex items-center"
               style={{ top: `${nowTopRem}rem` }}
             >
               <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
@@ -113,17 +114,18 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
                 style={gridCols}
               >
                 {/* Time gutter */}
-                <div
-                  className={`p-2 h-8 text-xs border-r border-r-zinc-500/25 flex items-center justify-center gap-1 border-t ${
-                    isHourMark ? 'border-t-zinc-500/50' : 'border-t-zinc-500/25'
-                  } ${
-                    isExtended ? 'bg-amber-500/8 text-amber-700 dark:text-amber-400' : ''
-                  }`}
-                  title={isExtended ? 'Fuori orari di apertura' : undefined}
-                >
-                  {isExtended && <AlertTriangle className="size-3 shrink-0" />}
-                  {formatTimeSlot(timeSlot)}
-                </div>
+                <Tooltip label={isExtended ? 'Fuori orari di apertura' : undefined}>
+                  <div
+                    className={`p-2 h-8 text-xs border-r border-r-zinc-500/25 flex items-center justify-center gap-1 border-t ${
+                      isHourMark ? 'border-t-zinc-500/50' : 'border-t-zinc-500/25'
+                    } ${
+                      isExtended ? 'bg-amber-500/8 text-amber-700 dark:text-amber-400' : ''
+                    }`}
+                  >
+                    {isExtended && <AlertTriangle className="size-3 shrink-0" />}
+                    {formatTimeSlot(timeSlot)}
+                  </div>
+                </Tooltip>
 
                 {/* Slot cells */}
                 {columns.map((col) => (

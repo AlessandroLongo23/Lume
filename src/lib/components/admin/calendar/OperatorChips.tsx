@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { Users, Ban, Crosshair } from 'lucide-react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { useOperatorsStore } from '@/lib/stores/operators';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import type { Operator } from '@/lib/types/Operator';
 
 function operatorInitial(op: Operator): string {
@@ -177,25 +178,25 @@ export function OperatorChips({ onAddFerie }: OperatorChipsProps = {}) {
       {activeOperators.map((op) => {
         const selected = chipIsSelected(op.id);
         return (
-          <button
-            key={op.id}
-            type="button"
-            onClick={(e) => handleChipClick(e, op.id)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
-            }}
-            aria-pressed={selected}
-            title={op.getFullName()}
-            className={[
-              'relative shrink-0 rounded-full transition-all',
-              selected
-                ? 'opacity-100 ring-2 ring-primary'
-                : 'opacity-40 hover:opacity-80 ring-1 ring-zinc-300 dark:ring-zinc-700',
-            ].join(' ')}
-          >
-            <OperatorAvatar operator={op} />
-          </button>
+          <Tooltip key={op.id} label={op.getFullName()}>
+            <button
+              type="button"
+              onClick={(e) => handleChipClick(e, op.id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
+              }}
+              aria-pressed={selected}
+              className={[
+                'relative shrink-0 rounded-full transition-all',
+                selected
+                  ? 'opacity-100 ring-2 ring-primary'
+                  : 'opacity-40 hover:opacity-80 ring-1 ring-zinc-300 dark:ring-zinc-700',
+              ].join(' ')}
+            >
+              <OperatorAvatar operator={op} />
+            </button>
+          </Tooltip>
         );
       })}
 
@@ -203,7 +204,7 @@ export function OperatorChips({ onAddFerie }: OperatorChipsProps = {}) {
         createPortal(
           <div
             onMouseDown={(e) => e.stopPropagation()}
-            className="fixed z-[100] min-w-44 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden text-sm"
+            className="fixed z-popover min-w-44 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden text-sm"
             style={{ left: Math.min(contextMenu.x, window.innerWidth - 200), top: contextMenu.y }}
           >
             <button

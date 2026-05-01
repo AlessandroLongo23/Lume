@@ -217,14 +217,14 @@ export function CommandMenu({
       <button
         type="button"
         aria-label="Chiudi"
-        className="fixed inset-0 z-[80] bg-black/40"
+        className="fixed inset-0 z-command bg-black/40"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Comandi"
-        className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[90] w-[min(640px,calc(100vw-32px))] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden"
+        className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-command w-[min(640px,calc(100vw-32px))] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden"
       >
         <div className="flex items-center gap-3 px-4 border-b border-zinc-200 dark:border-zinc-800">
           <Search className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.5} />

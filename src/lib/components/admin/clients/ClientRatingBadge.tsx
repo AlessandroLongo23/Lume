@@ -2,6 +2,7 @@
 
 import { Star, Wallet, CalendarDays } from 'lucide-react';
 import type { Stars } from '@/lib/types/ClientRating';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 type Kind = 'money' | 'calendar';
 
@@ -29,16 +30,18 @@ export function ClientRatingBadge({ stars, kind, size = 'sm' }: ClientRatingBadg
   const dim = 'text-zinc-300 dark:text-zinc-600';
 
   return (
-    <span className="inline-flex items-center gap-1" title={kind === 'money' ? `Spesa: ${stars}/5 stelle` : `Frequenza: ${stars}/5 stelle`}>
-      <Icon className={`${iconClass} ${accent}`} />
-      <span className="inline-flex">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Star
-            key={i}
-            className={`${starClass} ${i <= stars ? `${accent} fill-current` : dim}`}
-          />
-        ))}
+    <Tooltip label={kind === 'money' ? `Spesa: ${stars}/5 stelle` : `Frequenza: ${stars}/5 stelle`}>
+      <span className="inline-flex items-center gap-1">
+        <Icon className={`${iconClass} ${accent}`} />
+        <span className="inline-flex">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Star
+              key={i}
+              className={`${starClass} ${i <= stars ? `${accent} fill-current` : dim}`}
+            />
+          ))}
+        </span>
       </span>
-    </span>
+    </Tooltip>
   );
 }

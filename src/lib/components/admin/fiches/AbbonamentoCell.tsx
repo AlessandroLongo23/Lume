@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { BadgePercent, X, Check } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import type { Abbonamento } from '@/lib/types/Abbonamento';
 
 interface AbbonamentoCellProps {
@@ -91,16 +92,17 @@ export function AbbonamentoCell({
     const label = `${current.remainingTreatments}/${current.total_treatments}`;
     return (
       <div className="flex items-center justify-center">
-        <button
-          type="button"
-          onClick={() => onChange(null)}
-          title={`Abbonamento attivo (${label}) — clicca per rimuovere`}
-          className={`${buttonBase} flex items-center gap-1 px-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20`}
-        >
-          <BadgePercent className="size-3" />
-          <span className="font-mono">{label}</span>
-          <X className="size-3 opacity-60" />
-        </button>
+        <Tooltip label={`Abbonamento attivo (${label}) — clicca per rimuovere`}>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className={`${buttonBase} flex items-center gap-1 px-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20`}
+          >
+            <BadgePercent className="size-3" />
+            <span className="font-mono">{label}</span>
+            <X className="size-3 opacity-60" />
+          </button>
+        </Tooltip>
       </div>
     );
   }
@@ -108,21 +110,22 @@ export function AbbonamentoCell({
   // Eligible but none selected
   return (
     <div ref={ref} className="relative flex items-center justify-center">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        title="Usa un abbonamento"
-        className={`${buttonBase} text-zinc-400 hover:text-primary hover:bg-primary/10`}
-        aria-label="Usa abbonamento"
-      >
-        <BadgePercent className="size-3.5" />
-      </button>
+      <Tooltip label="Usa un abbonamento">
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={`${buttonBase} text-zinc-400 hover:text-primary hover:bg-primary/10`}
+          aria-label="Usa abbonamento"
+        >
+          <BadgePercent className="size-3.5" />
+        </button>
+      </Tooltip>
       {open && dropdownPos && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownRef}
           style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }}
-          className="w-56 rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 shadow-xl z-1000"
+          className="w-56 rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 shadow-xl z-popover"
         >
           <div className="px-2 py-1.5 text-2xs uppercase tracking-wide text-zinc-400 border-b border-zinc-500/10">
             Abbonamenti disponibili

@@ -30,7 +30,7 @@ export function SidebarShortcutHint() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-6 left-6 z-[70] flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-200 shadow-lg max-w-sm transition-opacity"
+      className="fixed bottom-6 left-6 z-tooltip flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-200 shadow-lg max-w-sm transition-opacity"
     >
       <span>
         Suggerimento: premi{' '}

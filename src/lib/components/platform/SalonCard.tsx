@@ -160,10 +160,10 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
               <button
                 type="button"
                 aria-label="Chiudi menu"
-                className="fixed inset-0 z-10"
+                className="fixed inset-0"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 top-8 z-20 w-40 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1">
+              <div className="absolute right-0 top-8 z-dropdown w-40 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1">
                 <button
                   type="button"
                   onClick={() => { setIsRenaming(true); setMenuOpen(false); }}

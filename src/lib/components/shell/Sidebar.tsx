@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useMobileMenu, useSidebarForceExpanded } from './sidebarContext';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 export type SidebarNavItem = {
   name: string;
@@ -36,34 +37,35 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
   const Icon = item.icon;
 
   return (
-    <Link
-      href={item.url}
-      onClick={onNavigate}
-      title={collapsed ? item.name : undefined}
-      className={`flex items-center text-sm rounded-md overflow-hidden transition-colors ${
-        isActive
-          ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
-          : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
-      }`}
-    >
-      <span className="flex items-center justify-center w-10 h-10 shrink-0">
-        <Icon className="w-5 h-5" strokeWidth={1.5} />
-      </span>
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.span
-            key="label"
-            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-            animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
-            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="truncate whitespace-nowrap"
-          >
-            {item.name}
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </Link>
+    <Tooltip label={collapsed ? item.name : undefined} side="right">
+      <Link
+        href={item.url}
+        onClick={onNavigate}
+        className={`flex items-center text-sm rounded-md overflow-hidden transition-colors ${
+          isActive
+            ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
+            : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
+        }`}
+      >
+        <span className="flex items-center justify-center w-10 h-10 shrink-0">
+          <Icon className="w-5 h-5" strokeWidth={1.5} />
+        </span>
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.span
+              key="label"
+              initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+              animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
+              exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="truncate whitespace-nowrap"
+            >
+              {item.name}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </Link>
+    </Tooltip>
   );
 }
 

@@ -6,6 +6,7 @@ import { it } from 'date-fns/locale';
 import { Bot, Pencil, Trash2 } from 'lucide-react';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackComment } from '@/lib/types/FeedbackComment';
 import { MarkdownBody } from './MarkdownBody';
@@ -93,9 +94,11 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
             </span>
           )}
           <span className="text-zinc-400">·</span>
-          <span className="text-zinc-500 dark:text-zinc-400" title={new Date(comment.created_at).toLocaleString('it-IT')}>
-            {formatDistanceToNow(new Date(comment.created_at), { locale: it, addSuffix: true })}
-          </span>
+          <Tooltip label={new Date(comment.created_at).toLocaleString('it-IT')}>
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {formatDistanceToNow(new Date(comment.created_at), { locale: it, addSuffix: true })}
+            </span>
+          </Tooltip>
           {wasEdited && (
             <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">(modificato)</span>
           )}

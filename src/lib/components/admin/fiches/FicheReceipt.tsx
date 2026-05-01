@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Scissors, Package, Lightbulb, Gift, Tag, BadgePercent } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useProductsStore } from '@/lib/stores/products';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
 
 export interface CouponDiscountLine {
@@ -138,14 +139,18 @@ export function FicheReceipt({
                       <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
                     )}
                     {isAbbonamento ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Coperto da abbonamento" aria-label="Coperto da abbonamento">
-                        <BadgePercent className="size-3.5" />
-                        <span className="text-2xs font-semibold uppercase tracking-wide">Abb.</span>
-                      </span>
+                      <Tooltip label="Coperto da abbonamento">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" aria-label="Coperto da abbonamento">
+                          <BadgePercent className="size-3.5" />
+                          <span className="text-2xs font-semibold uppercase tracking-wide">Abb.</span>
+                        </span>
+                      </Tooltip>
                     ) : isGift ? (
-                      <span className="inline-flex items-center text-pink-500 dark:text-pink-400" title="Omaggio" aria-label="Omaggio">
-                        <Gift className="size-3.5" />
-                      </span>
+                      <Tooltip label="Omaggio">
+                        <span className="inline-flex items-center text-pink-500 dark:text-pink-400" aria-label="Omaggio">
+                          <Gift className="size-3.5" />
+                        </span>
+                      </Tooltip>
                     ) : (
                       <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
                         € {fmt(fs.final_price)}
@@ -184,9 +189,11 @@ export function FicheReceipt({
                       <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
                     )}
                     {isGift ? (
-                      <span className="inline-flex items-center text-pink-500 dark:text-pink-400" title="Omaggio" aria-label="Omaggio">
-                        <Gift className="size-3.5" />
-                      </span>
+                      <Tooltip label="Omaggio">
+                        <span className="inline-flex items-center text-pink-500 dark:text-pink-400" aria-label="Omaggio">
+                          <Gift className="size-3.5" />
+                        </span>
+                      </Tooltip>
                     ) : (
                       <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
                         € {fmt(finalTotalLine)}

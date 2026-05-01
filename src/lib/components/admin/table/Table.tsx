@@ -203,7 +203,7 @@ export function Table({
     <div className="flex flex-col gap-4 items-start justify-between w-full">
       <div className={`shadow-sm max-h-130 w-full overflow-y-auto overflow-visible ${cardStyle}`}>
         <table className="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-          <thead className="sticky top-0 z-10 text-zinc-700 bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400">
+          <thead className="sticky top-0 z-sticky text-zinc-700 bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400">
             <tr>
               {showNumbers && (
                 <th scope="col" className="px-4 py-3 border-r border-zinc-500/25 w-10">

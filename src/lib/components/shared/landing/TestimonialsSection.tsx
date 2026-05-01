@@ -121,8 +121,8 @@ function MarqueeRow({
   return (
     <div className="relative overflow-hidden">
       {/* Fade edges */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 z-10 bg-linear-to-r from-background to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 z-10 bg-linear-to-l from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 z-content-floating bg-linear-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 z-content-floating bg-linear-to-l from-background to-transparent" />
 
       <div
         className={`gap-4 ${
