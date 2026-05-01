@@ -1,16 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { isSameDay } from 'date-fns';
 import { getWeekDays, formatDateString } from '@/lib/utils/date';
 import { capitalize } from '@/lib/utils/string';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { useCalendarStore } from '@/lib/stores/calendar';
 import { TimeGrid } from './TimeGrid';
 import { DayViewSlot } from './DayViewSlot';
 import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
 import { isSlotActive, extendBoundsForRanges } from '@/lib/utils/operating-hours';
 
@@ -19,13 +21,17 @@ interface WeekViewProps {
   selectedOperatorId: string;
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
-  operatingHours: DaySchedule[];
+  onCreateUnavailability?: (data: { operator: Operator; start: Date; end: Date }) => void;
+  onSelectUnavailability?: (item: OperatorUnavailability) => void;
+  /** Resolves the effective weekly schedule for one operator. */
+  getScheduleFor: (operatorId: string) => DaySchedule[];
   gridBounds: { startHour: number; endHour: number };
 }
 
-export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onFicheSelected, operatingHours, gridBounds }: WeekViewProps) {
+export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onFicheSelected, onCreateUnavailability, onSelectUnavailability, getScheduleFor, gridBounds }: WeekViewProps) {
   const operators = useOperatorsStore((s) => s.operators);
   const fiches = useFichesStore((s) => s.fiches);
+  const setHoveredTime = useCalendarStore((s) => s.setHoveredTime);
 
   const operator = useMemo(
     () => operators.find((op) => op.id === selectedOperatorId) ?? null,
@@ -72,6 +78,20 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
     return extendBoundsForRanges(gridBounds, ranges);
   }, [weekFiches, gridBounds]);
 
+  const handleCellHover = useCallback(
+    (columnKey: string, timeSlot: Date) => {
+      const columnDate = new Date(columnKey);
+      const date = new Date(columnDate);
+      date.setHours(timeSlot.getHours(), timeSlot.getMinutes(), 0, 0);
+      setHoveredTime({
+        date,
+        minutes: timeSlot.getHours() * 60 + timeSlot.getMinutes(),
+        operatorId: selectedOperatorId,
+      });
+    },
+    [selectedOperatorId, setHoveredTime],
+  );
+
   if (!operator) return null;
 
   function renderSlot(columnKey: string, timeSlot: Date) {
@@ -83,7 +103,7 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
     adjustedSlot.setHours(timeSlot.getHours(), timeSlot.getMinutes(), 0, 0);
 
     const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
-    const disabled = !isSlotActive(operatingHours, columnDate.getDay(), slotMinutes);
+    const disabled = !isSlotActive(getScheduleFor(selectedOperatorId), columnDate.getDay(), slotMinutes);
     const slotHour = timeSlot.getHours();
     const extended = slotHour < gridBounds.startHour || slotHour >= gridBounds.endHour;
 
@@ -94,8 +114,12 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
         fiches={dayFiches}
         onSlotSelected={onSlotSelected}
         onFicheSelected={onFicheSelected}
+        onCreateUnavailability={onCreateUnavailability}
+        onSelectUnavailability={onSelectUnavailability}
         isDisabled={disabled}
         isExtendedHours={extended}
+        gridStartHour={displayBounds.startHour}
+        gridEndHour={displayBounds.endHour}
       />
     );
   }
@@ -108,6 +132,7 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
       startHour={displayBounds.startHour}
       endHour={displayBounds.endHour}
       scheduleBounds={gridBounds}
+      onCellHover={handleCellHover}
     />
   );
 }

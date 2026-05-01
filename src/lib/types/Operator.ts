@@ -1,5 +1,6 @@
 import { User, AtSign, Phone } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { OperatingHourDay } from '@/lib/stores/salonSettings';
 
 export class Operator {
   id: string;
@@ -13,6 +14,8 @@ export class Operator {
   phoneNumber: string;
   avatar_url: string | null;
   archived_at: string | null;
+  /** Per-operator weekly schedule. `null` means: follow the salon's operating_hours. */
+  working_hours: OperatingHourDay[] | null;
 
   constructor(operator: Operator) {
     this.id = operator.id;
@@ -26,6 +29,7 @@ export class Operator {
     this.phoneNumber = operator.phoneNumber;
     this.avatar_url = operator.avatar_url ?? null;
     this.archived_at = operator.archived_at ?? null;
+    this.working_hours = operator.working_hours ?? null;
   }
 
   get isArchived(): boolean {

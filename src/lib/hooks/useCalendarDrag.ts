@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useCalendarDragStore, type DragKind, type PreviewSegment } from '@/lib/stores/calendarDrag';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { wouldBlockCollide, type ConflictResult } from '@/lib/utils/calendar-conflicts';
 import type { FicheService } from '@/lib/types/FicheService';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
@@ -16,7 +17,12 @@ export interface DropResult {
 }
 
 interface UseCalendarDragArgs {
-  schedule: DaySchedule[];
+  /**
+   * Resolver returning the effective schedule for a given operator, so that
+   * per-operator working hours (operators.working_hours) are honored when
+   * validating moves and resizes. Falls back to salon hours internally.
+   */
+  getSchedule: (operatorId: string) => DaySchedule[];
   /** Pixels per slot row (h-8 = 32px in current implementation). */
   pixelsPerSlot: number;
   /** Minutes represented by one slot row. */
@@ -87,7 +93,7 @@ interface DragContext {
   };
 }
 
-export function useCalendarDrag({ schedule, pixelsPerSlot, timeStep, onDrop }: UseCalendarDragArgs) {
+export function useCalendarDrag({ getSchedule, pixelsPerSlot, timeStep, onDrop }: UseCalendarDragArgs) {
   const beginStore = useCalendarDragStore((s) => s.begin);
   const updateStore = useCalendarDragStore((s) => s.update);
   const endStore = useCalendarDragStore((s) => s.end);
@@ -148,14 +154,15 @@ export function useCalendarDrag({ schedule, pixelsPerSlot, timeStep, onDrop }: U
         segments: preview,
         excludeFicheServiceIds: ctx.before.map((s) => s.ficheServiceId),
         allFicheServices: useFicheServicesStore.getState().fiche_services,
-        schedule,
+        schedule: getSchedule,
         clientId: ficheClientMap.get(ctx.ficheId) ?? null,
         ficheClientMap,
+        unavailabilities: useOperatorUnavailabilitiesStore.getState().items,
       });
 
       return { preview, conflict };
     },
-    [schedule],
+    [getSchedule],
   );
 
   const computeResizePreview = useCallback(
@@ -227,14 +234,15 @@ export function useCalendarDrag({ schedule, pixelsPerSlot, timeStep, onDrop }: U
         segments: preview,
         excludeFicheServiceIds: preview.map((p) => p.ficheServiceId),
         allFicheServices: useFicheServicesStore.getState().fiche_services,
-        schedule,
+        schedule: getSchedule,
         clientId: ficheClientMap.get(ctx.ficheId) ?? null,
         ficheClientMap,
+        unavailabilities: useOperatorUnavailabilitiesStore.getState().items,
       });
 
       return { preview, conflict };
     },
-    [schedule, pixelsPerSlot, timeStep],
+    [getSchedule, pixelsPerSlot, timeStep],
   );
 
   const beginMove = useCallback(

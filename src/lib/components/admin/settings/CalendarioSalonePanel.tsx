@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Save, Loader2 } from 'lucide-react';
+import { Calendar, Save, Loader2, Ban } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Switch } from '@/lib/components/shared/ui/Switch';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
@@ -16,18 +17,23 @@ export function CalendarioSalonePanel() {
 
   const [slotMin, setSlotMin] = useState<number>(settings?.slot_granularity_min ?? 15);
   const [defaultDuration, setDefaultDuration] = useState<number>(settings?.default_appointment_duration_min ?? 30);
+  const [allowSelfUnavail, setAllowSelfUnavail] = useState<boolean>(
+    settings?.allow_operator_self_unavailability ?? false,
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !settings) return;
     setSlotMin(settings.slot_granularity_min ?? 15);
     setDefaultDuration(settings.default_appointment_duration_min ?? 30);
+    setAllowSelfUnavail(settings.allow_operator_self_unavailability ?? false);
   }, [isLoaded, settings]);
 
   const isDirty =
     settings !== null &&
     (settings.slot_granularity_min !== slotMin ||
-      settings.default_appointment_duration_min !== defaultDuration);
+      settings.default_appointment_duration_min !== defaultDuration ||
+      settings.allow_operator_self_unavailability !== allowSelfUnavail);
 
   const onSave = async () => {
     if (!Number.isInteger(defaultDuration) || defaultDuration < 5 || defaultDuration > 480) {
@@ -39,6 +45,7 @@ export function CalendarioSalonePanel() {
       await updateSettings({
         slot_granularity_min: slotMin,
         default_appointment_duration_min: defaultDuration,
+        allow_operator_self_unavailability: allowSelfUnavail,
       });
       messagePopup.getState().success('Impostazioni calendario salvate');
     } catch {
@@ -102,6 +109,19 @@ export function CalendarioSalonePanel() {
             className="w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
           />
           <span className="text-sm text-zinc-500">minuti</span>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard
+        icon={Ban}
+        title="Non disponibilità operatori"
+        description="Quando attivo, ogni operatore può aggiungere e modificare le proprie ferie e non disponibilità dal calendario."
+      >
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm text-zinc-700 dark:text-zinc-200">
+            Permetti agli operatori di gestire le proprie non disponibilità
+          </span>
+          <Switch checked={allowSelfUnavail} onChange={() => setAllowSelfUnavail((v) => !v)} />
         </div>
       </SettingsCard>
 

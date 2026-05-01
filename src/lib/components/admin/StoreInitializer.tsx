@@ -27,6 +27,7 @@ import { useSpeseStore } from '@/lib/stores/spese';
 import { useObiettiviStore } from '@/lib/stores/obiettivi';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
+import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
@@ -55,6 +56,7 @@ export function StoreInitializer() {
   const fetchSpese = useSpeseStore((s) => s.fetchSpese);
   const fetchObiettivi = useObiettiviStore((s) => s.fetchObiettivi);
   const fetchFeedback = useFeedbackStore((s) => s.fetchEntries);
+  const fetchOperatorUnavailabilities = useOperatorUnavailabilitiesStore((s) => s.fetchItems);
   const activeSalonId = useWorkspaceStore((s) => s.activeSalonId);
   const resolve = useWorkspaceStore((s) => s.resolve);
 
@@ -86,6 +88,7 @@ export function StoreInitializer() {
       fetchSpese(),
       fetchObiettivi(),
       fetchFeedback(),
+      fetchOperatorUnavailabilities(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -127,6 +130,7 @@ export function StoreInitializer() {
   useRealtimeStore('coupon_redemptions', fetchCouponRedemptions, activeSalonId);
   useRealtimeStore('abbonamenti', fetchAbbonamenti, activeSalonId);
   useRealtimeStore('fiche_payments', fetchFichePayments, activeSalonId);
+  useRealtimeStore('operator_unavailabilities', fetchOperatorUnavailabilities, activeSalonId);
   // Feedback is global — no salon_id filter.
   useRealtimeStore('feedback_entries', fetchFeedback);
   useRealtimeStore('feedback_upvotes', fetchFeedback);

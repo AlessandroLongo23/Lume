@@ -9,6 +9,21 @@ export interface DaySchedule {
   shifts: Shift[];
 }
 
+/**
+ * Resolve the schedule that applies to a given operator.
+ * Operators with a custom `working_hours` array use it; otherwise they
+ * inherit the salon-wide schedule.
+ */
+export function effectiveScheduleFor(
+  operatorWorkingHours: DaySchedule[] | null | undefined,
+  salonHours: DaySchedule[],
+): DaySchedule[] {
+  if (Array.isArray(operatorWorkingHours) && operatorWorkingHours.length > 0) {
+    return operatorWorkingHours;
+  }
+  return salonHours;
+}
+
 /** Parse "HH:mm" → total minutes since midnight */
 function parseTime(t: string): number {
   const [h, m] = t.split(':').map(Number);

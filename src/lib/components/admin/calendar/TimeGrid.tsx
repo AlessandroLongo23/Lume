@@ -18,9 +18,11 @@ interface TimeGridProps {
   endHour?: number;
   /** Original schedule bounds — slots outside this range are marked as extended hours. */
   scheduleBounds?: { startHour: number; endHour: number };
+  /** Fired when the cursor enters a cell. Consumers map columnKey → operator/date. */
+  onCellHover?: (columnKey: string, timeSlot: Date) => void;
 }
 
-export function TimeGrid({ columns, date, renderSlot, startHour, endHour, scheduleBounds }: TimeGridProps) {
+export function TimeGrid({ columns, date, renderSlot, startHour, endHour, scheduleBounds, onCellHover }: TimeGridProps) {
   const timeStep =
     useSalonSettingsStore((s) => s.settings?.slot_granularity_min) ?? CALENDAR_CONFIG.daily.timeStep;
   const effectiveStartHour = startHour ?? CALENDAR_CONFIG.daily.startHour;
@@ -125,7 +127,11 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
 
                 {/* Slot cells */}
                 {columns.map((col) => (
-                  <div key={col.key} className="border-r border-zinc-500/25 last:border-r-0">
+                  <div
+                    key={col.key}
+                    className="border-r border-zinc-500/25 last:border-r-0"
+                    onPointerEnter={onCellHover ? () => onCellHover(col.key, timeSlot) : undefined}
+                  >
                     {renderSlot(col.key, timeSlot)}
                   </div>
                 ))}

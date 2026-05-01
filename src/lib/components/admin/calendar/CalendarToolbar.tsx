@@ -6,9 +6,10 @@ import { addMonths, subMonths, formatDateString, getWeekDays } from '@/lib/utils
 import { capitalize } from '@/lib/utils/string';
 import { startOfMonth } from 'date-fns';
 import { useCalendarStore } from '@/lib/stores/calendar';
-import { useOperatorsStore } from '@/lib/stores/operators';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { CalendarDatePicker } from './CalendarDatePicker';
+import { OperatorChips } from './OperatorChips';
+import { HoveredTimePreview } from './CalendarHeader';
+import type { Operator } from '@/lib/types/Operator';
 
 const VIEW_OPTIONS = [
   { value: 'day', label: 'Giorno' },
@@ -18,12 +19,13 @@ const VIEW_OPTIONS = [
 
 type CalendarView = 'day' | 'week' | 'month';
 
-export function CalendarToolbar() {
-  const { currentView, selectedDate, currentMonth, selectedOperatorId } = useCalendarStore();
-  const { setView, setSelectedDate, setCurrentMonth, setSelectedOperatorId } = useCalendarStore();
-  const operators = useOperatorsStore((s) => s.operators);
+interface CalendarToolbarProps {
+  onAddFerie?: (operator: Operator) => void;
+}
 
-  const activeOperators = operators.filter((op) => !op.isArchived);
+export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
+  const { currentView, selectedDate, currentMonth } = useCalendarStore();
+  const { setView, setSelectedDate, setCurrentMonth } = useCalendarStore();
 
   function navigatePrev() {
     if (currentView === 'day') setSelectedDate(subDays(selectedDate, 1));
@@ -61,25 +63,15 @@ export function CalendarToolbar() {
   }
 
   return (
-    <div className="flex w-full justify-between items-center py-4 mb-4 pb-4 border-b border-zinc-500/25">
+    <div className="flex w-full justify-between items-center gap-6 py-3 mb-3 border-b border-zinc-500/25">
 
-      {/* Left: operator filter */}
-      <div className="flex items-center">
-        <CustomSelect
-          value={selectedOperatorId}
-          onChange={setSelectedOperatorId}
-          options={activeOperators}
-          labelKey={(op) => op.getFullName()}
-          valueKey="id"
-          placeholder="Tutti gli operatori"
-          isNullable
-          searchable={false}
-          width="w-52"
-        />
+      {/* Left: live hover-time preview */}
+      <div className="flex items-center min-w-0 basis-0 grow shrink">
+        <HoveredTimePreview />
       </div>
 
       {/* Center: prev / date (click = today) / next */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
           onClick={navigatePrev}
@@ -118,12 +110,15 @@ export function CalendarToolbar() {
         </button>
       </div>
 
-      {/* Right: view toggle */}
-      <div className="flex items-center gap-3">
+      {/* Right: operator chips + view toggle */}
+      <div className="flex items-center justify-end gap-3 min-w-0 basis-0 grow shrink">
+        <div className="min-w-0 flex">
+          <OperatorChips onAddFerie={onAddFerie} />
+        </div>
 
         <div
           role="radiogroup"
-          className="flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25"
+          className="flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25 shrink-0"
         >
           {VIEW_OPTIONS.map(({ value, label }, i) => {
             const isActive = currentView === value;

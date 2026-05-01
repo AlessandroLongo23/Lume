@@ -26,7 +26,10 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
   const fiches = useFichesStore((s) => s.fiches);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
   const services = useServicesStore((s) => s.services);
-  const selectedOperatorId = useCalendarStore((s) => s.selectedOperatorId);
+  const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
+  // Per-operator metrics only when the user has isolated a single operator.
+  const selectedOperatorId =
+    selectedOperatorIds && selectedOperatorIds.length === 1 ? selectedOperatorIds[0] : null;
   const monthDays = useMemo(() => getMonthDays(currentMonth), [currentMonth]);
 
   // Pre-compute metrics per day in a single pass

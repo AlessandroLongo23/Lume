@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
@@ -14,7 +14,9 @@ import { MonthView } from './MonthView';
 import { CalendarDragGhost } from './CalendarDragGhost';
 import { ConfirmAppointmentChangeModal } from './ConfirmAppointmentChangeModal';
 import { CalendarDragContext } from './CalendarDragContext';
+import { UnavailabilityModal } from './UnavailabilityModal';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
+import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import { useCalendarDrag, type DropResult } from '@/lib/hooks/useCalendarDrag';
 import {
   buildAppointmentChangeMessage,
@@ -24,42 +26,48 @@ import {
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
-import { getGridBounds } from '@/lib/utils/operating-hours';
+import { effectiveScheduleFor, getGridBounds } from '@/lib/utils/operating-hours';
 
 const PIXELS_PER_SLOT = 32; // h-8 in CSS
 
 export function Calendar() {
-  const { currentView, selectedDate, currentMonth, selectedOperatorId } = useCalendarStore();
-  const { setSelectedDate, setView } = useCalendarStore();
+  const { currentView, selectedDate, currentMonth, focusedOperatorId } = useCalendarStore();
+  const { setSelectedDate, setView, setHoveredTime } = useCalendarStore();
   const applyPlannedSegments = useFicheServicesStore((s) => s.applyPlannedSegments);
   const operators = useOperatorsStore((s) => s.operators);
   const salonSettings = useSalonSettingsStore((s) => s.settings);
 
-  // For the week view: fall back to the first active operator when none is explicitly selected.
+  // Clear the hover-time preview whenever the view changes — stale values would
+  // otherwise linger in the header until the user hovers a fresh cell.
+  useEffect(() => {
+    setHoveredTime(null);
+  }, [currentView, setHoveredTime]);
+
+  // For the week view: fall back to the first active operator when none is explicitly focused.
   const weekOperatorId = useMemo(() => {
-    if (selectedOperatorId) return selectedOperatorId;
+    if (focusedOperatorId) return focusedOperatorId;
     return operators.find((op) => !op.isArchived)?.id ?? null;
-  }, [selectedOperatorId, operators]);
+  }, [focusedOperatorId, operators]);
   const timeStep = salonSettings?.slot_granularity_min ?? CALENDAR_CONFIG.daily.timeStep;
   const salonName = salonSettings?.name ?? 'Lume';
 
-  // Operating hours — fetched once, drives grid bounds and disabled slots
-  const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
+  // Salon-wide hours drive the grid bounds. Each operator either inherits these
+  // (working_hours = null) or overrides with their own schedule.
+  const salonHours = useMemo<DaySchedule[]>(
+    () => (Array.isArray(salonSettings?.operating_hours) ? salonSettings!.operating_hours : []),
+    [salonSettings],
+  );
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data.operating_hours)) {
-          setOperatingHours(data.operating_hours as DaySchedule[]);
-        }
-      })
-      .catch(() => {
-        // leave empty → isSlotActive returns true for all slots (safe fallback)
-      });
-  }, []);
+  const gridBounds = useMemo(() => getGridBounds(salonHours), [salonHours]);
 
-  const gridBounds = useMemo(() => getGridBounds(operatingHours), [operatingHours]);
+  /** Returns the effective schedule for one operator (custom or salon fallback). */
+  const getScheduleFor = useCallback(
+    (operatorId: string): DaySchedule[] => {
+      const op = operators.find((o) => o.id === operatorId);
+      return effectiveScheduleFor(op?.working_hours ?? null, salonHours);
+    },
+    [operators, salonHours],
+  );
 
   // Modal state — transient UI in local state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,6 +79,12 @@ export function Calendar() {
   // Drag → confirm modal state
   const [pendingDrop, setPendingDrop] = useState<DropResult | null>(null);
   const [isPersisting, setIsPersisting] = useState(false);
+
+  // Unavailability modal state
+  const [isUnavailModalOpen, setIsUnavailModalOpen] = useState(false);
+  const [unavailModalOperator, setUnavailModalOperator] = useState<Operator | null>(null);
+  const [unavailModalPrefill, setUnavailModalPrefill] = useState<{ start: Date; end: Date } | null>(null);
+  const [unavailModalEditing, setUnavailModalEditing] = useState<OperatorUnavailability | null>(null);
 
   function handleDayClick(day: Date) {
     setSelectedDate(day);
@@ -86,6 +100,27 @@ export function Calendar() {
   function handleFicheSelected(fiche: Fiche) {
     setEditFiche(fiche);
     setIsEditModalOpen(true);
+  }
+
+  function handleCreateUnavailability({ operator, start, end }: { operator: Operator; start: Date; end: Date }) {
+    setUnavailModalOperator(operator);
+    setUnavailModalPrefill({ start, end });
+    setUnavailModalEditing(null);
+    setIsUnavailModalOpen(true);
+  }
+
+  function handleSelectUnavailability(item: OperatorUnavailability) {
+    setUnavailModalOperator(item.getOperator());
+    setUnavailModalPrefill(null);
+    setUnavailModalEditing(item);
+    setIsUnavailModalOpen(true);
+  }
+
+  function handleAddFerie(operator: Operator) {
+    setUnavailModalOperator(operator);
+    setUnavailModalPrefill(null);
+    setUnavailModalEditing(null);
+    setIsUnavailModalOpen(true);
   }
 
   // ============ Drag orchestration ============
@@ -108,7 +143,7 @@ export function Calendar() {
   }, [applyPlannedSegments]);
 
   const { beginMove, beginResize } = useCalendarDrag({
-    schedule: operatingHours,
+    getSchedule: getScheduleFor,
     pixelsPerSlot: PIXELS_PER_SLOT,
     timeStep,
     onDrop: handleDrop,
@@ -211,6 +246,18 @@ export function Calendar() {
         fiche={editFiche}
       />
 
+      <UnavailabilityModal
+        isOpen={isUnavailModalOpen}
+        onClose={() => {
+          setIsUnavailModalOpen(false);
+          setUnavailModalPrefill(null);
+          setUnavailModalEditing(null);
+        }}
+        operator={unavailModalOperator}
+        prefill={unavailModalPrefill}
+        editing={unavailModalEditing}
+      />
+
       <ConfirmAppointmentChangeModal
         isOpen={!!pendingDrop}
         client={pendingClient}
@@ -224,14 +271,16 @@ export function Calendar() {
       <CalendarDragGhost pixelsPerSlot={PIXELS_PER_SLOT} timeStep={timeStep} />
 
       <div className="relative h-full flex flex-col">
-        <CalendarToolbar />
+        <CalendarToolbar onAddFerie={handleAddFerie} />
 
         {currentView === 'day' && (
           <DayView
             selectedDate={selectedDate}
             onSlotSelected={handleSlotSelected}
             onFicheSelected={handleFicheSelected}
-            operatingHours={operatingHours}
+            onCreateUnavailability={handleCreateUnavailability}
+            onSelectUnavailability={handleSelectUnavailability}
+            getScheduleFor={getScheduleFor}
             gridBounds={gridBounds}
           />
         )}
@@ -242,7 +291,9 @@ export function Calendar() {
             selectedOperatorId={weekOperatorId}
             onSlotSelected={handleSlotSelected}
             onFicheSelected={handleFicheSelected}
-            operatingHours={operatingHours}
+            onCreateUnavailability={handleCreateUnavailability}
+            onSelectUnavailability={handleSelectUnavailability}
+            getScheduleFor={getScheduleFor}
             gridBounds={gridBounds}
           />
         )}

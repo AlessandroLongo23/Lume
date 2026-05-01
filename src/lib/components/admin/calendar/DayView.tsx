@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { isSameDay } from 'date-fns';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useFichesStore } from '@/lib/stores/fiches';
@@ -10,6 +10,7 @@ import { DayViewSlot } from './DayViewSlot';
 import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
 import { isSlotActive, extendBoundsForRanges } from '@/lib/utils/operating-hours';
 
@@ -17,19 +18,25 @@ interface DayViewProps {
   selectedDate: Date;
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
-  operatingHours: DaySchedule[];
+  onCreateUnavailability?: (data: { operator: Operator; start: Date; end: Date }) => void;
+  onSelectUnavailability?: (item: OperatorUnavailability) => void;
+  /** Resolves the effective weekly schedule for one operator. */
+  getScheduleFor: (operatorId: string) => DaySchedule[];
   gridBounds: { startHour: number; endHour: number };
 }
 
-export function DayView({ selectedDate, onSlotSelected, onFicheSelected, operatingHours, gridBounds }: DayViewProps) {
+export function DayView({ selectedDate, onSlotSelected, onFicheSelected, onCreateUnavailability, onSelectUnavailability, getScheduleFor, gridBounds }: DayViewProps) {
   const operators = useOperatorsStore((s) => s.operators);
   const fiches = useFichesStore((s) => s.fiches);
-  const selectedOperatorId = useCalendarStore((s) => s.selectedOperatorId);
+  const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
+  const setHoveredTime = useCalendarStore((s) => s.setHoveredTime);
 
   const activeOperators = useMemo(() => {
     const base = operators.filter((op) => !op.isArchived);
-    return selectedOperatorId ? base.filter((op) => op.id === selectedOperatorId) : base;
-  }, [operators, selectedOperatorId]);
+    if (selectedOperatorIds === null) return base;
+    const set = new Set(selectedOperatorIds);
+    return base.filter((op) => set.has(op.id));
+  }, [operators, selectedOperatorIds]);
 
   const columns: TimeGridColumn[] = useMemo(
     () => activeOperators.map((op) => ({ key: op.id, label: op.getFullName() })),
@@ -58,11 +65,24 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected, operati
     [activeOperators]
   );
 
+  const handleCellHover = useCallback(
+    (columnKey: string, timeSlot: Date) => {
+      const date = new Date(selectedDate);
+      date.setHours(timeSlot.getHours(), timeSlot.getMinutes(), 0, 0);
+      setHoveredTime({
+        date,
+        minutes: timeSlot.getHours() * 60 + timeSlot.getMinutes(),
+        operatorId: columnKey,
+      });
+    },
+    [selectedDate, setHoveredTime],
+  );
+
   function renderSlot(columnKey: string, timeSlot: Date) {
     const operator = operatorMap.get(columnKey);
     if (!operator) return null;
     const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
-    const disabled = !isSlotActive(operatingHours, timeSlot.getDay(), slotMinutes);
+    const disabled = !isSlotActive(getScheduleFor(operator.id), timeSlot.getDay(), slotMinutes);
     const slotHour = timeSlot.getHours();
     const extended = slotHour < gridBounds.startHour || slotHour >= gridBounds.endHour;
     return (
@@ -72,9 +92,21 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected, operati
         fiches={dateFiches}
         onSlotSelected={onSlotSelected}
         onFicheSelected={onFicheSelected}
+        onCreateUnavailability={onCreateUnavailability}
+        onSelectUnavailability={onSelectUnavailability}
         isDisabled={disabled}
         isExtendedHours={extended}
+        gridStartHour={displayBounds.startHour}
+        gridEndHour={displayBounds.endHour}
       />
+    );
+  }
+
+  if (activeOperators.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center border border-zinc-500/25 rounded-lg p-12 text-sm text-zinc-500 dark:text-zinc-400">
+        Nessun operatore selezionato.
+      </div>
     );
   }
 
@@ -86,6 +118,7 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected, operati
       startHour={displayBounds.startHour}
       endHour={displayBounds.endHour}
       scheduleBounds={gridBounds}
+      onCellHover={handleCellHover}
     />
   );
 }

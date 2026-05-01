@@ -1,10 +1,12 @@
 import type { FicheService } from '@/lib/types/FicheService';
+import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import type { DaySchedule } from '@/lib/utils/operating-hours';
 import { isRangeWithinHours } from '@/lib/utils/operating-hours';
 
 export type ConflictReason =
   | 'overlap'
   | 'client-overlap'
+  | 'unavailability'
   | 'outside-hours'
   | 'closed-day'
   | 'past'
@@ -24,6 +26,7 @@ const OK: ConflictResult = { valid: true, reason: null, conflictingFicheServiceI
 const HARD_REASONS: ReadonlySet<NonNullable<ConflictReason>> = new Set([
   'overlap',
   'client-overlap',
+  'unavailability',
   'past',
   'invalid-range',
 ]);
@@ -45,6 +48,9 @@ interface CollideArgs {
   clientId?: string | null;
   /** Map of fiche_id → client_id, used to evaluate cross-operator client overlaps. */
   ficheClientMap?: Map<string, string>;
+  /** Active unavailability blocks; the segment is rejected if it overlaps any
+   *  block owned by the same operator. */
+  unavailabilities?: OperatorUnavailability[];
 }
 
 export function wouldCollide(args: CollideArgs): ConflictResult {
@@ -58,6 +64,7 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
     allowPast = false,
     clientId = null,
     ficheClientMap,
+    unavailabilities,
   } = args;
 
   if (end.getTime() <= start.getTime()) {
@@ -96,6 +103,15 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
     }
   }
 
+  if (unavailabilities && unavailabilities.length > 0) {
+    const blocks = unavailabilities.some(
+      (u) => u.operator_id === operatorId && u.start_at.getTime() < endMs && u.end_at.getTime() > startMs,
+    );
+    if (blocks) {
+      return { valid: false, reason: 'unavailability', conflictingFicheServiceIds: [] };
+    }
+  }
+
   if (schedule.length > 0) {
     const day = schedule.find((d) => d.day === start.getDay());
     if (!day || !day.isOpen || day.shifts.length === 0) {
@@ -120,10 +136,16 @@ interface BlockCollideArgs {
   segments: BlockSegment[];
   excludeFicheServiceIds: string[];
   allFicheServices: FicheService[];
-  schedule: DaySchedule[];
+  /**
+   * Either a single schedule applied to every segment, or a resolver that
+   * returns the effective schedule for the operator that owns each segment
+   * (used so per-operator working hours are honored).
+   */
+  schedule: DaySchedule[] | ((operatorId: string) => DaySchedule[]);
   allowPast?: boolean;
   clientId?: string | null;
   ficheClientMap?: Map<string, string>;
+  unavailabilities?: OperatorUnavailability[];
 }
 
 /**
@@ -135,11 +157,17 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
   const reasonCounts: Record<NonNullable<ConflictReason>, number> = {
     overlap: 0,
     'client-overlap': 0,
+    unavailability: 0,
     'outside-hours': 0,
     'closed-day': 0,
     past: 0,
     'invalid-range': 0,
   };
+
+  const resolveSchedule =
+    typeof args.schedule === 'function'
+      ? args.schedule
+      : () => args.schedule as DaySchedule[];
 
   for (const seg of args.segments) {
     const r = wouldCollide({
@@ -148,10 +176,11 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
       end: seg.end,
       excludeFicheServiceIds: args.excludeFicheServiceIds,
       allFicheServices: args.allFicheServices,
-      schedule: args.schedule,
+      schedule: resolveSchedule(seg.operatorId),
       allowPast: args.allowPast,
       clientId: args.clientId,
       ficheClientMap: args.ficheClientMap,
+      unavailabilities: args.unavailabilities,
     });
     if (r.reason) {
       reasonCounts[r.reason]++;
@@ -162,6 +191,7 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
   const priorityOrder: NonNullable<ConflictReason>[] = [
     'overlap',
     'client-overlap',
+    'unavailability',
     'past',
     'invalid-range',
     'outside-hours',

@@ -19,7 +19,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
-import { canManageSalon } from '@/lib/auth/roles';
+import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 type Item = { href: string; label: string; icon: React.ElementType };
 type Group = { title: string; items: Item[]; hint?: string; gated?: boolean };
@@ -40,22 +40,35 @@ const SALONE_ITEMS: Item[] = [
   { href: '/admin/impostazioni/salone/fatturazione', label: 'Fatturazione', icon: Receipt },
 ];
 
-const ACCOUNT_ITEMS: Item[] = [
+const ACCOUNT_ITEMS_BASE: Item[] = [
   { href: '/admin/impostazioni/profilo', label: 'Profilo', icon: User },
   { href: '/admin/impostazioni/account/sicurezza', label: 'Sicurezza', icon: Shield },
   { href: '/admin/impostazioni/abbonamento', label: 'Abbonamento', icon: CreditCard },
   { href: '/admin/impostazioni/account/elimina', label: 'Zona pericolosa', icon: TriangleAlert },
 ];
 
+const WORKING_HOURS_ITEM: Item = {
+  href: '/admin/impostazioni/orari-lavoro',
+  label: 'Orari di lavoro',
+  icon: Clock,
+};
+
 export function SettingsSidebar() {
   const pathname = usePathname();
   const role = useSubscriptionStore((s) => s.role);
   const canManage = canManageSalon(role);
 
+  // Anyone who is also bookable as an operator (owner / admin / operator) sees
+  // "Orari di lavoro" in their account section. The panel itself decides whether
+  // it renders editable (owner / admin) or read-only (operator).
+  const accountItems: Item[] = isSalonStaff(role)
+    ? [ACCOUNT_ITEMS_BASE[0], WORKING_HOURS_ITEM, ...ACCOUNT_ITEMS_BASE.slice(1)]
+    : ACCOUNT_ITEMS_BASE;
+
   const groups: Group[] = [
     { title: 'Preferenze', items: PREFERENZE_ITEMS },
     { title: 'Salone', items: SALONE_ITEMS, hint: 'Solo titolari', gated: !canManage },
-    { title: 'Account', items: ACCOUNT_ITEMS, hint: 'Tuo accesso' },
+    { title: 'Account', items: accountItems, hint: 'Tuo accesso' },
   ];
 
   return (

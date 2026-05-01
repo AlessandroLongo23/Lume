@@ -16,6 +16,9 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
+import { OperatorWorkingHoursPanel } from '@/lib/components/admin/operators/OperatorWorkingHoursPanel';
+import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { canManageSalon } from '@/lib/auth/roles';
 import type { Operator } from '@/lib/types/Operator';
 
 export default function OperatorDetailPage() {
@@ -25,6 +28,8 @@ export default function OperatorDetailPage() {
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const archiveOperator = useOperatorsStore((s) => s.archiveOperator);
   const restoreOperator = useOperatorsStore((s) => s.restoreOperator);
+  const role = useSubscriptionStore((s) => s.role);
+  const canEdit = canManageSalon(role);
 
   const [operator, setOperator] = useState<Operator | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +191,13 @@ export default function OperatorDetailPage() {
                 )}
               </div>
             </div>
+          </DetailSection>
+
+          <DetailSection index={1} label="Orari di lavoro">
+            <OperatorWorkingHoursPanel
+              operator={operator}
+              readOnly={!canEdit || operator.isArchived}
+            />
           </DetailSection>
         </div>
       </div>

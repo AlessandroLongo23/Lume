@@ -34,6 +34,8 @@ export interface SalonSettings {
   form_defaults: SalonFormDefaults;
   // M5 additions
   email_notifications: SalonEmailNotifications;
+  /** When true, operators can create/edit/delete their own unavailabilities. */
+  allow_operator_self_unavailability: boolean;
 }
 
 interface SalonSettingsState {
@@ -67,6 +69,7 @@ const EMPTY: SalonSettings = {
   default_low_stock_threshold: 0,
   form_defaults: {},
   email_notifications: {},
+  allow_operator_self_unavailability: false,
 };
 
 export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({

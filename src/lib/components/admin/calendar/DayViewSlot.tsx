@@ -1,14 +1,21 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
+import { useUnavailabilityCreateStore } from '@/lib/stores/unavailabilityCreate';
+import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { FicheBlock } from './FicheBlock';
+import { UnavailabilityBlock } from './UnavailabilityBlock';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheService } from '@/lib/types/FicheService';
 import type { Operator } from '@/lib/types/Operator';
+import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
+
+const DRAG_THRESHOLD = 4;
+const PIXELS_PER_SLOT = 32; // h-8 in CSS
 
 interface DayViewSlotProps {
   operator: Operator;
@@ -16,10 +23,18 @@ interface DayViewSlotProps {
   fiches: Fiche[];
   onSlotSelected: (data: { operator: Operator; datetime: Date }) => void;
   onFicheSelected: (fiche: Fiche) => void;
+  /** Fired when the user finishes a click-and-drag on an empty cell. */
+  onCreateUnavailability?: (data: { operator: Operator; start: Date; end: Date }) => void;
+  /** Fired when the user clicks an existing unavailability block. */
+  onSelectUnavailability?: (item: OperatorUnavailability) => void;
   /** True when this slot falls outside the salon's configured operating hours */
   isDisabled?: boolean;
   /** True when this slot is before opening / after closing (beyond the schedule bounds). */
   isExtendedHours?: boolean;
+  /** Hour at which the visible time grid for this column starts (e.g. 9). */
+  gridStartHour: number;
+  /** Hour at which the visible time grid for this column ends (e.g. 20). */
+  gridEndHour: number;
 }
 
 function getTimeAsMinutes(date: Date): number {
@@ -54,12 +69,21 @@ export function DayViewSlot({
   fiches,
   onSlotSelected,
   onFicheSelected,
+  onCreateUnavailability,
+  onSelectUnavailability,
   isDisabled = false,
   isExtendedHours = false,
+  gridStartHour,
+  gridEndHour,
 }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
   const timeStep =
     useSalonSettingsStore((s) => s.settings?.slot_granularity_min) ?? CALENDAR_CONFIG.daily.timeStep;
+  const beginCreate = useUnavailabilityCreateStore((s) => s.begin);
+  const updateCreate = useUnavailabilityCreateStore((s) => s.update);
+  const endCreate = useUnavailabilityCreateStore((s) => s.end);
+  // Suppress click-through on cells when the cursor moved beyond threshold.
+  const draggedRef = useRef(false);
 
   // Subscribe to drag preview so we can highlight invalid zones live.
   const dragActive = useCalendarDragStore((s) => s.active);
@@ -109,7 +133,52 @@ export function DayViewSlot({
     return out;
   }, [slotFiches, operator.id, datetime, timeStep]);
 
-  const isOccupied = slotFiches.length > 0;
+  // Unavailabilities owned by this operator that overlap this slot.
+  const allUnavailabilities = useOperatorUnavailabilitiesStore((s) => s.items);
+  const unavailabilitiesInSlot = useMemo(() => {
+    const slotStartMs = datetime.getTime();
+    const slotEndMs = slotStartMs + timeStep * 60_000;
+    return allUnavailabilities.filter(
+      (u) =>
+        u.operator_id === operator.id &&
+        u.start_at.getTime() < slotEndMs &&
+        u.end_at.getTime() > slotStartMs,
+    );
+  }, [allUnavailabilities, operator.id, datetime, timeStep]);
+
+  // Unavailabilities that anchor their visual block to this slot. The block is
+  // clamped to the column's visible grid bounds so all-day / multi-day blocks
+  // (which may start at 00:00 or extend past closing) render on the first
+  // visible cell that overlaps them, with a height clamped to the visible day.
+  const unavailStartingHere = useMemo(() => {
+    const slotStartMs = datetime.getTime();
+    const slotEndMs = slotStartMs + timeStep * 60_000;
+    const dayGridStart = new Date(datetime);
+    dayGridStart.setHours(gridStartHour, 0, 0, 0);
+    const dayGridEnd = new Date(datetime);
+    dayGridEnd.setHours(0, 0, 0, 0);
+    dayGridEnd.setHours(gridEndHour, 0, 0, 0);
+    const dayGridStartMs = dayGridStart.getTime();
+    const dayGridEndMs = dayGridEnd.getTime();
+
+    return unavailabilitiesInSlot
+      .map((u) => {
+        const renderStart = Math.max(u.start_at.getTime(), dayGridStartMs);
+        const renderEnd = Math.min(u.end_at.getTime(), dayGridEndMs);
+        return { item: u, renderStart, renderEnd };
+      })
+      .filter(({ renderStart, renderEnd }) =>
+        renderEnd > renderStart && renderStart >= slotStartMs && renderStart < slotEndMs,
+      )
+      .map(({ item, renderStart, renderEnd }) => ({
+        item,
+        totalMinutes: Math.max(timeStep, Math.round((renderEnd - renderStart) / 60_000)),
+      }));
+  }, [unavailabilitiesInSlot, datetime, timeStep, gridStartHour, gridEndHour]);
+
+  const hasUnavailabilityHere = unavailabilitiesInSlot.length > 0;
+
+  const isOccupied = slotFiches.length > 0 || hasUnavailabilityHere;
   const isPast = datetime < new Date();
   const isBlocked = isPast;
   const hasBlocksHere = runsStartingHere.length > 0;
@@ -128,9 +197,80 @@ export function DayViewSlot({
     );
   }, [dragActive, dragValid, dragPreview, operator.id, datetime, timeStep]);
 
+  // Preview band when this cell falls inside the active "create unavailability" drag.
+  const createPreview = useUnavailabilityCreateStore((s) => s.preview);
+  const isInCreatePreview =
+    createPreview &&
+    createPreview.operatorId === operator.id &&
+    createPreview.start.getTime() < datetime.getTime() + timeStep * 60_000 &&
+    createPreview.end.getTime() > datetime.getTime();
+
   function handleClick() {
     if (isBlocked) return;
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
     if (!isOccupied) onSlotSelected({ operator, datetime });
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    // Only the empty-cell area handles the create-unavailability gesture.
+    if (isBlocked || isOccupied || !onCreateUnavailability) return;
+    if (e.button !== 0) return;
+    // Don't hijack drags that originated on a child (e.g. plus icon area is fine,
+    // but if a FicheBlock is added later we still rely on isOccupied).
+    e.preventDefault();
+
+    const startClientY = e.clientY;
+    const startMs = datetime.getTime();
+    const slotMs = timeStep * 60_000;
+    let dragged = false;
+    draggedRef.current = false;
+
+    const onMove = (mv: PointerEvent) => {
+      const deltaY = mv.clientY - startClientY;
+      if (!dragged && Math.abs(deltaY) > DRAG_THRESHOLD) {
+        dragged = true;
+      }
+      if (!dragged) return;
+
+      // Snap the cursor delta to whole slots. Negative delta = drag upwards.
+      const slotsDelta = Math.round(deltaY / PIXELS_PER_SLOT);
+      let startTs = startMs;
+      let endTs = startMs + slotMs;
+      if (slotsDelta >= 0) {
+        endTs = startMs + slotMs + slotsDelta * slotMs;
+      } else {
+        startTs = startMs + slotsDelta * slotMs;
+      }
+      const start = new Date(startTs);
+      const end = new Date(endTs);
+      if (!useUnavailabilityCreateStore.getState().active) {
+        beginCreate({ operatorId: operator.id, start, end });
+      } else {
+        updateCreate({ operatorId: operator.id, start, end });
+      }
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      const finalPreview = useUnavailabilityCreateStore.getState().preview;
+      endCreate();
+
+      if (dragged && finalPreview) {
+        draggedRef.current = true;
+        onCreateUnavailability({
+          operator,
+          start: finalPreview.start,
+          end: finalPreview.end,
+        });
+      }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   }
 
   const closedHoursStyle = isDisabled && !isPast
@@ -170,11 +310,23 @@ export function DayViewSlot({
         <div className="absolute inset-0 bg-red-500/15 pointer-events-none z-20" />
       )}
 
+      {/* Live preview band while the user click-drags an unavailability */}
+      {isInCreatePreview && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(-45deg, rgba(99,102,241,0.18), rgba(99,102,241,0.18) 4px, transparent 4px, transparent 8px)',
+          }}
+        />
+      )}
+
       <div
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
           isBlocked ? 'cursor-default' : isOccupied ? '' : 'cursor-pointer'
         }`}
         onClick={isBlocked || isOccupied ? undefined : handleClick}
+        onPointerDown={isBlocked || isOccupied ? undefined : handlePointerDown}
       >
         {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche }) => (
           <FicheBlock
@@ -188,7 +340,16 @@ export function DayViewSlot({
             onSelectFiche={() => onFicheSelected(fiche)}
           />
         ))}
-        {isOccupied && !hasBlocksHere && <div className="w-full h-full" />}
+        {unavailStartingHere.map(({ item, totalMinutes }) => (
+          <UnavailabilityBlock
+            key={item.id}
+            item={item}
+            totalMinutes={totalMinutes}
+            timeStep={timeStep}
+            onSelect={onSelectUnavailability ?? (() => {})}
+          />
+        ))}
+        {isOccupied && !hasBlocksHere && unavailStartingHere.length === 0 && <div className="w-full h-full" />}
         {!isOccupied && isHovered && !isBlocked && <Plus size={16} className="text-zinc-400" />}
       </div>
     </div>

@@ -37,7 +37,7 @@ export async function GET() {
 
   const { data: salon } = await ctx.admin
     .from('salons')
-    .select('name, type, operating_hours, track_inventory, address, city, cap, province, phone, public_email, logo_url, favicon_url, brand_color, fiscal, slot_granularity_min, default_appointment_duration_min, default_low_stock_threshold, form_defaults, email_notifications')
+    .select('name, type, operating_hours, track_inventory, address, city, cap, province, phone, public_email, logo_url, favicon_url, brand_color, fiscal, slot_granularity_min, default_appointment_duration_min, default_low_stock_threshold, form_defaults, email_notifications, allow_operator_self_unavailability')
     .eq('id', ctx.salonId)
     .single();
 
@@ -63,6 +63,7 @@ export async function GET() {
     default_low_stock_threshold: salon.default_low_stock_threshold ?? 0,
     form_defaults: (salon.form_defaults ?? {}) as SalonFormDefaults,
     email_notifications: (salon.email_notifications ?? {}) as SalonEmailNotifications,
+    allow_operator_self_unavailability: salon.allow_operator_self_unavailability ?? false,
   });
 }
 
@@ -356,6 +357,10 @@ export async function PATCH(req: NextRequest) {
     const en = parseEmailNotifications(body.email_notifications);
     if (en === null) return NextResponse.json({ error: 'Notifiche email non valide' }, { status: 400 });
     updates.email_notifications = en;
+  }
+
+  if (body.allow_operator_self_unavailability !== undefined) {
+    updates.allow_operator_self_unavailability = Boolean(body.allow_operator_self_unavailability);
   }
 
   if (Object.keys(updates).length === 0) {

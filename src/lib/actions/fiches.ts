@@ -103,6 +103,22 @@ export async function validateFicheConflicts(
         error: `L'operatore ${service.operator_name} è già occupato in questo orario.`,
       };
     }
+
+    const { data: unavailConflicts, error: unavailErr } = await supabase
+      .from('operator_unavailabilities')
+      .select('id')
+      .eq('operator_id', service.operator_id)
+      .lt('start_at', service.end_time)
+      .gt('end_at', service.start_time)
+      .limit(1);
+
+    if (unavailErr) throw new Error(unavailErr.message);
+
+    if (unavailConflicts && unavailConflicts.length > 0) {
+      return {
+        error: `L'operatore ${service.operator_name} risulta non disponibile in questo orario.`,
+      };
+    }
   }
 
   return {};

@@ -45,7 +45,8 @@ import type { Service } from '@/lib/types/Service';
 import type { Product } from '@/lib/types/Product';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
-import { isRangeWithinHours, type DaySchedule } from '@/lib/utils/operating-hours';
+import { isRangeWithinHours, effectiveScheduleFor, type DaySchedule } from '@/lib/utils/operating-hours';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 
 interface FicheModalProps {
   mode: 'add' | 'edit';
@@ -192,6 +193,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const productCategories = useProductCategoriesStore((s) => s.product_categories);
   const { addFicheProduct, updateFicheProduct, deleteFicheProduct } = useFicheProductsStore();
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
+  const salonHours = useSalonSettingsStore((s) => s.settings?.operating_hours ?? null);
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
@@ -213,7 +215,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
   const [treatmentTab, setTreatmentTab] = useState<'new' | 'last'>('new');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [operatingHours, setOperatingHours] = useState<DaySchedule[]>([]);
   const [pendingAction, setPendingAction] = useState<'submit' | null>(null);
 
   // Payment state
@@ -295,24 +296,9 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fiche, mode, initialView]);
 
-  // Fetch operating hours once the modal opens so we can warn when the
-  // appointment falls outside configured shifts.
-  useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (Array.isArray(data.operating_hours)) {
-          setOperatingHours(data.operating_hours as DaySchedule[]);
-        }
-      })
-      .catch(() => {
-        // leave empty → isRangeWithinHours returns true (safe fallback)
-      });
-    return () => { cancelled = true; };
-  }, [isOpen]);
+  // Salon hours come from the global store (loaded by StoreInitializer).
+  // We resolve per-operator effective hours below so out-of-hours warnings
+  // respect each operator's working_hours override.
 
   // Sync datetime when the calendar slot changes while the modal is already open (add mode only)
   useEffect(() => {
@@ -632,12 +618,17 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     return !Object.values(newErrors).some(Boolean);
   }
 
-  /** Returns true when the appointment (first service start → last service end) falls outside configured shifts. */
+  /** Returns true when any service in the appointment falls outside the
+   *  effective shifts for its assigned operator (operator's working_hours
+   *  if set, otherwise the salon's operating_hours). */
   function isOutOfHours(): boolean {
-    if (ficheServices.length === 0) return false;
-    const firstStart = servicesWithTimes[0].start_time;
-    const lastEnd = servicesWithTimes[servicesWithTimes.length - 1].end_time;
-    return !isRangeWithinHours(operatingHours, firstStart, lastEnd);
+    if (servicesWithTimes.length === 0) return false;
+    const salonSched: DaySchedule[] = Array.isArray(salonHours) ? salonHours : [];
+    return servicesWithTimes.some((svc) => {
+      const op = operators.find((o) => o.id === svc.operator_id);
+      const sched = effectiveScheduleFor(op?.working_hours ?? null, salonSched);
+      return !isRangeWithinHours(sched, svc.start_time, svc.end_time);
+    });
   }
 
   async function handleSubmit() {
