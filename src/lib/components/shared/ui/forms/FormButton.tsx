@@ -1,6 +1,7 @@
 'use client';
 
 import type { ButtonHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FormButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
@@ -10,21 +11,21 @@ interface FormButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-const sizeClasses = {
+const sizeClasses: Record<NonNullable<FormButtonProps['size']>, string> = {
   sm: 'px-4 py-2 text-sm',
   md: 'px-6 py-3 text-base',
   lg: 'px-8 py-4 text-lg',
 };
 
-const variantClasses = {
+const variantClasses: Record<NonNullable<FormButtonProps['variant']>, string> = {
   primary:
-    'bg-gradient-to-r from-blue-500 to-primary hover:from-blue-600 hover:to-primary-hover text-white shadow-lg hover:shadow-xl',
+    'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active hover:-translate-y-px hover:shadow-[0_8px_24px_-8px_var(--lume-accent-muted)]',
   secondary:
-    'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-500/25',
+    'bg-secondary text-secondary-foreground border border-border hover:bg-muted hover:-translate-y-px',
   outline:
-    'border-2 border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-600',
+    'bg-transparent text-primary border border-primary hover:bg-[var(--lume-accent-light)]',
   ghost:
-    'text-zinc-600 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+    'bg-transparent text-foreground hover:bg-muted',
 };
 
 export function FormButton({
@@ -39,28 +40,29 @@ export function FormButton({
 }: FormButtonProps) {
   return (
     <button
-      className={`group relative inline-flex items-center justify-center font-semibold rounded-xl
-        transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20
-        transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed
-        cursor-pointer overflow-hidden
-        ${sizeClasses[size]} ${variantClasses[variant]}
-        ${fullWidth ? 'w-full' : ''}
-        ${className}`}
+      className={cn(
+        'relative inline-flex items-center justify-center gap-2 font-medium rounded-md',
+        'transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-[var(--ease-in-out)]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
+        'max-md:active:translate-y-0',
+        sizeClasses[size],
+        variantClasses[variant],
+        fullWidth && 'w-full',
+        className,
+      )}
       disabled={disabled || loading}
       {...props}
     >
       {loading ? (
         <>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          </div>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          </span>
           <span className="opacity-0">{children}</span>
         </>
       ) : (
         children
-      )}
-      {variant === 'primary' && !disabled && !loading && (
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
       )}
     </button>
   );
