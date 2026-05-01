@@ -15,19 +15,20 @@ interface AddFeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialType?: FeedbackType;
+  initialImagePaths?: string[];
 }
 
 const TYPE_ORDER: FeedbackType[] = ['suggestion', 'bug', 'idea'];
 const BUCKET = 'feedback-attachments';
 
-export function AddFeedbackModal({ isOpen, onClose, initialType }: AddFeedbackModalProps) {
+export function AddFeedbackModal({ isOpen, onClose, initialType, initialImagePaths }: AddFeedbackModalProps) {
   const addEntry = useFeedbackStore((s) => s.addEntry);
 
   const [type, setType] = useState<FeedbackType>(initialType ?? 'suggestion');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionLength, setDescriptionLength] = useState(0);
-  const [imagePaths, setImagePaths] = useState<string[]>([]);
+  const [imagePaths, setImagePaths] = useState<string[]>(initialImagePaths ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -36,10 +37,10 @@ export function AddFeedbackModal({ isOpen, onClose, initialType }: AddFeedbackMo
       setTitle('');
       setDescription('');
       setDescriptionLength(0);
-      setImagePaths([]);
+      setImagePaths(initialImagePaths ?? []);
       setIsSubmitting(false);
     }
-  }, [isOpen, initialType]);
+  }, [isOpen, initialType, initialImagePaths]);
 
   const canSubmit = title.trim().length >= 3 && descriptionLength >= 1 && descriptionLength <= 4000 && !isSubmitting;
 

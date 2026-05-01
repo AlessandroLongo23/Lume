@@ -479,4 +479,11 @@ button, a {
   textarea {
     --tw-ring-inset: inset;
   }
+
+  /* Hides floating UI (bug button, theme toggle) during a viewport screenshot
+     capture — kept invisible but still occupying layout, so the captured image
+     reflects the page the user actually sees minus our own widgets. */
+  [data-capture-hide="true"] {
+    visibility: hidden !important;
+  }
 }

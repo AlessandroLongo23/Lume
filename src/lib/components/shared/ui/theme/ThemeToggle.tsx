@@ -9,6 +9,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
+      data-capture-hide=""
       className="relative flex items-center justify-center p-2
         bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700
         hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-all duration-100 ease-in-out cursor-pointer"

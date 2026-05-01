@@ -8,6 +8,7 @@ import { useSidebarCollapse } from './useSidebarCollapse';
 import { SidebarCollapseContext, MobileMenuContext, SidebarForceExpandedContext } from './sidebarContext';
 import { SidebarEdgeToggle } from './SidebarCollapseToggle';
 import { SidebarShortcutHint } from './SidebarShortcutHint';
+import { BugButton } from './BugButton';
 
 interface AppShellProps {
   impersonationBanner?: React.ReactNode;
@@ -24,7 +25,8 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'b') return;
+      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+      if (e.key.toLowerCase() !== 'b') return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       e.preventDefault();
@@ -64,26 +66,26 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
           style={{ ...staticVars, ['--shell-sidebar-w' as string]: sidebarWPx }}
         >
           {hasBanner && (
-            <div className="fixed top-0 left-0 right-0 z-[60] h-[var(--shell-banner-h)]">
+            <div className="fixed top-0 left-0 right-0 z-header h-[var(--shell-banner-h)]">
               {impersonationBanner}
             </div>
           )}
 
-          <aside className="hidden md:flex fixed left-0 bottom-0 z-40 top-[var(--shell-banner-h)] w-[var(--shell-sidebar-w)] bg-zinc-50 dark:bg-zinc-950 flex-col overflow-y-auto overflow-x-hidden">
+          <aside className="hidden md:flex fixed left-0 bottom-0 z-sidebar top-[var(--shell-banner-h)] w-[var(--shell-sidebar-w)] bg-zinc-50 dark:bg-zinc-950 flex-col overflow-y-auto overflow-x-hidden">
             <SidebarForceExpandedContext.Provider value={false}>
               {sidebar}
             </SidebarForceExpandedContext.Provider>
           </aside>
 
           <div
-            className="hidden md:block fixed z-[45] top-1/2 -translate-y-1/2 left-[calc(var(--shell-sidebar-w)+0.5rem)] -translate-x-1/2"
+            className="hidden md:block fixed z-sidebar top-1/2 -translate-y-1/2 left-[calc(var(--shell-sidebar-w)+0.5rem)] -translate-x-1/2"
           >
             <SidebarEdgeToggle />
           </div>
 
           {mobileOpen && (
             <>
-              <aside className="md:hidden fixed left-0 bottom-0 z-[55] top-[var(--shell-banner-h)] w-72 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
+              <aside className="md:hidden fixed left-0 bottom-0 z-drawer top-[var(--shell-banner-h)] w-72 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
                 <div className="flex justify-end p-3">
                   <button
                     type="button"
@@ -100,7 +102,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
               </aside>
               <button
                 type="button"
-                className="md:hidden fixed inset-0 z-[52] bg-black/40"
+                className="md:hidden fixed inset-0 z-drawer-backdrop bg-black/40"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Chiudi menu"
               />
@@ -110,10 +112,10 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
           <main className="h-screen flex flex-col pt-[var(--shell-banner-h)] pl-0 md:pl-[var(--shell-sidebar-w)]">
             <div className="flex-1 min-h-0 flex flex-col p-2">
               <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <div className="sticky top-0 z-10 h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
+                <div className="sticky top-0 z-sticky h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
                 </div>
-                <div key={pageAnimationKey} className="px-8 md:px-14 pt-10 pb-12 shell-page-enter">
+                <div key={pageAnimationKey} className="px-8 md:px-[4.125rem] pt-10 pb-12 shell-page-enter">
                   {children}
                 </div>
               </div>
@@ -121,6 +123,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
           </main>
 
           <SidebarShortcutHint />
+          <BugButton />
         </motion.div>
       </MobileMenuContext.Provider>
     </SidebarCollapseContext.Provider>
