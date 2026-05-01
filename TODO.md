@@ -2,10 +2,11 @@
 
 ## Bug
 
-## Chiarimenti
+## UX
 [*] Add # appointments for clients, qty. of products sold, and other stats to tables
 [ ] applicazione abbonamento e dove trovare i dettagli
-[ ] Patch notes system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
+[ ] Set up a "patch notes" system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
+[ ] Make so that the unavailability slot in the calendar stays during the confirmation modal
 
 ## Personalization
 
@@ -17,7 +18,7 @@
 [ ] tessera cliente
 
 [ ] AI for speech to speech queries and actions (possibly free integrations)
-[ ] AI Image geneation for products and services
+[ ] AI Image generation for products and services
 
 ## Impostazioni
 
@@ -25,11 +26,14 @@
 [ ] Set up automatic import with Anthropic API and Supabase MCP
 [ ] passare tutti i dati da Stiv
 [ ] add step to onboarding to load all your data
+[ ] add "Importa dati" option to all three dots dropdown in every page
+[ ] when it detects if there's already data for that salon, it should ask if it wants to add (blind adding), overwrite (clean slate), or merge (smart adding)
 
 ## Design
 [ ] design all pages to be responsive and design intuitive phone interactions, especially for tables and the calendar page
 [ ] Audit the codebase to add animations using motion
   [ ] Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
+[ ] dropdown below three dots button has the same spacing between btn and dropdown than between btn and other btn
 
 ## Codebase
 [ ] Playwright automated testing
@@ -87,7 +91,7 @@ and create an interface for it for managing the interviews and inspect the aggre
 [x] pagina abbonamento
 [x] togliere email obbligatoria per creare cliente
 
-## Chiarimenti
+## UX
 [x] Time preview on calendar cell hover
 [x] week calendar is always clickable, but one of the operator is forced
 [x] add eye icon for login modal password

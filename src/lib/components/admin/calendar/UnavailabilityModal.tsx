@@ -167,6 +167,7 @@ export function UnavailabilityModal({
     try {
       await remove(editing.id);
       messagePopup.getState().success('Non disponibilità eliminata');
+      setConfirmDelete(false);
       onClose();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Errore imprevisto';
