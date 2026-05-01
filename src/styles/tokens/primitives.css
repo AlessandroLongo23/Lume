@@ -30,9 +30,10 @@
   --radius-full: 9999px;   /* avatars, fully round    */
 
   /* ── Typography — family ──────────────────────────────────────────────── */
-  --font-sans:    'Inter', 'Helvetica Neue', 'Arial', sans-serif;
-  --font-heading: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
-  --font-mono:    'JetBrains Mono', 'Menlo', 'Monaco', monospace;
+  /* --font-sans and --font-mono are owned by next/font (Geist + JetBrains   */
+  /* Mono) via layout.tsx; they're injected onto <html> at runtime. The     */
+  /* previous `--font-heading: Inter` was dead — DESIGN.md doesn't define   */
+  /* a separate heading font, titles inherit body Geist.                   */
 
   /* ── Typography — size ────────────────────────────────────────────────── */
   /* 2xs (11px) replaces arbitrary text-[9px]/text-[10px]/text-[11px]       */
