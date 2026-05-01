@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-01T00:00:00.000Z",
+  "title": "Design System: Lume",
+  "extensions": {
+    "colorMeta": {
+      "lamplight-indigo": {
+        "role": "primary",
+        "displayName": "Lamplight Indigo",
+        "canonical": "oklch(0.620 0.190 275)",
+        "tonalRamp": [
+          "oklch(0.220 0.080 275)",
+          "oklch(0.320 0.120 275)",
+          "oklch(0.390 0.160 275)",
+          "oklch(0.470 0.190 275)",
+          "oklch(0.540 0.210 275)",
+          "oklch(0.620 0.190 275)",
+          "oklch(0.710 0.160 275)",
+          "oklch(0.790 0.120 275)",
+          "oklch(0.870 0.080 275)",
+          "oklch(0.930 0.040 275)",
+          "oklch(0.970 0.020 275)"
+        ]
+      },
+      "brass-amber": {
+        "role": "secondary",
+        "displayName": "Brass Amber",
+        "canonical": "oklch(0.785 0.160 80)",
+        "tonalRamp": [
+          "oklch(0.260 0.055 80)",
+          "oklch(0.380 0.080 80)",
+          "oklch(0.470 0.105 80)",
+          "oklch(0.580 0.130 80)",
+          "oklch(0.690 0.150 80)",
+          "oklch(0.785 0.160 80)",
+          "oklch(0.830 0.150 80)",
+          "oklch(0.870 0.125 80)",
+          "oklch(0.915 0.090 80)",
+          "oklch(0.955 0.050 80)",
+          "oklch(0.980 0.020 80)"
+        ]
+      },
+      "graphite-50": {
+        "role": "neutral",
+        "displayName": "Graphite (Cool, hue 265)",
+        "canonical": "oklch(0.985 0.002 265)",
+        "tonalRamp": [
+          "oklch(0.106 0.004 265)",
+          "oklch(0.171 0.005 265)",
+          "oklch(0.234 0.007 265)",
+          "oklch(0.341 0.010 265)",
+          "oklch(0.421 0.011 265)",
+          "oklch(0.538 0.011 265)",
+          "oklch(0.692 0.010 265)",
+          "oklch(0.847 0.006 265)",
+          "oklch(0.902 0.005 265)",
+          "oklch(0.967 0.003 265)",
+          "oklch(0.985 0.002 265)"
+        ]
+      },
+      "midnight-shell": {
+        "role": "neutral",
+        "displayName": "Midnight (Indigo-tinted graphite, dark mode)",
+        "canonical": "oklch(0.148 0.007 265)",
+        "tonalRamp": [
+          "oklch(0.105 0.005 265)",
+          "oklch(0.148 0.007 265)",
+          "oklch(0.192 0.008 265)",
+          "oklch(0.232 0.009 265)",
+          "oklch(0.295 0.010 265)",
+          "oklch(0.355 0.011 265)",
+          "oklch(0.605 0.012 265)",
+          "oklch(0.780 0.010 265)",
+          "oklch(0.965 0.004 265)"
+        ]
+      },
+      "info-blue": {
+        "role": "tertiary",
+        "displayName": "Info Blue",
+        "canonical": "oklch(0.600 0.180 245)",
+        "tonalRamp": [
+          "oklch(0.210 0.075 245)",
+          "oklch(0.300 0.110 245)",
+          "oklch(0.370 0.140 245)",
+          "oklch(0.440 0.170 245)",
+          "oklch(0.520 0.190 245)",
+          "oklch(0.600 0.180 245)",
+          "oklch(0.680 0.160 245)",
+          "oklch(0.770 0.130 245)",
+          "oklch(0.860 0.090 245)",
+          "oklch(0.930 0.050 245)",
+          "oklch(0.970 0.020 245)"
+        ]
+      },
+      "success-green": {
+        "role": "tertiary",
+        "displayName": "Success Green",
+        "canonical": "oklch(0.650 0.170 148)",
+        "tonalRamp": [
+          "oklch(0.220 0.060 148)",
+          "oklch(0.330 0.090 148)",
+          "oklch(0.400 0.110 148)",
+          "oklch(0.480 0.140 148)",
+          "oklch(0.560 0.160 148)",
+          "oklch(0.650 0.170 148)",
+          "oklch(0.720 0.160 148)",
+          "oklch(0.790 0.140 148)",
+          "oklch(0.870 0.100 148)",
+          "oklch(0.930 0.060 148)",
+          "oklch(0.970 0.030 148)"
+        ]
+      },
+      "warning-yellow": {
+        "role": "tertiary",
+        "displayName": "Warning Yellow",
+        "canonical": "oklch(0.820 0.165 95)",
+        "tonalRamp": [
+          "oklch(0.250 0.050 65)",
+          "oklch(0.370 0.075 72)",
+          "oklch(0.470 0.105 78)",
+          "oklch(0.580 0.130 82)",
+          "oklch(0.700 0.150 88)",
+          "oklch(0.820 0.165 95)",
+          "oklch(0.855 0.155 95)",
+          "oklch(0.890 0.135 95)",
+          "oklch(0.930 0.100 95)",
+          "oklch(0.960 0.060 95)",
+          "oklch(0.980 0.030 95)"
+        ]
+      },
+      "danger-red": {
+        "role": "tertiary",
+        "displayName": "Danger Red",
+        "canonical": "oklch(0.640 0.200 25)",
+        "tonalRamp": [
+          "oklch(0.220 0.090 25)",
+          "oklch(0.330 0.130 25)",
+          "oklch(0.400 0.160 25)",
+          "oklch(0.480 0.190 25)",
+          "oklch(0.560 0.210 25)",
+          "oklch(0.640 0.200 25)",
+          "oklch(0.720 0.165 25)",
+          "oklch(0.810 0.125 25)",
+          "oklch(0.890 0.080 25)",
+          "oklch(0.940 0.040 25)",
+          "oklch(0.970 0.020 25)"
+        ]
+      },
+      "receipt-paper": {
+        "role": "neutral",
+        "displayName": "Receipt Paper (warm off-palette)",
+        "canonical": "oklch(0.985 0.005 95)",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing page heroes only. Never inside the admin app." },
+      "headline": { "displayName": "Headline", "purpose": "Top-of-page admin titles (Calendar, Clienti, Fiches)." },
+      "title": { "displayName": "Title", "purpose": "Section heads inside a page (panel, modal title, settings tab)." },
+      "body": { "displayName": "Body", "purpose": "Default running text. Cap at 65–75ch on prose surfaces." },
+      "label": { "displayName": "Label", "purpose": "Metadata, table column headers, badge text. 11px is the floor." },
+      "mono": { "displayName": "Mono", "purpose": "Currency, IDs, time gutter, tabular numerics." }
+    },
+    "shadows": [
+      { "name": "xs", "value": "0 1px 1px 0 var(--shadow-color, rgb(0 0 0 / 0.04))", "purpose": "Hairline lift on hovered table row." },
+      { "name": "sm", "value": "0 1px 2px 0 var(--shadow-color), 0 1px 3px 0 var(--shadow-color)", "purpose": "Cards that need to feel one tier above the page (.shadow-elegant)." },
+      { "name": "md", "value": "0 2px 4px -1px var(--shadow-color), 0 4px 8px -2px var(--shadow-color)", "purpose": "Popovers, dropdowns, .feature-card hover lift." },
+      { "name": "lg", "value": "0 4px 8px -2px var(--shadow-color), 0 10px 20px -4px var(--shadow-color)", "purpose": "Side panels, larger surfaces over the page." },
+      { "name": "xl", "value": "0 8px 16px -4px var(--shadow-color), 0 20px 40px -8px var(--shadow-color)", "purpose": "Modals, featured pricing card. Reserved for things that demand attention." },
+      { "name": "shadow-color-light", "value": "oklch(0.171 0.005 265 / 0.08)", "purpose": "Light-mode shadow tint. Hue 265 keeps shadows feeling like part of the graphite family." },
+      { "name": "shadow-color-dark", "value": "oklch(0 0 0 / 0.55)", "purpose": "Dark-mode shadow alpha pushed to 0.55 so depth stays visible against midnight surfaces." }
+    ],
+    "motion": [
+      { "name": "duration-fast", "value": "120ms", "purpose": "Micro-feedback (button press, focus shift, chip toggle)." },
+      { "name": "duration-base", "value": "200ms", "purpose": "Default state transition (hover, color change, transform)." },
+      { "name": "duration-slow", "value": "320ms", "purpose": "View transitions, theme curtain wipe, larger choreography." },
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Quartic ease-out. The default for entrances, lifts, and one-way transitions." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Symmetric ease for hover-and-back, theme wipes, two-way transitions." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The intended primary button. Solid Lamplight Indigo, white text, 1px hover lift, soft accent-muted glow. No gradient, no shimmer.",
+      "html": "<button class=\"ds-btn-primary\">Salva</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: oklch(0.620 0.190 275); color: #FFFFFF; font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: oklch(0.540 0.210 275); transform: translateY(-1px); box-shadow: 0 8px 24px -8px oklch(0.620 0.190 275 / 0.10); } .ds-btn-primary:active { transform: translateY(0); background: oklch(0.470 0.190 275); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.620 0.190 275); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "White surface, graphite-950 text, 1px graphite-200 border. Used for non-primary actions next to a Primary.",
+      "html": "<button class=\"ds-btn-secondary\">Annulla</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: #FFFFFF; color: oklch(0.106 0.004 265); font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 500; border-radius: 0.5rem; border: 1px solid oklch(0.902 0.005 265); cursor: pointer; transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: oklch(0.967 0.003 265); border-color: oklch(0.847 0.006 265); transform: translateY(-1px); } .ds-btn-secondary:focus-visible { outline: 2px solid oklch(0.620 0.190 275); outline-offset: 2px; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Used for deletions only. Same shape and cadence as Primary, swapped to Danger Red. Destructive actions in Lume must always offer undo, never confirm-modal-to-final.",
+      "html": "<button class=\"ds-btn-destructive\">Elimina</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: oklch(0.640 0.200 25); color: #FFFFFF; font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-destructive:hover { background: oklch(0.560 0.210 25); transform: translateY(-1px); } .ds-btn-destructive:focus-visible { outline: 2px solid oklch(0.640 0.200 25); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent background, no border. Used for tertiary toolbar actions inside a panel.",
+      "html": "<button class=\"ds-btn-ghost\">Filtri</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: transparent; color: oklch(0.106 0.004 265); font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: oklch(0.967 0.003 265); } .ds-btn-ghost:focus-visible { outline: 2px solid oklch(0.620 0.190 275); outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Canonical input pattern. 1px graphite-200 border, white surface, leading search icon, optional clear button. Cmd-K focuses (handled at component level).",
+      "html": "<div class=\"ds-input-search\"><svg class=\"ds-input-search-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"text\" placeholder=\"Cerca...\"/></div>",
+      "css": ".ds-input-search { position: relative; display: inline-flex; align-items: center; width: 100%; max-width: 320px; } .ds-input-search-icon { position: absolute; left: 0.5rem; color: oklch(0.692 0.010 265); pointer-events: none; } .ds-input-search input { width: 100%; padding: 0.5rem 0.5rem 0.5rem 2.25rem; background: #FFFFFF; color: oklch(0.106 0.004 265); font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 0.875rem; border: 1px solid oklch(0.902 0.005 265); border-radius: 0.5rem; outline: none; transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input-search input::placeholder { color: oklch(0.692 0.010 265); } .ds-input-search input:focus { border-color: oklch(0.620 0.190 275); box-shadow: 0 0 0 1px oklch(0.620 0.190 275 / 0.20) inset; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default surface for grouped content. Flat at rest. Hover state applied via .ds-card-interactive variant for clickable cards (see Feature Card).",
+      "html": "<div class=\"ds-card\"><h3>Appuntamenti di oggi</h3><p>12 prenotati, 3 in attesa di conferma.</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid oklch(0.902 0.005 265); border-radius: 0.75rem; padding: 1.5rem; } .ds-card h3 { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1.5rem; font-weight: 600; line-height: 1.35; color: oklch(0.106 0.004 265); margin: 0 0 0.5rem 0; } .ds-card p { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; line-height: 1.5; color: oklch(0.421 0.011 265); margin: 0; }"
+    },
+    {
+      "name": "Feature Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Interactive card variant. Hover lifts 2px, accent-muted shadow, border shifts to Lamplight Indigo. Used for clickable feature tiles on landing and dashboard.",
+      "html": "<a class=\"ds-feature-card\" href=\"#\"><h3>Calendario</h3><p>Trascina, sposta, ridimensiona.</p></a>",
+      "css": ".ds-feature-card { display: block; background: #FFFFFF; border: 1px solid oklch(0.902 0.005 265); border-radius: 0.75rem; padding: 1.5rem; text-decoration: none; transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-feature-card:hover { border-color: oklch(0.620 0.190 275); box-shadow: 0 0 0 1px oklch(0.620 0.190 275 / 0.10), 0 4px 8px -2px oklch(0.171 0.005 265 / 0.08); transform: translateY(-2px); } .ds-feature-card h3 { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1.5rem; font-weight: 600; line-height: 1.35; color: oklch(0.106 0.004 265); margin: 0 0 0.5rem 0; } .ds-feature-card p { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1rem; line-height: 1.5; color: oklch(0.421 0.011 265); margin: 0; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Tag, filter, or status pill. Selected variant uses Lamplight Indigo Soft fill with Lamplight Indigo text — no border, no glow.",
+      "html": "<span class=\"ds-chip\">Taglio</span><span class=\"ds-chip ds-chip-selected\">Colore</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; background: oklch(0.967 0.003 265); color: oklch(0.341 0.010 265); font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 0.6875rem; font-weight: 500; line-height: 1.35; letter-spacing: 0.04em; border-radius: 0.25rem; margin-right: 0.375rem; } .ds-chip-selected { background: oklch(0.970 0.020 275); color: oklch(0.620 0.190 275); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Sidebar navigation item. Active state is a tonal background shift, never a side-stripe border. Icon + label, full width of the sidebar.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg><span>Calendario</span></a>",
+      "css": ".ds-nav-item { display: inline-flex; align-items: center; gap: 0.625rem; width: 100%; padding: 0.5rem 0.75rem; background: transparent; color: oklch(0.421 0.011 265); font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 0.875rem; font-weight: 400; border-radius: 0.5rem; text-decoration: none; transition: background 120ms cubic-bezier(0.4, 0, 0.2, 1), color 120ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-item:hover { background: oklch(0.967 0.003 265); color: oklch(0.106 0.004 265); } .ds-nav-item-active { background: oklch(0.967 0.003 265); color: oklch(0.106 0.004 265); font-weight: 500; }"
+    },
+    {
+      "name": "Empty State",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Used when a list, calendar day, or tab has no content yet. Always presents at least one next-action button. No empty space without a prompt.",
+      "html": "<div class=\"ds-empty\"><svg class=\"ds-empty-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"80\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg><h2>Nessun appuntamento</h2><p>Inizia creando il primo appuntamento di oggi.</p><button class=\"ds-btn-primary\">Crea appuntamento</button></div>",
+      "css": ".ds-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; background: oklch(0.985 0.002 265); border: 1px dashed oklch(0.847 0.006 265); border-radius: 0.75rem; text-align: center; } .ds-empty-icon { color: oklch(0.847 0.006 265); margin-bottom: 1rem; } .ds-empty h2 { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 1.25rem; font-weight: 600; color: oklch(0.341 0.010 265); margin: 0 0 0.25rem 0; } .ds-empty p { font-family: 'Geist', 'Helvetica Neue', sans-serif; font-size: 0.875rem; color: oklch(0.538 0.011 265); max-width: 28ch; margin: 0 0 1.5rem 0; } .ds-btn-primary { display: inline-flex; align-items: center; padding: 0.625rem 1.25rem; background: oklch(0.620 0.190 275); color: #FFFFFF; font-size: 1rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Salon",
+    "overview": "A salon is already loud. The phone rings, scissors snap, the radio plays, two clients want to talk at once. Lume is the still point in that room. Every screen is generous with space, quiet with color, and direct with its words. The operator should feel a small drop in shoulder tension when they look at the screen, not the small spike they get from the incumbent's gray-on-gray clutter.\n\nThe system is built in three layers: a perceptually uniform OKLCH palette (hue 265 cool graphite, hue 275 lamplight indigo, hue 80 brass amber, plus status hues), theme-independent primitives (4px spacing grid, six radii, two easing curves, three durations), and semantic role tokens that swap between a near-white light mode and an indigo-tinted graphite dark mode. The palette is the only place raw color literals live. Everything downstream references through the semantic layer.\n\nThis system explicitly rejects four families: the incumbent salon-software aesthetic (Treatwell Connect, Stiv, Area Salon, Imaginsalon: dense Windows-era forms, four-deep dropdowns, gray gradients, every pixel filled); the 'luxury salon brochure' aesthetic (pink and gold gradients, scissor icons, script display fonts, stock photos of women with foils); the previous Lume identity (Cormorant Garamond, 'Synergia della Bellezza' naming, gold and cream `--salon-*` tokens, fully retired); and generic SaaS templates (pastel high-fives, hero-metric gradients, 'trusted by 1000+ teams' social proof, out-of-box shadcn-card-on-cream).",
+    "keyCharacteristics": [
+      "Quietly tactile. Buttons lift one pixel on hover, cards glow at the border with --lume-accent-muted. Every interaction confirms itself without theatrics. No bouncy elastic, no scale-115 zooms, no shimmer passes.",
+      "Indigo as a rare event. Lamplight Indigo carries primary actions, the one selected appointment, the focused field, the one active alert. Everywhere else lives in graphite neutrals. A screen with three indigo elements is a screen with a bug.",
+      "Two themes, both first-class. Light mode is the default for daytime reception PCs. Dark mode is built deliberately, not as a tinted inversion: a four-tier elevation ramp lifted off pure black, hue 265 carried through for 'indigo-tinted graphite', chromatic feedback borders, shadow alpha pushed to 0.55 so depth stays visible.",
+      "Italian throughout. Geist Sans (Western Latin glyph set), JetBrains Mono for prices and IDs, dates and currencies in Italian formatting. No English borrowings where Italian works."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Lamplight Indigo carries less than 10% of any given screen's pixels. Its rarity is the entire point. Two indigo elements means one of them needs to become a ghost button or a graphite chip.", "section": "colors" },
+      { "name": "The Both-Themes Rule", "body": "Every screen ships in light and dark from day one. Dark mode is not a stretch goal or a launch-week follow-up. If a component looks fine in light and broken in dark, the component is broken.", "section": "colors" },
+      { "name": "The Off-Palette Receipt Rule", "body": "Receipt Paper is deliberately off-palette and stays that way. Do not 'harmonize' it into the graphite family.", "section": "colors" },
+      { "name": "The Plain-Italian Rule", "body": "UI copy is written in Italian. Use English only when no native Italian word fits ('dashboard' is fine; 'appuntamento' beats 'appointment'). No abbreviations in labels (write 'appuntamento', never 'appt'). No jargon. Copy reads like a colleague speaking, not a software menu.", "section": "typography" },
+      { "name": "The Density Switch Rule", "body": "Tables respect the global data-density attribute on <html>. In compact mode, table body type drops to 13px and row padding tightens. Never override this per-table; respect the user's appearance preference.", "section": "typography" },
+      { "name": "The 11-Pixel Floor", "body": "No body text below 11px (--text-2xs). Anything smaller fails accessibility for the 50-year-old salon owner who is the target user.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Cards at rest carry no shadow. They sit on the page through tone and border. Shadows appear as a response to state (hover, focus, raised over the page, modal-on-overlay) or to identify a floating element (popover, dropdown). A static box-shadow: var(--shadow-md) on a default card is wrong.", "section": "elevation" },
+      { "name": "The Tonal-First Rule", "body": "When a designer wants to make something 'stand out', the first move is always tone, not shadow. Step the surface up one ramp tier (Graphite 50 → Graphite 100, or Midnight Shell → Midnight Surface). Reach for shadow only when tone has run out.", "section": "elevation" },
+      { "name": "The Dark-Mode-Shadow Doubling Rule", "body": "Shadow color in dark mode is alpha 0.55, not 0.10. Light-mode shadow values copied unchanged into dark mode will be invisible.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use .btn-primary and .btn-secondary from globals.css for every button in the admin app. They are the source of truth.",
+      "Do route every color, surface, border, and text decision through the --lume-* semantic layer. Components must never reference --color-brand-primary-500 or oklch(...) directly.",
+      "Do treat Lamplight Indigo as a rare event. If a screen has more than one indigo element, demote one to ghost or graphite.",
+      "Do ship every component in light and dark from day one. Dark mode is not a follow-up.",
+      "Do use tonal layering before reaching for shadow. Step the surface up a tier first.",
+      "Do write UI copy in Italian, in the voice of a colleague speaking, not a software menu.",
+      "Do push shadow alpha to 0.55 in dark mode. Lower values are invisible against the midnight surfaces.",
+      "Do pair every status color with an icon and text. Color is never the only signal (operator color-blindness assumption holds).",
+      "Do preserve the Receipt Paper aesthetic on Fiche surfaces. The off-palette warm white is intentional."
+    ],
+    "donts": [
+      "Don't use the legacy <FormButton> or <FormInput> for new screens. They use blue gradients, border-2, hover scales, and inner shimmer animations that are forbidden by this system. Migrate them on contact rather than copying their patterns.",
+      "Don't apply bg-gradient-to-r to buttons, cards, or any UI surface. The only sanctioned gradients are --lume-gradient-hero (landing background) and --lume-gradient-accent (decorative use only).",
+      "Don't use .gradient-text. Animated gradient text is rejected; emphasis comes from weight and size, not from background-clip: text. The class exists for legacy reasons; remove on contact.",
+      "Don't use raw zinc-*, blue-*, red-*, slate-* Tailwind utilities. Those are the drift that the token system replaced. Use semantic Lume utilities (bg-surface, text-secondary, border-flat) or extend the semantic layer.",
+      "Don't use border-left or border-right greater than 1px as a colored accent on cards, list items, callouts, or alerts. Side-stripe borders are forbidden. Use full borders, background tints, or leading icons instead.",
+      "Don't nest cards. A card inside a card is a structural failure.",
+      "Don't use modals as the first answer for any flow. Exhaust inline and progressive options first; <Modal> is reserved for genuinely blocking decisions.",
+      "Don't use --text-[9px], --text-[10px], or arbitrary pixel-sized text utilities below 11px. The 11-pixel floor is non-negotiable.",
+      "Don't ship with a bouncy spring or elastic easing. Use --ease-out (quartic) or --ease-in-out from primitives.css. No cubic-bezier(...) literals in component files.",
+      "Don't reproduce any of the Anti-references named in PRODUCT.md: no Treatwell-Stiv-Area-Salon density, no pink/gold luxury-salon brochure aesthetic, no resurrected --salon-* Synergia tokens, no shadcn-card-on-cream generic SaaS template.",
+      "Don't sit a dark surface on #000. Use Midnight Shell (oklch(0.148 0.007 265)) at minimum. Pure black causes optical vibration against the indigo accent and reads as cheap."
+    ]
+  }
+}
