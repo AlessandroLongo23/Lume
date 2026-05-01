@@ -1,7 +1,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { usePreferencesStore } from '@/lib/stores/preferences';
+
+// Routes that should always render in light mode regardless of the user's
+// saved theme preference (e.g. the public marketing landing).
+const LIGHT_LOCKED_ROUTES = new Set(['/', '/login', '/register']);
 
 export type Theme = 'system' | 'light' | 'dark';
 type ResolvedTheme = 'light' | 'dark';
@@ -35,12 +40,14 @@ function resolve(theme: Theme): ResolvedTheme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [theme, setThemeState] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
   const lastAppliedRef = useRef<ResolvedTheme | null>(null);
 
   const applyTheme = (t: Theme) => {
-    const next = resolve(t);
+    const isLightLocked = LIGHT_LOCKED_ROUTES.has(pathname);
+    const next: ResolvedTheme = isLightLocked ? 'light' : resolve(t);
     const apply = () => {
       document.documentElement.classList.toggle('dark', next === 'dark');
       document.documentElement.setAttribute('data-theme', next);
@@ -82,6 +89,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
+  // Re-apply when the route changes so light-locked pages flip correctly
+  // when entered or left. Skipped on the very first render — the initial
+  // paint effect above already handled it.
+  useEffect(() => {
+    if (lastAppliedRef.current === null) return;
+    const stored = (localStorage.getItem(STORAGE_KEY) ?? 'system') as Theme;
+    applyTheme(stored);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   // Sync from preferences store once it hydrates (DB is the source of truth)
   useEffect(() => {
     const unsub = usePreferencesStore.subscribe((state) => {
@@ -98,7 +115,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (t: Theme) => applyTheme(t);
   const toggleTheme = () => {
     // Toggling cycles between light and dark explicitly (drops 'system').
-    applyTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+    const next: Theme = resolvedTheme === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    // Persist back to the saved preference so the choice survives a refresh.
+    // Skipped pre-hydration: the user isn't authenticated yet or the store
+    // hasn't loaded, and the DB-sync effect will reconcile on first load.
+    const prefs = usePreferencesStore.getState();
+    if (prefs.isLoaded) {
+      void prefs.updatePreferences({ appearance: { theme: next } }).catch(() => {});
+    }
   };
 
   return (
