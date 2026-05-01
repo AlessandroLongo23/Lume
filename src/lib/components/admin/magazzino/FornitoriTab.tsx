@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Truck, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { Trash2, Truck, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Search, X } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -40,12 +40,29 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
   const [selected, setSelected] = useState<Supplier | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
+  const [globalFilter, setGlobalFilter] = useState('');
 
   useEffect(() => {
     if (!addTrigger) return;
     setSelected(null);
     setShowAdd(true);
   }, [addTrigger]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [globalFilter]);
+
+  const filteredSuppliers = useMemo(() => {
+    if (!globalFilter.trim()) return suppliers;
+    const q = globalFilter.toLowerCase();
+    return suppliers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.city ?? '').toLowerCase().includes(q) ||
+        (s.phone ?? '').toLowerCase().includes(q) ||
+        (s.email ?? '').toLowerCase().includes(q)
+    );
+  }, [suppliers, globalFilter]);
 
   const columns = useMemo<ColumnDef<Supplier>[]>(
     () => [
@@ -87,7 +104,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     useTableColumnPrefs('suppliers', columns);
 
   const table = useReactTable({
-    data: suppliers,
+    data: filteredSuppliers,
     columns,
     state: {
       sorting,
@@ -171,7 +188,29 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex items-center flex-1 max-w-sm">
+              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cerca fornitore..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                  border-zinc-200 dark:border-zinc-800
+                  focus:border-zinc-300 dark:focus:border-zinc-700
+                  text-zinc-900 dark:text-zinc-100
+                  placeholder:text-zinc-400 outline-none transition-colors"
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => setGlobalFilter('')}
+                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
             <ColumnPicker tableId="suppliers" columns={columns} className="ml-auto" />
           </div>
 
@@ -262,7 +301,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
           <Pagination
             currentPage={pageIndex + 1}
             onPageChange={(p) => setPageIndex(p - 1)}
-            totalItems={suppliers.length}
+            totalItems={filteredSuppliers.length}
             itemsPerPage={PAGE_SIZE}
             labelPlural="fornitori"
           />

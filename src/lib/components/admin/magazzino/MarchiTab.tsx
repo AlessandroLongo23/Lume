@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Factory, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { Trash2, Factory, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Search, X } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
@@ -41,12 +41,23 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
   const [selected, setSelected] = useState<Manufacturer | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
+  const [globalFilter, setGlobalFilter] = useState('');
 
   useEffect(() => {
     if (!addTrigger) return;
     setSelected(null);
     setShowAdd(true);
   }, [addTrigger]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [globalFilter]);
+
+  const filteredManufacturers = useMemo(() => {
+    if (!globalFilter.trim()) return manufacturers;
+    const q = globalFilter.toLowerCase();
+    return manufacturers.filter((m) => m.name.toLowerCase().includes(q));
+  }, [manufacturers, globalFilter]);
 
   const columns = useMemo<ColumnDef<Manufacturer>[]>(
     () => [
@@ -66,7 +77,7 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
     useTableColumnPrefs('brands', columns);
 
   const table = useReactTable({
-    data: manufacturers,
+    data: filteredManufacturers,
     columns,
     state: {
       sorting,
@@ -152,7 +163,29 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex items-center flex-1 max-w-sm">
+              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cerca marchio..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                  border-zinc-200 dark:border-zinc-800
+                  focus:border-zinc-300 dark:focus:border-zinc-700
+                  text-zinc-900 dark:text-zinc-100
+                  placeholder:text-zinc-400 outline-none transition-colors"
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => setGlobalFilter('')}
+                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
             <ColumnPicker tableId="brands" columns={columns} className="ml-auto" />
           </div>
 
@@ -237,7 +270,7 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
           <Pagination
             currentPage={pageIndex + 1}
             onPageChange={(p) => setPageIndex(p - 1)}
-            totalItems={manufacturers.length}
+            totalItems={filteredManufacturers.length}
             itemsPerPage={PAGE_SIZE}
             labelPlural="marchi"
           />

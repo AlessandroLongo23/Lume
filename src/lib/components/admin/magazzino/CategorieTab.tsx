@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Tags, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, ArchiveRestore } from 'lucide-react';
+import { Trash2, Tags, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, ArchiveRestore, Search, X } from 'lucide-react';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -43,12 +43,25 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
   const [selected, setSelected] = useState<ProductCategory | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
+  const [globalFilter, setGlobalFilter] = useState('');
 
   useEffect(() => {
     if (!addTrigger) return;
     setSelected(null);
     setShowAdd(true);
   }, [addTrigger]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [globalFilter]);
+
+  const filteredCategories = useMemo(() => {
+    if (!globalFilter.trim()) return categories;
+    const q = globalFilter.toLowerCase();
+    return categories.filter(
+      (c) => c.name.toLowerCase().includes(q) || (c.description ?? '').toLowerCase().includes(q)
+    );
+  }, [categories, globalFilter]);
 
   const columns = useMemo<ColumnDef<ProductCategory>[]>(
     () => [
@@ -75,7 +88,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
     useTableColumnPrefs('product-categories', columns);
 
   const table = useReactTable({
-    data: categories,
+    data: filteredCategories,
     columns,
     state: {
       sorting,
@@ -142,7 +155,29 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
         />
       ) : (
         <div className="flex flex-col gap-4 w-full">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex items-center flex-1 max-w-sm">
+              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cerca categoria..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                  border-zinc-200 dark:border-zinc-800
+                  focus:border-zinc-300 dark:focus:border-zinc-700
+                  text-zinc-900 dark:text-zinc-100
+                  placeholder:text-zinc-400 outline-none transition-colors"
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => setGlobalFilter('')}
+                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
             <ColumnPicker tableId="product-categories" columns={columns} className="ml-auto" />
           </div>
 
@@ -243,7 +278,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
           <Pagination
             currentPage={pageIndex + 1}
             onPageChange={(p) => setPageIndex(p - 1)}
-            totalItems={categories.length}
+            totalItems={filteredCategories.length}
             itemsPerPage={PAGE_SIZE}
             labelPlural="categorie"
           />
