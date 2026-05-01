@@ -1,13 +1,11 @@
 # TODO
 
 ## Bug
-[*] (S) Fix the z-index on the dropdown in the client's detail page
 
 ## UX 
 [*] (M) Add # appointments for clients, qty. of products sold, and other stats to tables
 [ ] (M) applicazione abbonamento e dove trovare i dettagli
 [ ] (L) Set up a "patch notes" system on login, automatically generated from commits and new pulsating badge for tutorials and features with overlays 
-[*] (S) Add drag icon (six dots) to service blocks in calendar on hovering (animation pushing the text)
 
 ## Personalization
 
@@ -20,7 +18,7 @@
 [ ] (XL) GDPR audit and look for "deliberatorie" and other necessary documents for ready to print, already filled forms (ask Ulisse about those)
 [ ] (XL) AI for speech to speech queries and actions (possibly free integrations)
 [ ] (L) AI Image generation for products and services
-[ ] (M) Add a bug button fixed to the bottom right corner (down aligned with the theme button) to take a screenshot of the current page, and when the screenshot is taken, it automatically opens the feedback modal with bug preselected and the screenshot already uploaded
+[ ] (M) Add multi-salon owner with salon selection on login and salon dropdown selection where we now have the salon name
 
 ## Impostazioni
 
@@ -29,14 +27,14 @@
   [ ] (M) passare tutti i dati da Stiv
   [ ] (L) when it detects if there's already data for that salon, it should ask if it wants to add (blind adding), overwrite (clean slate), or merge (smart adding)
 [ ] (M) add step to onboarding to load all your data
-[ ] (S) add "Importa dati" option to all three dots dropdown in every page
 
 ## Design
 [ ] (L) design all pages to be responsive and design intuitive phone interactions, especially for tables and the calendar page
 [ ] (L) Audit the codebase to add animations using motion
-  [ ] (M) Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
+[ ] (M) Add fly in animation for pages when opening nested dynamic routes (like Modestas did with cursum ai)
 [ ] (S) dropdown below three dots button has the same spacing between btn and dropdown than between btn and other btn
 [ ] (S) animate archive and delete icons in the clients' card
+[ ] (S) Replace default dropdown selections with our custom one
 
 ## Codebase
 [ ] (L) Playwright automated testing
@@ -67,6 +65,7 @@ and create an interface for it for managing the interviews and inspect the aggre
 # Done
 
 ## Bug
+[x] (S) Fix the z-index on the dropdown in the client's detail page
 [x] (S) Make so that the unavailability slot in the calendar stays during the confirmation modal
 [x] (S) In settings, every time you change section the animation triggers, and it shouldn't
 [x] theme always applying on refresh, instead, it should stay the same
@@ -95,8 +94,11 @@ and create an interface for it for managing the interviews and inspect the aggre
 [x] feedback page con up/down
 [x] pagina abbonamento
 [x] togliere email obbligatoria per creare cliente
+[x] (M) Add a bug button fixed to the bottom right corner (down aligned with the theme button) to take a screenshot of the current page, and when the screenshot is taken, it automatically opens the feedback modal with bug preselected and the screenshot already uploaded
 
 ## UX
+[x] (S) Add drag icon (six dots) to service blocks in calendar on hovering (animation pushing the text)
+[x] (S) Add breadcrumb navigation and add entity details page to the list
 [x] (S) Click abbonamento row to open edit modal
 [x] Time preview on calendar cell hover
 [x] week calendar is always clickable, but one of the operator is forced
@@ -112,6 +114,7 @@ and create an interface for it for managing the interviews and inspect the aggre
 [x] Settare valore di default per validità buoni
 
 ## Data
+[x] (S) add "Importa dati" option to all three dots dropdown in every page
 
 ## Design
 
