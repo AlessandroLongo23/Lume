@@ -1,23 +1,23 @@
 import 'server-only';
 import { inngest, importCommitRequested } from '@/lib/inngest/client';
 import { getInngestSupabase, type InngestSupabase } from '@/lib/inngest/admin';
-import { parseFile } from '@/lib/imports/parseFile';
-import { transformRow, type ClientInsertRow, type FailedRow } from '@/lib/imports/clientImportSchema';
-import type { ColumnMapping } from '@/lib/imports/llmMapper';
-import type { ClientDestField } from '@/lib/imports/clientHeaderDictionary';
+import { loadParsedFile } from '@/lib/imports/core/loadParsedFile';
+import { resolveFkColumns } from '@/lib/imports/core/fkResolver';
+import { getEntityConfig, isEntitySupported } from '@/lib/imports/entities/registry';
+import type { ColumnMapping, DedupKeyConfig, FailedRow } from '@/lib/imports/entities/types';
 
 const BATCH_SIZE = 500;
 
 /**
  * Stage 2 of the import pipeline: re-parse the source file (Inngest steps are
  * stateless, so we can't carry rows across), apply the user-confirmed column
- * map to every row, dedup against existing clients in this salon, and bulk
- * insert in chunks while streaming progress to `import_jobs`.
+ * map to every row, dedup against existing rows in the entity's table for this
+ * salon, and chunk-insert with row-by-row fallback while streaming progress
+ * to `import_jobs`.
  *
- * Direct insert into `clients` with `user_id: null` — bypassing /api/clients
- * is intentional. The POST handler creates an auth.users row per client which
- * would trigger thousands of welcome emails on a real migration. Owners can
- * invite individual clients later if they need app accounts.
+ * Direct insert into the entity's table is intentional — bypasses entity
+ * routes that auto-create auth users / send welcome emails on a real
+ * migration. Owners can invite users individually later if they need accounts.
  */
 export const commitImport = inngest.createFunction(
   {
@@ -28,23 +28,23 @@ export const commitImport = inngest.createFunction(
   },
   async ({ event, step }) => {
     const { jobId, salonId, entity } = event.data;
-    // The wire-format mappings have `destField: string | null`; narrow to our
-    // domain enum here so transformRow can rely on the type.
     const mappings: ColumnMapping[] = event.data.mappings.map((m) => ({
       sourceColumn: m.sourceColumn,
-      destField: m.destField as ClientDestField | null,
+      destField: m.destField,
       confidence: m.confidence,
     }));
     const supabase = getInngestSupabase();
 
-    if (entity !== 'clients') {
-      await markJob(supabase, jobId, { status: 'failed', failure_reason: `Entity '${entity}' non supportata in v1` });
+    if (!isEntitySupported(entity)) {
+      await markJob(supabase, jobId, { status: 'failed', failure_reason: `Entity '${entity}' non supportata` });
       return { ok: false };
     }
+    const config = getEntityConfig(entity);
 
     await markJob(supabase, jobId, { status: 'committing', processed_rows: 0, skipped_rows: 0, failed_rows: 0 });
 
-    // Step 1 — re-parse + transform every row
+    // Step 1 — re-parse + transform every row (PDFs use the cached extraction
+    // written during processImport — no second LLM call)
     const { transformed, failed } = await step.run('parse-and-transform', async () => {
       const { data: job } = await supabase
         .from('import_jobs')
@@ -53,119 +53,162 @@ export const commitImport = inngest.createFunction(
         .single();
       if (!job) throw new Error(`Import job ${jobId} not found`);
 
-      const { data: blob, error: dlError } = await supabase.storage.from('imports').download(job.storage_path);
-      if (dlError || !blob) throw new Error(`Storage download failed: ${dlError?.message}`);
+      const parsed = await loadParsedFile(supabase, job, config);
 
-      const buffer = await blob.arrayBuffer();
-      const parsed = parseFile(buffer, job.source_filename);
-
-      const t: ClientInsertRow[] = [];
+      const t: Record<string, unknown>[] = [];
       const f: FailedRow[] = [];
       for (let i = 0; i < parsed.rows.length; i++) {
-        const result = transformRow(parsed.rows[i], mappings, i);
-        if (result.ok) t.push(result.row);
+        const result = config.transformRow(parsed.rows[i], mappings, i);
+        if (result.ok) t.push(result.row as Record<string, unknown>);
         else f.push(result);
       }
       return { transformed: t, failed: f };
     });
 
-    // Step 2 — dedup against existing clients (email + phoneNumber) for this salon
+    // Step 2 — resolve FK columns (auto-create missing referenced records)
+    if (config.fkColumns?.length) {
+      await step.run('resolve-fks', async () => {
+        await resolveFkColumns(supabase, transformed, config.fkColumns, salonId);
+        return { resolved: config.fkColumns!.length };
+      });
+    }
+
+    // Step 3 — dedup using entity-defined keys
     const { dedupedRows, skipped } = await step.run('dedup', async () => {
-      const emails = transformed.map((r) => r.email).filter((e): e is string => !!e);
-      const phones = transformed.map((r) => r.phoneNumber).filter((p): p is string => !!p);
-
-      const existingEmails = new Set<string>();
-      const existingPhones = new Set<string>();
-
-      if (emails.length > 0) {
-        const { data: existing } = await supabase
-          .from('clients')
-          .select('email')
-          .eq('salon_id', salonId)
-          .in('email', emails);
-        for (const r of existing ?? []) {
-          if (r.email) existingEmails.add(r.email.toLowerCase());
-        }
-      }
-      if (phones.length > 0) {
-        const { data: existing } = await supabase
-          .from('clients')
-          .select('phoneNumber')
-          .eq('salon_id', salonId)
-          .in('phoneNumber', phones);
-        for (const r of existing ?? []) {
-          if (r.phoneNumber) existingPhones.add(r.phoneNumber);
-        }
-      }
-
-      const seenInBatchEmail = new Set<string>();
-      const seenInBatchPhone = new Set<string>();
-      const out: ClientInsertRow[] = [];
-      let skippedCount = 0;
-      for (const r of transformed) {
-        const e = r.email?.toLowerCase() ?? null;
-        const p = r.phoneNumber ?? null;
-        if (e && (existingEmails.has(e) || seenInBatchEmail.has(e))) { skippedCount++; continue; }
-        if (p && (existingPhones.has(p) || seenInBatchPhone.has(p))) { skippedCount++; continue; }
-        if (e) seenInBatchEmail.add(e);
-        if (p) seenInBatchPhone.add(p);
-        out.push(r);
-      }
-      return { dedupedRows: out, skipped: skippedCount };
+      return dedupRows(supabase, transformed, config.dedupKeys, config.table, salonId);
     });
 
-    // Step 3 — chunked insert, streaming progress
+    // Step 4 — chunked insert, streaming progress.
+    // Postgres rolls back the WHOLE multi-row INSERT if any single row hits a
+    // constraint, so on batch error we retry that batch row-by-row to capture
+    // exactly which rows are bad (and let the rest succeed).
     let inserted = 0;
-    let insertFailed = 0;
+    const insertFailures: FailedRow[] = [];
+
     for (let offset = 0; offset < dedupedRows.length; offset += BATCH_SIZE) {
       const batch = dedupedRows.slice(offset, offset + BATCH_SIZE);
       const result = await step.run(`insert-batch-${offset}`, async () => {
-        const payload = batch.map((r) => ({
-          salon_id: salonId,
-          user_id: null,
-          firstName: r.firstName,
-          lastName: r.lastName,
-          email: r.email,
-          phonePrefix: r.phonePrefix,
-          phoneNumber: r.phoneNumber,
-          gender: r.gender,
-          birthDate: r.birthDate,
-          isTourist: r.isTourist ?? false,
-          note: r.note,
-        }));
+        const payload = batch.map((r) => config.buildInsertPayload(r as never, { salonId }));
         const { error, count } = await supabase
-          .from('clients')
+          .from(config.table)
           .insert(payload, { count: 'exact' });
-        if (error) {
-          console.error(`[commitImport] batch ${offset} insert error:`, error.message);
-          return { inserted: 0, failed: batch.length, error: error.message };
+        if (!error) {
+          return { inserted: count ?? batch.length, failures: [] as FailedRow[] };
         }
-        return { inserted: count ?? batch.length, failed: 0 };
+        console.warn(`[commitImport] batch ${offset} failed (${error.message}), retrying row-by-row`);
+
+        let perRowOk = 0;
+        const failures: FailedRow[] = [];
+        for (let i = 0; i < batch.length; i++) {
+          const row = batch[i];
+          const { error: rowError } = await supabase
+            .from(config.table)
+            .insert(config.buildInsertPayload(row as never, { salonId }));
+          if (rowError) {
+            failures.push({
+              ok: false,
+              rowIndex: offset + i,
+              reason: `Insert: ${rowError.message}`,
+              rawValues: rowToRawValues(row),
+              partialRow: row,
+            });
+          } else {
+            perRowOk++;
+          }
+        }
+        return { inserted: perRowOk, failures };
       });
 
       inserted += result.inserted;
-      insertFailed += result.failed;
+      insertFailures.push(...result.failures);
 
       await markJob(supabase, jobId, {
         processed_rows: inserted,
         skipped_rows: skipped,
-        failed_rows: failed.length + insertFailed,
+        failed_rows: failed.length + insertFailures.length,
       });
     }
 
-    const finalStatus = (failed.length + insertFailed) === 0 ? 'completed' : 'partial_failure';
+    const allFailures = [...failed, ...insertFailures];
+    const finalStatus = allFailures.length === 0 ? 'completed' : 'partial_failure';
     await markJob(supabase, jobId, {
       status: finalStatus,
       processed_rows: inserted,
       skipped_rows: skipped,
-      failed_rows: failed.length + insertFailed,
-      error_log: failed.length > 0 ? { rows: failed.slice(0, 200) } : null, // cap stored rows
+      failed_rows: allFailures.length,
+      error_log: allFailures.length > 0 ? { rows: allFailures.slice(0, 200) } : null,
       completed_at: new Date().toISOString(),
     });
 
-    return { ok: true, inserted, skipped, failed: failed.length + insertFailed };
+    return { ok: true, inserted, skipped, failed: allFailures.length };
   },
 );
+
+function normalizeKey(value: unknown, normalize: DedupKeyConfig['normalize']): string | null {
+  if (value == null || value === '') return null;
+  const s = String(value);
+  if (normalize === 'lower') return s.toLowerCase();
+  if (normalize === 'lower-trim') return s.trim().toLowerCase();
+  return s;
+}
+
+async function dedupRows(
+  supabase: InngestSupabase,
+  transformed: Record<string, unknown>[],
+  dedupKeys: readonly DedupKeyConfig[],
+  table: string,
+  salonId: string,
+): Promise<{ dedupedRows: Record<string, unknown>[]; skipped: number }> {
+  const existingByKey = new Map<string, Set<string>>();
+  for (const key of dedupKeys) {
+    const candidates = transformed
+      .map((r) => normalizeKey(r[key.rowField], key.normalize))
+      .filter((v): v is string => v != null && v.length > 0);
+    const set = new Set<string>();
+    if (candidates.length === 0) {
+      existingByKey.set(key.column, set);
+      continue;
+    }
+    for (let i = 0; i < candidates.length; i += 500) {
+      const chunk = candidates.slice(i, i + 500);
+      const { data } = await supabase.from(table).select(key.column).eq('salon_id', salonId).in(key.column, chunk);
+      for (const r of (data ?? []) as unknown as Record<string, unknown>[]) {
+        const norm = normalizeKey(r[key.column], key.normalize);
+        if (norm) set.add(norm);
+      }
+    }
+    existingByKey.set(key.column, set);
+  }
+
+  const seenByKey = new Map<string, Set<string>>();
+  for (const key of dedupKeys) seenByKey.set(key.column, new Set());
+
+  const out: Record<string, unknown>[] = [];
+  let skippedCount = 0;
+  for (const r of transformed) {
+    let isDup = false;
+    for (const key of dedupKeys) {
+      const norm = normalizeKey(r[key.rowField], key.normalize);
+      if (!norm) continue;
+      const existing = existingByKey.get(key.column)!;
+      const seen = seenByKey.get(key.column)!;
+      if (existing.has(norm) || seen.has(norm)) {
+        isDup = true;
+        break;
+      }
+    }
+    if (isDup) {
+      skippedCount++;
+      continue;
+    }
+    for (const key of dedupKeys) {
+      const norm = normalizeKey(r[key.rowField], key.normalize);
+      if (norm) seenByKey.get(key.column)!.add(norm);
+    }
+    out.push(r);
+  }
+  return { dedupedRows: out, skipped: skippedCount };
+}
 
 async function markJob(
   supabase: InngestSupabase,
@@ -174,4 +217,12 @@ async function markJob(
 ): Promise<void> {
   const { error } = await supabase.from('import_jobs').update(patch).eq('id', jobId);
   if (error) console.error('[commitImport] failed to update job:', error);
+}
+
+function rowToRawValues(r: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(r)) {
+    out[k] = v == null ? '' : String(v);
+  }
+  return out;
 }

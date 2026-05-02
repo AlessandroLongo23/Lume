@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff } from '@/lib/auth/roles';
-import { inngest } from '@/lib/inngest/client';
+import { runProcessImport } from '@/lib/imports/core/runProcess';
+
+export const maxDuration = 300; // seconds — covers parse + LLM call + DB writes
 
 function getAdminSupabase() {
   return createAdminClient(
@@ -15,9 +17,10 @@ function getAdminSupabase() {
 /**
  * POST /api/imports/start  { jobId }
  *
- * Verifies the file was uploaded, transitions the job to `queued`, and
- * dispatches the Inngest `import/process.requested` event. Returning quickly
- * is important — the actual parsing happens in the background.
+ * Verifies the file was uploaded, transitions the job to `queued`, and runs
+ * the parse + LLM mapping in the background via after(). The browser is
+ * redirected to the review page immediately and watches Realtime updates on
+ * the import_jobs row to know when the preview is ready.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -58,10 +61,8 @@ export async function POST(request: NextRequest) {
 
     await admin.from('import_jobs').update({ status: 'queued' }).eq('id', jobId);
 
-    await inngest.send({
-      name: 'import/process.requested',
-      data: { jobId, salonId: job.salon_id, entity: job.entity },
-    });
+    // Run the heavy work after the response is sent. Realtime drives the UI.
+    after(runProcessImport(jobId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

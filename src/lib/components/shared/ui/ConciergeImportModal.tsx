@@ -6,10 +6,11 @@ import { Sparkles, X, Upload, Paperclip, FileX, Send, Plus } from 'lucide-react'
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { supabase } from '@/lib/supabase/client';
+import type { ImportEntity } from '@/lib/imports/entities/types';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB (auto pipeline) — concierge path enforces 10 MB at the email layer
 
-type AutoEntity = 'clients';
+type AutoEntity = ImportEntity;
 
 interface PendingFile {
   file: File;
@@ -28,9 +29,7 @@ interface ConciergeImportModalProps {
   entity?: AutoEntity;
 }
 
-const ENTITY_REVIEW_PATH: Record<AutoEntity, (jobId: string) => string> = {
-  clients: (jobId) => `/admin/clienti/import/${jobId}`,
-};
+const reviewPath = (jobId: string) => `/admin/imports/${jobId}`;
 
 export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImportModalProps) {
   const router = useRouter();
@@ -70,7 +69,7 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
   const isAutoCandidate = (file: File): boolean => {
     if (!entity) return false;
     const ext = file.name.toLowerCase().split('.').pop();
-    return ext === 'csv' || ext === 'xlsx' || ext === 'xls' || ext === 'tsv';
+    return ext === 'csv' || ext === 'xlsx' || ext === 'xls' || ext === 'tsv' || ext === 'pdf';
   };
 
   /** Auto pipeline: init → upload to Storage → start → navigate to review. */
@@ -107,7 +106,7 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
       throw new Error(startJson.error ?? 'Errore avvio elaborazione');
     }
 
-    router.push(ENTITY_REVIEW_PATH[entity](jobId));
+    router.push(reviewPath(jobId));
     return true;
   };
 

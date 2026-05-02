@@ -1,5 +1,4 @@
-import type { ColumnMapping } from '@/lib/imports/llmMapper';
-import type { RowResult } from '@/lib/imports/clientImportSchema';
+import type { ColumnMapping, FailedRow, ImportEntity, RowResult } from '@/lib/imports/entities/types';
 
 export type ImportJobStatus =
   | 'uploading'
@@ -24,6 +23,8 @@ export interface ImportJobPreview {
   usedLLM: boolean;
   warnings: string[];
   sample: RowResult[];
+  /** Raw source rows (parallel to `sample`) for showing per-column previews. */
+  sourceSample?: Record<string, string>[];
   previewRowCount: number;
 }
 
@@ -31,7 +32,7 @@ export interface ImportJob {
   id: string;
   salon_id: string;
   created_by: string;
-  entity: 'clients';
+  entity: ImportEntity;
   source_filename: string;
   source_size_bytes: number | null;
   storage_path: string;
@@ -42,7 +43,7 @@ export interface ImportJob {
   failed_rows: number;
   mapping_json: ImportJobMappingPayload | null;
   preview_json: ImportJobPreview | null;
-  error_log: { rows: Extract<RowResult, { ok: false }>[] } | null;
+  error_log: { rows: FailedRow[] } | null;
   failure_reason: string | null;
   created_at: string;
   completed_at: string | null;

@@ -5,6 +5,8 @@
  * the LLM call entirely.
  */
 
+import type { HeaderDictionary } from '../types';
+
 export type ClientDestField =
   | 'firstName'
   | 'lastName'
@@ -18,7 +20,7 @@ export type ClientDestField =
   | 'isTourist'
   | 'note';
 
-const DICTIONARY: Record<ClientDestField, readonly string[]> = {
+export const CLIENT_DICTIONARY: HeaderDictionary = {
   firstName:   ['nome', 'firstname', 'first name', 'first_name', 'given name', 'givenname', 'name'],
   lastName:    ['cognome', 'lastname', 'last name', 'last_name', 'surname', 'family name', 'familyname'],
   fullName:    ['nome completo', 'nominativo', 'cliente', 'full name', 'fullname', 'name and surname', 'ragione sociale'],
@@ -32,25 +34,5 @@ const DICTIONARY: Record<ClientDestField, readonly string[]> = {
   note:        ['note', 'note cliente', 'osservazioni', 'commenti', 'notes', 'remarks', 'comments', 'appunti', 'descrizione'],
 };
 
-function normalize(s: string): string {
-  return s.trim().toLowerCase().replace(/[._\-:/\\]+/g, ' ').replace(/\s+/g, ' ');
-}
-
-/**
- * Looks up a source column header in the dictionary. Returns the destination
- * field if there's an exact-or-near match, null otherwise.
- */
-export function lookupHeader(sourceHeader: string): ClientDestField | null {
-  const normalized = normalize(sourceHeader);
-  for (const [dest, aliases] of Object.entries(DICTIONARY) as [ClientDestField, readonly string[]][]) {
-    if (aliases.some((alias) => alias === normalized)) return dest;
-  }
-  // Fuzzier pass: strip non-alphanumerics and try contains
-  const compact = normalized.replace(/\s+/g, '');
-  for (const [dest, aliases] of Object.entries(DICTIONARY) as [ClientDestField, readonly string[]][]) {
-    if (aliases.some((alias) => alias.replace(/\s+/g, '') === compact)) return dest;
-  }
-  return null;
-}
-
-export const ALL_CLIENT_DEST_FIELDS: readonly ClientDestField[] = Object.keys(DICTIONARY) as ClientDestField[];
+export const ALL_CLIENT_DEST_FIELDS: readonly ClientDestField[] =
+  Object.keys(CLIENT_DICTIONARY) as ClientDestField[];

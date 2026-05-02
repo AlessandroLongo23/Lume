@@ -1,9 +1,9 @@
 import 'server-only';
 import { inngest, importProcessRequested } from '@/lib/inngest/client';
 import { getInngestSupabase, type InngestSupabase } from '@/lib/inngest/admin';
-import { parseFile } from '@/lib/imports/parseFile';
-import { mapClientColumns } from '@/lib/imports/llmMapper';
-import { transformRow } from '@/lib/imports/clientImportSchema';
+import { loadParsedFile } from '@/lib/imports/core/loadParsedFile';
+import { mapColumns } from '@/lib/imports/core/llmMapper';
+import { getEntityConfig, isEntitySupported } from '@/lib/imports/entities/registry';
 
 const PREVIEW_ROW_COUNT = 20;
 
@@ -26,14 +26,16 @@ export const processImport = inngest.createFunction(
     const { jobId, entity } = event.data;
     const supabase = getInngestSupabase();
 
-    if (entity !== 'clients') {
-      await markJob(supabase, jobId, { status: 'failed', failure_reason: `Entity '${entity}' non supportata in v1` });
+    if (!isEntitySupported(entity)) {
+      await markJob(supabase, jobId, { status: 'failed', failure_reason: `Entity '${entity}' non supportata` });
       return { ok: false, reason: 'unsupported entity' };
     }
+    const config = getEntityConfig(entity);
 
     await markJob(supabase, jobId, { status: 'parsing' });
 
-    // Step 1 — read the source file from Storage
+    // Step 1 — read the source file from Storage (parses CSV/XLSX inline,
+    // extracts PDFs via Claude — see loadParsedFile)
     const { headers, rows, sourceFilename } = await step.run('download-and-parse', async () => {
       const { data: job, error } = await supabase
         .from('import_jobs')
@@ -42,11 +44,7 @@ export const processImport = inngest.createFunction(
         .single();
       if (error || !job) throw new Error(`Import job ${jobId} not found`);
 
-      const { data: blob, error: dlError } = await supabase.storage.from('imports').download(job.storage_path);
-      if (dlError || !blob) throw new Error(`Storage download failed: ${dlError?.message}`);
-
-      const buffer = await blob.arrayBuffer();
-      const parsed = parseFile(buffer, job.source_filename);
+      const parsed = await loadParsedFile(supabase, job, config);
       return { headers: parsed.headers, rows: parsed.rows, sourceFilename: job.source_filename };
     });
 
@@ -57,25 +55,18 @@ export const processImport = inngest.createFunction(
 
     // Step 2 — column mapping
     const mappingResult = await step.run('map-columns', async () => {
-      const result = await mapClientColumns(headers, rows.slice(0, 20));
-      return result;
+      return mapColumns(headers, rows.slice(0, 20), config);
     });
 
-    const hasNameCoverage = mappingResult.mappings.some(
-      (m) => m.confidence >= 0.6 && (m.destField === 'firstName' || m.destField === 'fullName'),
-    ) && mappingResult.mappings.some(
-      (m) => m.confidence >= 0.6 && (m.destField === 'lastName' || m.destField === 'fullName'),
-    );
-
-    if (!hasNameCoverage) {
+    if (!config.hasRequiredCoverage(mappingResult.mappings)) {
       await markJob(supabase, jobId, {
         status: 'needs_concierge',
         mapping_json: mappingResult,
-        failure_reason: 'Impossibile identificare nome e cognome con sufficiente certezza. Il team Lume importerà il file manualmente entro 24 ore.',
+        failure_reason: `${config.insufficientMappingReason} Il team Lume importerà il file manualmente entro 24 ore.`,
       });
       // Fire-and-forget concierge email so the salon doesn't have to re-upload
       await step.run('send-concierge-email', () =>
-        forwardToConcierge(supabase, jobId, sourceFilename).catch((err) => {
+        forwardToConcierge(supabase, jobId, sourceFilename, entity).catch((err) => {
           console.error('[processImport] concierge forward failed:', err);
         }),
       );
@@ -83,7 +74,11 @@ export const processImport = inngest.createFunction(
     }
 
     // Step 3 — transform preview rows
-    const preview = rows.slice(0, PREVIEW_ROW_COUNT).map((r, i) => transformRow(r, mappingResult.mappings, i));
+    const preview = rows.slice(0, PREVIEW_ROW_COUNT).map((r, i) => config.transformRow(r, mappingResult.mappings, i));
+
+    // Keep a slice of raw source rows so the UI can show real per-column
+    // sample values (the transformed `preview` only has destination fields).
+    const sourceSample = rows.slice(0, PREVIEW_ROW_COUNT);
 
     await markJob(supabase, jobId, {
       status: 'awaiting_review',
@@ -93,6 +88,7 @@ export const processImport = inngest.createFunction(
         usedLLM: mappingResult.usedLLM,
         warnings: mappingResult.warnings,
         sample: preview,
+        sourceSample,
         previewRowCount: preview.length,
       },
     });
@@ -114,6 +110,7 @@ async function forwardToConcierge(
   supabase: InngestSupabase,
   jobId: string,
   sourceFilename: string,
+  entity: string,
 ): Promise<void> {
   if (!process.env.RESEND_API_KEY || !process.env.NOTIFICATION_EMAIL) return;
   const { data: job } = await supabase
@@ -137,6 +134,7 @@ async function forwardToConcierge(
       `Salon ID:   ${job.salon_id}`,
       `Created by: ${job.created_by}`,
       `Job ID:     ${jobId}`,
+      `Entity:     ${entity}`,
       `Filename:   ${sourceFilename}`,
       `Size:       ${job.source_size_bytes ?? 'n/a'} bytes`,
       '',

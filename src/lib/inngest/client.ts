@@ -1,10 +1,20 @@
 import 'server-only';
 import { Inngest, eventType } from 'inngest';
 import { z } from 'zod';
+import type { ImportEntity } from '@/lib/imports/entities/types';
 
-export type ImportEntity = 'clients';
+export type { ImportEntity };
 
-const importEntity = z.enum(['clients']);
+const importEntity = z.enum([
+  'clients',
+  'productCategories',
+  'manufacturers',
+  'suppliers',
+  'serviceCategories',
+  'operators',
+  'products',
+  'services',
+]);
 
 const columnMappingSchema = z.object({
   sourceColumn: z.string(),

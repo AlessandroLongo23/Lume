@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { parsePhone, parseItalianDate, splitFullName, parseGender, parseBool, titleCase } from './transforms';
-import type { ColumnMapping } from './llmMapper';
-import type { ClientDestField } from './clientHeaderDictionary';
+import { parsePhone, parseItalianDate, splitFullName, parseGender, parseBool, titleCase } from '../../core/transforms';
+import type { ColumnMapping, RowResult } from '../types';
+import type { ClientDestField } from './dictionary';
 
 /** Shape of a single client row ready to insert into public.clients. */
 export const clientInsertSchema = z.object({
@@ -18,37 +18,23 @@ export const clientInsertSchema = z.object({
 
 export type ClientInsertRow = z.infer<typeof clientInsertSchema>;
 
-export interface TransformedRow {
-  ok: true;
-  row: ClientInsertRow;
-}
-
-export interface FailedRow {
-  ok: false;
-  rowIndex: number;
-  reason: string;
-  rawValues: Record<string, string>;
-}
-
-export type RowResult = TransformedRow | FailedRow;
-
 /**
  * Applies the column map to a single source row and returns a validated client
  * insert payload (or a structured error). Never throws — caller iterates over
  * thousands of rows and needs deterministic per-row outcomes.
  */
-export function transformRow(
+export function transformClientRow(
   source: Record<string, string>,
   mappings: ColumnMapping[],
   rowIndex: number,
-): RowResult {
+): RowResult<ClientInsertRow> {
   // Build a partial destination object by walking the column map
   const dest: Partial<Record<ClientDestField, string>> = {};
   for (const m of mappings) {
     if (!m.destField || m.confidence < 0.6) continue;
     const value = source[m.sourceColumn];
     if (value == null || value === '') continue;
-    dest[m.destField] = value;
+    dest[m.destField as ClientDestField] = value;
   }
 
   // Resolve first/last name — either directly mapped, or via fullName split
@@ -104,9 +90,13 @@ export function transformRow(
     // Phone failed to parse — keep raw in note instead of failing the row
     candidate.note = candidate.note ? `${candidate.note}\n[telefono non valido: ${dest.phoneRaw}]` : `[telefono non valido: ${dest.phoneRaw}]`;
   }
+  // Contact info is intentionally NOT required for imports. Legacy salon CRMs
+  // often have no email/phone on inactive clients; staff completes the data
+  // when those clients return. The DB CHECK clients_email_or_phone_chk is
+  // conditional on user_id, so guest profiles (user_id NULL) are accepted.
 
   if (reasons.length > 0) {
-    return { ok: false, rowIndex, reason: reasons.join(', '), rawValues: source };
+    return { ok: false, rowIndex, reason: reasons.join(', '), rawValues: source, partialRow: candidate };
   }
 
   const parsed = clientInsertSchema.safeParse(candidate);
@@ -116,6 +106,7 @@ export function transformRow(
       rowIndex,
       reason: parsed.error.issues.map((i) => i.message).join(', '),
       rawValues: source,
+      partialRow: candidate,
     };
   }
 

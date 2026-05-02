@@ -3,8 +3,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff } from '@/lib/auth/roles';
+import { isEntitySupported } from '@/lib/imports/entities/registry';
 
-const SUPPORTED_ENTITIES = new Set(['clients']);
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB (matches storage bucket limit)
 
 function getAdminSupabase() {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (!filename || !entity) {
       return NextResponse.json({ success: false, error: 'Campi mancanti' }, { status: 400 });
     }
-    if (!SUPPORTED_ENTITIES.has(entity)) {
+    if (!isEntitySupported(entity)) {
       return NextResponse.json({ success: false, error: `Entity '${entity}' non supportata` }, { status: 400 });
     }
     if (sizeBytes > MAX_FILE_SIZE) {

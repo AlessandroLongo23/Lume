@@ -1,9 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff } from '@/lib/auth/roles';
-import { inngest } from '@/lib/inngest/client';
+import { runCommitImport } from '@/lib/imports/core/runCommit';
+import type { ColumnMapping } from '@/lib/imports/entities/types';
+
+export const maxDuration = 300; // covers per-row insert of up to ~10k rows
 
 function getAdminSupabase() {
   return createAdminClient(
@@ -15,8 +18,9 @@ function getAdminSupabase() {
 /**
  * POST /api/imports/[jobId]/commit  { mappings }
  *
- * Confirms the user-edited column map and dispatches `import/commit.requested`.
- * Allows the user to override the LLM's suggestions before bulk insert.
+ * Confirms the user-edited column map and runs the dedup + per-row insert
+ * in the background via after(). The UI watches the import_jobs row over
+ * Realtime to follow progress.
  */
 export async function POST(
   request: NextRequest,
@@ -50,7 +54,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: `Job in stato '${job.status}'` }, { status: 409 });
     }
 
-    // Persist the user-confirmed mappings before dispatching
+    // Persist the user-confirmed mappings before running
     await admin
       .from('import_jobs')
       .update({
@@ -59,15 +63,7 @@ export async function POST(
       })
       .eq('id', jobId);
 
-    await inngest.send({
-      name: 'import/commit.requested',
-      data: {
-        jobId,
-        salonId: job.salon_id,
-        entity: job.entity,
-        mappings,
-      },
-    });
+    after(runCommitImport(jobId, mappings as ColumnMapping[]));
 
     return NextResponse.json({ success: true });
   } catch (error) {
