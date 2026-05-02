@@ -13,7 +13,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "PWDEBUG=1 playwright test",
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
-    "shoot:landing": "tsx scripts/screenshots/landing-hero.ts"
+    "shoot:landing": "tsx scripts/screenshots/landing-hero.ts",
+    "audit:tenancy": "tsx scripts/audit-tenant-isolation.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",

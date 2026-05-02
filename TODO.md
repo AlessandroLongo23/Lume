@@ -18,7 +18,7 @@ Currently in flight. Keep this section short; promote items here only when start
 **Block onboarding paying salons safely.** A miss here means data loss, silent billing leakage, legal exposure, or production debugging without a safety net.
 
 ### Multi-tenancy
-- [ ] [infra] (XL) `salons` table + Supabase RLS for `salon_id` scoping on every tenant table _(CLAUDE.md flags this as planned-not-built — single biggest unfinished piece of infra)_
+- [x] [infra] (XL) `salons` table + Supabase RLS for `salon_id` scoping on every tenant table — done. `salons` table + 25 tenant tables with RLS + `get_user_salon_id()` helper + admin impersonation via `super_admin_impersonation` were already shipped; this audit closed the four advisor-flagged gaps (super_admin_impersonation policies, feedback views SECURITY INVOKER, internal `SECURITY DEFINER` EXECUTE, public bucket listing) and added `npm run audit:tenancy` smoke test.
 - [ ] [feat] (M) Multi-salon owner: salon picker on login + dropdown replacing static salon name in nav
 
 ### Billing & subscriptions _(proposed)_
@@ -46,6 +46,7 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Client-facing booking
 - [ ] [feat] (L) White-label online booking — service list, operator choice (toggleable), time slot, optional confirmation; one-time setup + edit page. **Largest moat vs. €60/mo incumbent**
+- [ ] [feat] (M) Merge clienti — quando un cliente importato (senza email/phone) si registra online, prompt allo staff "Possibile duplicato di [Mario Rossi]? Unisci?". Sposta fiches/appuntamenti del profilo guest sul nuovo profilo con auth e archivia il vecchio. Match suggerito su (in ordine): codice fiscale > telefono > email > nome+data nascita. **Necessario prima del rilascio della prenotazione online cliente.**
 
 ### Communication & reminders _(proposed)_
 **The single highest-leverage feature category in salon software** — one prevented no-show (≈€40–60) pays a month's subscription.
@@ -61,7 +62,7 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [feat] (M) End-to-end onboarding flow design — signup → first appointment booked _(proposed)_
 - [ ] [feat] (L) First-run tutorial — pick format (video, step-and-highlight, modern overlay)
 - [ ] [data] (M) Onboarding step to bulk-load salon data
-- [ ] [data] (XL) Automatic import via Anthropic API + Supabase MCP
+- [*] [data] (XL) Automatic import via Anthropic API + Supabase MCP
   - [ ] [data] (M) Passare tutti i dati da Stiv
   - [ ] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
 

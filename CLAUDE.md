@@ -57,7 +57,7 @@ There are no automated tests in this project.
 - Tone: Professional, modern, minimal — no luxury salon vibes
 - The old brand (Synergia della Bellezza, Cormorant Garamond, `--salon-*` gold/cream colors) is fully replaced
 
-**Multi-tenancy:** A `salons` table with Supabase Row Level Security (`salon_id` FK on all tenant tables) is planned for isolation of data per customer. Not yet implemented.
+**Multi-tenancy:** Implemented. `public.salons` is the tenant root; every tenant table has a `salon_id` FK and Supabase RLS scoped through `public.get_user_salon_id()` (which COALESCEs from `super_admin_impersonation` then `profiles.salon_id`). Platform admins impersonate via `/api/platform/enter-salon` (DB row written first, then `lume-active-salon-id` httpOnly + `lume-impersonating` non-httpOnly cookies). See "Multi-tenancy" under Key patterns for the recipe when adding a new tenant table.
 
 **Competitor context:** The tool currently used by the target market costs €60/month. Lume undercuts it at €49/month with a dramatically better UX. Feature parity with that tool is the first milestone.
 
@@ -106,6 +106,8 @@ src/
 **State** — Each entity (clients, operators, products, services, fiches, coupons, orders, …) has its own Zustand store in `src/lib/stores/`. Stores follow a consistent shape: `items`, `selected`, `fetch()`, `add()`, `update()`, `delete()`, `setSelected()`. Real-time DB changes are pushed into stores via `useRealtimeStore`.
 
 **Types / table columns** — Entity models are classes in `src/lib/types/`. Each class has a static `dataColumns` array that drives table rendering (column labels, field accessors, custom display logic). Use this pattern when adding new entities.
+
+**Multi-tenancy** — Every tenant row has `salon_id uuid not null` FK to `public.salons`, and RLS is enabled on every tenant table with the four standard policies (SELECT/INSERT/UPDATE/DELETE) gated by `salon_id = get_user_salon_id()` (DELETE often further restricted to `get_user_role() = 'owner'`). Active salon for the caller is `super_admin_impersonation.salon_id` for impersonating platform admins, otherwise `profiles.salon_id`. Server code never reads `salon_id` from cookies for security decisions — it goes through `getCallerProfile()` ([src/lib/gateway/getCallerProfile.ts](src/lib/gateway/getCallerProfile.ts)) which returns `{id, salon_id, role}` for both regular users and impersonating admins. Stores read with the anon-key SSR/browser client and rely on RLS to filter; service-role usage is reserved for impersonation writes, auth user management, and orphan cleanup. **When adding a new tenant table**: add `salon_id uuid not null references public.salons(id) on delete cascade`, enable RLS, add the four standard policies, and verify with `npm run audit:tenancy`.
 
 **API routes** — Server actions live in `src/app/api/`. They use the Supabase **service role key** (server-only env var) for privileged operations. Client-facing Supabase calls use the anon key.
 
