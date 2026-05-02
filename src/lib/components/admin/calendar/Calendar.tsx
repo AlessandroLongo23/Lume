@@ -272,7 +272,7 @@ export function Calendar() {
 
       <CalendarDragGhost pixelsPerSlot={PIXELS_PER_SLOT} timeStep={timeStep} />
 
-      <div className="relative h-full flex flex-col">
+      <div className="relative flex-1 min-h-0 flex flex-col">
         <CalendarToolbar onAddFerie={handleAddFerie} />
 
         {currentView === 'day' && (

@@ -79,7 +79,7 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
   }, [fiches, ficheServices, services, monthDays, selectedOperatorId]);
 
   return (
-    <>
+    <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="grid grid-cols-7">
         {weekDays.map((day) => (
           <div key={day} className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 py-2 uppercase tracking-wider border-b border-zinc-500/25">
@@ -106,6 +106,6 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
           );
         })}
       </div>
-    </>
+    </div>
   );
 }

@@ -58,6 +58,9 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
     ? '/admin/impostazioni'
     : pathname;
 
+  // Calendar fits the available area exactly — no outer scroll, no double scrollbars.
+  const isFullBleed = pathname === '/admin/calendario';
+
   return (
     <SidebarCollapseContext.Provider value={collapseState}>
       <MobileMenuContext.Provider value={{ open: mobileOpen, setOpen: setMobileOpen }}>
@@ -111,11 +114,22 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
 
           <main className="h-screen flex flex-col pt-[var(--shell-banner-h)] pl-0 md:pl-[var(--shell-sidebar-w)]">
             <div className="flex-1 min-h-0 flex flex-col p-2">
-              <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <div
+                className={`flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 ${
+                  isFullBleed ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+                }`}
+              >
                 <div className="sticky top-0 z-sticky h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
                 </div>
-                <div key={pageAnimationKey} className="px-8 md:px-[4.125rem] pt-10 pb-12 shell-page-enter">
+                <div
+                  key={pageAnimationKey}
+                  className={`shell-page-enter ${
+                    isFullBleed
+                      ? 'flex-1 min-h-0 flex flex-col px-8 md:px-[4.125rem] pt-6 pb-6'
+                      : 'px-8 md:px-[4.125rem] pt-10 pb-12'
+                  }`}
+                >
                   {children}
                 </div>
               </div>

@@ -70,8 +70,8 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
   const gridCols = { gridTemplateColumns: `64px repeat(${columns.length}, minmax(96px, 1fr))` };
 
   return (
-    <div className="border border-zinc-500/25 rounded-lg overflow-hidden">
-      <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-11rem)]">
+    <div className="border border-zinc-500/25 rounded-lg overflow-hidden flex-1 min-h-0 flex flex-col">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto no-scrollbar">
         {/* Header — sticky so operator names stay visible while scrolling */}
         <div
           className="grid sticky top-0 z-sticky bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
@@ -90,8 +90,10 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
           ))}
         </div>
 
-        {/* Time rows */}
-        <div className="relative">
+        {/* Time rows — `isolate` creates a stacking context so blocks and the
+            now-line can layer relative to each other while staying below the
+            sticky operator header above. */}
+        <div className="relative isolate">
           {showNowLine && (
             <div
               className="absolute left-0 right-0 z-content-floating pointer-events-none flex items-center"

@@ -25,7 +25,7 @@ export function UnavailabilityBlock({ item, totalMinutes, timeStep, onSelect }: 
           e.stopPropagation();
           onSelect(item);
         }}
-        className="absolute left-0 right-0 top-0 z-content-floating flex flex-col items-start justify-start gap-0.5 px-2 py-1 text-left
+        className="absolute left-0 right-0 top-0 z-raised flex flex-col items-start justify-start gap-0.5 px-2 py-1 text-left
           rounded-sm border border-zinc-300/70 dark:border-zinc-600/60 text-zinc-600 dark:text-zinc-300
           hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors overflow-hidden cursor-pointer"
         style={{
