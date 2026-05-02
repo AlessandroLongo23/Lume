@@ -24,10 +24,9 @@ import { DeleteProductModal } from './DeleteProductModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 import type { Product } from '@/lib/types/Product';
-
-const PAGE_SIZE = 10;
 
 // ─── Stock badge component ────────────────────────────────────────────────────
 
@@ -165,6 +164,8 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
+
   useEffect(() => {
     setPageIndex(0);
   }, [globalFilter, selectedManufacturers, selectedCategories, selectedSuppliers]);
@@ -188,6 +189,11 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
 
     return data;
   }, [products, selectedManufacturers, selectedCategories, selectedSuppliers, globalFilter]);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredData.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, filteredData.length, pageIndex]);
 
   const manufacturerOptions = useMemo(
     () => manufacturers.map((m) => ({ value: m.id, label: m.name })),
@@ -295,7 +301,7 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
     columns,
     state: {
       sorting,
-      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      pagination: { pageIndex, pageSize },
       columnVisibility,
       columnOrder,
     },
@@ -303,7 +309,7 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -353,7 +359,7 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
         selectedProduct={selectedProduct}
       />
 
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex items-center flex-1 max-w-sm">
@@ -402,7 +408,8 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
         </div>
 
         {/* Table */}
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -510,12 +517,13 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={filteredData.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="prodotti"
         />
       </div>

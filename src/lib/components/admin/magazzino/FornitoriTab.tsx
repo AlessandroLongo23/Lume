@@ -21,9 +21,8 @@ import { AddFornitoreModal } from './AddFornitoreModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
-
-const PAGE_SIZE = 10;
 
 interface FornitoriTabProps {
   addTrigger?: number;
@@ -41,6 +40,8 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [globalFilter, setGlobalFilter] = useState('');
+
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
 
   useEffect(() => {
     if (!addTrigger) return;
@@ -63,6 +64,11 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
         (s.email ?? '').toLowerCase().includes(q)
     );
   }, [suppliers, globalFilter]);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredSuppliers.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, filteredSuppliers.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Supplier>[]>(
     () => [
@@ -108,7 +114,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     columns,
     state: {
       sorting,
-      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      pagination: { pageIndex, pageSize },
       columnVisibility,
       columnOrder,
     },
@@ -116,7 +122,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -187,7 +193,7 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
           action={{ label: 'Nuovo fornitore', icon: Plus, onClick: () => { setSelected(null); setShowAdd(true); } }}
         />
       ) : (
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex items-center flex-1 max-w-sm">
               <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
@@ -214,7 +220,8 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
             <ColumnPicker tableId="suppliers" columns={columns} className="ml-auto" />
           </div>
 
-          <div className={`w-full overflow-auto ${cardStyle}`}>
+          <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+            <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -297,12 +304,13 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
               </tbody>
             </table>
           </div>
+          </div>
 
           <Pagination
             currentPage={pageIndex + 1}
             onPageChange={(p) => setPageIndex(p - 1)}
             totalItems={filteredSuppliers.length}
-            itemsPerPage={PAGE_SIZE}
+            itemsPerPage={pageSize}
             labelPlural="fornitori"
           />
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,10 +18,10 @@ import { DeleteOrderModal } from './DeleteOrderModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 import type { Order } from '@/lib/types/Order';
 
-const PAGE_SIZE = 10;
 
 interface OrdersTableProps {
   orders: Order[];
@@ -37,6 +37,13 @@ export function OrdersTable({ orders }: OrdersTableProps) {
   const [editedOrder, setEditedOrder] = useState<Partial<Order>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
+
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(orders.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, orders.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Order>[]>(
     () => [
@@ -73,7 +80,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     columns,
     state: {
       sorting,
-      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      pagination: { pageIndex, pageSize },
       columnVisibility,
       columnOrder,
     },
@@ -81,7 +88,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -105,12 +112,13 @@ export function OrdersTable({ orders }: OrdersTableProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         <div className="flex items-center gap-2">
           <ColumnPicker tableId="orders" columns={columns} className="ml-auto" />
         </div>
 
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -200,12 +208,13 @@ export function OrdersTable({ orders }: OrdersTableProps) {
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={orders.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="ordini"
         />
       </div>

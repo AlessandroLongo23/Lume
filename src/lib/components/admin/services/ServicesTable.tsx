@@ -22,6 +22,7 @@ import { DeleteServiceModal } from './DeleteServiceModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface ServicesTableProps {
@@ -29,8 +30,6 @@ interface ServicesTableProps {
   showArchived?: boolean;
   usageCounts?: Map<string, number>;
 }
-
-const PAGE_SIZE = 10;
 
 export function ServicesTable({ services, showArchived = false, usageCounts }: ServicesTableProps) {
   const router = useRouter();
@@ -47,6 +46,8 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
   const [pageIndex, setPageIndex] = useState(0);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -83,6 +84,11 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
 
     return data;
   }, [services, selectedCategories, globalFilter, categories]);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredData.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, filteredData.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
@@ -145,7 +151,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     columns,
     state: {
       sorting,
-      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      pagination: { pageIndex, pageSize },
       columnVisibility,
       columnOrder,
     },
@@ -153,7 +159,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -185,7 +191,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
 
   return (
     <>
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           <div className="relative flex items-center flex-1 max-w-sm">
@@ -282,7 +288,8 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         </div>
 
         {/* Table */}
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -400,12 +407,13 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={filteredData.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="servizi"
         />
       </div>

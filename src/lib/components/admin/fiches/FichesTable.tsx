@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,6 +20,7 @@ import { FicheStatus } from '@/lib/types/ficheStatus';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
 import { cardStyle } from '@/lib/const/appearance';
@@ -29,8 +30,6 @@ interface FichesTableProps {
   globalFilter?: string;
   onGlobalFilterChange?: (value: string) => void;
 }
-
-const PAGE_SIZE = 10;
 
 const STATUS_STYLES: Record<string, string> = {
   [FicheStatus.CREATED]: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
@@ -67,6 +66,13 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
+
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(fiches.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, fiches.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Fiche>[]>(
     () => [
@@ -166,12 +172,12 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
   const table = useReactTable({
     data: fiches,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
+    state: { sorting, pagination: { pageIndex, pageSize }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -184,7 +190,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
 
   return (
     <>
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           {showSearch && (
@@ -215,7 +221,8 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
         </div>
 
         {/* Table */}
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -292,12 +299,13 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={fiches.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="fiches"
         />
       </div>

@@ -22,7 +22,9 @@ import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { ClientRatingBadge } from './ClientRatingBadge';
+import { IncompleteContactBadge } from './IncompleteContactBadge';
 import { DeleteClientModal } from './DeleteClientModal';
 import { TreatmentHistory } from './TreatmentHistory';
 import { SidePanel } from '@/lib/components/shared/ui/SidePanel';
@@ -33,8 +35,6 @@ interface ClientsTableProps {
   clients: Client[];
   showArchived?: boolean;
 }
-
-const PAGE_SIZE = 10;
 
 const GENDER_OPTIONS = [
   { value: 'M', label: 'Uomo', prefix: <span className="text-xs font-semibold text-blue-500 mr-0.5">M</span> },
@@ -57,6 +57,9 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
+  // Rating column stacks two badges, so rows are taller than typical tables.
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 53 });
+
   useEffect(() => { setPageIndex(0); }, [globalFilter, selectedGenders]);
 
   const filteredData = useMemo(() => {
@@ -73,6 +76,12 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
     }
     return data;
   }, [clients, selectedGenders, globalFilter]);
+
+  // Clamp the active page if the dataset shrinks past it (filter, viewport, delete).
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredData.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, filteredData.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Client>[]>(
     () => [
@@ -93,8 +102,11 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       {
         accessorKey: 'firstName',
         header: 'Nome',
-        cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+        cell: ({ getValue, row }) => (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+            {row.original.hasIncompleteContact && <IncompleteContactBadge variant="icon" />}
+          </span>
         ),
         meta: { requiredVisible: true },
       },
@@ -271,7 +283,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
     columns,
     state: {
       sorting,
-      pagination: { pageIndex, pageSize: PAGE_SIZE },
+      pagination: { pageIndex, pageSize },
       columnVisibility,
       columnOrder,
     },
@@ -279,7 +291,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -299,7 +311,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
 
   return (
     <>
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           <div className="relative flex items-center flex-1 max-w-sm">
@@ -329,7 +341,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         </div>
 
         {/* Table */}
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -436,12 +449,13 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={filteredData.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="clienti"
         />
       </div>

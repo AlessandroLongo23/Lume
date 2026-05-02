@@ -19,11 +19,10 @@ import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 import { formatCurrency, formatDateDisplay } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-
-const PAGE_SIZE = 10;
 
 const CATEGORIE = ['Manutenzione', 'Prodotti', 'Utenze', 'Affitto', 'Marketing', 'Personale', 'Altro'] as const;
 
@@ -57,7 +56,14 @@ export function BilancioSpeseTab() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'data', desc: true }]);
   const [pageIndex, setPageIndex] = useState(0);
 
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
+
   useEffect(() => { fetchSpese(); }, [fetchSpese]);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(spese.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, spese.length, pageIndex]);
 
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -135,12 +141,12 @@ export function BilancioSpeseTab() {
   const table = useReactTable({
     data: spese,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
+    state: { sorting, pagination: { pageIndex, pageSize }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -232,7 +238,7 @@ export function BilancioSpeseTab() {
           action={{ label: 'Nuova spesa', icon: Plus, onClick: openDialog }}
         />
       ) : (
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         <div className="flex items-center justify-end gap-2">
           <ColumnPicker tableId="expenses" columns={columns} />
           <button
@@ -244,7 +250,8 @@ export function BilancioSpeseTab() {
           </button>
         </div>
 
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -303,12 +310,13 @@ export function BilancioSpeseTab() {
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={spese.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="spese"
         />
       </div>

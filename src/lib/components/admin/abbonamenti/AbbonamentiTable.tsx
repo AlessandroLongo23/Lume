@@ -18,12 +18,11 @@ import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { EditAbbonamentoModal } from './EditAbbonamentoModal';
 import { DeleteAbbonamentoModal } from './DeleteAbbonamentoModal';
 import { Abbonamento, type AbbonamentoStatus } from '@/lib/types/Abbonamento';
 import { cardStyle } from '@/lib/const/appearance';
-
-const PAGE_SIZE = 10;
 
 const STATUS_STYLES: Record<AbbonamentoStatus, string> = {
   attivo: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
@@ -56,6 +55,8 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
   const [selected, setSelected] = useState<Abbonamento | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
 
+  const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
+
   useEffect(() => { setPageIndex(0); }, [globalFilter]);
 
   const filteredData = useMemo(() => {
@@ -63,6 +64,11 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
     const q = globalFilter.toLowerCase();
     return abbonamenti.filter((a) => clientName(a.client_id).toLowerCase().includes(q));
   }, [abbonamenti, globalFilter, clientName]);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredData.length / pageSize) - 1);
+    if (pageIndex > lastPage) setPageIndex(lastPage);
+  }, [pageSize, filteredData.length, pageIndex]);
 
   const columns = useMemo<ColumnDef<Abbonamento>[]>(() => [
     {
@@ -158,12 +164,12 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, pagination: { pageIndex, pageSize: PAGE_SIZE }, columnVisibility, columnOrder },
+    state: { sorting, pagination: { pageIndex, pageSize }, columnVisibility, columnOrder },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: PAGE_SIZE }) : updater;
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize }) : updater;
       setPageIndex(next.pageIndex);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -173,7 +179,7 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           <div className="relative flex items-center flex-1 max-w-sm">
@@ -201,7 +207,8 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
           <ColumnPicker tableId="subscriptions" columns={columns} className="ml-auto" />
         </div>
 
-        <div className={`w-full overflow-auto ${cardStyle}`}>
+        <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -278,12 +285,13 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
             </tbody>
           </table>
         </div>
+        </div>
 
         <Pagination
           currentPage={pageIndex + 1}
           onPageChange={(p) => setPageIndex(p - 1)}
           totalItems={filteredData.length}
-          itemsPerPage={PAGE_SIZE}
+          itemsPerPage={pageSize}
           labelPlural="abbonamenti"
         />
       </div>

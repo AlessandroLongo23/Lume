@@ -60,6 +60,17 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
 
   // Calendar fits the available area exactly — no outer scroll, no double scrollbars.
   const isFullBleed = pathname === '/admin/calendario';
+  // Table pages own their own internal scroll: rows fit the viewport, pagination stays put.
+  const isViewportFit =
+    isFullBleed ||
+    pathname === '/admin/clienti' ||
+    pathname === '/admin/operatori' ||
+    pathname === '/admin/abbonamenti' ||
+    pathname === '/admin/coupons' ||
+    pathname === '/admin/fiches' ||
+    pathname === '/admin/magazzino' ||
+    pathname === '/admin/ordini' ||
+    pathname === '/admin/servizi';
 
   return (
     <SidebarCollapseContext.Provider value={collapseState}>
@@ -116,7 +127,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             <div className="flex-1 min-h-0 flex flex-col p-2">
               <div
                 className={`flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 ${
-                  isFullBleed ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+                  isViewportFit ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
                 }`}
               >
                 <div className="sticky top-0 z-sticky h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
@@ -125,8 +136,8 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
                 <div
                   key={pageAnimationKey}
                   className={`shell-page-enter ${
-                    isFullBleed
-                      ? 'flex-1 min-h-0 flex flex-col px-8 md:px-[4.125rem] pt-6 pb-6'
+                    isViewportFit
+                      ? `flex-1 min-h-0 flex flex-col px-8 md:px-[4.125rem] ${isFullBleed ? 'pt-6 pb-6' : 'pt-10 pb-12'}`
                       : 'px-8 md:px-[4.125rem] pt-10 pb-12'
                   }`}
                 >
