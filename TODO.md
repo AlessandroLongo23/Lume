@@ -76,6 +76,7 @@ Currently in flight. Keep this section short; promote items here only when start
 ### UX
 - [ ] [ux] (M) Applicazione abbonamento e dove trovare i dettagli
 - [ ] [ux] (L) Patch-notes overlay on login, auto-generated from commits; pulsating badge for new tutorials and features
+- [ ] [ux] (M) Organize fiches in "Future/Prenotate", "Arretrate" and "Concluse"
 
 ### Features
 - [ ] [feat] (L) Spese ricorrenti (Spotify, servizi, …)

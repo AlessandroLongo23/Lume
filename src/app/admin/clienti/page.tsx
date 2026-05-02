@@ -72,7 +72,7 @@ export default function ClientiPage() {
         onClose={() => setCommandDelete(null)}
         selectedClient={commandDelete}
       />
-      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} entity="clients" />
 
       <div className="flex flex-col gap-6">
         <PageHeader
