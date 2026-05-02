@@ -17,7 +17,7 @@ export const useViewsStore = create<ViewsState>((set) => ({
   products: 'categories',
   services: 'categories',
   orders: 'table',
-  clients: 'table',
+  clients: 'grid',
   operators: 'table',
   fiches: 'table',
   setView: (key, value) => set({ [key]: value }),

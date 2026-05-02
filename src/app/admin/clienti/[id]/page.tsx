@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
@@ -56,6 +56,7 @@ function clientToDraft(client: Client): ClientFormValue {
     password: '',
     birthDate,
     isTourist: client.isTourist,
+    photoUrl: client.photoUrl ?? null,
   };
 }
 
@@ -89,7 +90,7 @@ export default function ClientDetailPage() {
   const isDirty = useMemo(() => {
     if (!isEditing || !client) return false;
     const baseline = clientToDraft(client);
-    const keys: (keyof ClientFormValue)[] = ['firstName', 'lastName', 'gender', 'email', 'phonePrefix', 'phoneNumber', 'password', 'birthDate', 'isTourist'];
+    const keys: (keyof ClientFormValue)[] = ['firstName', 'lastName', 'gender', 'email', 'phonePrefix', 'phoneNumber', 'password', 'birthDate', 'isTourist', 'photoUrl'];
     return keys.some((k) => (draft[k] ?? '') !== (baseline[k] ?? ''));
   }, [isEditing, draft, client]);
 
@@ -303,7 +304,7 @@ export default function ClientDetailPage() {
       <div className="flex flex-col">
         <DetailHero
           onBack={handleBack}
-          avatar={<HeroAvatar initials={initials} />}
+          avatar={<HeroAvatar initials={initials} photoUrl={client.photoUrl} />}
           title={`${client.firstName} ${client.lastName}`}
           chips={
             <>
@@ -311,6 +312,11 @@ export default function ClientDetailPage() {
               {client.isTourist && (
                 <DetailChip tone="sky" icon={Plane}>
                   Turista
+                </DetailChip>
+              )}
+              {client.hasIncompleteContact && (
+                <DetailChip tone="amber" icon={AlertCircle}>
+                  Dati incompleti
                 </DetailChip>
               )}
             </>
@@ -384,6 +390,8 @@ export default function ClientDetailPage() {
                     errors={errors}
                     lockEmail={hadEmail}
                     lockPhone={hadPhone}
+                    salonId={client.salon_id}
+                    clientId={client.id}
                   />
                 </DetailSection>
               </motion.div>

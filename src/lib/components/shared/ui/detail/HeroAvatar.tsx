@@ -2,12 +2,17 @@
 
 import type { LucideIcon } from 'lucide-react';
 
-export function HeroAvatar({ initials }: { initials: string }) {
+export function HeroAvatar({ initials, photoUrl }: { initials: string; photoUrl?: string | null }) {
   return (
-    <div className="size-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center ring-1 ring-inset ring-zinc-500/15">
-      <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 tracking-wide">
-        {initials || '·'}
-      </span>
+    <div className="size-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center ring-1 ring-inset ring-zinc-500/15 overflow-hidden">
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photoUrl} alt="" className="size-full object-cover" />
+      ) : (
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 tracking-wide">
+          {initials || '·'}
+        </span>
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ export class Client {
   birthDate: string;
   note: string;
   archived_at: string | null;
+  photoUrl: string | null;
 
   constructor(client: Client) {
     this.id = client.id;
@@ -33,6 +34,7 @@ export class Client {
     this.birthDate = client.birthDate;
     this.note = client.note;
     this.archived_at = client.archived_at ?? null;
+    this.photoUrl = client.photoUrl ?? null;
   }
 
   get isArchived(): boolean {
@@ -45,6 +47,10 @@ export class Client {
 
   hasPhone(): boolean {
     return !!(this.phonePrefix && this.phoneNumber);
+  }
+
+  get hasIncompleteContact(): boolean {
+    return !this.email && !this.hasPhone();
   }
 
   getPhoneNumber(): string {

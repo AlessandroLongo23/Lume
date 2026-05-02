@@ -15,8 +15,8 @@ interface ClientsGridProps {
 }
 
 const GENDER_OPTIONS = [
-  { value: 'M', label: 'Uomo', prefix: <span className="text-xs font-semibold text-blue-500 mr-0.5">M</span> },
-  { value: 'F', label: 'Donna', prefix: <span className="text-xs font-semibold text-pink-500 mr-0.5">F</span> },
+  { value: 'M', label: 'Uomo' },
+  { value: 'F', label: 'Donna' },
 ];
 
 export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps) {
@@ -57,25 +57,25 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
       <div className="flex items-center gap-2">
         <div className="relative flex items-center flex-1 max-w-sm">
-          <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder="Cerca cliente..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-              border-zinc-200 dark:border-zinc-800
-              focus:border-zinc-300 dark:focus:border-zinc-700
-              text-zinc-900 dark:text-zinc-100
-              placeholder:text-zinc-400 outline-none transition-colors"
+              border-border focus:border-foreground/30
+              text-foreground placeholder:text-muted-foreground
+              outline-none transition-colors"
           />
           {globalFilter && (
             <button
               onClick={() => setGlobalFilter('')}
-              className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+              aria-label="Cancella ricerca"
+              className="absolute right-2 p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
             >
               <X className="size-3.5" />
             </button>
@@ -85,22 +85,24 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
       </div>
 
       {filteredClients.length === 0 ? (
-        <div className="min-h-[300px] flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-          <Users className="w-16 h-16 text-zinc-300 dark:text-zinc-600 mb-3" />
-          <h3 className="text-lg font-medium text-zinc-600 dark:text-zinc-400 mb-1">Nessun cliente trovato</h3>
-          <p className="text-sm text-zinc-500 text-center max-w-md">Nessun cliente soddisfa i criteri di ricerca.</p>
+        <div className="min-h-[18.75rem] flex flex-col items-center justify-center p-8 bg-muted/40 rounded-lg border border-dashed border-border">
+          <Users className="w-16 h-16 text-muted-foreground/60 mb-3" />
+          <h3 className="text-lg font-medium text-foreground mb-1">Nessun cliente trovato</h3>
+          <p className="text-sm text-muted-foreground text-center max-w-md">Nessun cliente soddisfa i criteri di ricerca.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
-          {filteredClients.map((client) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-              onDelete={handleDelete}
-              onRestore={handleRestore}
-              showArchived={showArchived}
-            />
-          ))}
+        <div className="flex-1 min-h-0 overflow-y-auto -mr-4 pr-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in pb-2">
+            {filteredClients.map((client) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                showArchived={showArchived}
+              />
+            ))}
+          </div>
         </div>
       )}
 
