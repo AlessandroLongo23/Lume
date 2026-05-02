@@ -11,6 +11,7 @@ interface OrdersState {
   addOrder: (order: Partial<Order>) => Promise<Order>;
   updateOrder: (id: string, updated: Partial<Order>) => Promise<Order>;
   deleteOrder: (id: string) => Promise<void>;
+  deleteAllOrders: () => Promise<void>;
 }
 
 export const useOrdersStore = create<OrdersState>((set) => ({
@@ -42,5 +43,16 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   deleteOrder: async (id) => {
     const { error } = await supabase.from('orders').delete().eq('id', id);
     if (error) throw new Error('Impossibile eliminare l\'ordine.');
+  },
+
+  deleteAllOrders: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'orders' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ orders: [] });
   },
 }));

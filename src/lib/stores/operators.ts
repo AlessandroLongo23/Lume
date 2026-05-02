@@ -14,6 +14,7 @@ interface OperatorsState {
   archiveOperator: (operatorId: string) => Promise<void>;
   restoreOperator: (operatorId: string) => Promise<void>;
   deleteOperator: (operatorId: string) => Promise<void>;
+  deleteAllOperators: () => Promise<void>;
   setSelectedOperator: (operator: Operator | null) => void;
   setShowArchived: (show: boolean) => void;
 }
@@ -85,6 +86,17 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
+  },
+
+  deleteAllOperators: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'operators' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ operators: [] });
   },
 
   setSelectedOperator: (operator) => set({ selectedOperator: operator }),

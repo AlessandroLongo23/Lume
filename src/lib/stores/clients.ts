@@ -15,6 +15,7 @@ interface ClientsState {
   archiveClient: (clientId: string) => Promise<void>;
   restoreClient: (clientId: string) => Promise<void>;
   deleteClient: (clientId: string) => Promise<void>;
+  deleteAllClients: () => Promise<void>;
   setSelectedClient: (client: Client | null) => void;
   setShowArchived: (show: boolean) => void;
 }
@@ -98,6 +99,17 @@ export const useClientsStore = create<ClientsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
+  },
+
+  deleteAllClients: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'clients' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ clients: [] });
   },
 
   setSelectedClient: (client) => set({ selectedClient: client }),

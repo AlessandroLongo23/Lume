@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Warehouse, Package, Tags, Truck, Factory, Plus, EllipsisVertical, Archive, ArrowDownToLine } from 'lucide-react';
+import { Warehouse, Package, Tags, Truck, Factory, Plus, EllipsisVertical, Archive, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -15,6 +15,7 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -26,6 +27,13 @@ const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
   categorie: { label: 'Categorie', icon: Tags },
   fornitori: { label: 'Fornitori', icon: Truck },
   marchi: { label: 'Marchi', icon: Factory },
+};
+
+const IMPORT_ENTITY_FOR_TAB = {
+  prodotti: { entity: 'products' as const, label: 'Importa prodotti' },
+  categorie: { entity: 'productCategories' as const, label: 'Importa categorie' },
+  fornitori: { entity: 'suppliers' as const, label: 'Importa fornitori' },
+  marchi: { entity: 'manufacturers' as const, label: 'Importa marchi' },
 };
 
 const DEFAULT_ORDER = TAB_DEFAULTS.magazzino as readonly Tab[];
@@ -40,6 +48,7 @@ export default function MagazzinoPage() {
   const [trackInventory, setTrackInventory] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [categorieAddTrigger, setCategorieAddTrigger] = useState(0);
   const [fornitoriAddTrigger, setFornitoriAddTrigger] = useState(0);
   const [marchiAddTrigger, setMarchiAddTrigger] = useState(0);
@@ -50,6 +59,7 @@ export default function MagazzinoPage() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
+  const deleteAllProducts = useProductsStore((s) => s.deleteAllProducts);
   const fetchProductCategories = useProductCategoriesStore((s) => s.fetchProductCategories);
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const fetchManufacturers = useManufacturersStore((s) => s.fetchManufacturers);
@@ -122,9 +132,26 @@ export default function MagazzinoPage() {
         onClose={() => setModalOpen(false)}
         trackInventory={trackInventory}
       />
-      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <ConciergeImportModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        entity={IMPORT_ENTITY_FOR_TAB[activeTab].entity}
+      />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="prodotti"
+        count={products.length}
+        cascadeNotice={
+          <>
+            Verranno rimossi anche dagli ordini, dalle fiche e dai servizi che li utilizzano.
+            Lo storico dei prezzi e dei movimenti di magazzino andrà perso.
+          </>
+        }
+        onConfirm={deleteAllProducts}
+      />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Magazzino"
           subtitle="Sai sempre cosa c'è in scorta, e cosa sta finendo."
@@ -192,8 +219,20 @@ export default function MagazzinoPage() {
                       onClick={() => { setShowImport(true); setMenuOpen(false); }}
                     >
                       <ArrowDownToLine className="size-4 text-zinc-400" />
-                      Importa dati
+                      {IMPORT_ENTITY_FOR_TAB[activeTab].label}
                     </button>
+                    {activeTab === 'prodotti' && products.length > 0 && (
+                      <>
+                        <div className="my-1 border-t border-zinc-500/25" />
+                        <button
+                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
+                        >
+                          <Trash2 className="size-4 text-red-500" />
+                          Elimina tutti
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, Search, X, ArrowDownToLine } from 'lucide-react';
+import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, Search, X, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from '@/lib/components/admin/fiches/DeleteFicheModal';
 import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
@@ -31,12 +32,14 @@ export default function FichesPage() {
   const searchParams = useSearchParams();
   const fiches = useFichesStore((s) => s.fiches);
   const isLoading = useFichesStore((s) => s.isLoading);
+  const deleteAllFiches = useFichesStore((s) => s.deleteAllFiches);
   const clients = useClientsStore((s) => s.clients);
 
   const view = useViewsStore((s) => s.fiches);
   const setView = (v: 'table' | 'grid') => useViewsStore.getState().setView('fiches', v);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const { visible } = useOrderedTabs<TabValue>('fiches', DEFAULT_ORDER);
   const [userTab, setUserTab] = useState<TabValue | null>(null);
   const activeTab: TabValue = userTab && visible.includes(userTab) ? userTab : visible[0];
@@ -113,8 +116,21 @@ export default function FichesPage() {
         selectedFiche={commandTarget}
       />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="fiches"
+        count={fiches.length}
+        cascadeNotice={
+          <>
+            Verranno eliminati <strong>tutti i pagamenti, servizi e prodotti</strong> registrati
+            sulle fiche. Lo storico del bilancio risulterà <strong>permanentemente alterato</strong>.
+          </>
+        }
+        onConfirm={deleteAllFiches}
+      />
 
-      <div className="flex flex-col gap-8">
+      <div className="flex-1 min-h-0 flex flex-col gap-8">
         <PageHeader
           title="Fiches"
           subtitle="La storia di ogni visita, dal check-in al saldo."
@@ -138,12 +154,15 @@ export default function FichesPage() {
               <DropdownMenu items={[
                 { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
                 { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                ...(fiches.length > 0
+                  ? [{ label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true }]
+                  : []),
               ]} />
             </>
           }
         />
 
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-6">
           {/* Status Tabs */}
           <div className="flex items-center gap-1 border-b border-border">
             {visible.map((id) => (
@@ -165,7 +184,7 @@ export default function FichesPage() {
 
           {/* Search (grid view only — table view embeds the search in its toolbar) */}
           {view === 'grid' && (
-            <div className="py-4">
+            <div>
               <div className="relative flex items-center max-w-sm">
                 <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
                 <input
@@ -203,13 +222,11 @@ export default function FichesPage() {
               action={{ label: 'Nuova fiche', icon: Ticket, onClick: () => setShowAdd(true) }}
             />
           ) : view === 'table' ? (
-            <div className="pt-4">
-              <FichesTable
-                fiches={filteredFiches}
-                globalFilter={globalFilter}
-                onGlobalFilterChange={setGlobalFilter}
-              />
-            </div>
+            <FichesTable
+              fiches={filteredFiches}
+              globalFilter={globalFilter}
+              onGlobalFilterChange={setGlobalFilter}
+            />
           ) : (
             <FichesGrid fiches={filteredFiches} />
           )}

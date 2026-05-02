@@ -20,6 +20,7 @@ interface FichesState {
   addFiche: (fiche: Partial<Fiche>) => Promise<Fiche>;
   updateFiche: (ficheId: string, updatedFiche: Partial<Fiche>) => Promise<Fiche>;
   deleteFiche: (ficheId: string) => Promise<void>;
+  deleteAllFiches: () => Promise<void>;
   setSelectedFiche: (fiche: Fiche | null) => void;
   closeFiche: (ficheId: string, salonId: string, payments: PaymentSplit[]) => Promise<void>;
 }
@@ -75,6 +76,17 @@ export const useFichesStore = create<FichesState>((set) => ({
     const { error } = await supabase.from('fiches').delete().eq('id', ficheId);
     if (error) throw new Error('Impossibile eliminare la fiche.');
     set((s) => ({ fiches: s.fiches.filter((f) => f.id !== ficheId) }));
+  },
+
+  deleteAllFiches: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'fiches' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ fiches: [] });
   },
 
   setSelectedFiche: (fiche) => set({ selectedFiche: fiche }),

@@ -9,6 +9,7 @@ export interface DropdownMenuItem {
   label: string;
   icon: React.ComponentType<any>;
   onClick: () => void;
+  destructive?: boolean;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -70,10 +71,14 @@ export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
             {items.map((item) => (
               <button
                 key={item.label}
-                className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                className={
+                  item.destructive
+                    ? "flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                    : "flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                }
                 onClick={() => { item.onClick(); setOpen(false); }}
               >
-                <item.icon className="size-4 text-zinc-400" />
+                <item.icon className={item.destructive ? "size-4 text-red-500" : "size-4 text-zinc-400"} />
                 {item.label}
               </button>
             ))}

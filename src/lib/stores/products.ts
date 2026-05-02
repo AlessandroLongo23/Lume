@@ -13,6 +13,7 @@ interface ProductsState {
   archiveProduct: (id: string) => Promise<void>;
   restoreProduct: (id: string) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  deleteAllProducts: () => Promise<void>;
   setShowArchived: (show: boolean) => void;
 }
 
@@ -79,6 +80,17 @@ export const useProductsStore = create<ProductsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
+  },
+
+  deleteAllProducts: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'products' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ products: [] });
   },
 
   setShowArchived: (show) => set({ showArchived: show }),

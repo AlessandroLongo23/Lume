@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShoppingCart, TableProperties, CalendarDays, FileDown, ArrowDownToLine } from 'lucide-react';
+import { ShoppingCart, TableProperties, CalendarDays, FileDown, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { useViewsStore } from '@/lib/stores/views';
 import { useSearchStore } from '@/lib/stores/search';
 import { AddOrderModal } from '@/lib/components/admin/orders/AddOrderModal';
@@ -24,11 +25,13 @@ export default function OrdiniPage() {
   const searchParams = useSearchParams();
   const orders = useOrdersStore((s) => s.orders);
   const isLoading = useOrdersStore((s) => s.isLoading);
+  const deleteAllOrders = useOrdersStore((s) => s.deleteAllOrders);
   const view = useViewsStore((s) => s.orders);
   const setView = useViewsStore((s) => s.setView);
   const query = useSearchStore((s) => s.query);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [commandTarget, setCommandTarget] = useState<Order | null>(null);
   const [editedOrder, setEditedOrder] = useState<Partial<Order>>({});
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
@@ -81,8 +84,21 @@ export default function OrdiniPage() {
         selectedOrder={commandTarget}
       />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="ordini"
+        count={orders.length}
+        cascadeNotice={
+          <>
+            Verranno eliminate anche tutte le righe d&apos;ordine. I prodotti già a magazzino
+            non verranno toccati.
+          </>
+        }
+        onConfirm={deleteAllOrders}
+      />
 
-      <div className="flex flex-col gap-8">
+      <div className="flex-1 min-h-0 flex flex-col gap-8">
         <PageHeader
           title="Ordini"
           subtitle="Riordina prima che gli scaffali si svuotino."
@@ -107,6 +123,9 @@ export default function OrdiniPage() {
               <DropdownMenu items={[
                 { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
                 { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+                ...(orders.length > 0
+                  ? [{ label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true }]
+                  : []),
               ]} />
             </>
           }

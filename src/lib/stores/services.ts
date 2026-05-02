@@ -13,6 +13,7 @@ interface ServicesState {
   archiveService: (id: string) => Promise<void>;
   restoreService: (id: string) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
+  deleteAllServices: () => Promise<void>;
   setShowArchived: (show: boolean) => void;
 }
 
@@ -79,6 +80,17 @@ export const useServicesStore = create<ServicesState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
+  },
+
+  deleteAllServices: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'services' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ services: [] });
   },
 
   setShowArchived: (show) => set({ showArchived: show }),

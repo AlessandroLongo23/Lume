@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine, EllipsisVertical, Archive } from 'lucide-react';
+import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine, EllipsisVertical, Archive, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useViewsStore } from '@/lib/stores/views';
 import { AddClientModal } from '@/lib/components/admin/clients/AddClientModal';
@@ -23,11 +24,13 @@ export default function ClientiPage() {
   const isLoading = useClientsStore((s) => s.isLoading);
   const showArchived = useClientsStore((s) => s.showArchived);
   const setShowArchived = useClientsStore((s) => s.setShowArchived);
+  const deleteAllClients = useClientsStore((s) => s.deleteAllClients);
   const view = useViewsStore((s) => s.clients);
   const setView = useViewsStore((s) => s.setView);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [commandDelete, setCommandDelete] = useState<Client | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,8 +76,21 @@ export default function ClientiPage() {
         selectedClient={commandDelete}
       />
       <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} entity="clients" />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="clienti"
+        count={clients.length}
+        cascadeNotice={
+          <>
+            Verranno cancellate anche <strong>tutte le fiche</strong>, gli abbonamenti e i coupon
+            collegati. Lo storico del bilancio risulterà <strong>permanentemente alterato</strong>.
+          </>
+        }
+        onConfirm={deleteAllClients}
+      />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title={showArchived ? 'Clienti archiviati' : 'Clienti'}
           subtitle="Ricorda ogni persona che entra nel tuo salone."
@@ -89,7 +105,7 @@ export default function ClientiPage() {
                 icons={[TableProperties, LayoutGrid]}
               />
               <button
-                className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
+                className="btn-primary whitespace-nowrap"
                 onClick={() => setShowAdd(true)}
               >
                 <UserPlus className="size-5" />
@@ -97,46 +113,66 @@ export default function ClientiPage() {
               </button>
               <div className="relative" ref={menuRef}>
                 <button
-                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                  className="flex items-center justify-center size-9 rounded-lg border border-border bg-muted/40 hover:bg-muted transition-colors"
                   onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Altre azioni"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
                 >
-                  <EllipsisVertical className="size-4 text-zinc-500" />
+                  <EllipsisVertical className="size-4 text-muted-foreground" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
+                  <div role="menu" className="absolute right-0 top-full mt-1 w-64 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-dropdown py-1">
                     <button
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      role="menuitem"
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
                       onClick={() => { setShowArchived(!showArchived); setMenuOpen(false); }}
                     >
-                      <Archive className="size-4 text-zinc-400" />
+                      <Archive className="size-4 text-muted-foreground" />
                       {showArchived ? 'Mostra clienti attivi' : 'Mostra clienti archiviati'}
                       {archivedCount > 0 && (
-                        <span className="ml-auto text-xs font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">
+                        <span className="ml-auto text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {archivedCount}
                         </span>
                       )}
                     </button>
                     <button
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      role="menuitem"
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
                       onClick={() => { setShowImport(true); setMenuOpen(false); }}
                     >
-                      <ArrowDownToLine className="size-4 text-zinc-400" />
+                      <ArrowDownToLine className="size-4 text-muted-foreground" />
                       Importa dati
                     </button>
                     <button
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      role="menuitem"
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
                       onClick={() => { setMenuOpen(false); /* TODO: export PDF */ }}
                     >
-                      <FileDown className="size-4 text-zinc-400" />
+                      <FileDown className="size-4 text-muted-foreground" />
                       Esporta PDF
                     </button>
                     <button
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+                      role="menuitem"
+                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
                       onClick={() => { setMenuOpen(false); /* TODO: export CSV */ }}
                     >
-                      <FileSpreadsheet className="size-4 text-zinc-400" />
+                      <FileSpreadsheet className="size-4 text-muted-foreground" />
                       Esporta CSV
                     </button>
+                    {clients.length > 0 && (
+                      <>
+                        <div className="my-1 border-t border-border" />
+                        <button
+                          role="menuitem"
+                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-[var(--lume-danger-fg)] hover:bg-[var(--lume-danger-bg)] transition-colors"
+                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
+                        >
+                          <Trash2 className="size-4" />
+                          Elimina tutti
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

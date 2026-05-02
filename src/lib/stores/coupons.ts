@@ -12,6 +12,7 @@ interface CouponsState {
   addCoupon: (coupon: Partial<Coupon>) => Promise<Coupon>;
   updateCoupon: (id: string, updated: Partial<Coupon>) => Promise<Coupon>;
   deleteCoupon: (id: string) => Promise<void>;
+  deleteAllCoupons: () => Promise<void>;
   /**
    * Apply a coupon against a fiche. The server inserts a redemption row,
    * and (for gift cards) decrements `remaining_value` atomically.
@@ -76,6 +77,17 @@ export const useCouponsStore = create<CouponsState>((set) => ({
     const result = await response.json();
     if (!result.success) throw new Error(result.error || 'Impossibile eliminare il coupon.');
     set((s) => ({ coupons: s.coupons.filter((c) => c.id !== id) }));
+  },
+
+  deleteAllCoupons: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'coupons' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ coupons: [], redemptions: [] });
   },
 
   applyCoupon: async (couponId, ficheId, amountApplied) => {

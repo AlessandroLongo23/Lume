@@ -10,6 +10,7 @@ interface AbbonamentiState {
   addAbbonamento: (abbonamento: Partial<Abbonamento>) => Promise<Abbonamento>;
   updateAbbonamento: (id: string, updated: Partial<Abbonamento>) => Promise<Abbonamento>;
   deleteAbbonamento: (id: string) => Promise<void>;
+  deleteAllAbbonamenti: () => Promise<void>;
 }
 
 export const useAbbonamentiStore = create<AbbonamentiState>((set) => ({
@@ -62,5 +63,16 @@ export const useAbbonamentiStore = create<AbbonamentiState>((set) => ({
     const result = await response.json();
     if (!result.success) throw new Error(result.error || "Impossibile eliminare l'abbonamento.");
     set((s) => ({ abbonamenti: s.abbonamenti.filter((a) => a.id !== id) }));
+  },
+
+  deleteAllAbbonamenti: async () => {
+    const response = await fetch('/api/admin/delete-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'abbonamenti' }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set({ abbonamenti: [] });
   },
 }));

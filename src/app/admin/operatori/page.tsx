@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, EllipsisVertical, Archive, Users, ArrowDownToLine, UserCog } from 'lucide-react';
+import { UserPlus, EllipsisVertical, Archive, Users, ArrowDownToLine, UserCog, Trash2 } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { AddOperatorModal } from '@/lib/components/admin/operators/AddOperatorModal';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
@@ -21,8 +22,10 @@ export default function OperatoriPage() {
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const showArchived = useOperatorsStore((s) => s.showArchived);
   const setShowArchived = useOperatorsStore((s) => s.setShowArchived);
+  const deleteAllOperators = useOperatorsStore((s) => s.deleteAllOperators);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [commandTarget, setCommandTarget] = useState<Operator | null>(null);
   const [editedOperator, setEditedOperator] = useState<Partial<Operator>>({});
@@ -82,9 +85,22 @@ export default function OperatoriPage() {
         onClose={() => { setCommandMode(null); setCommandTarget(null); }}
         selectedOperator={commandTarget}
       />
-      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} entity="operators" />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="operatori"
+        count={operators.length}
+        cascadeNotice={
+          <>
+            Le fiche già esistenti verranno mantenute, ma i servizi associati non risulteranno
+            più collegati ad alcun operatore.
+          </>
+        }
+        onConfirm={deleteAllOperators}
+      />
 
-      <div className="flex flex-col gap-8">
+      <div className="flex-1 min-h-0 flex flex-col gap-8">
         <PageHeader
           title={showArchived ? 'Operatori archiviati' : 'Operatori'}
           subtitle="Il tuo team, turni e permessi sotto controllo."
@@ -126,6 +142,18 @@ export default function OperatoriPage() {
                       <ArrowDownToLine className="size-4 text-zinc-400" />
                       Importa dati
                     </button>
+                    {operators.length > 0 && (
+                      <>
+                        <div className="my-1 border-t border-zinc-500/25" />
+                        <button
+                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
+                        >
+                          <Trash2 className="size-4 text-red-500" />
+                          Elimina tutti
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

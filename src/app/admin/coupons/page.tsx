@@ -2,11 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Tag, Gift, CreditCard, Plus } from 'lucide-react';
+import { Tag, Gift, CreditCard, Plus, Trash2 } from 'lucide-react';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { CouponsTable } from '@/lib/components/admin/coupons/CouponsTable';
 import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal';
 import { GiftCardModal } from '@/lib/components/admin/coupons/GiftCardModal';
@@ -33,10 +36,12 @@ export default function CouponsPage() {
   const setActiveTab = (t: Tab) => setUserTab(t);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [commandTarget, setCommandTarget] = useState<Coupon | null>(null);
 
   const coupons = useCouponsStore((s) => s.coupons);
   const isLoading = useCouponsStore((s) => s.isLoading);
+  const deleteAllCoupons = useCouponsStore((s) => s.deleteAllCoupons);
 
   const visibleCoupons = useMemo(
     () => coupons.filter((c) => c.kind === activeTab),
@@ -68,30 +73,50 @@ export default function CouponsPage() {
         onClose={() => setCommandTarget(null)}
         coupon={commandTarget}
       />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="coupon"
+        count={coupons.length}
+        cascadeNotice={
+          <>
+            Verranno eliminati <strong>coupon regalo e gift card</strong>, insieme allo storico
+            delle redemption. I clienti non potranno più riscattare i loro buoni.
+          </>
+        }
+        onConfirm={deleteAllCoupons}
+      />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Coupon e gift card"
           subtitle="Sconti da attivare, regali da stampare."
           icon={Tag}
           actions={
-            activeTab === 'gift' ? (
-              <button
-                onClick={() => setGiftModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-              >
-                <Plus className="size-4" />
-                Nuovo coupon
-              </button>
-            ) : (
-              <button
-                onClick={() => setGiftCardModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-              >
-                <Plus className="size-4" />
-                Vendi gift card
-              </button>
-            )
+            <>
+              {activeTab === 'gift' ? (
+                <button
+                  onClick={() => setGiftModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                >
+                  <Plus className="size-4" />
+                  Nuovo coupon
+                </button>
+              ) : (
+                <button
+                  onClick={() => setGiftCardModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                >
+                  <Plus className="size-4" />
+                  Vendi gift card
+                </button>
+              )}
+              {coupons.length > 0 && (
+                <DropdownMenu items={[
+                  { label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true },
+                ]} />
+              )}
+            </>
           }
         />
 
@@ -122,7 +147,27 @@ export default function CouponsPage() {
           })}
         </div>
 
-        {isLoading ? <TableSkeleton /> : <CouponsTable coupons={visibleCoupons} variant={activeTab} />}
+        {isLoading ? (
+          <TableSkeleton />
+        ) : visibleCoupons.length === 0 ? (
+          activeTab === 'gift' ? (
+            <EmptyState
+              icon={Gift}
+              title="Nessun coupon regalo"
+              description="Crea il primo coupon: uno sconto da regalare a chi ti porta nuovi clienti."
+              action={{ label: 'Nuovo coupon', icon: Plus, onClick: () => setGiftModalOpen(true) }}
+            />
+          ) : (
+            <EmptyState
+              icon={CreditCard}
+              title="Nessuna gift card"
+              description="Vendi la prima gift card: un buono prepagato che il cliente può regalare a un'altra persona."
+              action={{ label: 'Vendi gift card', icon: Plus, onClick: () => setGiftCardModalOpen(true) }}
+            />
+          )
+        ) : (
+          <CouponsTable coupons={visibleCoupons} variant={activeTab} />
+        )}
       </div>
     </>
   );

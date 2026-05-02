@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BadgePercent, Plus } from 'lucide-react';
+import { BadgePercent, Plus, Trash2 } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
+import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { AbbonamentiTable } from '@/lib/components/admin/abbonamenti/AbbonamentiTable';
 import { AddAbbonamentoModal } from '@/lib/components/admin/abbonamenti/AddAbbonamentoModal';
 import { EditAbbonamentoModal } from '@/lib/components/admin/abbonamenti/EditAbbonamentoModal';
@@ -17,8 +20,10 @@ export default function AbbonamentiPage() {
   const searchParams = useSearchParams();
   const abbonamenti = useAbbonamentiStore((s) => s.abbonamenti);
   const isLoading = useAbbonamentiStore((s) => s.isLoading);
+  const deleteAllAbbonamenti = useAbbonamentiStore((s) => s.deleteAllAbbonamenti);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [commandTarget, setCommandTarget] = useState<Abbonamento | null>(null);
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
 
@@ -57,24 +62,55 @@ export default function AbbonamentiPage() {
         onClose={() => { setCommandMode(null); setCommandTarget(null); }}
         abbonamento={commandTarget}
       />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="abbonamenti"
+        count={abbonamenti.length}
+        cascadeNotice={
+          <>
+            Verranno cancellati tutti gli abbonamenti dei clienti. I servizi delle fiche già
+            registrate non risulteranno più collegati ad alcun abbonamento.
+          </>
+        }
+        onConfirm={deleteAllAbbonamenti}
+      />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Abbonamenti"
           subtitle="Pacchetti prepagati per chi torna spesso."
           icon={BadgePercent}
           actions={
-            <button
-              onClick={() => setAddOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-            >
-              <Plus className="size-4" />
-              Nuovo abbonamento
-            </button>
+            <>
+              <button
+                onClick={() => setAddOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              >
+                <Plus className="size-4" />
+                Nuovo abbonamento
+              </button>
+              {abbonamenti.length > 0 && (
+                <DropdownMenu items={[
+                  { label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true },
+                ]} />
+              )}
+            </>
           }
         />
 
-        {isLoading ? <TableSkeleton /> : <AbbonamentiTable abbonamenti={abbonamenti} />}
+        {isLoading ? (
+          <TableSkeleton />
+        ) : abbonamenti.length === 0 ? (
+          <EmptyState
+            icon={BadgePercent}
+            title="Nessun abbonamento"
+            description="Crea il primo pacchetto prepagato per i clienti che tornano spesso."
+            action={{ label: 'Nuovo abbonamento', icon: Plus, onClick: () => setAddOpen(true) }}
+          />
+        ) : (
+          <AbbonamentiTable abbonamenti={abbonamenti} />
+        )}
       </div>
     </>
   );

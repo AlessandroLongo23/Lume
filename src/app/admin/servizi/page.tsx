@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Scissors, Tags, Plus, ArrowDownToLine, FileDown, EllipsisVertical, Archive } from 'lucide-react';
+import { Scissors, Tags, Plus, ArrowDownToLine, FileDown, EllipsisVertical, Archive, Trash2 } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { supabase } from '@/lib/supabase/client';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
 import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServiceCategoryModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
@@ -25,6 +26,11 @@ const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
   categorie: { label: 'Categorie', icon: Tags },
 };
 
+const IMPORT_ENTITY_FOR_TAB = {
+  servizi: { entity: 'services' as const, label: 'Importa servizi' },
+  categorie: { entity: 'serviceCategories' as const, label: 'Importa categorie' },
+};
+
 const DEFAULT_ORDER = TAB_DEFAULTS.servizi as readonly Tab[];
 
 export default function ServiziPage() {
@@ -33,6 +39,7 @@ export default function ServiziPage() {
   const services = useServicesStore((s) => s.services);
   const isLoading = useServicesStore((s) => s.isLoading);
   const fetchServices = useServicesStore((s) => s.fetchServices);
+  const deleteAllServices = useServicesStore((s) => s.deleteAllServices);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
   const isCategoriesLoading = useServiceCategoriesStore((s) => s.isLoading);
   const fetchServiceCategories = useServiceCategoriesStore((s) => s.fetchServiceCategories);
@@ -44,6 +51,7 @@ export default function ServiziPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
 
   const [servicesShowArchived, setServicesShowArchived] = useState(false);
   const [categoriesShowArchived, setCategoriesShowArchived] = useState(false);
@@ -126,9 +134,26 @@ export default function ServiziPage() {
     <>
       <AddServiceModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
       <AddServiceCategoryModal isOpen={showAddCategory} onClose={() => setShowAddCategory(false)} selectedCategory={null} />
-      <ConciergeImportModal isOpen={showImport} onClose={() => setShowImport(false)} />
+      <ConciergeImportModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        entity={IMPORT_ENTITY_FOR_TAB[activeTab].entity}
+      />
+      <DeleteAllModal
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        entityLabel="servizi"
+        count={services.length}
+        cascadeNotice={
+          <>
+            Verranno eliminati anche i <strong>servizi presenti nelle fiche già esistenti</strong>:
+            lo storico dei trattamenti effettuati ne risulterà parzialmente alterato.
+          </>
+        }
+        onConfirm={deleteAllServices}
+      />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Servizi"
           subtitle="Tutto quello che il tuo salone sa fare."
@@ -178,7 +203,7 @@ export default function ServiziPage() {
                       onClick={() => { setShowImport(true); setMenuOpen(false); }}
                     >
                       <ArrowDownToLine className="size-4 text-zinc-400" />
-                      Importa dati
+                      {IMPORT_ENTITY_FOR_TAB[activeTab].label}
                     </button>
                     <button
                       className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
@@ -187,6 +212,18 @@ export default function ServiziPage() {
                       <FileDown className="size-4 text-zinc-400" />
                       Scarica PDF
                     </button>
+                    {isServiziTab && services.length > 0 && (
+                      <>
+                        <div className="my-1 border-t border-zinc-500/25" />
+                        <button
+                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
+                        >
+                          <Trash2 className="size-4 text-red-500" />
+                          Elimina tutti
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
