@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Pencil, Plus, X, Check, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Pencil, Plus, X, Check, Trash2 } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
@@ -11,8 +11,6 @@ import { useProspectsStore, type ProspectInput } from '@/lib/stores/prospects';
 import { Prospect, PROSPECT_STATUSES, STATUS_LABEL, STATUS_TONE, type ProspectStatus } from '@/lib/types/Prospect';
 import { ProspectStatusChip } from './ProspectStatusChip';
 import { cn } from '@/lib/utils';
-
-const GMAPS_RE = /^https?:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)/;
 
 interface ProspectFormModalProps {
   isOpen:    boolean;
@@ -76,10 +74,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
   const [comune, setComune]   = useState<ComuneSelection | null>(null);
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [prefilling, setPrefilling] = useState(false);
-  const [prefillDone, setPrefillDone] = useState(false);
   const [activeTab, setActiveTab] = useState<'pre_call' | 'post_call'>('post_call');
-  const prefillDoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -92,53 +87,9 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
       }
       setErrors({});
       setSubmitting(false);
-      setPrefilling(false);
-      setPrefillDone(false);
       setActiveTab('post_call');
     }
   }, [isOpen, prospect]);
-
-  const triggerPrefill = async (url: string) => {
-    if (prefilling) return;
-    if (prefillDoneTimer.current) clearTimeout(prefillDoneTimer.current);
-    setPrefilling(true);
-    setPrefillDone(false);
-    try {
-      const res = await fetch('/api/platform/prospects/prefill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setForm((s) => ({
-        ...s,
-        name:     data.name     ?? s.name,
-        phone_shop: data.phone_shop ?? s.phone_shop,
-        address:  data.address  ?? s.address,
-      }));
-      if (data.comune_code && data.city) {
-        setComune({
-          comune_code: data.comune_code,
-          city:        data.city,
-          province:    data.province ?? '',
-          region:      data.region   ?? '',
-        });
-      }
-      setPrefillDone(true);
-      prefillDoneTimer.current = setTimeout(() => setPrefillDone(false), 4000);
-    } finally {
-      setPrefilling(false);
-    }
-  };
-
-  const handleMapsUrlChange = (url: string) => {
-    setForm((s) => ({ ...s, google_maps_url: url }));
-    setPrefillDone(false);
-    if (GMAPS_RE.test(url.trim())) {
-      triggerPrefill(url.trim());
-    }
-  };
 
   const handleStatusChange = async (status: ProspectStatus) => {
     if (!prospect || prospect.status === status) return;
@@ -215,7 +166,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
         </div>
 
         {isEdit && (
-          <div className="flex flex-row gap-1 px-6 pt-4 shrink-0">
+          <div role="tablist" className="flex flex-row gap-1 px-6 pt-4 shrink-0">
             {(
               [
                 { key: 'post_call', label: 'Dopo la chiamata' },
@@ -225,6 +176,8 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
               <button
                 key={key}
                 type="button"
+                role="tab"
+                aria-selected={activeTab === key}
                 onClick={() => setActiveTab(key)}
                 className={cn(
                   'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
@@ -240,154 +193,149 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
         )}
 
         <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-6">
-          {isEdit && prospect && (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-medium text-foreground">Stato</h3>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>Chiamate: <span className="tabular-nums font-medium text-foreground">{prospect.call_count}</span></span>
-                  {prospect.last_call_at && (
-                    <span>Ultima: <span className="tabular-nums font-medium text-foreground">{new Date(prospect.last_call_at).toLocaleDateString('it-IT')}</span></span>
-                  )}
+
+          {/* ── POST-CALL TAB (edit only, default) ─────────────────────────── */}
+          {isEdit && prospect && activeTab === 'post_call' && (
+            <>
+              {/* Status section */}
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-medium text-foreground">Stato</h3>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>Chiamate: <span className="tabular-nums font-medium text-foreground">{prospect.call_count}</span></span>
+                    {prospect.last_call_at && (
+                      <span>Ultima: <span className="tabular-nums font-medium text-foreground">{new Date(prospect.last_call_at).toLocaleDateString('it-IT')}</span></span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {PROSPECT_STATUSES.map((s) => {
+                    const active = prospect.status === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => handleStatusChange(s)}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+                          active
+                            ? 'border-[var(--lume-accent)] bg-[var(--lume-accent-light)] text-[var(--lume-accent-dark)]'
+                            : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
+                        )}
+                      >
+                        <span className={cn('size-1.5 rounded-full', TONE_DOT[STATUS_TONE[s]])} />
+                        {STATUS_LABEL[s]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {prospect.status === 'callback_scheduled' && (
+                  <div className="text-xs text-muted-foreground">
+                    Per impostare/aggiornare la data di richiamo, usa la sessione di chiamata.
+                  </div>
+                )}
+                {prospect.callback_at && (
+                  <div className="text-xs text-muted-foreground">
+                    Da richiamare il <span className="font-medium text-foreground tabular-nums">
+                      {new Date(prospect.callback_at).toLocaleString('it-IT')}
+                    </span>
+                  </div>
+                )}
+              </section>
+
+              <div className="border-t border-border" />
+
+              {/* Post-call fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormInput
+                  label="Telefono titolare"
+                  value={form.phone_personal}
+                  onChange={(e) => setForm((s) => ({ ...s, phone_personal: e.target.value }))}
+                  placeholder="+39 333 1234567"
+                  inputMode="tel"
+                />
+
+                <FormInput
+                  label="Titolare"
+                  value={form.owner_name}
+                  onChange={(e) => setForm((s) => ({ ...s, owner_name: e.target.value }))}
+                  placeholder="Mario Rossi"
+                />
+
+                <div className="md:col-span-2">
+                  <FormInput
+                    label="Software in uso"
+                    value={form.current_software}
+                    onChange={(e) => setForm((s) => ({ ...s, current_software: e.target.value }))}
+                    placeholder="Treatwell, agenda cartacea, …"
+                  />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {PROSPECT_STATUSES.map((s) => {
-                  const active = prospect.status === s;
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => handleStatusChange(s)}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
-                        active
-                          ? 'border-[var(--lume-accent)] bg-[var(--lume-accent-light)] text-[var(--lume-accent-dark)]'
-                          : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
-                      )}
-                    >
-                      <span className={cn('size-1.5 rounded-full', TONE_DOT[STATUS_TONE[s]])} />
-                      {STATUS_LABEL[s]}
-                    </button>
-                  );
-                })}
-              </div>
-              {prospect.status === 'callback_scheduled' && (
-                <div className="text-xs text-muted-foreground">
-                  Per impostare/aggiornare la data di richiamo, usa la sessione di chiamata.
-                </div>
-              )}
-              {prospect.callback_at && (
-                <div className="text-xs text-muted-foreground">
-                  Da richiamare il <span className="font-medium text-foreground tabular-nums">
-                    {new Date(prospect.callback_at).toLocaleString('it-IT')}
-                  </span>
-                </div>
-              )}
-            </section>
+            </>
           )}
 
-          {isEdit && <div className="border-t border-border" />}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Maps URL at top — paste to auto-fill everything */}
-            <div className="md:col-span-2">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  Link Google Maps
-                  {prefilling && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
-                      <Loader2 className="size-3 animate-spin" />
-                      Ricerca in corso…
-                    </span>
-                  )}
-                  {prefillDone && !prefilling && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--lume-success-fg)] font-normal">
-                      <CheckCircle2 className="size-3" />
-                      Compilato automaticamente
-                    </span>
-                  )}
-                </label>
+          {/* ── PRE-CALL TAB (edit) or flat add form ───────────────────────── */}
+          {(!isEdit || activeTab === 'pre_call') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
                 <FormInput
+                  label="Nome salone"
+                  value={form.name}
+                  onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+                  error={errors.name}
+                  required
+                  placeholder="Parrucchiere Rossi"
+                  autoFocus
+                />
+              </div>
+
+              <FormInput
+                label="Telefono salone"
+                value={form.phone_shop}
+                onChange={(e) => setForm((s) => ({ ...s, phone_shop: e.target.value }))}
+                placeholder="+39 02 1234567"
+                inputMode="tel"
+              />
+
+              <div className="md:col-span-2">
+                <ComuneAutocomplete
+                  label="Comune"
+                  value={comune}
+                  onChange={setComune}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <FormInput
+                  label="Link Google Maps"
                   value={form.google_maps_url}
-                  onChange={(e) => handleMapsUrlChange(e.target.value)}
-                  placeholder="Incolla il link di Google Maps per compilare i campi in automatico…"
+                  onChange={(e) => setForm((s) => ({ ...s, google_maps_url: e.target.value }))}
+                  placeholder="https://maps.app.goo.gl/…"
                   type="url"
-                  autoFocus={!isEdit}
-                  disabled={prefilling}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <FormInput
+                  label="Indirizzo"
+                  value={form.address}
+                  onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))}
+                  placeholder="Via Roma 12, Milano"
+                />
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-sm font-medium text-foreground">Note</label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
+                  placeholder="Qualunque dettaglio utile prima della chiamata…"
+                  rows={3}
+                  className="w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm transition-[border-color,box-shadow] duration-200"
                 />
               </div>
             </div>
+          )}
 
-            <div className="md:col-span-2">
-              <FormInput
-                label="Nome salone"
-                value={form.name}
-                onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-                error={errors.name}
-                required
-                placeholder="Parrucchiere Rossi"
-                autoFocus={isEdit}
-              />
-            </div>
-
-            <FormInput
-              label="Telefono salone"
-              value={form.phone_shop}
-              onChange={(e) => setForm((s) => ({ ...s, phone_shop: e.target.value }))}
-              placeholder="+39 02 1234567"
-              inputMode="tel"
-            />
-
-            <FormInput
-              label="Telefono titolare"
-              value={form.phone_personal}
-              onChange={(e) => setForm((s) => ({ ...s, phone_personal: e.target.value }))}
-              placeholder="+39 333 1234567"
-              inputMode="tel"
-            />
-
-            <div className="md:col-span-2">
-              <ComuneAutocomplete
-                label="Comune"
-                value={comune}
-                onChange={setComune}
-              />
-            </div>
-
-            <FormInput
-              label="Titolare"
-              value={form.owner_name}
-              onChange={(e) => setForm((s) => ({ ...s, owner_name: e.target.value }))}
-              placeholder="Mario Rossi"
-            />
-
-            <FormInput
-              label="Software in uso"
-              value={form.current_software}
-              onChange={(e) => setForm((s) => ({ ...s, current_software: e.target.value }))}
-              placeholder="Treatwell, agenda cartacea, …"
-            />
-
-            <div className="md:col-span-2">
-              <FormInput
-                label="Indirizzo"
-                value={form.address}
-                onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))}
-                placeholder="Via Roma 12, Milano"
-              />
-            </div>
-
-            <div className="md:col-span-2 space-y-2">
-              <label className="block text-sm font-medium text-foreground">Note</label>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
-                placeholder="Qualunque dettaglio utile prima della chiamata…"
-                rows={3}
-                className="w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm transition-[border-color,box-shadow] duration-200"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="flex flex-row flex-wrap items-center justify-between gap-3 p-6 border-t border-border shrink-0">
