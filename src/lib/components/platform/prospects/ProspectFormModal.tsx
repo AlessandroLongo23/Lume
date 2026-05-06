@@ -226,6 +226,8 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                 key={key}
                 type="button"
                 role="tab"
+                id={`tab-${key}`}
+                aria-controls={`panel-${key}`}
                 aria-selected={activeTab === key}
                 onClick={() => setActiveTab(key)}
                 className={cn(
@@ -245,7 +247,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
 
           {/* ── POST-CALL TAB (edit only, default) ─────────────────────────── */}
           {isEdit && prospect && activeTab === 'post_call' && (
-            <>
+            <div role="tabpanel" id="panel-post_call" aria-labelledby="tab-post_call">
               {/* Status section */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
@@ -263,6 +265,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                     return (
                       <button
                         key={s}
+                        type="button"
                         onClick={() => handleStatusChange(s)}
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
@@ -297,6 +300,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormInput
                   label="Telefono titolare"
+                  autoFocus
                   value={form.phone_personal}
                   onChange={(e) => setForm((s) => ({ ...s, phone_personal: e.target.value }))}
                   placeholder="+39 333 1234567"
@@ -319,12 +323,13 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   />
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* ── PRE-CALL TAB (edit) or flat add form ───────────────────────── */}
           {(!isEdit || activeTab === 'pre_call') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div role="tabpanel" id="panel-pre_call" aria-labelledby="tab-pre_call">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Maps URL first — paste to auto-fill everything */}
               <div className="md:col-span-2 space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -404,6 +409,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   className="w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm transition-[border-color,box-shadow] duration-200"
                 />
               </div>
+            </div>
             </div>
           )}
 
