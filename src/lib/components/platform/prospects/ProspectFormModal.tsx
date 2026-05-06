@@ -214,6 +214,31 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
           </Button>
         </div>
 
+        {isEdit && (
+          <div className="flex flex-row gap-1 px-6 pt-4 shrink-0">
+            {(
+              [
+                { key: 'post_call', label: 'Dopo la chiamata' },
+                { key: 'pre_call',  label: 'Prima della chiamata' },
+              ] as const
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                  activeTab === key
+                    ? 'bg-[var(--lume-accent-light)] text-[var(--lume-accent-dark)]'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-6">
           {isEdit && prospect && (
             <section className="space-y-3">
