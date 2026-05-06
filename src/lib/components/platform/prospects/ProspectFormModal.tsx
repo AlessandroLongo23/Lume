@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Pencil, Plus, X, Check, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Pencil, Plus, X, Check, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+
+const GMAPS_RE = /^https?:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)/;
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
@@ -74,7 +76,11 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
   const [comune, setComune]   = useState<ComuneSelection | null>(null);
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [prefilling, setPrefilling] = useState(false);
+  const [prefillDone, setPrefillDone] = useState(false);
+  const [prefillError, setPrefillError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pre_call' | 'post_call'>('post_call');
+  const prefillDoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -87,9 +93,52 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
       }
       setErrors({});
       setSubmitting(false);
+      setPrefilling(false);
+      setPrefillDone(false);
+      setPrefillError(null);
       setActiveTab('post_call');
     }
   }, [isOpen, prospect]);
+
+  const triggerPrefill = async (url: string) => {
+    if (prefilling) return;
+    if (prefillDoneTimer.current) clearTimeout(prefillDoneTimer.current);
+    setPrefilling(true);
+    setPrefillDone(false);
+    setPrefillError(null);
+    try {
+      const res = await fetch('/api/platform/prospects/prefill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPrefillError(data.error ?? 'Errore durante il prefill');
+        return;
+      }
+      setForm((s) => ({
+        ...s,
+        name:       data.name      ?? s.name,
+        phone_shop: data.phone_shop ?? s.phone_shop,
+        address:    data.address   ?? s.address,
+      }));
+      if (data.comune_code && data.city) {
+        setComune({ comune_code: data.comune_code, city: data.city, province: data.province ?? '', region: data.region ?? '' });
+      }
+      setPrefillDone(true);
+      prefillDoneTimer.current = setTimeout(() => setPrefillDone(false), 4000);
+    } finally {
+      setPrefilling(false);
+    }
+  };
+
+  const handleMapsUrlChange = (url: string) => {
+    setForm((s) => ({ ...s, google_maps_url: url }));
+    setPrefillDone(false);
+    setPrefillError(null);
+    if (GMAPS_RE.test(url.trim())) triggerPrefill(url.trim());
+  };
 
   const handleStatusChange = async (status: ProspectStatus) => {
     if (!prospect || prospect.status === status) return;
@@ -276,6 +325,38 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
           {/* ── PRE-CALL TAB (edit) or flat add form ───────────────────────── */}
           {(!isEdit || activeTab === 'pre_call') && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Maps URL first — paste to auto-fill everything */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  Link Google Maps
+                  {prefilling && (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
+                      <Loader2 className="size-3 animate-spin" />
+                      Ricerca in corso…
+                    </span>
+                  )}
+                  {prefillDone && !prefilling && (
+                    <span className="flex items-center gap-1 text-xs text-[var(--lume-success-fg)] font-normal">
+                      <CheckCircle2 className="size-3" />
+                      Compilato automaticamente
+                    </span>
+                  )}
+                  {prefillError && !prefilling && (
+                    <span className="text-xs text-[var(--lume-danger-fg)] font-normal">
+                      {prefillError}
+                    </span>
+                  )}
+                </label>
+                <FormInput
+                  value={form.google_maps_url}
+                  onChange={(e) => handleMapsUrlChange(e.target.value)}
+                  placeholder="Incolla il link di Google Maps per compilare i campi in automatico…"
+                  type="url"
+                  autoFocus={!isEdit}
+                  disabled={prefilling}
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <FormInput
                   label="Nome salone"
@@ -284,7 +365,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   error={errors.name}
                   required
                   placeholder="Parrucchiere Rossi"
-                  autoFocus
+                  autoFocus={isEdit}
                 />
               </div>
 
@@ -301,16 +382,6 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   label="Comune"
                   value={comune}
                   onChange={setComune}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <FormInput
-                  label="Link Google Maps"
-                  value={form.google_maps_url}
-                  onChange={(e) => setForm((s) => ({ ...s, google_maps_url: e.target.value }))}
-                  placeholder="https://maps.app.goo.gl/…"
-                  type="url"
                 />
               </div>
 
