@@ -247,7 +247,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
 
           {/* ── POST-CALL TAB (edit only, default) ─────────────────────────── */}
           {isEdit && prospect && activeTab === 'post_call' && (
-            <div role="tabpanel" id="panel-post_call" aria-labelledby="tab-post_call">
+            <div role="tabpanel" id="panel-post_call" aria-labelledby="tab-post_call" className="space-y-6">
               {/* Status section */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
@@ -400,8 +400,9 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="block text-sm font-medium text-foreground">Note</label>
+                <label htmlFor="prospect-notes" className="block text-sm font-medium text-foreground">Note</label>
                 <textarea
+                  id="prospect-notes"
                   value={form.notes}
                   onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
                   placeholder="Qualunque dettaglio utile prima della chiamata…"
