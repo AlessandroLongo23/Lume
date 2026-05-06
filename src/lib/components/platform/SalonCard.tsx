@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowRight, MoreVertical, Pencil, Trash2, Users, Ticket, Euro } from 'lucide-react';
+import { ArrowRight, MoreVertical, Pencil, Trash2, Users, Ticket, Euro, FlaskConical } from 'lucide-react';
 import { DeletePlatformSalonModal } from './DeletePlatformSalonModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 
@@ -71,6 +71,7 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(row.name);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [confirmTestToggle, setConfirmTestToggle] = useState(false);
 
   async function handleEnter() {
     setIsEntering(true);
@@ -140,9 +141,17 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                 className="w-full text-sm font-semibold tracking-tight text-zinc-900 dark:text-white bg-transparent border-b border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-primary"
               />
             ) : (
-              <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
-                {row.name}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
+                  {row.name}
+                </p>
+                {row.isTest && (
+                  <span className="shrink-0 flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <FlaskConical className="size-2.5" />
+                    Test
+                  </span>
+                )}
+              </div>
             )}
             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{row.ownerEmail}</p>
           </div>
@@ -164,19 +173,62 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                 type="button"
                 aria-label="Chiudi menu"
                 className="fixed inset-0"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => { setMenuOpen(false); setConfirmTestToggle(false); }}
               />
-              <div className="absolute right-0 top-8 z-dropdown w-40 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1">
+              <div className="absolute right-0 top-8 z-dropdown w-48 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1">
                 <button
                   type="button"
-                  onClick={() => { setIsRenaming(true); setMenuOpen(false); }}
+                  onClick={() => { setIsRenaming(true); setMenuOpen(false); setConfirmTestToggle(false); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
                   <Pencil className="w-4 h-4" /> Rinomina
                 </button>
+
+                {confirmTestToggle ? (
+                  <div className="px-3 py-2 flex flex-col gap-2">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                      {row.isTest ? 'Rimuovere il flag di test?' : 'Segnare come salone di test?'}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setConfirmTestToggle(false);
+                          setMenuOpen(false);
+                          await fetch(`/api/platform/salons/${row.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ is_test: !row.isTest }),
+                          });
+                          router.refresh();
+                        }}
+                        className="flex-1 text-xs px-2 py-1 rounded bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium hover:bg-zinc-700 dark:hover:bg-zinc-100"
+                      >
+                        Conferma
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmTestToggle(false)}
+                        className="flex-1 text-xs px-2 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmTestToggle(true)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    <FlaskConical className="w-4 h-4" />
+                    {row.isTest ? 'Rimuovi da test' : 'Segna come test'}
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => { setDeleteModalOpen(true); setMenuOpen(false); }}
+                  onClick={() => { setDeleteModalOpen(true); setMenuOpen(false); setConfirmTestToggle(false); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
                   <Trash2 className="w-4 h-4" /> Elimina
