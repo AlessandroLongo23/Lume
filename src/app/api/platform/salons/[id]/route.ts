@@ -19,14 +19,25 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const name = typeof body.name === 'string' ? body.name.trim() : '';
-  if (!name) return NextResponse.json({ error: 'Nome mancante' }, { status: 400 });
+
+  const patch: Record<string, unknown> = {};
+  if (typeof body.name === 'string') {
+    const name = body.name.trim();
+    if (!name) return NextResponse.json({ error: 'Nome mancante' }, { status: 400 });
+    patch.name = name;
+  }
+  if (typeof body.is_test === 'boolean') {
+    patch.is_test = body.is_test;
+  }
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: 'Nessun campo da aggiornare' }, { status: 400 });
+  }
 
   const supabaseAdmin = getAdminClient();
-  const { error } = await supabaseAdmin.from('salons').update({ name }).eq('id', id);
+  const { error } = await supabaseAdmin.from('salons').update(patch).eq('id', id);
   if (error) {
-    console.error('Platform salon rename failed:', error);
-    return NextResponse.json({ error: 'Rinomina fallita' }, { status: 500 });
+    console.error('Platform salon update failed:', error);
+    return NextResponse.json({ error: 'Aggiornamento fallito' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
