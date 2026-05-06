@@ -146,7 +146,7 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                   {row.name}
                 </p>
                 {row.isTest && (
-                  <span className="shrink-0 flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                  <span className="shrink-0 flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                     <FlaskConical className="size-2.5" />
                     Test
                   </span>
@@ -195,12 +195,17 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                         onClick={async () => {
                           setConfirmTestToggle(false);
                           setMenuOpen(false);
-                          await fetch(`/api/platform/salons/${row.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ is_test: !row.isTest }),
-                          });
-                          router.refresh();
+                          try {
+                            const res = await fetch(`/api/platform/salons/${row.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ is_test: !row.isTest }),
+                            });
+                            if (!res.ok) throw new Error('is_test update failed');
+                            router.refresh();
+                          } catch (err) {
+                            console.error(err);
+                          }
                         }}
                         className="flex-1 text-xs px-2 py-1 rounded bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium hover:bg-zinc-700 dark:hover:bg-zinc-100"
                       >
