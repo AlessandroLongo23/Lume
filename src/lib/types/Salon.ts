@@ -67,4 +67,9 @@ export interface Salon {
   form_defaults:           SalonFormDefaults;
   // M5 additions
   email_notifications:     SalonEmailNotifications;
+  // Onboarding bulk import
+  onboarded_at:            string | null;
+  onboarding_dismissed_at: string | null;
+  // Platform
+  is_test:                 boolean;
 }
