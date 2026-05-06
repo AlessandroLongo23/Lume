@@ -23,6 +23,7 @@ type SalonRow = {
   subscription_plan:    string | null;
   subscription_ends_at: string | null;
   logo_url:             string | null;
+  is_test:              boolean;
 };
 
 type ProfileRow = { id: string; email: string; first_name: string; last_name: string };
@@ -32,7 +33,7 @@ export default async function SalonsPage() {
 
   const { data: salons } = await supabase
     .from('salons')
-    .select('id, name, owner_id, trial_ends_at, created_at, subscription_status, subscription_plan, subscription_ends_at, logo_url')
+    .select('id, name, owner_id, trial_ends_at, created_at, subscription_status, subscription_plan, subscription_ends_at, logo_url, is_test')
     .order('created_at', { ascending: false })
     .returns<SalonRow[]>();
 
@@ -101,6 +102,7 @@ export default async function SalonsPage() {
       clientsCount:         clientsBySalon.get(s.id) ?? 0,
       fichesThisMonth:      fichesThisMonthBySalon.get(s.id) ?? 0,
       revenueThisMonth:     revenueBySalon.get(s.id) ?? 0,
+      isTest:               s.is_test,
     };
   });
 

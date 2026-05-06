@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowRight, MoreVertical, Pencil, Trash2, Loader2, Users, Ticket, Euro } from 'lucide-react';
+import { ArrowRight, MoreVertical, Pencil, Trash2, Users, Ticket, Euro } from 'lucide-react';
 import { DeletePlatformSalonModal } from './DeletePlatformSalonModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 export type SalonCardRow = {
   id:                 string;
@@ -20,6 +21,7 @@ export type SalonCardRow = {
   clientsCount:       number;
   fichesThisMonth:    number;
   revenueThisMonth:   number;
+  isTest:             boolean;
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -147,14 +149,15 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
         </div>
 
         <div className="relative shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             aria-label="Azioni"
             onClick={() => setMenuOpen((v) => !v)}
-            className="p-1 rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-white dark:hover:bg-zinc-800"
           >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+            <MoreVertical />
+          </Button>
           {menuOpen && (
             <>
               <button
@@ -227,15 +230,17 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
         </div>
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="primary"
+        size="sm"
+        fullWidth
+        loading={isEntering}
+        leadingIcon={ArrowRight}
         onClick={handleEnter}
-        disabled={isEntering}
-        className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-md bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-60"
+        className="mt-1"
       >
-        {isEntering ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-        <span>{isEntering ? 'Entrando…' : 'Entra nel salone'}</span>
-      </button>
+        {isEntering ? 'Entrando…' : 'Entra nel salone'}
+      </Button>
 
       <DeletePlatformSalonModal
         isOpen={deleteModalOpen}
