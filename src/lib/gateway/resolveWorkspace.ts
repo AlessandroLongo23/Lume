@@ -38,7 +38,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const [ownedResult, operatorResult, clientResult] = await Promise.all([
     supabaseAdmin
       .from('salons')
-      .select('id, name')
+      .select('id, name, onboarded_at')
       .eq('owner_id', userId),
 
     supabaseAdmin
@@ -56,10 +56,14 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   // --- Build businessContexts (owner takes precedence over operator for same salon) ---
   const businessContexts: WorkspaceContext[] = [];
   const seenSalonIds = new Set<string>();
+  // Track which owned salons haven't completed onboarding so we can route the
+  // owner to /onboarding/import instead of straight to the calendar.
+  const ownedNeedingOnboarding = new Set<string>();
 
-  for (const salon of ownedResult.data ?? []) {
+  for (const salon of (ownedResult.data ?? []) as Array<{ id: string; name: string; onboarded_at: string | null }>) {
     businessContexts.push({ type: 'business', salonId: salon.id, salonName: salon.name, role: 'owner' });
     seenSalonIds.add(salon.id);
+    if (!salon.onboarded_at) ownedNeedingOnboarding.add(salon.id);
   }
 
   for (const row of operatorResult.data ?? []) {
@@ -149,8 +153,11 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
 
   if (hasBusiness && !hasClient) {
     if (businessContexts.length === 1) {
-      redirect      = '/admin/calendario';
-      activeSalonId = businessContexts[0].salonId;
+      const onlySalonId = businessContexts[0].salonId;
+      // First-run: an owner with one salon that hasn't completed onboarding
+      // lands in the bulk-import wizard rather than the empty calendar.
+      redirect      = ownedNeedingOnboarding.has(onlySalonId) ? '/onboarding/import' : '/admin/calendario';
+      activeSalonId = onlySalonId;
     } else {
       redirect = '/select-salon';
     }

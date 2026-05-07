@@ -5,18 +5,24 @@ import { extractPdfTable } from './pdfExtractor';
 import type { EntityImportConfig } from '../entities/types';
 
 /**
- * Single entry point used by both runProcess and runCommit to obtain the
- * `{ headers, rows }` shape regardless of source file type.
+ * Single entry point used everywhere a job's `{ headers, rows }` is needed —
+ * runProcess, runCommit, and the onboarding classifier — regardless of source
+ * file type.
  *
  * - CSV / XLSX / TSV: download from storage, parse synchronously.
  * - PDF: download, extract via Claude. The result is cached as a sibling
- *   `<storage_path>.parsed.json` in the same bucket so runCommit doesn't pay
- *   the LLM call a second time after the user confirms the mappings.
+ *   `<storage_path>.parsed.json` in the same bucket so subsequent passes
+ *   (commit after review, or process after onboarding classification) reuse
+ *   the same extraction without paying the LLM a second time.
+ *
+ * `config` is optional — pass it when the entity is already known so the PDF
+ * prompt can include a domain hint; omit it during onboarding classification
+ * (entity unknown until the classifier runs).
  */
 export async function loadParsedFile(
   supabase: SupabaseClient,
-  job: { storage_path: string; source_filename: string },
-  config: EntityImportConfig,
+  job: { storage_path: string; source_filename: string; source_sheet_name?: string | null },
+  config?: EntityImportConfig,
 ): Promise<ParsedFile> {
   const ext = job.source_filename.toLowerCase().split('.').pop();
 
@@ -32,7 +38,7 @@ export async function loadParsedFile(
   }
 
   const buffer = await downloadBuffer(supabase, job.storage_path);
-  return parseFile(buffer, job.source_filename);
+  return parseFile(buffer, job.source_filename, job.source_sheet_name);
 }
 
 async function downloadBuffer(supabase: SupabaseClient, path: string): Promise<ArrayBuffer> {

@@ -19,6 +19,7 @@ import {
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import { useImportsStore } from '@/lib/stores/imports';
 import { getEntityConfig } from '@/lib/imports/entities/registry';
@@ -70,9 +71,10 @@ export default function ImportReviewPage({ params }: { params: Promise<{ jobId: 
   }, [jobId, job, fetchJob]);
 
   // Resolve config once we know the entity. If the entity isn't registered
-  // (legacy job? out-of-band insert?), surface a clean error.
+  // (legacy job? out-of-band insert? onboarding child still being classified?),
+  // surface a clean error.
   const config = useMemo(() => {
-    if (!job) return null;
+    if (!job || !job.entity) return null;
     try {
       return getEntityConfig(job.entity);
     } catch {
@@ -96,23 +98,25 @@ export default function ImportReviewPage({ params }: { params: Promise<{ jobId: 
     return (
       <ErrorPanel
         title="Tipo di import non supportato"
-        message={`Il tipo '${job.entity}' non è gestito dal client. Contatta il supporto Lume.`}
+        message={`Il tipo '${job.entity ?? 'non classificato'}' non è gestito dal client. Contatta il supporto Lume.`}
         onBack={() => router.push('/admin/clienti')}
       />
     );
   }
 
-  const importedHint = IMPORTATI_HINT_BY_ENTITY[job.entity] ?? 'Record aggiunti correttamente.';
+  const importedHint = job.entity ? IMPORTATI_HINT_BY_ENTITY[job.entity] ?? 'Record aggiunti correttamente.' : 'Record aggiunti correttamente.';
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
       <header className="flex items-center justify-between">
-        <button
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        <Button
+          variant="ghost"
+          size="sm"
+          leadingIcon={ArrowLeft}
           onClick={() => router.push(config.redirectAfterCompletion)}
         >
-          <ArrowLeft className="size-4" /> Torna a {config.italianLabel.toLowerCase()}
-        </button>
+          Torna a {config.italianLabel.toLowerCase()}
+        </Button>
         <JobIdBadge id={job.id} />
       </header>
 
@@ -328,22 +332,21 @@ function ReviewPanel({ job, jobId, config }: { job: ImportJob; jobId: string; co
 
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-3 pt-2">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          leadingIcon={X}
           onClick={() => setShowCancelConfirm(true)}
-          className="btn-secondary"
         >
-          <X className="size-4" /> Annulla
-        </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
+          Annulla
+        </Button>
+        <Button
+          variant="primary"
+          loading={isSubmitting}
+          leadingIcon={ArrowRight}
           onClick={handleConfirm}
-          className="btn-primary disabled:opacity-40"
         >
-          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
           {isSubmitting ? 'Avvio...' : `Conferma e importa ${totalRows.toLocaleString('it-IT')} righe`}
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog
@@ -772,13 +775,13 @@ function CompletedPanel({
       </div>
       <div className="flex items-center gap-3 pt-2">
         {errors.length > 0 && (
-          <button type="button" onClick={downloadErrors} className="btn-secondary">
-            <FileWarning className="size-4" /> Scarica report errori
-          </button>
+          <Button variant="secondary" leadingIcon={FileWarning} onClick={downloadErrors}>
+            Scarica report errori
+          </Button>
         )}
-        <button type="button" onClick={onReturn} className="btn-primary">
-          Vai a {config.italianLabel.toLowerCase()} <ArrowRight className="size-4" />
-        </button>
+        <Button variant="primary" trailingIcon={ArrowRight} onClick={onReturn}>
+          Vai a {config.italianLabel.toLowerCase()}
+        </Button>
       </div>
     </div>
   );
@@ -804,9 +807,9 @@ function ErrorPanel({ title, message, onBack }: { title: string; message: string
       <AlertTriangle className="size-10 text-destructive" />
       <h2 className="text-base font-semibold text-foreground">{title}</h2>
       <p className="text-sm text-muted-foreground">{message}</p>
-      <button type="button" onClick={onBack} className="btn-secondary">
-        <ArrowLeft className="size-4" /> Torna indietro
-      </button>
+      <Button variant="secondary" leadingIcon={ArrowLeft} onClick={onBack}>
+        Torna indietro
+      </Button>
     </div>
   );
 }

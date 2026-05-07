@@ -29,7 +29,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
   fetchClients: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('clients').select('*');
+    const { data, error } = await supabase.from('clients').select('*').limit(10000);
     if (error) {
       set({ isLoading: false, error: error.message });
       return;

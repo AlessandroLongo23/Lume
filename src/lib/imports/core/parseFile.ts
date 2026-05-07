@@ -11,8 +11,12 @@ export interface ParsedFile {
  * Parses a CSV or XLSX (or XLS) buffer into a uniform shape: array of headers
  * plus array of row objects keyed by those headers. All values are coerced to
  * strings so downstream transforms have a single type to handle.
+ *
+ * For workbooks, pass `sheetName` to read a specific sheet — needed by the
+ * onboarding bulk-import flow, which splits multi-sheet workbooks into one
+ * import_jobs row per sheet.
  */
-export function parseFile(buffer: ArrayBuffer, filename: string): ParsedFile {
+export function parseFile(buffer: ArrayBuffer, filename: string, sheetName?: string | null): ParsedFile {
   const ext = filename.toLowerCase().split('.').pop();
 
   if (ext === 'csv' || ext === 'tsv' || ext === 'txt') {
@@ -20,7 +24,7 @@ export function parseFile(buffer: ArrayBuffer, filename: string): ParsedFile {
   }
 
   if (ext === 'xlsx' || ext === 'xls') {
-    return parseXlsx(buffer);
+    return parseXlsx(buffer, sheetName);
   }
 
   throw new Error(`Estensione file non supportata: ${ext ?? '(sconosciuta)'}`);
@@ -43,11 +47,19 @@ function parseCsv(buffer: ArrayBuffer): ParsedFile {
   return { headers, rows };
 }
 
-function parseXlsx(buffer: ArrayBuffer): ParsedFile {
+function parseXlsx(buffer: ArrayBuffer, sheetName?: string | null): ParsedFile {
   const wb = XLSX.read(buffer, { type: 'array', cellDates: false });
-  const firstSheetName = wb.SheetNames[0];
-  if (!firstSheetName) throw new Error('Foglio Excel vuoto');
-  const sheet = wb.Sheets[firstSheetName];
+  const target = sheetName && wb.Sheets[sheetName] ? sheetName : wb.SheetNames[0];
+  if (!target) throw new Error('Foglio Excel vuoto');
+  return parseSingleSheet(wb.Sheets[target]);
+}
+
+/**
+ * Parses one sheet of an XLSX workbook into the same `ParsedFile` shape that
+ * CSV produces. Used by `parseXlsx` for the single-sheet legacy path and by
+ * `splitWorkbook` to fan out multi-sheet onboarding uploads.
+ */
+export function parseSingleSheet(sheet: XLSX.WorkSheet): ParsedFile {
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
     defval: '',
     raw: false,

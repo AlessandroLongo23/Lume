@@ -16,6 +16,11 @@ const MAX_PDF_SIZE_BYTES = 32 * 1024 * 1024;
  * (column mapping, transform, dedup, insert) doesn't care which kind of
  * source file came in.
  *
+ * Pass `config` when the entity is already known (manual single-file import)
+ * so the prompt can hint at the expected domain. Omit it during onboarding
+ * classification — the result is then cached and reused by the entity-aware
+ * `runProcessImport` step without paying for a second extraction.
+ *
  * Throws (caller marks the job `failed` or routes to concierge):
  *   - PDF too large for the API
  *   - ANTHROPIC_API_KEY missing
@@ -24,7 +29,7 @@ const MAX_PDF_SIZE_BYTES = 32 * 1024 * 1024;
  */
 export async function extractPdfTable(
   buffer: ArrayBuffer,
-  config: EntityImportConfig,
+  config?: EntityImportConfig,
 ): Promise<ParsedFile> {
   if (buffer.byteLength > MAX_PDF_SIZE_BYTES) {
     throw new Error('PDF troppo grande per l\'estrazione automatica (max 32 MB).');
@@ -122,11 +127,14 @@ const EXTRACTION_TOOL = {
   },
 };
 
-function buildSystemPrompt(config: EntityImportConfig): string {
+function buildSystemPrompt(config?: EntityImportConfig): string {
+  const domainLine = config
+    ? `Domain: ${config.llmDomainHint}\nThe salon is migrating to a new tool and exported their existing ${config.italianLabel.toLowerCase()} as a PDF.`
+    : `The salon is migrating to a new tool and exported some of their data as a PDF. The file may contain clients, services, products, operators, fiches (closed appointments), or any other salon data.`;
+
   return `You are extracting tabular data from an Italian salon-software PDF report.
 
-Domain: ${config.llmDomainHint}
-The salon is migrating to a new tool and exported their existing ${config.italianLabel.toLowerCase()} as a PDF. Find the tabular data (typically a table or repeating list of records) and return it as headers + rows.
+${domainLine} Find the tabular data (typically a table or repeating list of records) and return it as headers + rows.
 
 Rules:
 - Use the column header text exactly as written in the PDF (Italian, English, abbreviations — anything). The salon-side mapping step normalizes them later.

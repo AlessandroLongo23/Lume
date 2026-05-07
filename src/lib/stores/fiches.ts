@@ -39,7 +39,8 @@ export const useFichesStore = create<FichesState>((set) => ({
     const { data, error } = await supabase
       .from('fiches')
       .select('*')
-      .gte('datetime', since.toISOString());
+      .gte('datetime', since.toISOString())
+      .limit(10000);
     if (error) {
       set({ isLoading: false, error: error.message });
       return;

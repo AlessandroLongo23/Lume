@@ -7,13 +7,15 @@
 
 export type ImportEntity =
   | 'clients'
+  | 'clientCategories'
   | 'productCategories'
   | 'manufacturers'
   | 'suppliers'
   | 'serviceCategories'
   | 'operators'
   | 'products'
-  | 'services';
+  | 'services'
+  | 'fiches';
 
 /** Recognized value parsers shared across entities. Maps 1:1 to helpers in core/transforms.ts. */
 export type ValueParser = 'string' | 'number' | 'integer' | 'boolean' | 'raw';
@@ -177,6 +179,16 @@ export interface EntityImportConfig<TRow extends Record<string, unknown> = Recor
   dedupKeys: DedupKeyConfig[];
   /** Build the Supabase insert payload for one transformed row */
   buildInsertPayload: (row: TRow, ctx: { salonId: string }) => Record<string, unknown>;
+  /**
+   * Optional custom commit path. When set, runCommitImport delegates the entire
+   * insert phase to this function instead of the default per-row insert. Used
+   * by entities with multi-table line items (fiches → fiche_services /
+   * fiche_products / fiche_payments) and cross-file FK resolution.
+   */
+  customCommit?: (
+    rows: TransformedRow<TRow>[],
+    ctx: { salonId: string; jobId: string },
+  ) => Promise<{ inserted: number; skipped: number; failed: FailedRow[] }>;
   /** Columns shown in the review-page preview table */
   previewColumns: readonly PreviewColumn[];
   /** Path to navigate to from the completed/cancelled/error states */

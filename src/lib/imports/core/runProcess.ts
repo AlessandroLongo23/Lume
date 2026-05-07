@@ -5,6 +5,7 @@ import { loadParsedFile } from './loadParsedFile';
 import { mapColumns, type MappingResult } from './llmMapper';
 import { smartMapColumns } from './smartMapper';
 import { getEntityConfig } from '../entities/registry';
+import { evaluateAutoCommitEligibility } from '../onboarding/autoCommitEligibility';
 
 const PREVIEW_ROW_COUNT = 20;
 
@@ -40,10 +41,11 @@ export async function runProcessImport(jobId: string): Promise<void> {
     // 1. Download + parse
     const { data: job, error: jobErr } = await supabase
       .from('import_jobs')
-      .select('storage_path, source_filename, entity, salon_id, created_by, source_size_bytes')
+      .select('storage_path, source_filename, source_sheet_name, entity, salon_id, created_by, source_size_bytes')
       .eq('id', jobId)
       .single();
     if (jobErr || !job) throw new Error(`job ${jobId} not found: ${jobErr?.message}`);
+    if (!job.entity) throw new Error(`job ${jobId} has no entity (not classified yet)`);
 
     const config = getEntityConfig(job.entity);
 
@@ -92,10 +94,16 @@ export async function runProcessImport(jobId: string): Promise<void> {
     const preview = parsed.rows.slice(0, PREVIEW_ROW_COUNT).map((r, i) => config.transformRow(r, mappingResult.mappings, i));
     const sourceSample = parsed.rows.slice(0, PREVIEW_ROW_COUNT);
 
+    // Onboarding orchestrator reads `auto_commit_eligible` to decide which
+    // children to commit without user review. Always set it — for the manual
+    // per-entity flow it's harmless extra metadata.
+    const eligibility = evaluateAutoCommitEligibility(mappingResult.mappings, config, mappingResult);
+
     await markJob(supabase, jobId, {
       status: 'awaiting_review',
       total_rows: parsed.rows.length,
       mapping_json: mappingResult,
+      auto_commit_eligible: eligibility.eligible,
       preview_json: {
         usedLLM: mappingResult.usedLLM,
         warnings: mappingResult.warnings,
@@ -104,7 +112,7 @@ export async function runProcessImport(jobId: string): Promise<void> {
         previewRowCount: preview.length,
       },
     });
-    log('done — awaiting_review', { total: parsed.rows.length, previewOk: preview.filter((p) => p.ok).length });
+    log('done — awaiting_review', { total: parsed.rows.length, previewOk: preview.filter((p) => p.ok).length, eligible: eligibility.eligible });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[runProcessImport ${jobId.slice(0, 8)}] FAILED:`, msg);

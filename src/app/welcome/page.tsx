@@ -66,7 +66,7 @@ function WelcomeSequence() {
       setIndex(i => i + 1);
       setVisible(true);
     } else {
-      router.push('/admin/calendario');
+      router.push('/onboarding/import');
     }
   }
 

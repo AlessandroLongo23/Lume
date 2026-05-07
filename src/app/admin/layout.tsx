@@ -12,6 +12,7 @@ import { Breadcrumbs } from '@/lib/components/shell/Breadcrumbs';
 import { useAdminBreadcrumbs } from '@/lib/components/shell/useAdminBreadcrumbs';
 import { StoreInitializer } from '@/lib/components/admin/StoreInitializer';
 import { TrialWarningBanner } from '@/lib/components/admin/TrialWarningBanner';
+import { OnboardingProgressBanner } from '@/lib/components/admin/OnboardingProgressBanner';
 import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
 import { SubscriptionCTA } from '@/lib/components/admin/SubscriptionCTA';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
@@ -119,6 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const isExpired = useSubscriptionStore((s) => s.isExpired);
+  const isLoaded = useSubscriptionStore((s) => s.isLoaded);
   const isLoading = useSubscriptionStore((s) => s.isLoading);
   const firstName = useSubscriptionStore((s) => s.firstName);
   const lastName = useSubscriptionStore((s) => s.lastName);
@@ -135,10 +137,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (isAdmin) return;
-    if (!isLoading && isExpired && pathname !== '/admin/subscribe') {
+    // Only redirect once we've confirmed an expired state from a successful
+    // /api/subscription call. Otherwise a transient API failure right after
+    // signup/onboarding would bounce the owner to /admin/subscribe.
+    if (isLoaded && !isLoading && isExpired && pathname !== '/admin/subscribe') {
       router.replace('/admin/subscribe');
     }
-  }, [isAdmin, isLoading, isExpired, pathname, router]);
+  }, [isAdmin, isLoaded, isLoading, isExpired, pathname, router]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -276,6 +281,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       ) : (
         <>
+          <OnboardingProgressBanner />
           <TrialWarningBanner />
           {children}
         </>

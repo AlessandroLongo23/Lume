@@ -32,7 +32,9 @@ export interface ImportJob {
   id: string;
   salon_id: string;
   created_by: string;
-  entity: ImportEntity;
+  /** Null when the job is a child of an onboarding bulk-import that hasn't been
+   *  classified yet. Required by the manual per-entity flow. */
+  entity: ImportEntity | null;
   source_filename: string;
   source_size_bytes: number | null;
   storage_path: string;
@@ -47,4 +49,10 @@ export interface ImportJob {
   failure_reason: string | null;
   created_at: string;
   completed_at: string | null;
+  /** Set when this job is part of a bulk onboarding import. */
+  onboarding_id: string | null;
+  /** Set by processOnboarding when the mapping is confident enough to skip review. */
+  auto_commit_eligible: boolean;
+  /** Set when this job represents one sheet of a split multi-sheet workbook. */
+  source_sheet_name: string | null;
 }

@@ -9,11 +9,12 @@ export type SafeRedirect = {
 };
 
 const LABELS: Record<GatewayResult['redirect'], string> = {
-  '/platform':         'la dashboard admin',
-  '/admin/calendario': 'il tuo calendario',
-  '/select-salon':     'la selezione salone',
-  '/client-dashboard': 'la tua area cliente',
-  '/select-workspace': 'la selezione workspace',
+  '/platform':           'la dashboard admin',
+  '/admin/calendario':   'il tuo calendario',
+  '/select-salon':       'la selezione salone',
+  '/client-dashboard':   'la tua area cliente',
+  '/select-workspace':   'la selezione workspace',
+  '/onboarding/import':  'l\'importazione dei tuoi dati',
 };
 
 /**

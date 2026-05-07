@@ -28,6 +28,9 @@ const REGISTRY: Record<ImportEntity, EntityImportConfig | undefined> = {
   operators: operatorsConfig as unknown as EntityImportConfig,
   products: productsConfig as unknown as EntityImportConfig,
   services: servicesConfig as unknown as EntityImportConfig,
+  // Wired in Phase 3 of the onboarding bulk-import work.
+  clientCategories: undefined,
+  fiches: undefined,
 };
 
 /**

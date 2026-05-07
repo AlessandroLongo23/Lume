@@ -9,7 +9,7 @@ export type GatewayResult = {
   businessContexts: WorkspaceContext[];
   clientContexts:   WorkspaceContext[];
   /** Pre-computed redirect target */
-  redirect:        '/admin/calendario' | '/select-salon' | '/client-dashboard' | '/select-workspace' | '/platform';
+  redirect:        '/admin/calendario' | '/select-salon' | '/client-dashboard' | '/select-workspace' | '/platform' | '/onboarding/import';
   /** Non-null only when redirect === '/admin/calendario' (single unambiguous salon) */
   activeSalonId:   string | null;
   /** True when the authenticated user is a platform admin (formerly super-admin) */
