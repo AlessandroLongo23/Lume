@@ -5,6 +5,7 @@ import { Pencil, Trash2, CheckCircle2, Clock, Sparkles, Receipt } from 'lucide-r
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useOperatorsStore } from '@/lib/stores/operators';
@@ -13,16 +14,10 @@ import { Button } from '@/lib/components/shared/ui/Button';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
 
-const STATUS_STYLES: Record<string, string> = {
-  [FicheStatus.CREATED]: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
-  [FicheStatus.PENDING]: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-  [FicheStatus.COMPLETED]: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  [FicheStatus.CREATED]: 'Creata',
-  [FicheStatus.PENDING]: 'In corso',
-  [FicheStatus.COMPLETED]: 'Completata',
+const BUCKET_STYLES: Record<FicheBucket, string> = {
+  [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
+  [FicheBucket.ARRETRATA]: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  [FicheBucket.CONCLUSA]: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
 };
 
 function withOpacity(hex: string, opacity: number): string {
@@ -65,7 +60,8 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
     `€ ${value.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const isCompleted = fiche.status === FicheStatus.COMPLETED;
-  const isPending = fiche.status === FicheStatus.PENDING;
+  const bucket = getFicheBucket(fiche);
+  const isArretrata = bucket === FicheBucket.ARRETRATA;
 
   const categoryColors = useMemo(() => {
     return ficheServices.map((fs) => {
@@ -94,9 +90,9 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
             </p>
           </div>
         </div>
-        <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_STYLES[fiche.status] ?? ''}`}>
-          {isPending && <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />}
-          {STATUS_LABELS[fiche.status] ?? fiche.status}
+        <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${BUCKET_STYLES[bucket]}`}>
+          {isArretrata && <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />}
+          {FICHE_BUCKET_LABELS[bucket]}
         </span>
       </div>
 
@@ -187,6 +183,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
               <Button
                 variant="secondary"
                 iconOnly
+                fullWidth
                 aria-label="Elimina"
                 title="Elimina"
                 onClick={() => onDelete(fiche)}
@@ -197,6 +194,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
               <Button
                 variant="secondary"
                 iconOnly
+                fullWidth
                 aria-label="Modifica"
                 title="Modifica"
                 onClick={() => onEdit(fiche)}
@@ -204,7 +202,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
                 <Pencil />
               </Button>
             </div>
-            <Button variant="primary" leadingIcon={Receipt} onClick={() => onCheckout(fiche)}>
+            <Button variant="primary" fullWidth leadingIcon={Receipt} onClick={() => onCheckout(fiche)}>
               Chiudi Fiche
             </Button>
           </div>

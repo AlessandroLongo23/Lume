@@ -19,6 +19,7 @@ import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
@@ -201,7 +202,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [note, setNote] = useState('');
   const [miscela, setMiscela] = useState('');
   const [tecnica, setTecnica] = useState('');
-  const [status, setStatus] = useState<FicheStatus>(FicheStatus.CREATED);
   const [ficheServices, setFicheServices] = useState<FicheServiceDraft[]>([]);
   const [ficheProducts, setFicheProducts] = useState<FicheProductDraft[]>([]);
   const [totalOverride, setTotalOverride] = useState<number | null>(null);
@@ -238,7 +238,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setNote(fiche.note ?? '');
       setMiscela(fiche.miscela ?? '');
       setTecnica(fiche.tecnica ?? '');
-      setStatus(fiche.status);
       setTotalOverride(fiche.total_override ?? null);
       setFicheServices(
         fiche.getFicheServices().map((fs) => {
@@ -274,7 +273,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setNote('');
       setMiscela('');
       setTecnica('');
-      setStatus(FicheStatus.CREATED);
       setTotalOverride(null);
       setFicheServices([]);
       setFicheProducts([]);
@@ -526,7 +524,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
     if (mode === 'add') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
+      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status: FicheStatus.CREATED, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
       await Promise.all(
         servicesWithTimes.map((svc) =>
           addFicheService({
@@ -557,7 +555,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
     if (!fiche) throw new Error('Fiche mancante');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, status, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
+    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
 
     const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
     for (const fs of fiche.getFicheServices()) {
@@ -695,6 +693,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   const isEdit = mode === 'edit';
   const isCompleted = fiche?.status === FicheStatus.COMPLETED;
+  const currentBucket = getFicheBucket({
+    datetime: baseTime,
+    status: fiche?.status ?? FicheStatus.CREATED,
+  });
+  const bucketChipClass: Record<FicheBucket, string> =
+    {
+      [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
+      [FicheBucket.ARRETRATA]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+      [FicheBucket.CONCLUSA]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    };
   const paymentValid = isPaymentValid(paymentView, effectiveTotal, cashGiven, splits);
 
   const confirmText = activeTopTab === 'payment'
@@ -815,13 +823,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
           {activeTopTab === 'edit' ? (
             /* ══ MODIFICA TAB ═══════════════════════════════════════════════ */
-            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 2xl:gap-8 flex-1 min-h-0 overflow-y-auto 2xl:overflow-visible">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 xl:gap-8 flex-1 min-h-0 overflow-y-auto xl:overflow-visible">
 
               {/* ── LEFT: Dettagli ── */}
-              <div className="flex flex-col gap-5 2xl:overflow-y-auto 2xl:pr-1">
+              <div className="flex flex-col gap-5 xl:overflow-y-auto xl:pr-1">
 
                 {/* Row 1: Data, Cliente, Stato — 3-col below 2xl when there's room, stacked at 2xl (narrow column) */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-5">
                   <div className="flex flex-col gap-1.5">
                     <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
                     <input
@@ -849,15 +857,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                   <div className="flex flex-col gap-1.5">
                     <label className={labelClass}><Check className="size-3.5" />Stato</label>
-                    <select
-                      className={inputClass}
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as FicheStatus)}
+                    <span
+                      className={`self-start inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${bucketChipClass[currentBucket]}`}
+                      title="Lo stato è derivato dalla data e dal pagamento"
                     >
-                      <option value={FicheStatus.CREATED}>Creata</option>
-                      <option value={FicheStatus.PENDING}>In attesa</option>
-                      <option value={FicheStatus.COMPLETED}>Completata</option>
-                    </select>
+                      {FICHE_BUCKET_LABELS[currentBucket]}
+                    </span>
                   </div>
                 </div>
 
@@ -886,7 +891,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   </div>
 
                   {treatmentTab === 'new' ? (
-                    <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-3 pt-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-3 pt-1">
                       <div className="flex flex-col gap-1.5">
                         <label className={labelClass}><FlaskConical className="size-3.5" />Miscela</label>
                         <textarea
@@ -925,7 +930,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                           {format(new Date(lastTreatment.datetime), "d MMMM yyyy", { locale: it })}
                         </p>
                       )}
-                      <div className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-1 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-3">
                         {(['miscela', 'tecnica', 'note'] as const).map((field) => {
                           const config = {
                             miscela: { icon: FlaskConical, label: 'Miscela', empty: 'Nessuna miscela precedente' },
@@ -1025,7 +1030,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                       {errors.services && <p className="text-xs text-red-500 -mt-2">{errors.services}</p>}
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 2xl:flex-1 2xl:min-h-0">
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 xl:flex-1 xl:min-h-0">
                         {ficheServices.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
                             <Scissors className="size-8 opacity-20" />
@@ -1049,7 +1054,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                               <span />
                             </div>
 
-                            <div className="divide-y divide-zinc-500/10 2xl:overflow-y-auto 2xl:overscroll-contain">
+                            <div className="divide-y divide-zinc-500/10 xl:overflow-y-auto xl:overscroll-contain">
                               {servicesWithTimes.map((svc, i) => (
                                 <div
                                   key={svc.id ?? i}
@@ -1065,7 +1070,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                           type="text"
                                           value={svc.name}
                                           onChange={(e) => updateServiceName(i, e.target.value)}
-                                          className="w-full min-w-0 px-2 py-1 rounded-md border border-transparent hover:border-zinc-500/25 focus:border-primary/50 focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:outline-none bg-transparent text-sm text-zinc-900 dark:text-zinc-100 transition-colors"
+                                          className="w-full min-w-0 h-[var(--lume-control-h-sm)] px-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)] rounded-md border border-transparent hover:border-zinc-500/25 focus:border-primary/50 focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:outline-none bg-transparent text-zinc-900 dark:text-zinc-100 transition-colors"
                                           aria-label="Nome servizio"
                                         />
                                         {isOverridden && (
@@ -1094,7 +1099,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                       onChange={(v) => updateServiceOperator(i, v)}
                                       placeholder="—"
                                       maxHeight="max-h-40"
-                                      classes="text-sm"
+                                      size="sm"
                                     />
                                   </div>
 
@@ -1104,7 +1109,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                       onChange={(v) => updateServiceDuration(i, v ?? 5)}
                                       min={5}
                                       step={5}
-                                      size="lg"
+                                      size="sm"
                                     />
                                   </div>
 
@@ -1123,7 +1128,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                       step={0.5}
                                       decimals={2}
                                       suffix="€"
-                                      size="lg"
+                                      size="sm"
                                       disabled={!!svc.abbonamento_id}
                                     />
                                   </div>
@@ -1213,7 +1218,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         )}
                       </div>
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 2xl:flex-1 2xl:min-h-0">
+                      <div className="flex flex-col rounded-lg border border-zinc-500/25 xl:flex-1 xl:min-h-0">
                         {ficheProducts.length > 0 && (
                           <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
                             <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
@@ -1229,7 +1234,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                             <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-zinc-500/10 2xl:overflow-y-auto 2xl:overscroll-contain">
+                          <div className="divide-y divide-zinc-500/10 xl:overflow-y-auto xl:overscroll-contain">
                             {ficheProducts.map((prod) => (
                               <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                                 <div className="flex flex-col min-w-0 flex-1">

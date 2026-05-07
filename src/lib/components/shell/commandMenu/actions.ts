@@ -13,7 +13,6 @@ import {
   BadgePercent,
   FolderOpen,
   Archive,
-  CheckCircle2,
   Power,
   NotebookText,
   type LucideIcon,
@@ -25,8 +24,6 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useServicesStore } from '@/lib/stores/services';
 import { useProductsStore } from '@/lib/stores/products';
-import { useFichesStore } from '@/lib/stores/fiches';
-import { FicheStatus } from '@/lib/types/ficheStatus';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -193,17 +190,6 @@ const archiveProductAction = (entity: EntitySummary): CommandAction =>
     'Errore durante l’archiviazione.',
   );
 
-const markFicheCompletedAction = (entity: EntitySummary): CommandAction =>
-  inlineConfirmAction(
-    `complete-fiche-${entity.id}`,
-    entity,
-    'Marca come completata',
-    CheckCircle2,
-    () => useFichesStore.getState().updateFiche(entity.id, { status: FicheStatus.COMPLETED }),
-    'Fiche completata.',
-    'Errore durante l’operazione.',
-  );
-
 const toggleCouponActiveAction = (entity: EntitySummary): CommandAction => {
   const current = useCouponsStore.getState().coupons.find((c) => c.id === entity.id);
   const isActive = current?.is_active ?? true;
@@ -288,10 +274,6 @@ const ficheFactory: EntityActionFactory = (entity, role) => {
     openAction(entity, 'Apri fiche'),
     editAction(entity, 'Modifica fiche'),
   ];
-  const fiche = useFichesStore.getState().fiches.find((f) => f.id === entity.id);
-  if (fiche && fiche.status !== FicheStatus.COMPLETED) {
-    actions.push(markFicheCompletedAction(entity));
-  }
   if (canManageSalon(role)) actions.push(deleteAction(entity, 'Elimina fiche'));
   return actions;
 };

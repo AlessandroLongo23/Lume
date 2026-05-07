@@ -12,7 +12,7 @@ export const TAB_DEFAULTS: Record<TabsPageKey, readonly string[]> = {
   servizi: ['servizi', 'categorie'],
   coupons: ['gift', 'gift_card'],
   bilancio: ['panoramica', 'spese', 'obiettivi'],
-  fiches: ['active', 'completed', 'all'],
+  fiches: ['prenotate', 'arretrate', 'concluse', 'tutte'],
 } as const;
 
 export const TAB_LABELS: Record<TabsPageKey, Record<string, string>> = {
@@ -36,9 +36,10 @@ export const TAB_LABELS: Record<TabsPageKey, Record<string, string>> = {
     obiettivi: 'Obiettivi',
   },
   fiches: {
-    active: 'In corso',
-    completed: 'Completate',
-    all: 'Tutte',
+    prenotate: 'Prenotate',
+    arretrate: 'Arretrate',
+    concluse: 'Concluse',
+    tutte: 'Tutte',
   },
 };
 

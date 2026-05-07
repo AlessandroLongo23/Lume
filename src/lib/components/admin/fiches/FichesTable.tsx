@@ -10,14 +10,14 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2, Search, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
-import { Fiche } from '@/lib/types/Fiche';
-import { FicheStatus } from '@/lib/types/ficheStatus';
+import { Fiche, FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
@@ -30,21 +30,16 @@ interface FichesTableProps {
   fiches: Fiche[];
   globalFilter?: string;
   onGlobalFilterChange?: (value: string) => void;
+  emptyText?: string;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  [FicheStatus.CREATED]: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-  [FicheStatus.PENDING]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  [FicheStatus.COMPLETED]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+const BUCKET_STYLES: Record<FicheBucket, string> = {
+  [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
+  [FicheBucket.ARRETRATA]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  [FicheBucket.CONCLUSA]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  [FicheStatus.CREATED]: 'Creata',
-  [FicheStatus.PENDING]: 'In corso',
-  [FicheStatus.COMPLETED]: 'Completata',
-};
-
-export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: FichesTableProps) {
+export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyText }: FichesTableProps) {
   const isLoading = useFichesStore((s) => s.isLoading);
   const clients = useClientsStore((s) => s.clients);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
@@ -152,13 +147,14 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
         },
       },
       {
-        accessorKey: 'status',
+        id: 'status',
         header: 'Stato',
-        cell: ({ getValue }) => {
-          const s = getValue() as string;
+        accessorFn: (fiche) => getFicheBucket(fiche),
+        cell: ({ row }) => {
+          const bucket = getFicheBucket(row.original);
           return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_STYLES[s] ?? ''}`}>
-              {STATUS_LABELS[s] ?? s}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${BUCKET_STYLES[bucket]}`}>
+              {FICHE_BUCKET_LABELS[bucket]}
             </span>
           );
         },
@@ -195,32 +191,12 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           {showSearch && (
-            <div className="relative flex items-center flex-1 max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca fiche..."
-                value={globalFilter ?? ''}
-                onChange={(e) => onGlobalFilterChange?.(e.target.value)}
-                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  aria-label="Cancella ricerca"
-                  onClick={() => onGlobalFilterChange?.('')}
-                  className="absolute right-1"
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+            <Searchbar
+              className="flex-1 max-w-sm"
+              placeholder="Cerca fiche..."
+              value={globalFilter ?? ''}
+              onChange={(v) => onGlobalFilterChange?.(v)}
+            />
           )}
           <ColumnPicker tableId="fiches" columns={columns} className="ml-auto" />
         </div>
@@ -272,7 +248,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
-                    Nessuna fiche trovata.
+                    {emptyText ?? 'Nessuna fiche trovata.'}
                   </td>
                 </tr>
               ) : (

@@ -9,9 +9,10 @@ import type { Fiche } from '@/lib/types/Fiche';
 
 interface FichesGridProps {
   fiches: Fiche[];
+  emptyText?: string;
 }
 
-export function FichesGrid({ fiches }: FichesGridProps) {
+export function FichesGrid({ fiches, emptyText }: FichesGridProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
@@ -22,7 +23,7 @@ export function FichesGrid({ fiches }: FichesGridProps) {
       {fiches.length === 0 ? (
         <div className="min-h-[300px] flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
           <Calendar className="w-16 h-16 text-zinc-300 dark:text-zinc-600 mb-3" />
-          <h3 className="text-lg font-medium text-zinc-600 dark:text-zinc-400">Nessuna fiche trovata</h3>
+          <h3 className="text-lg font-medium text-zinc-600 dark:text-zinc-400">{emptyText ?? 'Nessuna fiche trovata'}</h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

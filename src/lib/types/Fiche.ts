@@ -1,12 +1,34 @@
 import { User, Calendar, Check } from 'lucide-react';
+import { startOfDay } from 'date-fns';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
-import type { FicheStatus } from './ficheStatus';
+import { FicheStatus } from './ficheStatus';
 import type { FicheService } from './FicheService';
 import type { FicheProduct } from './FicheProduct';
 import type { DataColumn } from './dataColumn';
 import type { Client } from './Client';
+
+export enum FicheBucket {
+  PRENOTATA = 'prenotata',
+  ARRETRATA = 'arretrata',
+  CONCLUSA = 'conclusa',
+}
+
+export const FICHE_BUCKET_LABELS: Record<FicheBucket, string> = {
+  [FicheBucket.PRENOTATA]: 'Prenotata',
+  [FicheBucket.ARRETRATA]: 'Arretrata',
+  [FicheBucket.CONCLUSA]: 'Conclusa',
+};
+
+// A fiche becomes *arretrata* only on the day after its scheduled date,
+// so an in-progress visit doesn't flicker into the overdue bucket.
+export function getFicheBucket(fiche: { datetime: Date | string; status: FicheStatus }): FicheBucket {
+  if (fiche.status === FicheStatus.COMPLETED) return FicheBucket.CONCLUSA;
+  const today = startOfDay(new Date());
+  const ficheDay = startOfDay(new Date(fiche.datetime));
+  return ficheDay < today ? FicheBucket.ARRETRATA : FicheBucket.PRENOTATA;
+}
 
 export class Fiche {
   id: string;
@@ -74,6 +96,10 @@ export class Fiche {
 
   hasDiscount(): boolean {
     return this.total_override !== null && this.total_override < this.getSubtotal();
+  }
+
+  getBucket(): FicheBucket {
+    return getFicheBucket(this);
   }
 
   static dataColumns: DataColumn[] = [

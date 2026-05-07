@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, Search, X, ArrowDownToLine, Trash2 } from 'lucide-react';
+import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
-import { FicheStatus } from '@/lib/types/ficheStatus';
+import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
@@ -17,6 +17,7 @@ import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -24,9 +25,16 @@ import { useViewsStore } from '@/lib/stores/views';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS, TAB_LABELS } from '@/lib/const/tab-defaults';
 
-type TabValue = 'active' | 'completed' | 'all';
+type TabValue = 'prenotate' | 'arretrate' | 'concluse' | 'tutte';
 
 const DEFAULT_ORDER = TAB_DEFAULTS.fiches as readonly TabValue[];
+
+const EMPTY_TAB_TEXT: Record<TabValue, string> = {
+  prenotate: 'Nessuna fiche prenotata.',
+  arretrate: 'Nessuna fiche arretrata. Tutto in regola.',
+  concluse: 'Nessuna fiche conclusa.',
+  tutte: 'Nessuna fiche.',
+};
 
 export default function FichesPage() {
   const router = useRouter();
@@ -76,26 +84,37 @@ export default function FichesPage() {
 
   const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
 
-  const counts = useMemo(() => ({
-    active: fiches.filter((f) => f.status !== FicheStatus.COMPLETED).length,
-    completed: fiches.filter((f) => f.status === FicheStatus.COMPLETED).length,
-    all: fiches.length,
-  }), [fiches]);
+  const fichesWithBucket = useMemo(
+    () => fiches.map((f) => ({ fiche: f, bucket: getFicheBucket(f) })),
+    [fiches]
+  );
+
+  const counts = useMemo(() => {
+    const c = { prenotate: 0, arretrate: 0, concluse: 0, tutte: fiches.length };
+    for (const { bucket } of fichesWithBucket) {
+      if (bucket === FicheBucket.PRENOTATA) c.prenotate++;
+      else if (bucket === FicheBucket.ARRETRATA) c.arretrate++;
+      else if (bucket === FicheBucket.CONCLUSA) c.concluse++;
+    }
+    return c;
+  }, [fichesWithBucket, fiches.length]);
 
   const filteredFiches = useMemo(() => {
-    let data = fiches;
-    if (activeTab === 'active') data = data.filter((f) => f.status !== FicheStatus.COMPLETED);
-    else if (activeTab === 'completed') data = data.filter((f) => f.status === FicheStatus.COMPLETED);
+    let data = fichesWithBucket;
+    if (activeTab === 'prenotate') data = data.filter((d) => d.bucket === FicheBucket.PRENOTATA);
+    else if (activeTab === 'arretrate') data = data.filter((d) => d.bucket === FicheBucket.ARRETRATA);
+    else if (activeTab === 'concluse') data = data.filter((d) => d.bucket === FicheBucket.CONCLUSA);
     if (globalFilter.trim()) {
       const q = globalFilter.toLowerCase();
-      data = data.filter((f) => {
-        const client = clientMap.get(f.client_id);
+      data = data.filter(({ fiche, bucket }) => {
+        const client = clientMap.get(fiche.client_id);
         const fullName = client ? `${client.firstName} ${client.lastName}`.toLowerCase() : '';
-        return fullName.includes(q) || f.status.toLowerCase().includes(q);
+        const bucketLabel = FICHE_BUCKET_LABELS[bucket].toLowerCase();
+        return fullName.includes(q) || bucketLabel.includes(q);
       });
     }
-    return data;
-  }, [fiches, activeTab, globalFilter, clientMap]);
+    return data.map((d) => d.fiche);
+  }, [fichesWithBucket, activeTab, globalFilter, clientMap]);
 
   return (
     <>
@@ -186,30 +205,12 @@ export default function FichesPage() {
 
           {/* Search (grid view only — table view embeds the search in its toolbar) */}
           {view === 'grid' && (
-            <div>
-              <div className="relative flex items-center max-w-sm">
-                <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Cerca fiche..."
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                    border-zinc-200 dark:border-zinc-800
-                    focus:border-zinc-300 dark:focus:border-zinc-700
-                    text-zinc-900 dark:text-zinc-100
-                    placeholder:text-zinc-400 outline-none transition-colors"
-                />
-                {globalFilter && (
-                  <button
-                    onClick={() => setGlobalFilter('')}
-                    className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
+            <Searchbar
+              className="max-w-sm"
+              placeholder="Cerca fiche..."
+              value={globalFilter}
+              onChange={setGlobalFilter}
+            />
           )}
 
           {/* Content */}
@@ -228,9 +229,10 @@ export default function FichesPage() {
               fiches={filteredFiches}
               globalFilter={globalFilter}
               onGlobalFilterChange={setGlobalFilter}
+              emptyText={EMPTY_TAB_TEXT[activeTab]}
             />
           ) : (
-            <FichesGrid fiches={filteredFiches} />
+            <FichesGrid fiches={filteredFiches} emptyText={EMPTY_TAB_TEXT[activeTab]} />
           )}
         </div>
       </div>
