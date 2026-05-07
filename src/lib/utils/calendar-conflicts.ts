@@ -9,7 +9,6 @@ export type ConflictReason =
   | 'unavailability'
   | 'outside-hours'
   | 'closed-day'
-  | 'past'
   | 'invalid-range'
   | null;
 
@@ -27,7 +26,6 @@ const HARD_REASONS: ReadonlySet<NonNullable<ConflictReason>> = new Set([
   'overlap',
   'client-overlap',
   'unavailability',
-  'past',
   'invalid-range',
 ]);
 
@@ -42,7 +40,6 @@ interface CollideArgs {
   excludeFicheServiceIds: string[];
   allFicheServices: FicheService[];
   schedule: DaySchedule[];
-  allowPast?: boolean;
   /** Client of the segment being moved/created. When provided, overlaps with any
    *  other service for this client (regardless of operator) are also reported. */
   clientId?: string | null;
@@ -61,7 +58,6 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
     excludeFicheServiceIds,
     allFicheServices,
     schedule,
-    allowPast = false,
     clientId = null,
     ficheClientMap,
     unavailabilities,
@@ -69,10 +65,6 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
 
   if (end.getTime() <= start.getTime()) {
     return { valid: false, reason: 'invalid-range', conflictingFicheServiceIds: [] };
-  }
-
-  if (!allowPast && start.getTime() < Date.now()) {
-    return { valid: false, reason: 'past', conflictingFicheServiceIds: [] };
   }
 
   const exclude = new Set(excludeFicheServiceIds);
@@ -142,7 +134,6 @@ interface BlockCollideArgs {
    * (used so per-operator working hours are honored).
    */
   schedule: DaySchedule[] | ((operatorId: string) => DaySchedule[]);
-  allowPast?: boolean;
   clientId?: string | null;
   ficheClientMap?: Map<string, string>;
   unavailabilities?: OperatorUnavailability[];
@@ -150,7 +141,7 @@ interface BlockCollideArgs {
 
 /**
  * Aggregate validation across multiple segments (a fiche moved as a block).
- * Priority of returned reason: overlap > client-overlap > outside-hours > closed-day > past > invalid-range.
+ * Priority of returned reason: overlap > client-overlap > outside-hours > closed-day > invalid-range.
  */
 export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
   const allConflictingIds = new Set<string>();
@@ -160,7 +151,6 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
     unavailability: 0,
     'outside-hours': 0,
     'closed-day': 0,
-    past: 0,
     'invalid-range': 0,
   };
 
@@ -177,7 +167,6 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
       excludeFicheServiceIds: args.excludeFicheServiceIds,
       allFicheServices: args.allFicheServices,
       schedule: resolveSchedule(seg.operatorId),
-      allowPast: args.allowPast,
       clientId: args.clientId,
       ficheClientMap: args.ficheClientMap,
       unavailabilities: args.unavailabilities,
@@ -192,7 +181,6 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
     'overlap',
     'client-overlap',
     'unavailability',
-    'past',
     'invalid-range',
     'outside-hours',
     'closed-day',

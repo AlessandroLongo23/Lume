@@ -189,7 +189,6 @@ export function DayViewSlot({
 
   const isOccupied = slotFiches.length > 0 || hasUnavailabilityHere;
   const isPast = datetime < new Date();
-  const isBlocked = isPast;
   const hasBlocksHere = runsStartingHere.length > 0;
 
   // Live invalid-zone highlight: only when drag is active AND invalid AND this slot
@@ -215,7 +214,6 @@ export function DayViewSlot({
     createPreview.end.getTime() > datetime.getTime();
 
   function handleClick() {
-    if (isBlocked) return;
     if (draggedRef.current) {
       draggedRef.current = false;
       return;
@@ -225,7 +223,7 @@ export function DayViewSlot({
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     // Only the empty-cell area handles the create-unavailability gesture.
-    if (isBlocked || isOccupied || !onCreateUnavailability) return;
+    if (isOccupied || !onCreateUnavailability) return;
     if (e.button !== 0) return;
     // Don't hijack drags that originated on a child (e.g. plus icon area is fine,
     // but if a FicheBlock is added later we still rely on isOccupied).
@@ -294,7 +292,7 @@ export function DayViewSlot({
     : undefined;
 
   const baseBg = isPast
-    ? 'bg-zinc-100 dark:bg-zinc-800/80 cursor-default'
+    ? 'bg-zinc-100 dark:bg-zinc-800/80'
     : isExtendedHours
       ? 'bg-amber-500/5 dark:bg-amber-500/10'
       : isDisabled
@@ -303,7 +301,11 @@ export function DayViewSlot({
           ? 'bg-zinc-50 dark:bg-zinc-800/50'
           : 'bg-white dark:bg-zinc-900';
 
-  const slotTooltip = isPast ? 'Questo orario è passato' : isExtendedHours ? 'Fuori orari di apertura' : undefined;
+  const slotTooltip = isPast
+    ? 'Slot passato — clicca per registrare retroattivamente'
+    : isExtendedHours
+      ? 'Fuori orari di apertura'
+      : undefined;
 
   return (
     <Tooltip label={slotTooltip}>
@@ -315,9 +317,9 @@ export function DayViewSlot({
         datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'
       } ${baseBg}`}
       style={closedHoursStyle}
-      onMouseEnter={() => !isBlocked && setIsHovered(true)}
+      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      {...(!isBlocked && !isOccupied && { role: 'button', tabIndex: 0 })}
+      {...(!isOccupied && { role: 'button', tabIndex: 0 })}
     >
       {/* Invalid drop highlight overlay */}
       {isInvalidPreviewZone && (
@@ -337,10 +339,10 @@ export function DayViewSlot({
 
       <div
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
-          isBlocked ? 'cursor-default' : isOccupied ? '' : 'cursor-pointer'
+          isOccupied ? '' : 'cursor-pointer'
         }`}
-        onClick={isBlocked || isOccupied ? undefined : handleClick}
-        onPointerDown={isBlocked || isOccupied ? undefined : handlePointerDown}
+        onClick={isOccupied ? undefined : handleClick}
+        onPointerDown={isOccupied ? undefined : handlePointerDown}
       >
         {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche, topOffsetRem }) => (
           <FicheBlock
@@ -365,7 +367,7 @@ export function DayViewSlot({
           />
         ))}
         {isOccupied && !hasBlocksHere && unavailStartingHere.length === 0 && <div className="w-full h-full" />}
-        {!isOccupied && isHovered && !isBlocked && <Plus size={16} className="text-zinc-400" />}
+        {!isOccupied && isHovered && <Plus size={16} className="text-zinc-400" />}
       </div>
     </div>
     </Tooltip>

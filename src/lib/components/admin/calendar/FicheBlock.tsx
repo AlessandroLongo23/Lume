@@ -63,8 +63,6 @@ export function FicheBlock({
   const dragValid = useCalendarDragStore((s) => s.conflict.valid);
 
   const client = clients.find((c) => c.id === fiche.client_id) ?? null;
-  const status = fiche.status;
-  const isLocked = status === 'completed' || isPast;
 
   const firstService = operatorServices[0];
   const lastService = operatorServices[operatorServices.length - 1];
@@ -90,7 +88,6 @@ export function FicheBlock({
   /** Threshold-gated drag activator. Falls back to onSelectFiche on plain click. */
   function makeMoveStarter(kind: 'move-block' | 'move-service', getServices: () => FicheService[]) {
     return (e: React.PointerEvent) => {
-      if (isLocked) return;
       e.stopPropagation();
       e.preventDefault();
       const start = { x: e.clientX, y: e.clientY };
@@ -132,7 +129,6 @@ export function FicheBlock({
     service: FicheService,
   ) {
     return (e: React.PointerEvent) => {
-      if (isLocked) return;
       e.stopPropagation();
       e.preventDefault();
       beginResize({
@@ -179,16 +175,14 @@ export function FicheBlock({
       }}
     >
       {/* Top resize handle (first service start time) */}
-      {!isLocked && (
-        <Tooltip label="Sposta inizio">
-          <button
-            type="button"
-            aria-label="Sposta inizio"
-            onPointerDown={startResize('resize-top', firstService)}
-            className="absolute top-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
-          />
-        </Tooltip>
-      )}
+      <Tooltip label="Sposta inizio">
+        <button
+          type="button"
+          aria-label="Sposta inizio"
+          onPointerDown={startResize('resize-top', firstService)}
+          className="absolute top-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
+        />
+      </Tooltip>
 
       {/* Service segments — segment heights sum to totalMinutes, so the block
           aligns precisely with the time grid. The first segment hosts a small
@@ -210,14 +204,10 @@ export function FicheBlock({
           : makeMoveStarter('move-service', () => [fs]);
         const bodyStarter = makeMoveStarter('move-service', () => [fs]);
 
-        const headerTitle = isLocked
-          ? 'Fiche già chiusa, non modificabile'
-          : isBlockDragEligible
-            ? 'Trascina per spostare l’intera fiche'
-            : 'I servizi di questa fiche sono su operatori diversi: trascina ciascuno singolarmente';
-        const bodyTitle = isLocked
-          ? 'Fiche già chiusa, non modificabile'
-          : 'Trascina per spostare il servizio';
+        const headerTitle = isBlockDragEligible
+          ? 'Trascina per spostare l’intera fiche'
+          : 'I servizi di questa fiche sono su operatori diversi: trascina ciascuno singolarmente';
+        const bodyTitle = 'Trascina per spostare il servizio';
 
         return (
           <div
@@ -244,12 +234,10 @@ export function FicheBlock({
                       onSelectFiche();
                     }
                   }}
-                  className={`group/seg shrink-0 flex items-center gap-1 px-2 py-1 min-w-0 border-b border-black/5 dark:border-white/5 ${
-                    isLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
-                  }`}
+                  className="group/seg shrink-0 flex items-center gap-1 px-2 py-1 min-w-0 border-b border-black/5 dark:border-white/5 cursor-grab active:cursor-grabbing"
                   style={{ backgroundColor: withOpacity(color, 0.10) }}
                 >
-                  {!isLocked && isBlockDragEligible && (
+                  {isBlockDragEligible && (
                     <div className="overflow-hidden flex shrink-0 w-0 -mr-1 group-hover/seg:w-3 group-hover/seg:mr-0 transition-[width,margin] duration-200 ease-out">
                       <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/seg:translate-x-0 transition-transform duration-200 ease-out" />
                     </div>
@@ -277,15 +265,11 @@ export function FicheBlock({
                     onSelectFiche();
                   }
                 }}
-                className={`group/body flex-1 min-h-0 overflow-hidden px-2 py-1 flex items-start ${
-                  isLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
-                }`}
+                className="group/body flex-1 min-h-0 overflow-hidden px-2 py-1 flex items-start cursor-grab active:cursor-grabbing"
               >
-              {!isLocked && (
                 <div className="overflow-hidden flex shrink-0 w-0 mr-0 group-hover/body:w-3 group-hover/body:mr-1 transition-[width,margin] duration-200 ease-out mt-px">
                   <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/body:translate-x-0 transition-transform duration-200 ease-out" />
                 </div>
-              )}
                 <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight min-w-0">
                   {service?.name ?? 'Servizio'}
                   {blockHeightRem >= 2 && (
@@ -296,7 +280,7 @@ export function FicheBlock({
             </Tooltip>
 
             {/* Seam chevrons — disambiguate which segment to resize */}
-            {isSeam && lower && !isLocked && (
+            {isSeam && lower && (
               <div className="absolute left-0 right-0 bottom-0 translate-y-1/2 z-content-floating pointer-events-none flex items-center justify-center gap-0.5 opacity-0 group-hover/block:opacity-100">
                 <Tooltip label="Estendi/accorcia il servizio precedente">
                   <button
@@ -325,16 +309,14 @@ export function FicheBlock({
       })}
 
       {/* Bottom resize handle (last service end time) */}
-      {!isLocked && (
-        <Tooltip label="Sposta fine">
-          <button
-            type="button"
-            aria-label="Sposta fine"
-            onPointerDown={startResize('resize-bottom', lastService)}
-            className="absolute bottom-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
-          />
-        </Tooltip>
-      )}
+      <Tooltip label="Sposta fine">
+        <button
+          type="button"
+          aria-label="Sposta fine"
+          onPointerDown={startResize('resize-bottom', lastService)}
+          className="absolute bottom-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
+        />
+      </Tooltip>
 
       {/* Cascade-mode badge */}
       {isThisFicheDragging && useCalendarDragStore.getState().cascade && (

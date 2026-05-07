@@ -173,9 +173,34 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
           </span>
         </div>
         {isCompleted ? (
-          <div className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-md border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle2 className="size-4" />
-            Pagata
+          <div className="space-y-2">
+            <div className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="size-4" />
+              Pagata
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
+                iconOnly
+                fullWidth
+                aria-label="Elimina"
+                title="Elimina"
+                onClick={() => onDelete(fiche)}
+                className="text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40"
+              >
+                <Trash2 />
+              </Button>
+              <Button
+                variant="secondary"
+                iconOnly
+                fullWidth
+                aria-label="Modifica"
+                title="Modifica fiche chiusa"
+                onClick={() => onEdit(fiche)}
+              >
+                <Pencil />
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
