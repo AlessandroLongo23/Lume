@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import type { FilterChoice } from '@/lib/types/dataColumn';
 
 interface SelectFilterProps {
@@ -18,18 +19,16 @@ export function SelectFilter({ options = [], value = null, onChange }: SelectFil
           Pulisci
         </Button>
       </div>
-      <select
-        className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-sm"
-        value={String(value ?? '')}
-        onChange={(e) => onChange(e.target.value || null)}
-      >
-        <option value="">Tutte</option>
-        {options.map((opt) => (
-          <option key={String(opt.value)} value={String(opt.value)}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <CustomSelect
+        value={value}
+        onChange={(v) => onChange((v ?? null) as string | number | null)}
+        options={options}
+        labelKey="label"
+        valueKey="value"
+        placeholder="Tutte"
+        isNullable
+        size="sm"
+      />
     </div>
   );
 }

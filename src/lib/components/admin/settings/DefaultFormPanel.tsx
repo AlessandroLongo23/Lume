@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Save, Loader2, RotateCcw, Scissors, Gift, BadgePercent, User } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { FACTORY_FORM_DEFAULTS } from '@/lib/const/factory-defaults';
@@ -126,16 +127,18 @@ export function DefaultFormPanel() {
             <label htmlFor="gcoupon-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Tipo di sconto predefinito (coupon regalo)
             </label>
-            <select
-              id="gcoupon-type"
+            <CustomSelect
               value={form.gift_coupon_discount_type}
-              onChange={(e) => setField('gift_coupon_discount_type', e.target.value as FormState['gift_coupon_discount_type'])}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="fixed">Importo fisso (€)</option>
-              <option value="percent">Percentuale (%)</option>
-              <option value="free_item">Servizio o prodotto omaggio</option>
-            </select>
+              onChange={(v) => setField('gift_coupon_discount_type', v as FormState['gift_coupon_discount_type'])}
+              options={[
+                { value: 'fixed', label: 'Importo fisso (€)' },
+                { value: 'percent', label: 'Percentuale (%)' },
+                { value: 'free_item', label: 'Servizio o prodotto omaggio' },
+              ]}
+              labelKey="label"
+              valueKey="value"
+              searchable={false}
+            />
           </div>
         </div>
       </SettingsCard>
@@ -179,16 +182,18 @@ export function DefaultFormPanel() {
             <label htmlFor="abb-payment" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Metodo di pagamento
             </label>
-            <select
-              id="abb-payment"
+            <CustomSelect
               value={form.abbonamento_payment_method}
-              onChange={(e) => setField('abbonamento_payment_method', e.target.value as FormState['abbonamento_payment_method'])}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="cash">Contanti</option>
-              <option value="card">Carta</option>
-              <option value="transfer">Bonifico</option>
-            </select>
+              onChange={(v) => setField('abbonamento_payment_method', v as FormState['abbonamento_payment_method'])}
+              options={[
+                { value: 'cash', label: 'Contanti' },
+                { value: 'card', label: 'Carta' },
+                { value: 'transfer', label: 'Bonifico' },
+              ]}
+              labelKey="label"
+              valueKey="value"
+              searchable={false}
+            />
           </div>
         </div>
       </SettingsCard>
@@ -217,15 +222,17 @@ export function DefaultFormPanel() {
             <label htmlFor="cl-gender" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Genere predefinito
             </label>
-            <select
-              id="cl-gender"
+            <CustomSelect
               value={form.client_default_gender}
-              onChange={(e) => setField('client_default_gender', e.target.value as FormState['client_default_gender'])}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="M">Uomo</option>
-              <option value="F">Donna</option>
-            </select>
+              onChange={(v) => setField('client_default_gender', v as FormState['client_default_gender'])}
+              options={[
+                { value: 'M', label: 'Uomo' },
+                { value: 'F', label: 'Donna' },
+              ]}
+              labelKey="label"
+              valueKey="value"
+              searchable={false}
+            />
           </div>
         </div>
       </SettingsCard>

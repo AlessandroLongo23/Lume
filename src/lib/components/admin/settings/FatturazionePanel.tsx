@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Receipt, Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { RegimeFiscale, SalonFiscal } from '@/lib/types/Salon';
@@ -157,33 +158,35 @@ export function FatturazionePanel() {
             <label htmlFor="regime" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Regime fiscale
             </label>
-            <select
-              id="regime"
-              value={form.regime}
-              onChange={(e) => setField('regime', e.target.value as FormState['regime'])}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="">— Seleziona —</option>
-              <option value="forfettario">Forfettario</option>
-              <option value="ordinario">Ordinario</option>
-            </select>
+            <CustomSelect
+              value={form.regime || null}
+              onChange={(v) => setField('regime', (v ?? '') as FormState['regime'])}
+              options={[
+                { value: 'forfettario', label: 'Forfettario' },
+                { value: 'ordinario', label: 'Ordinario' },
+              ]}
+              labelKey="label"
+              valueKey="value"
+              placeholder="— Seleziona —"
+              isNullable
+              searchable={false}
+            />
           </div>
 
           <div>
             <label htmlFor="default-iva" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               IVA predefinita
             </label>
-            <select
-              id="default-iva"
-              value={form.default_iva_pct === '' ? '' : String(form.default_iva_pct)}
-              onChange={(e) => setField('default_iva_pct', e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="">— Nessuna —</option>
-              {IVA_OPTIONS.map((p) => (
-                <option key={p} value={p}>{p}%</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={form.default_iva_pct === '' ? null : form.default_iva_pct}
+              onChange={(v) => setField('default_iva_pct', v === null || v === undefined ? '' : (v as number))}
+              options={IVA_OPTIONS.map((p) => ({ value: p, label: `${p}%` }))}
+              labelKey="label"
+              valueKey="value"
+              placeholder="— Nessuna —"
+              isNullable
+              searchable={false}
+            />
           </div>
 
           <div>

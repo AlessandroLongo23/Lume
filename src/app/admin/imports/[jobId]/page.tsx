@@ -20,6 +20,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import { useImportsStore } from '@/lib/stores/imports';
 import { getEntityConfig } from '@/lib/imports/entities/registry';
@@ -392,17 +393,18 @@ function MappingRow({
       <ArrowRight className="size-4 text-muted-foreground/60 mt-2" />
       <div className="flex flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-2">
-          <select
-            value={mapping.destField ?? ''}
+          <CustomSelect
+            value={mapping.destField ?? null}
+            onChange={(v) => onChange((v as string) ?? null)}
+            options={destFields.map((f) => ({ value: f, label: destFieldLabels[f] ?? f }))}
+            labelKey="label"
+            valueKey="value"
+            placeholder="Ignora"
+            isNullable
             disabled={!!smart}
-            onChange={(e) => onChange(e.target.value ? e.target.value : null)}
-            className="flex-1 px-3 py-1.5 text-sm rounded-md border border-input bg-card text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <option value="">Ignora</option>
-            {destFields.map((f) => (
-              <option key={f} value={f}>{destFieldLabels[f] ?? f}</option>
-            ))}
-          </select>
+            size="sm"
+            classes="flex-1"
+          />
           {showConfidence && (mapping.destField || smart) && (
             <ConfidencePill confidence={mapping.confidence} />
           )}

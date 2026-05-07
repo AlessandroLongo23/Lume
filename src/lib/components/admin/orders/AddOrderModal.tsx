@@ -63,12 +63,19 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          <select className={inputClass} value={order.status} onChange={(e) => set('status', e.target.value)}>
-            <option value="pending">In attesa</option>
-            <option value="confirmed">Confermato</option>
-            <option value="delivered">Consegnato</option>
-            <option value="cancelled">Annullato</option>
-          </select>
+          <CustomSelect
+            value={order.status}
+            onChange={(v) => set('status', v)}
+            options={[
+              { value: 'pending', label: 'In attesa' },
+              { value: 'confirmed', label: 'Confermato' },
+              { value: 'delivered', label: 'Consegnato' },
+              { value: 'cancelled', label: 'Annullato' },
+            ]}
+            labelKey="label"
+            valueKey="value"
+            searchable={false}
+          />
         </div>
       </div>
     </AddModal>

@@ -5,6 +5,7 @@ import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2, Scis
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useServicesStore } from '@/lib/stores/services';
 import { useProductsStore } from '@/lib/stores/products';
@@ -194,7 +195,6 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
         {/* text-zinc-50/zinc-800 sets currentColor for the SVG fill to match modal bg */}
         <div
           className="text-receipt"
-          style={{ filter: 'drop-shadow(0 4px 20px rgb(0 0 0 / 0.13))' }}
         >
           <TornEdge kind="top" />
 
@@ -388,18 +388,20 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
               <div className="flex flex-col gap-3">
                 {splits.map((split, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <select
+                    <CustomSelect
                       value={split.method}
-                      onChange={(e) => updateSplitMethod(i, e.target.value)}
-                      className="flex-1 px-2.5 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-900
-                        border-zinc-200 dark:border-zinc-700
-                        focus:border-primary/70 dark:focus:border-primary
-                        text-zinc-900 dark:text-zinc-100 outline-none transition-colors"
-                    >
-                      <option value={FichePaymentMethod.CASH}>Contanti</option>
-                      <option value={FichePaymentMethod.POS}>POS</option>
-                      <option value={FichePaymentMethod.OTHER}>Altro</option>
-                    </select>
+                      onChange={(v) => updateSplitMethod(i, v as string)}
+                      options={[
+                        { value: FichePaymentMethod.CASH, label: 'Contanti' },
+                        { value: FichePaymentMethod.POS, label: 'POS' },
+                        { value: FichePaymentMethod.OTHER, label: 'Altro' },
+                      ]}
+                      labelKey="label"
+                      valueKey="value"
+                      searchable={false}
+                      size="sm"
+                      classes="flex-1"
+                    />
                     <CustomNumberInput
                       value={split.amount}
                       onChange={(v) => updateSplitAmount(i, v)}

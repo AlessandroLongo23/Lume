@@ -4,7 +4,15 @@ import { Calendar, Check } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import type { Order } from '@/lib/types/Order';
+
+const ORDER_STATUS_OPTIONS = [
+  { value: 'pending', label: 'In attesa' },
+  { value: 'confirmed', label: 'Confermato' },
+  { value: 'delivered', label: 'Consegnato' },
+  { value: 'cancelled', label: 'Annullato' },
+];
 
 interface EditOrderModalProps {
   isOpen: boolean;
@@ -46,13 +54,15 @@ export function EditOrderModal({ isOpen, onClose, editedOrder, onEditedOrderChan
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <select className={inputClass} value={(editedOrder as any).status ?? ''} onChange={(e) => set('status', e.target.value)}>
-            <option value="pending">In attesa</option>
-            <option value="confirmed">Confermato</option>
-            <option value="delivered">Consegnato</option>
-            <option value="cancelled">Annullato</option>
-          </select>
+          <CustomSelect
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            value={(editedOrder as any).status ?? null}
+            onChange={(v) => set('status', v)}
+            options={ORDER_STATUS_OPTIONS}
+            labelKey="label"
+            valueKey="value"
+            searchable={false}
+          />
         </div>
       </div>
     </EditModal>

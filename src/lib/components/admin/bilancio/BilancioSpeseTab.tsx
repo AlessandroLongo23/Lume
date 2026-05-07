@@ -16,6 +16,7 @@ import { Spesa } from '@/lib/types/Spesa';
 import { BilancioSpeseSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
@@ -193,11 +194,14 @@ export function BilancioSpeseTab() {
             </div>
             <div className="flex flex-col gap-2">
               <label className={labelClass}>Categoria *</label>
-              <select className={inputClass} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}>
-                {CATEGORIE.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={form.categoria}
+                onChange={(v) => set('categoria', v)}
+                options={CATEGORIE.map((c) => ({ value: c, label: c }))}
+                labelKey="label"
+                valueKey="value"
+                searchable={false}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className={labelClass}>Importo (€) *</label>

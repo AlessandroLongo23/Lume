@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Building2, Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -131,17 +132,16 @@ export function AnagraficaPanel() {
             <label htmlFor="salon-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Tipo di attività <span className="text-red-500">*</span>
             </label>
-            <select
-              id="salon-type"
-              value={form.type}
-              onChange={(e) => setField('type', e.target.value as FormState['type'])}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            >
-              <option value="">— Seleziona —</option>
-              {BUSINESS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={form.type || null}
+              onChange={(v) => setField('type', (v ?? '') as FormState['type'])}
+              options={BUSINESS_OPTIONS}
+              labelKey="label"
+              valueKey="value"
+              placeholder="— Seleziona —"
+              isNullable
+              searchable={false}
+            />
           </div>
 
           <div className="sm:col-span-2">

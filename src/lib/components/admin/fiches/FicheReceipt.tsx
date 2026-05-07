@@ -87,8 +87,8 @@ export function FicheReceipt({
 
   return (
     <div
-      className="text-receipt"
-      style={{ filter: 'drop-shadow(0 4px 20px rgb(0 0 0 / 0.13))' }}
+      className="text-receipt p-4"
+      style={{ filter: 'drop-shadow(0 4px 10px var(--shadow-color))' }}
     >
       <TornEdge kind="top" />
 
