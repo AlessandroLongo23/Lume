@@ -23,6 +23,9 @@ interface FicheBlockProps {
   /** Total minutes spanned by `operatorServices` (may include gaps). */
   totalMinutes: number;
   timeStep: number;
+  /** Vertical offset (in rem) from the anchor slot's top — non-zero when the run
+   *  starts at a time not aligned to the current granularity (e.g. 11:15 with 10-min slots). */
+  topOffsetRem?: number;
   isPast: boolean;
   /** True when the operator-filtered services equal the entire fiche AND are contiguous. */
   isBlockDragEligible: boolean;
@@ -42,6 +45,7 @@ export function FicheBlock({
   operatorServices,
   totalMinutes,
   timeStep,
+  topOffsetRem = 0,
   isPast,
   isBlockDragEligible,
   onSelectFiche,
@@ -152,7 +156,7 @@ export function FicheBlock({
 
   return (
     <div
-      className={`group/block absolute top-0 left-0 w-full flex flex-col rounded-md z-raised overflow-hidden shadow-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 ${
+      className={`group/block absolute left-0 w-full flex flex-col rounded-md z-raised overflow-hidden shadow-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 ${
         isPast ? 'opacity-60' : ''
       } ${blockBorderClass} ${
         isThisFicheDragging && (dragKind === 'move-block' || dragKind === 'move-service')
@@ -160,6 +164,7 @@ export function FicheBlock({
           : ''
       }`}
       style={{
+        top: `${topOffsetRem}rem`,
         height: `${(totalMinutes / timeStep) * 2}rem`,
         borderLeftWidth: '3px',
         borderLeftStyle: 'solid',

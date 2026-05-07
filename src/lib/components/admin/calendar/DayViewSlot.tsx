@@ -62,6 +62,9 @@ interface RunStartingHere {
   run: FicheService[];
   totalMinutes: number;
   isWholeFiche: boolean;
+  /** Vertical offset (in rem) of the run start relative to the anchor slot's top.
+   *  Non-zero when the run starts at a time not aligned to the current granularity. */
+  topOffsetRem: number;
 }
 
 export function DayViewSlot({
@@ -91,7 +94,11 @@ export function DayViewSlot({
   const dragValid = useCalendarDragStore((s) => s.conflict.valid);
   const dragPreview = useCalendarDragStore((s) => s.preview);
 
-  // Fiches that involve this operator AND overlap this time slot
+  // Fiches that involve this operator AND overlap this time slot.
+  // Uses the standard interval-overlap formula (A.start < B.end && A.end > B.start)
+  // so that a service starting mid-slot — e.g. 11:15 with 10-min slots — still
+  // counts as overlapping its anchor slot (11:10–11:20). Without this, fiches
+  // whose start time isn't aligned to the current granularity would disappear.
   const slotFiches = useMemo(() => {
     const slotMinutes = getTimeAsMinutes(datetime);
     return fiches.filter((fiche) => {
@@ -100,10 +107,10 @@ export function DayViewSlot({
       return operatorServices.some((fs) => {
         const start = getTimeAsMinutes(new Date(fs.start_time));
         const end = getTimeAsMinutes(new Date(fs.end_time));
-        return start <= slotMinutes && end > slotMinutes;
+        return start < slotMinutes + timeStep && end > slotMinutes;
       });
     });
-  }, [fiches, operator.id, datetime]);
+  }, [fiches, operator.id, datetime, timeStep]);
 
   // Runs (contiguous chains) of this operator's services for each fiche that
   // start within THIS slot. Each run renders as its own FicheBlock.
@@ -127,6 +134,7 @@ export function DayViewSlot({
             run,
             totalMinutes: Math.round((endMs - startMs) / 60_000),
             isWholeFiche: run.length === totalServicesInFiche,
+            topOffsetRem: ((runStart - slotMinutes) / timeStep) * 2,
           });
         }
       }
@@ -334,13 +342,14 @@ export function DayViewSlot({
         onClick={isBlocked || isOccupied ? undefined : handleClick}
         onPointerDown={isBlocked || isOccupied ? undefined : handlePointerDown}
       >
-        {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche }) => (
+        {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche, topOffsetRem }) => (
           <FicheBlock
             key={`${fiche.id}-${run[0].id}`}
             fiche={fiche}
             operatorServices={run}
             totalMinutes={totalMinutes}
             timeStep={timeStep}
+            topOffsetRem={topOffsetRem}
             isPast={isPast}
             isBlockDragEligible={isWholeFiche}
             onSelectFiche={() => onFicheSelected(fiche)}
