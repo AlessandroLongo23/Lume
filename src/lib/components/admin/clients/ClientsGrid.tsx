@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search, Users, X } from 'lucide-react';
 import { ClientCard } from './ClientCard';
-import { DeleteClientModal } from './DeleteClientModal';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -19,10 +19,16 @@ const GENDER_OPTIONS = [
   { value: 'F', label: 'Donna' },
 ];
 
+// Matches Tailwind's sm/lg breakpoints used on the grid below.
+function getColCount(width: number): number {
+  if (width >= 1024) return 3;
+  if (width >= 640) return 2;
+  return 1;
+}
+
 export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps) {
+  const archiveClient = useClientsStore((s) => s.archiveClient);
   const restoreClient = useClientsStore((s) => s.restoreClient);
-  const [showDelete, setShowDelete] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
@@ -42,9 +48,13 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
     return data;
   }, [clients, selectedGenders, globalFilter]);
 
-  const handleDelete = (client: Client) => {
-    setSelectedClient(client);
-    setShowDelete(true);
+  const handleArchive = async (client: Client) => {
+    try {
+      await archiveClient(client.id);
+      messagePopup.getState().success('Cliente archiviato con successo.');
+    } catch {
+      messagePopup.getState().error('Errore durante l’archiviazione.');
+    }
   };
 
   const handleRestore = async (client: Client) => {
@@ -55,6 +65,65 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
       messagePopup.getState().error('Errore durante il ripristino.');
     }
   };
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const [colCount, setColCount] = useState(3);
+
+  const isEmpty = filteredClients.length === 0;
+  const rowCount = Math.ceil(filteredClients.length / colCount);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setColCount(getColCount(el.clientWidth));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Fade in the top/bottom mask only when there's content scrolled past the edge.
+  useEffect(() => {
+    const el = scrollRef.current;
+    const inner = innerRef.current;
+    if (!el || !inner) return;
+    const FADE = 24;
+    const update = () => {
+      const top = Math.min(el.scrollTop, FADE);
+      const bottom = Math.max(
+        0,
+        Math.min(el.scrollHeight - el.scrollTop - el.clientHeight, FADE)
+      );
+      el.style.setProperty('--top-fade', `${top}px`);
+      el.style.setProperty('--bottom-fade', `${bottom}px`);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    ro.observe(inner);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [isEmpty]);
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 224,
+    overscan: 4,
+  });
+
+  // Row content shifts when columns reflow, so previously cached heights are
+  // no longer correct for the same row index — drop them and re-measure.
+  useEffect(() => {
+    virtualizer.measure();
+  }, [colCount, virtualizer]);
+
+  const colsClass =
+    colCount === 3 ? 'grid-cols-3' : colCount === 2 ? 'grid-cols-2' : 'grid-cols-1';
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
@@ -84,33 +153,55 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
         <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
       </div>
 
-      {filteredClients.length === 0 ? (
+      {isEmpty ? (
         <div className="min-h-[18.75rem] flex flex-col items-center justify-center p-8 bg-muted/40 rounded-lg border border-dashed border-border">
           <Users className="w-16 h-16 text-muted-foreground/60 mb-3" />
           <h3 className="text-lg font-medium text-foreground mb-1">Nessun cliente trovato</h3>
           <p className="text-sm text-muted-foreground text-center max-w-md">Nessun cliente soddisfa i criteri di ricerca.</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto -mr-4 pr-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in pb-2">
-            {filteredClients.map((client) => (
-              <ClientCard
-                key={client.id}
-                client={client}
-                onDelete={handleDelete}
-                onRestore={handleRestore}
-                showArchived={showArchived}
-              />
-            ))}
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto -mr-4 pr-4"
+          style={{
+            maskImage:
+              'linear-gradient(to bottom, transparent 0, black var(--top-fade, 0px), black calc(100% - var(--bottom-fade, 0px)), transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent 0, black var(--top-fade, 0px), black calc(100% - var(--bottom-fade, 0px)), transparent 100%)',
+          }}
+        >
+          <div
+            ref={innerRef}
+            className="animate-fade-in relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
+          >
+            {virtualizer.getVirtualItems().map((vRow) => {
+              const start = vRow.index * colCount;
+              const rowClients = filteredClients.slice(start, start + colCount);
+              return (
+                <div
+                  key={vRow.key}
+                  data-index={vRow.index}
+                  ref={virtualizer.measureElement}
+                  className={`absolute inset-x-0 grid gap-4 pb-4 ${colsClass}`}
+                  style={{ transform: `translateY(${vRow.start}px)` }}
+                >
+                  {rowClients.map((client) => (
+                    <ClientCard
+                      key={client.id}
+                      client={client}
+                      onArchive={handleArchive}
+                      onRestore={handleRestore}
+                      showArchived={showArchived}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      <DeleteClientModal
-        isOpen={showDelete}
-        onClose={() => setShowDelete(false)}
-        selectedClient={selectedClient}
-      />
     </div>
   );
 }

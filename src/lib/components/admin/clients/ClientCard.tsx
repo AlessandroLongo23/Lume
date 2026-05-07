@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Plane, Mail, Phone, Cake, Trash, ArchiveRestore, Wallet, CalendarDays, Plus, Sparkles,
+  Plane, Mail, Phone, Cake, Archive, ArchiveRestore, Wallet, CalendarDays, Plus, Sparkles,
 } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
@@ -13,7 +13,7 @@ import styles from './ClientCard.module.css';
 
 interface ClientCardProps {
   client: Client;
-  onDelete: (client: Client) => void;
+  onArchive: (client: Client) => void;
   onRestore?: (client: Client) => void;
   showArchived?: boolean;
 }
@@ -48,7 +48,7 @@ function birthdayTooltip(days: number): string {
   return `Compleanno tra ${days} giorni`;
 }
 
-export function ClientCard({ client, onDelete, onRestore, showArchived = false }: ClientCardProps) {
+export function ClientCard({ client, onArchive, onRestore, showArchived = false }: ClientCardProps) {
   const router = useRouter();
   const rating = useClientRatingsStore((s) => s.ratings[client.id]);
   const created = (client as unknown as { created_at?: string }).created_at;
@@ -163,12 +163,12 @@ export function ClientCard({ client, onDelete, onRestore, showArchived = false }
             ><ArchiveRestore className="w-3.5 h-3.5" /></button>
           </Tooltip>
         ) : (
-          <Tooltip label="Elimina cliente">
+          <Tooltip label="Archivia cliente">
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(client); }}
-              className={`${styles.btn} ${styles.btnDelete}`}
-              aria-label="Elimina cliente"
-            ><Trash className="w-3.5 h-3.5" /></button>
+              onClick={(e) => { e.stopPropagation(); onArchive(client); }}
+              className={`${styles.btn} ${styles.btnArchive}`}
+              aria-label="Archivia cliente"
+            ><Archive className="w-3.5 h-3.5" /></button>
           </Tooltip>
         )}
       </footer>

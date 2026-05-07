@@ -288,10 +288,10 @@
   opacity: 1;
 }
 
-.btnDelete:hover {
-  background: var(--lume-danger-bg);
-  color: var(--lume-danger-fg);
-  border-color: var(--lume-danger-border);
+.btnArchive:hover {
+  background: var(--lume-warning-bg);
+  color: var(--lume-warning-fg);
+  border-color: var(--lume-warning-border);
 }
 
 .btnRestore:hover {
