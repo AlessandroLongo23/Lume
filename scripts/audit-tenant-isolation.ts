@@ -32,6 +32,7 @@ const TENANT_TABLES = [
   'clients',
   'coupon_redemptions',
   'coupons',
+  'fiche_edits',
   'fiche_payments',
   'fiche_products',
   'fiche_services',
