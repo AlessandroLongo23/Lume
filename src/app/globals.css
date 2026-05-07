@@ -42,6 +42,8 @@
   --accent:               var(--color-neutral-100);
   --accent-foreground:    var(--lume-text);
   --destructive:          var(--lume-button-destructive-bg);
+  --success:              var(--lume-success-fg);
+  --warning:              var(--lume-warning-fg);
   --border:               var(--lume-border);
   --input:                var(--lume-border);
   --ring:                 var(--lume-ring-focus);
@@ -80,6 +82,8 @@
   --accent:               oklch(0.295 0.010 265);
   --accent-foreground:    var(--lume-text);
   --destructive:          var(--lume-button-destructive-bg);
+  --success:              var(--lume-success-fg);
+  --warning:              var(--lume-warning-fg);
   --border:               var(--lume-border);
   --input:                var(--lume-border);
   --ring:                 var(--lume-ring-focus);
@@ -213,62 +217,6 @@ button, a {
 	padding-bottom: 0.125rem;
 	font-size: 0.8125rem;
 	line-height: 1.125rem;
-}
-
-/* ─── Buttons ─────────────────────────────────────────────── */
-
-.btn-primary {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	padding: 0.625rem 1.25rem;
-	background: var(--lume-button-accent-bg);
-	color: var(--lume-button-accent-fg);
-	font-size: var(--text-sm);
-	font-weight: var(--font-weight-medium);
-	border-radius: var(--radius-md);
-	border: none;
-	transition: background var(--duration-base) var(--ease-in-out),
-	            transform var(--duration-base) var(--ease-in-out),
-	            box-shadow var(--duration-base) var(--ease-in-out);
-}
-.btn-primary:hover {
-	background: var(--lume-button-accent-bg-hover);
-	transform: translateY(-1px);
-	box-shadow: 0 8px 24px -8px var(--lume-accent-muted);
-}
-.btn-primary:active {
-	transform: translateY(0);
-}
-
-.btn-secondary {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	padding: 0.625rem 1.25rem;
-	background: var(--lume-button-secondary-bg);
-	color: var(--lume-button-secondary-fg);
-	font-size: var(--text-sm);
-	font-weight: var(--font-weight-medium);
-	border-radius: var(--radius-md);
-	border: 1px solid var(--lume-border);
-	transition: background var(--duration-base) var(--ease-in-out),
-	            border-color var(--duration-base) var(--ease-in-out),
-	            transform var(--duration-base) var(--ease-in-out);
-}
-.btn-secondary:hover {
-	background: var(--lume-button-secondary-bg-hover);
-	border-color: var(--color-neutral-300);
-	transform: translateY(-1px);
-}
-.dark .btn-secondary:hover {
-	border-color: var(--color-neutral-700);
-}
-
-@media (max-width: 768px) {
-	.btn-primary:active, .btn-secondary:active { transform: translateY(0); }
 }
 
 /* ─── Cards & surfaces ────────────────────────────────────── */
@@ -441,6 +389,8 @@ button, a {
 	--color-input:                        var(--input);
 	--color-border:                       var(--border);
 	--color-destructive:                  var(--destructive);
+	--color-success:                      var(--success);
+	--color-warning:                      var(--warning);
 	--color-accent-foreground:            var(--accent-foreground);
 	--color-accent:                       var(--accent);
 	--color-muted-foreground:             var(--muted-foreground);
@@ -460,6 +410,27 @@ button, a {
 	--color-receipt:                      var(--lume-receipt-bg);
 	--color-primary-hover:                var(--lume-button-accent-bg-hover);
 	--color-primary-active:               var(--lume-button-accent-bg-active);
+
+	/* Status — paired soft (bg) + strong (fg) + line (border), theme-aware.
+	   Use bg-success-soft / text-success-strong / border-success-line and
+	   the danger/warning/info equivalents instead of raw emerald-/amber-/
+	   red-/blue-* utilities, which break the dark-mode ramp. */
+	--color-success-soft:                 var(--lume-success-bg);
+	--color-success-strong:               var(--lume-success-fg);
+	--color-success-line:                 var(--lume-success-border);
+	--color-warning-soft:                 var(--lume-warning-bg);
+	--color-warning-strong:               var(--lume-warning-fg);
+	--color-warning-line:                 var(--lume-warning-border);
+	--color-danger-soft:                  var(--lume-danger-bg);
+	--color-danger-strong:                var(--lume-danger-fg);
+	--color-danger-line:                  var(--lume-danger-border);
+	--color-info-soft:                    var(--lume-info-bg);
+	--color-info-strong:                  var(--lume-info-fg);
+	--color-info-line:                    var(--lume-info-border);
+
+	/* Accent washes (rare-event indigo) */
+	--color-accent-soft:                  var(--lume-accent-light);
+	--color-accent-muted:                 var(--lume-accent-muted);
 }
 
 @layer base {
