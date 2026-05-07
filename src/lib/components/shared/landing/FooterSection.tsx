@@ -27,6 +27,9 @@ export function FooterSection() {
           <Link href="/privacy" className={linkClass}>
             Privacy
           </Link>
+          <Link href="/terms" className={linkClass}>
+            Termini
+          </Link>
           <Link href="/cookie-policy" className={linkClass}>
             Cookie
           </Link>
