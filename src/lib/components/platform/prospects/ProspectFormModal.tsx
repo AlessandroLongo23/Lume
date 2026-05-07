@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Pencil, Plus, X, Check, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Pencil, Plus, X, Check, Trash2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 const GMAPS_RE = /^https?:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)/;
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
@@ -68,8 +68,9 @@ const TONE_DOT: Record<(typeof STATUS_TONE)[ProspectStatus], string> = {
 };
 
 export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }: ProspectFormModalProps) {
-  const add    = useProspectsStore((s) => s.add);
-  const update = useProspectsStore((s) => s.update);
+  const add       = useProspectsStore((s) => s.add);
+  const update    = useProspectsStore((s) => s.update);
+  const prospects = useProspectsStore((s) => s.prospects);
   const isEdit = !!prospect;
 
   const [form, setForm]       = useState<FormState>(emptyForm());
@@ -79,6 +80,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
   const [prefilling, setPrefilling] = useState(false);
   const [prefillDone, setPrefillDone] = useState(false);
   const [prefillError, setPrefillError] = useState<string | null>(null);
+  const [duplicateProspect, setDuplicateProspect] = useState<Prospect | null>(null);
   const [activeTab, setActiveTab] = useState<'pre_call' | 'post_call'>('post_call');
   const prefillDoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,6 +98,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
       setPrefilling(false);
       setPrefillDone(false);
       setPrefillError(null);
+      setDuplicateProspect(null);
       setActiveTab('post_call');
     }
   }, [isOpen, prospect]);
@@ -137,7 +140,16 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
     setForm((s) => ({ ...s, google_maps_url: url }));
     setPrefillDone(false);
     setPrefillError(null);
-    if (GMAPS_RE.test(url.trim())) triggerPrefill(url.trim());
+    const trimmed = url.trim();
+    if (GMAPS_RE.test(trimmed)) {
+      const dup = prospects.find(
+        (p) => p.google_maps_url?.trim() === trimmed && p.id !== prospect?.id,
+      ) ?? null;
+      setDuplicateProspect(dup);
+      if (!dup) triggerPrefill(trimmed);
+    } else {
+      setDuplicateProspect(null);
+    }
   };
 
   const handleStatusChange = async (status: ProspectStatus) => {
@@ -360,6 +372,16 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   autoFocus={!isEdit}
                   disabled={prefilling}
                 />
+                {duplicateProspect && (
+                  <div className="flex items-start gap-2 rounded-md border border-[var(--lume-warning-fg)]/30 bg-[var(--lume-warning-bg)] px-3 py-2 text-sm text-[var(--lume-warning-fg)]">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                    <span>
+                      Questo link è già in lista come{' '}
+                      <span className="font-medium">{duplicateProspect.name}</span>.
+                      Salvataggio non consentito.
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -437,7 +459,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
             <Button
               variant="primary"
               leadingIcon={Check}
-              disabled={submitting}
+              disabled={submitting || !!duplicateProspect}
               onClick={handleSubmit}
             >
               {isEdit ? 'Salva' : 'Aggiungi'}
