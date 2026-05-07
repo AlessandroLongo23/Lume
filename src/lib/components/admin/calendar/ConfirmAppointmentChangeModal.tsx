@@ -16,6 +16,9 @@ interface Props {
   onConfirm: (notify: { email: boolean; whatsapp: boolean }) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
+  /** True when the new datetime is in the past — suppress the client notify
+   *  options since you can't usefully notify someone about a moved past slot. */
+  isPastMove?: boolean;
 }
 
 function fmtTime(d: Date): string {
@@ -33,6 +36,7 @@ export function ConfirmAppointmentChangeModal({
   onConfirm,
   onCancel,
   isSubmitting = false,
+  isPastMove = false,
 }: Props) {
   const operators = useOperatorsStore((s) => s.operators);
   const [notifyEmail, setNotifyEmail] = useState(false);
@@ -114,27 +118,33 @@ export function ConfirmAppointmentChangeModal({
             )}
           </div>
 
-          <div className="mt-5">
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Notifica al cliente</p>
-            <div className="flex flex-col gap-2">
-              <NotifyOption
-                icon={Mail}
-                label="Notifica via Email"
-                description={canEmail ? client?.email ?? '' : 'Email non disponibile'}
-                checked={notifyEmail}
-                onChange={setNotifyEmail}
-                disabled={!canEmail}
-              />
-              <NotifyOption
-                icon={MessageCircle}
-                label="Apri WhatsApp"
-                description={canWhatsapp ? client?.getPhoneNumber() ?? '' : 'Telefono non disponibile'}
-                checked={notifyWhatsApp}
-                onChange={setNotifyWhatsApp}
-                disabled={!canWhatsapp}
-              />
+          {isPastMove ? (
+            <p className="mt-5 text-xs text-zinc-500 dark:text-zinc-400">
+              Spostamento retroattivo — nessuna notifica sarà inviata al cliente.
+            </p>
+          ) : (
+            <div className="mt-5">
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Notifica al cliente</p>
+              <div className="flex flex-col gap-2">
+                <NotifyOption
+                  icon={Mail}
+                  label="Notifica via Email"
+                  description={canEmail ? client?.email ?? '' : 'Email non disponibile'}
+                  checked={notifyEmail}
+                  onChange={setNotifyEmail}
+                  disabled={!canEmail}
+                />
+                <NotifyOption
+                  icon={MessageCircle}
+                  label="Apri WhatsApp"
+                  description={canWhatsapp ? client?.getPhoneNumber() ?? '' : 'Telefono non disponibile'}
+                  checked={notifyWhatsApp}
+                  onChange={setNotifyWhatsApp}
+                  disabled={!canWhatsapp}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50/60 dark:bg-zinc-950/40 border-t border-zinc-500/10">
