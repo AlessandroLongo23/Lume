@@ -4,6 +4,7 @@ import './globals.css';
 import '@/lib/types/tableMeta';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/MessagePopupContainer';
+import { CookieConsentBanner } from '@/lib/components/shared/cookieConsent/CookieConsentBanner';
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <MessagePopupContainer />
+          <CookieConsentBanner />
         </ThemeProvider>
       </body>
     </html>

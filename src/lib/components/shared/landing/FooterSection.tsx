@@ -1,9 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { CookieManageLink } from '@/lib/components/shared/cookieConsent/CookieManageLink';
 import { motion, viewportConfig } from './motion';
 
 export function FooterSection() {
+  const linkClass =
+    'text-xs text-zinc-400 hover:text-zinc-600 transition-colors';
+
   return (
     <footer className="bg-white border-t border-border py-12 px-4">
       <motion.div
@@ -18,17 +23,15 @@ export function FooterSection() {
           <p className="text-xs text-zinc-400 mt-1">Il gestionale che illumina il tuo salone.</p>
         </div>
 
-        <div className="flex items-center gap-6">
-          <a href="#" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link href="/privacy" className={linkClass}>
             Privacy
-          </a>
-          <a href="#" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">
-            Termini
-          </a>
-          <a
-            href="mailto:info@lumeapp.it"
-            className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
-          >
+          </Link>
+          <Link href="/cookie-policy" className={linkClass}>
+            Cookie
+          </Link>
+          <CookieManageLink className={linkClass}>Gestisci cookie</CookieManageLink>
+          <a href="mailto:info@lumeapp.it" className={linkClass}>
             Contatti
           </a>
         </div>
