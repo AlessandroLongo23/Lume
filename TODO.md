@@ -23,7 +23,7 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Billing & subscriptions _(proposed)_
 - [ ] [billing] (?) Stripe lifecycle end-to-end — trial expiry, failed-payment dunning, plan switch (€49/mo ↔ €490/yr), cancellation, reactivation
-- [ ] [ux] (M) Subscription page — current plan, next charge, invoice history, change/cancel
+- [*] [ux] (M) Subscription page — current plan, next charge, invoice history, change/cancel
 
 ### Trust & safety
 - [ ] [infra] (L) Staging environment (separate Vercel project)
@@ -35,7 +35,7 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Legal & compliance
 - [ ] [legal] (XL) GDPR audit + pre-filled deliberatorie / consent forms (ask Ulisse)
-- [ ] [legal] (M) Cookie consent banner — EU requirement before charging EU customers _(proposed)_
+- [x] [legal] (M) Cookie consent banner — EU requirement before charging EU customers _(proposed)_
 - [ ] [legal] (M) Account deletion + data export endpoints — GDPR Art. 15 (portability) + Art. 17 (erasure) _(proposed)_
 - [ ] [legal] (S) Public Privacy Policy + Terms of Service pages — linked from footer _(proposed)_
 
@@ -62,6 +62,7 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [feat] (M) End-to-end onboarding flow design — signup → first appointment booked _(proposed)_
 - [ ] [feat] (L) First-run tutorial — pick format (video, step-and-highlight, modern overlay)
 - [ ] [data] (M) Onboarding step to bulk-load salon data
+- [ ] [data] (M) Goes over the most important settings, like opening time, authorizations and permissions, online booking service and setup, etc. (all clarifying that it could be done at any time and with a "Salta" button), for an initial setup
 - [*] [data] (XL) Automatic import via Anthropic API + Supabase MCP
   - [ ] [data] (M) Passare tutti i dati da Stiv
   - [ ] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
@@ -78,9 +79,25 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [ux] (M) Applicazione abbonamento e dove trovare i dettagli
 - [ ] [ux] (L) Patch-notes overlay on login, auto-generated from commits; pulsating badge for new tutorials and features
 - [ ] [ux] (M) Organize fiches in "Future/Prenotate", "Arretrate" and "Concluse"
+- [ ] [ux] (S) More navigation opportunities, with between-pages links
+- [ ] [ux] (M) Add spotify integration to control the music from the CMS
+- [x] [ux] (M) Bug button bottom-right (aligned with theme button) — screenshots current page, opens feedback modal with bug preselected and screenshot uploaded
+- [x] [ux] (S) Drag handle (six dots) on calendar service blocks on hover (animation pushes text)
+- [x] [ux] (S) Breadcrumb navigation + entity detail pages in trail
+- [x] [ux] (S) Click subscription row to open edit modal
+- [x] [ux] Time preview on calendar cell hover
+- [x] [ux] Week calendar always clickable; one operator forced
+- [x] [ux] Eye icon for password on login modal
+- [x] [ux] Restructure + redesign client info page
+- [x] [ux] Campi più grandi
+- [x] [ux] Spostare il bottone di chiusura fiche dentro il modale
+- [x] [ux] Cambiare il totale direttamente senza aggiornare i prezzi singoli
+- [x] [ux] Calendario — filtro operatori, visualizzazione messe, colori e parziali su totale
+- [x] [ux] Combobox a due livelli per servizi e prodotti nella fiche
 
 ### Features
-- [ ] [feat] (L) Spese ricorrenti (Spotify, servizi, …)
+- [ ] [feat] (M) Export data with format selection (.csv, .xlsl, .pdf, sql dump)
+- [ ] [feat] (L) recurrent expenses (Spotify, servizi, …)
 - [ ] [feat] (M) Notifica auguri sul gestionale
 - [ ] [feat] (L) Tessera cliente
 - [ ] [feat] (L) AI image generation for products and services
@@ -89,11 +106,24 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [feat] (M) Wait list / lista d'attesa — capture demand when slots are full, auto-offer cancellations _(proposed)_
 - [ ] [feat] (S) Codice fiscale field on client — needed for invoicing _(proposed)_
 - [ ] [feat] (M) Foto cliente before/after on profile — high engagement, retention driver _(proposed)_
-- [ ] [feat] (M) Re-engagement trigger — "non si vede da 60 giorni" surfacing, optional auto-WhatsApp _(proposed)_
-- [ ] [feat] (M) In-product free-trial gating — countdown banner, paywall after expiry, upgrade flow _(proposed)_
-- [ ] [feat] (L) Referral program — "give a month, get a month", tracked in-product _(proposed)_
+- [x] [feat] (M) In-product free-trial gating — countdown banner, paywall after expiry, upgrade flow _(proposed)_
+- [x] [feat] (L) Referral program — "give a month, get a month", tracked in-product _(proposed)_
+- [x] [feat] Vacation in calendar
+- [x] [feat] Compact vs default table density (wired to settings)
+- [x] [feat] Change service names at checkout
+- [x] [feat] Easier drag-and-drop calendar actions
+- [x] [feat] Scheda tecnica (data, miscela, tecnica, note) accessibile da tutte le parti — hover solo l'ultima, click per pagina intera; cambio nota nel modale fiche
+- [x] [feat] Archiviare servizi, prodotti, clienti invece di cancellarli
+- [x] [feat] Servizi a omaggio (0 €)
+- [x] [feat] Creazione coupon (servizio / soldi)
+  - [x] Omaggi dal negozio
+  - [x] Buono regalo
+- [x] [feat] Feedback page con up/down
+- [x] [feat] Pagina abbonamento
+- [x] [feat] Email non più obbligatoria per creare cliente
 
 ### Design
+- [ ] [design] (L) Storybook integration for DS maintainance
 - [ ] [design] (L) Audit codebase to add Motion animations where they help
 - [ ] [design] (M) Page fly-in for nested dynamic routes (à la Cursum AI)
 - [ ] [design] (S) Three-dots dropdown — match btn-to-dropdown spacing with btn-to-btn spacing
@@ -101,9 +131,9 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [design] (S) Replace native `<select>` with custom dropdown component
 
 ### Admin / dashboard
-- [ ] [admin] (M) "1% market coverage" component — custom circular progress bar
+- [x] [admin] (M) Contacts page for noting down who to call, who has already been called, google maps link, reason why not, phone number, material sent (boolean) via whatsapp
+- [*] [admin] (M) "1% market coverage" milestones component — custom circular progress bar
 - [ ] [admin] (M) Aggregate stats on settings chosen by businesses
-- [ ] [admin] (M) Per-operator commission reports _(proposed)_
 - [ ] [admin] (M) Revenue dashboards — per service, per operator, year-over-year comparisons _(proposed)_
 - [ ] [admin] (L) Export IVA / report mensile per il commercialista _(proposed)_
 
@@ -134,58 +164,26 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [exp] (M) Accessibility audit — keyboard nav, screen reader labels, calendar focus order _(proposed)_
 - [ ] [exp] (L) i18n scaffolding (locale string extraction) — only if going beyond Italy _(proposed)_
 
----
----
-
-# Done
-
 ## Bug
-- [x] (S) Z-index on dropdown in client detail page
-- [x] (S) Unavailability slot in calendar persists during confirmation modal
-- [x] (S) Settings — animation no longer re-triggers on section change
-- [x] Theme persists on refresh (instead of always re-applying)
-- [x] Avatar dropdown in sidebar
-- [x] Togliere categorie clienti
-- [x] Dropdown abbonamento nella fiche più visibile
-- [x] Merge valore gift card con importo incassato
-- [x] Errore "Valore dello sconto non valido" su gift card
-- [x] Messaggio fuori orario su chiusura fiche
+- [x] [bug] (S) Z-index on dropdown in client detail page
+- [x] [bug] (S) Unavailability slot in calendar persists during confirmation modal
+- [x] [bug] (S) Settings — animation no longer re-triggers on section change
+- [x] [bug] Theme persists on refresh (instead of always re-applying)
+- [x] [bug] Avatar dropdown in sidebar
+- [x] [bug] Togliere categorie clienti
+- [x] [bug] Dropdown abbonamento nella fiche più visibile
+- [x] [bug] Merge valore gift card con importo incassato
+- [x] [bug] Errore "Valore dello sconto non valido" su gift card
+- [x] [bug] Messaggio fuori orario su chiusura fiche
 
-## UX
-- [x] (M) Bug button bottom-right (aligned with theme button) — screenshots current page, opens feedback modal with bug preselected and screenshot uploaded
-- [x] (S) Drag handle (six dots) on calendar service blocks on hover (animation pushes text)
-- [x] (S) Breadcrumb navigation + entity detail pages in trail
-- [x] (S) Click subscription row to open edit modal
-- [x] Time preview on calendar cell hover
-- [x] Week calendar always clickable; one operator forced
-- [x] Eye icon for password on login modal
-- [x] Restructure + redesign client info page
-- [x] Campi più grandi
-- [x] Spostare il bottone di chiusura fiche dentro il modale
-- [x] Cambiare il totale direttamente senza aggiornare i prezzi singoli
-- [x] Calendario — filtro operatori, visualizzazione messe, colori e parziali su totale
-- [x] Combobox a due livelli per servizi e prodotti nella fiche
+---
+---
 
 ## Personalization
 - [x] Different working hours per operator
 - [x] Column selection + sorting on all tables
 
-## Features
-- [x] Vacation in calendar
-- [x] Compact vs default table density (wired to settings)
-- [x] Change service names at checkout
-- [x] Easier drag-and-drop calendar actions
-- [x] Scheda tecnica (data, miscela, tecnica, note) accessibile da tutte le parti — hover solo l'ultima, click per pagina intera; cambio nota nel modale fiche
-- [x] Archiviare servizi, prodotti, clienti invece di cancellarli
-- [x] Servizi a omaggio (0 €)
-- [x] Creazione coupon (servizio / soldi)
-  - [x] Omaggi dal negozio
-  - [x] Buono regalo
-- [x] Feedback page con up/down
-- [x] Pagina abbonamento
-- [x] Email non più obbligatoria per creare cliente
-
-## Impostazioni
+## Settings
 - [x] Default validità buoni
 
 ## Data

@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .mcp.json
+.superpowers/
 
 data/
 
@@ -58,3 +59,5 @@ output/marketing/*
 
 # allow the staging template through (`.env*` above ignores it)
 !.env.test.example
+
+docs/
