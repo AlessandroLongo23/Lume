@@ -370,7 +370,7 @@ export default function ClientDetailPage() {
                   icon: client.isArchived ? ArchiveRestore : Archive,
                   onClick: handleToggleArchive,
                 },
-                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true) },
+                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true), destructive: true },
               ]}
             />
           }

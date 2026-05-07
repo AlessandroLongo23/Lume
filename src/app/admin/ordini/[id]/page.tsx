@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
               onCancel={() => {}}
               onSave={() => {}}
               menuItems={[
-                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true) },
+                { label: 'Elimina', icon: Trash2, onClick: () => setShowDelete(true), destructive: true },
               ]}
             />
           }
