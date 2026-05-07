@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { EllipsisVertical } from 'lucide-react';
+import { Button } from './Button';
 import { Portal } from './Portal';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -53,14 +54,16 @@ export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
 
   return (
     <>
-      <button
+      <Button
         ref={triggerRef}
-        className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-        onClick={() => setOpen((v) => !v)}
+        variant="secondary"
+        size="md"
+        iconOnly
         aria-label="Altre opzioni"
+        onClick={() => setOpen((v) => !v)}
       >
-        <EllipsisVertical className="size-4 text-zinc-500" />
-      </button>
+        <EllipsisVertical />
+      </Button>
       {open && pos && (
         <Portal>
           <div

@@ -7,18 +7,16 @@ import { capitalize } from '@/lib/utils/string';
 import { startOfMonth } from 'date-fns';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CalendarDatePicker } from './CalendarDatePicker';
 import { OperatorChips } from './OperatorChips';
 import { HoveredTimePreview } from './CalendarHeader';
 import type { Operator } from '@/lib/types/Operator';
 
-const VIEW_OPTIONS = [
-  { value: 'day', label: 'Giorno' },
-  { value: 'week', label: 'Settimana' },
-  { value: 'month', label: 'Mese' },
-] as const;
+const VIEW_VALUES = ['day', 'week', 'month'] as const;
+const VIEW_LABELS = ['Giorno', 'Settimana', 'Mese'];
 
-type CalendarView = 'day' | 'week' | 'month';
+type CalendarView = (typeof VIEW_VALUES)[number];
 
 interface CalendarToolbarProps {
   onAddFerie?: (operator: Operator) => void;
@@ -105,34 +103,13 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
           <OperatorChips onAddFerie={onAddFerie} />
         </div>
 
-        <div
-          role="radiogroup"
-          className="flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25 shrink-0"
-        >
-          {VIEW_OPTIONS.map(({ value, label }, i) => {
-            const isActive = currentView === value;
-
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                onClick={() => handleViewChange(value)}
-                className={[
-                  'flex items-center justify-center px-3 py-2 text-sm transition-all',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-content-floating',
-                  i > 0 ? 'border-l border-zinc-500/25' : '',
-                  isActive
-                    ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                    : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700',
-                ].join(' ')}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <ToggleButton
+          options={[...VIEW_VALUES]}
+          value={currentView}
+          onChange={(v) => handleViewChange(v as CalendarView)}
+          labels={VIEW_LABELS}
+          className="shrink-0"
+        />
       </div>
     </div>
   );

@@ -391,33 +391,78 @@ element confirms itself with one frame of feedback (a 1px lift, a border
 shift, a soft accent-muted glow), never with a bouncy curve, never with a
 shimmer pass, never with a scale transform that pushes past 1.02.
 
+### Control Sizing (the toolbar baseline)
+
+Every control that sits in a toolbar — buttons, inputs, searchbars, segmented
+toggles, dropdown triggers, column pickers, the theme toggle — aligns on a
+single height. They are the same family of object; mixing 32 / 36 / 38 / 40
+breaks the rhythm of the page header.
+
+The token lives in [primitives.css](src/styles/tokens/primitives.css) under
+`--lume-control-h-*` and pairs with `--lume-control-px-*`,
+`--lume-control-text-*`, `--lume-control-gap-*`. Three sizes, one purpose
+each:
+
+| Size | Height | Use |
+|---|---|---|
+| **sm** | 32px (`--lume-control-h-sm`) | Inline filters inside a table row, compact density mode, secondary actions in dense panels. |
+| **md** | **36px** (`--lume-control-h-md`) — **default** | Every page-header toolbar across the admin app. Searchbar, primary action, three-dots, view toggle, theme toggle, column picker, table toolbar. |
+| **lg** | 44px (`--lume-control-h-lg`) | Landing-page CTAs, onboarding primaries, mobile touch targets (PRODUCT.md mandates ≥44px). Never inside the admin shell. |
+
+Five rules:
+
+1. **The 36-Pixel Rule.** A toolbar mixes `md` and only `md`. If a toolbar
+   visually mixes heights, one of the controls is bypassing the token.
+   Migrate it before shipping.
+2. **The Token-Or-Primitive Rule.** A new control reads `--lume-control-h-md`
+   directly, OR delegates to a primitive that does — `<Button>`,
+   `<Searchbar>`, `<ToggleButton>`, `<DropdownMenu>`. Raw `h-9` / `h-10` /
+   `size-9` / `py-2` heights on toolbar controls are forbidden.
+3. **The Single-Searchbar Rule.** `<Searchbar>` is the only searchbar
+   primitive. Pass `value` + `onChange` for local-state filters (table
+   toolbars, grid filters); omit them for the global cmd+K searchbar.
+   Never re-implement an `<input>` with a leading search icon — it always
+   drifts in height, padding, or focus colour.
+4. **The Icon-Only Square Rule.** An icon-only control is square: width =
+   `--lume-control-h-md`, padding 0, 16px lucide icon. The theme toggle, the
+   three-dots menu, the close-search "×" all follow this.
+5. **The Lg-Off-Limits Rule.** Inside `/admin/*`, never use `lg`. The
+   reception PC is the daily driver and 36 is the comfortable density there.
+   `lg` is reserved for landing pages and the mobile booking surface.
+
 ### Buttons
 
-The intended button system lives in `globals.css` as utility classes
-(`.btn-primary`, `.btn-secondary`) backed by semantic tokens. **Use these
-when building screens.** A second, legacy `<FormButton>` exists in
-[forms/FormButton.tsx](src/lib/components/shared/ui/forms/FormButton.tsx)
-and uses gradients, raw `blue-500`, hover scale, and an inner shimmer
-animation. It does not represent the system and should be migrated on
-contact.
+The button system is the `<Button>` primitive at
+[Button.tsx](src/lib/components/shared/ui/Button.tsx). It owns variant,
+size, icon-only, leading/trailing icons, loading state, and the focus ring.
+Reach for it before writing a styled `<button>`. A legacy `<FormButton>`
+([forms/FormButton.tsx](src/lib/components/shared/ui/forms/FormButton.tsx))
+exists with gradients, raw `blue-500`, hover scale, and an inner shimmer —
+off-spec; migrate on contact.
 
-- **Shape:** `rounded-md` (8px). Pill buttons (`rounded-full`) are
+- **Shape:** `rounded-lg` (8px). Pill buttons (`rounded-full`) are
   rejected; they evoke consumer apps, not professional tools.
-- **Primary** (`.btn-primary`): solid Lamplight Indigo background, white
-  text, 0.625rem / 1.25rem padding, weight 500. Hover: shifts to
+- **Sizing:** see *Control Sizing* above. `size="md"` is the toolbar
+  default (36px); the Button primitive consumes `--lume-control-h-md`,
+  `--lume-control-px-md`, `--lume-control-text-md`, `--lume-control-gap-md`
+  in lock-step.
+- **Primary** (`<Button variant="primary">`): solid Lamplight Indigo
+  background, white text, weight 500. Hover: shifts to
   `--lume-button-accent-bg-hover`, lifts 1px, soft accent-muted shadow at
   8px blur. Active: returns to baseline Y, shifts to
   `--lume-button-accent-bg-active`. Mobile (≤768px): no Y-translate on
   active (touch devices can't see a 1px lift).
-- **Secondary** (`.btn-secondary`): white background, graphite-950 text,
-  1px graphite-200 border, same padding and weight. Hover: graphite-100
-  background, border deepens to graphite-300, lifts 1px.
-- **Destructive**: `--lume-button-destructive-bg` (Danger Red 500), white
-  text. Same shape and padding as Primary. Used for deletions only;
-  destructive actions must always offer undo, never confirm-modal-to-final.
-- **Ghost**: transparent background, graphite-950 text, no border.
-  Hover background: graphite-100. Used for tertiary toolbar actions
-  inside a panel.
+- **Secondary** (`<Button variant="secondary">`): white background,
+  graphite-950 text, 1px graphite-200 border. Hover: graphite-100
+  background. The default for toolbar tertiary actions, three-dots
+  triggers, theme toggles.
+- **Destructive** (`<Button variant="destructive">`):
+  `--lume-button-destructive-bg` (Danger Red 500), white text. Same shape
+  as Primary. Used for deletions only; destructive actions must always
+  offer undo, never confirm-modal-to-final.
+- **Ghost** (`<Button variant="ghost">`): transparent background,
+  graphite-950 text, no border. Hover background: graphite-100. Used for
+  tertiary toolbar actions inside a panel.
 
 ### Inputs / Fields
 

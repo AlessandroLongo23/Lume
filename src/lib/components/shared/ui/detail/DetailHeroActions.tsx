@@ -28,12 +28,12 @@ export function DetailHeroActions({
   if (isEditing) {
     return (
       <>
-        <Button variant="secondary" size="sm" leadingIcon={X} onClick={onCancel} disabled={saving}>
+        <Button variant="secondary" size="md" leadingIcon={X} onClick={onCancel} disabled={saving}>
           Annulla
         </Button>
         <Button
           variant="primary"
-          size="sm"
+          size="md"
           leadingIcon={Save}
           onClick={onSave}
           disabled={saving || !isDirty}
@@ -47,7 +47,7 @@ export function DetailHeroActions({
   return (
     <>
       {!isLocked && (
-        <Button variant="secondary" size="sm" leadingIcon={Edit} onClick={onEdit}>
+        <Button variant="secondary" size="md" leadingIcon={Edit} onClick={onEdit}>
           Modifica
         </Button>
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useSearchStore } from '@/lib/stores/search';
 
@@ -11,6 +11,16 @@ interface SearchbarProps {
   isNullable?: boolean;
   className?: string;
   size?: ControlSize;
+  /**
+   * Controlled mode. When provided, the searchbar is decoupled from the
+   * global useSearchStore and behaves as a plain controlled input. Pair
+   * `value` with `onChange` to drive a local-state filter (e.g. a table
+   * toolbar that lives alongside the cmd+K global search).
+   */
+  value?: string;
+  onChange?: (value: string) => void;
+  /** Bind cmd/ctrl+K to focus this searchbar. Default: only in store mode. */
+  bindShortcut?: boolean;
 }
 
 const sizeClasses: Record<ControlSize, string> = {
@@ -24,11 +34,26 @@ export function Searchbar({
   isNullable = true,
   className = '',
   size = 'md',
+  value,
+  onChange,
+  bindShortcut,
 }: SearchbarProps) {
-  const { query, setQuery, clear } = useSearchStore();
+  const isControlled = value !== undefined && onChange !== undefined;
+  const store = useSearchStore();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const query = isControlled ? value! : store.query;
+  const setQuery = isControlled ? onChange! : store.setQuery;
+  const storeClear = store.clear;
+  const clear = useCallback(() => {
+    if (isControlled) onChange!('');
+    else storeClear();
+  }, [isControlled, onChange, storeClear]);
+
+  const shouldBindShortcut = bindShortcut ?? !isControlled;
+
   useEffect(() => {
+    if (!shouldBindShortcut) return;
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -41,12 +66,12 @@ export function Searchbar({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [clear]);
+  }, [clear, shouldBindShortcut]);
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      <div className="absolute left-2 text-zinc-400">
-        <Search className="size-5" />
+      <div className="absolute left-2.5 text-[var(--lume-text-muted)] pointer-events-none">
+        <Search className="size-4" />
       </div>
 
       <input
@@ -55,18 +80,19 @@ export function Searchbar({
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className={`w-full pl-9 pr-8 bg-transparent border rounded-md
-          ${sizeClasses[size]}
-          dark:border-zinc-800 border-zinc-200
-          dark:focus:border-zinc-700 focus:border-zinc-300
-          dark:text-zinc-100 text-zinc-900
-          placeholder:text-zinc-400
-          outline-none transition-all duration-200`}
+        className={[
+          'w-full pl-9 pr-8 bg-transparent border rounded-lg outline-none',
+          'border-[var(--lume-border)] text-[var(--lume-text)] placeholder:text-[var(--lume-text-muted)]',
+          'focus:border-[var(--lume-ring-focus)]',
+          'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
+          sizeClasses[size],
+        ].join(' ')}
       />
 
       {query && isNullable && (
         <button
-          className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md transition-colors"
+          type="button"
+          className="absolute right-2 p-1 text-[var(--lume-text-muted)] hover:text-[var(--lume-text)] rounded-md transition-colors"
           onClick={clear}
           aria-label="Cancella ricerca"
         >

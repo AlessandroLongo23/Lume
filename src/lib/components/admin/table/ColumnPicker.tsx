@@ -76,13 +76,17 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
       <button
         onClick={() => setOpen((o) => !o)}
         className={[
-          'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
+          'inline-flex items-center rounded-lg border font-medium whitespace-nowrap',
+          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
+          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
+          'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
+          'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
           hiddenCount > 0
-            ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
-            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
+            ? 'bg-[var(--lume-accent-muted)] border-[color-mix(in_oklch,var(--lume-accent)_30%,transparent)] text-[var(--lume-accent)]'
+            : 'bg-[var(--lume-button-secondary-bg)] border-[var(--lume-border)] text-[var(--lume-button-secondary-fg)] hover:bg-[var(--lume-button-secondary-bg-hover)]',
         ].join(' ')}
       >
-        <Columns3 className="size-4" />
+        <Columns3 className="size-4 shrink-0" />
         <span>Colonne</span>
         {hiddenCount > 0 && <NumberBadge value={hiddenCount} variant="solid" size="md" />}
       </button>

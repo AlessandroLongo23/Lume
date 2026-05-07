@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
-type InputSize = 'sm' | 'md' | 'lg';
+type ControlSize = 'sm' | 'md' | 'lg';
 
-const sizeConfig: Record<InputSize, {
+const sizeConfig: Record<ControlSize, {
   containerHeight: string;
   arrowWidth: string;
   iconClass: string;
@@ -53,7 +53,7 @@ interface CustomNumberInputProps {
   width?: string;
   /** Number of decimal places allowed. 0 (default) = integers only. */
   decimals?: number;
-  size?: InputSize;
+  size?: ControlSize;
 }
 
 export function CustomNumberInput({

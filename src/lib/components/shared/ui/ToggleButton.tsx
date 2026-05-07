@@ -1,5 +1,8 @@
 'use client';
 
+import { useId } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ToggleButtonProps {
   options: any[];
@@ -23,6 +26,8 @@ export function ToggleButton({
 }: ToggleButtonProps) {
   const currentValue = value ?? options[0];
   const isIconOnly = !!icons && !labels;
+  const pillId = useId();
+  const reduceMotion = useReducedMotion();
 
   const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
     let nextIdx: number | null = null;
@@ -35,7 +40,6 @@ export function ToggleButton({
     }
     if (nextIdx !== null) {
       onChange(options[nextIdx]);
-      // Move focus to the newly selected button
       const container = (e.target as HTMLElement).parentElement;
       const buttons = container?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
       buttons?.[nextIdx]?.focus();
@@ -45,9 +49,13 @@ export function ToggleButton({
   return (
     <div
       role="radiogroup"
-      className={`flex flex-row items-center rounded-lg overflow-hidden border border-zinc-500/25
-        ${style === 'elevated' ? 'shadow-sm' : ''}
-        ${className}`}
+      className={[
+        'inline-flex flex-row items-center rounded-lg p-[3px] gap-[2px]',
+        'h-[var(--lume-control-h-md)] border border-[var(--lume-border)]',
+        'bg-[var(--lume-button-secondary-bg)]',
+        style === 'elevated' ? 'shadow-[var(--shadow-sm)]' : '',
+        className,
+      ].filter(Boolean).join(' ')}
     >
       {options.map((opt, i) => {
         const isActive = currentValue === opt;
@@ -64,18 +72,36 @@ export function ToggleButton({
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(opt)}
             onKeyDown={(e) => handleKeyDown(e, i)}
-            className={`flex items-center justify-center gap-1.5 text-sm transition-all
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:z-content-floating
-              ${isIconOnly ? 'size-9' : 'flex-1 px-3 py-2'}
-              ${isActive
-                ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                : 'bg-white dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-              }
-              ${i > 0 ? 'border-l border-zinc-500/25' : ''}`}
+            className={[
+              'relative h-full inline-flex items-center justify-center rounded-md',
+              'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)] font-medium',
+              'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
+              'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
+              isIconOnly
+                ? 'aspect-square p-0'
+                : 'flex-1 px-[var(--lume-control-px-md)]',
+              isActive
+                ? 'text-[var(--lume-accent)]'
+                : 'text-[var(--lume-text-secondary)] hover:bg-[var(--lume-button-secondary-bg-hover)]',
+            ].join(' ')}
           >
-            {Icon && <Icon className="size-4" />}
-            {label && <span>{label}</span>}
-            {!Icon && !label && <span>{String(opt)}</span>}
+            {isActive && (
+              <motion.span
+                layoutId={`toggle-pill-${pillId}`}
+                aria-hidden
+                className="absolute inset-0 rounded-md bg-[var(--lume-accent-muted)]"
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }
+                }
+              />
+            )}
+            <span className="relative inline-flex items-center gap-[var(--lume-control-gap-md)]">
+              {Icon && <Icon className="size-4 shrink-0" />}
+              {label && <span>{label}</span>}
+              {!Icon && !label && <span>{String(opt)}</span>}
+            </span>
           </button>
         );
       })}

@@ -30,20 +30,25 @@
   --radius-full: 9999px;   /* avatars, fully round    */
 
   /* ── Control heights — buttons, inputs, selects, dropdowns ────────────
-     Single source of truth so a Button md and an Input md align in a row.
-     Pair with the matching --lume-control-px-*, --lume-control-text-* and
-     --lume-control-gap-* below. iconOnly uses width = height (square).   */
-  --lume-control-h-sm: 2rem;     /* 32px */
-  --lume-control-h-md: 2.5rem;   /* 40px — default     */
-  --lume-control-h-lg: 3rem;     /* 48px */
+     Single source of truth so every toolbar control aligns on a 36px
+     baseline: Button, Searchbar, ToggleButton, DropdownMenu trigger,
+     ColumnPicker trigger, every page-header action. md is the default
+     across the admin app; sm is for table inline filters; lg is reserved
+     for landing-page CTAs and onboarding.
 
-  --lume-control-px-sm: 0.625rem; /* 10px */
-  --lume-control-px-md: 0.875rem; /* 14px */
+     Pair with the matching --lume-control-px-*, --lume-control-text-* and
+     --lume-control-gap-* below. iconOnly uses width = height (square). */
+  --lume-control-h-sm: 2rem;     /* 32px — table inline filters       */
+  --lume-control-h-md: 2.25rem;  /* 36px — default toolbar baseline   */
+  --lume-control-h-lg: 2.75rem;  /* 44px — landing CTAs, touch target */
+
+  --lume-control-px-sm: 0.5rem;   /*  8px */
+  --lume-control-px-md: 0.75rem;  /* 12px */
   --lume-control-px-lg: 1.125rem; /* 18px */
 
-  --lume-control-text-sm: 0.875rem; /* 14px */
-  --lume-control-text-md: 0.875rem; /* 14px — reads tighter at 40px      */
-  --lume-control-text-lg: 1rem;     /* 16px */
+  --lume-control-text-sm: 0.8125rem; /* 13px */
+  --lume-control-text-md: 0.875rem;  /* 14px — reads cleanly at 36px  */
+  --lume-control-text-lg: 1rem;      /* 16px */
 
   --lume-control-gap-sm: 0.375rem; /* 6px between icon and label */
   --lume-control-gap-md: 0.5rem;   /* 8px */
