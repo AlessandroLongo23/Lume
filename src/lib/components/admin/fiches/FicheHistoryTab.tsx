@@ -18,6 +18,7 @@ const FIELD_LABELS: Record<string, string> = {
   miscela: 'Miscela',
   tecnica: 'Tecnica',
   paid: 'Pagata',
+  payment_added: 'Pagamento aggiunto',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -26,11 +27,39 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Conclusa',
 };
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: 'Contanti',
+  pos: 'POS',
+  other: 'Altro',
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function formatPaymentAdded(value: unknown): string {
+  if (!isRecord(value)) return '—';
+  const method = typeof value.method === 'string' ? value.method : '';
+  const amount = typeof value.amount === 'number' ? value.amount : Number(value.amount);
+  const methodLabel = PAYMENT_METHOD_LABELS[method] ?? (method || '—');
+  if (Number.isFinite(amount)) {
+    return `${methodLabel} · ${formatCurrency(amount)}`;
+  }
+  return methodLabel;
+}
+
 interface FicheHistoryTabProps {
   ficheId: string;
 }
 
 function formatValue(field: string, value: unknown): string {
+  // payment_added carries an object payload ({method, amount, …}); render it
+  // before the null-guard so an explicit `null` for `old` still becomes `—`.
+  if (field === 'payment_added') {
+    if (value === null || value === undefined) return '—';
+    return formatPaymentAdded(value);
+  }
+
   if (value === null || value === undefined || value === '') return '—';
 
   if (field === 'total_override') {
@@ -69,14 +98,17 @@ function formatValue(field: string, value: unknown): string {
 
 function ChangeBullet({ field, change }: { field: string; change: { old: unknown; new: unknown } }) {
   const label = FIELD_LABELS[field] ?? field;
+  // Returns a <div> (not a <li>) because the parent already wraps each entry
+  // in a <li>; nesting <li>s here would produce invalid HTML and a React 19
+  // warning.
   return (
-    <li className="text-xs text-zinc-600 dark:text-zinc-300">
+    <div className="text-xs text-zinc-600 dark:text-zinc-300">
       <span className="font-medium text-zinc-700 dark:text-zinc-200">{label}</span>
       <span className="text-zinc-500 dark:text-zinc-400">: </span>
       <span className="text-zinc-500 dark:text-zinc-400 line-through">{formatValue(field, change.old)}</span>
       <span className="mx-1.5 text-zinc-400">→</span>
       <span className="text-zinc-700 dark:text-zinc-200">{formatValue(field, change.new)}</span>
-    </li>
+    </div>
   );
 }
 
@@ -129,7 +161,7 @@ function EditRow({ edit }: { edit: FicheEdit }) {
           {edit.reason && edit.reason.trim() && (
             <>
               <span aria-hidden>·</span>
-              <span className="italic text-zinc-600 dark:text-zinc-300">&ldquo;{edit.reason}&rdquo;</span>
+              <span className="italic text-zinc-600 dark:text-zinc-300">&ldquo;{edit.reason.trim()}&rdquo;</span>
             </>
           )}
         </div>

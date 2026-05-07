@@ -54,6 +54,7 @@ import type { FicheProduct } from '@/lib/types/FicheProduct';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
 import { isRangeWithinHours, effectiveScheduleFor, type DaySchedule } from '@/lib/utils/operating-hours';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface FicheModalProps {
   mode: 'add' | 'edit';
@@ -363,6 +364,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setAppendAmount(Number(paymentDelta.toFixed(2)));
     }
   }, [isCompleted, activeTopTab, paymentDelta, appendAmount]);
+
+  // When the realtime echo lands a new payment row, reset appendAmount so the
+  // prefill effect above re-runs against the fresh delta. Trade-off: a manual
+  // edit the user typed before the echo arrived is wiped, but it would no
+  // longer match the displayed mismatch banner anyway. Manual edits within a
+  // single payments-list snapshot are still preserved.
+  const existingPaymentsCount = existingPayments.length;
+  useEffect(() => {
+    setAppendAmount(null);
+  }, [existingPaymentsCount]);
 
   // Close service dropdown on outside click
   useEffect(() => {
@@ -679,6 +690,50 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     return !Object.values(newErrors).some(Boolean);
   }
 
+  /** Detects whether the form has changed against the original fiche snapshot
+   *  on the whitelisted fields (the same set forwarded to update_fiche_with_audit:
+   *  client_id, datetime, note, total_override, miscela, tecnica) plus the
+   *  fiche services/products lists (count + per-row id and final_price). The
+   *  scope is intentionally narrow — status/paid live outside this form, and
+   *  service/product mutations don't go through update_fiche_with_audit, so
+   *  they're tracked separately by their own stores' realtime echo. */
+  function hasFormChanges(): boolean {
+    if (mode !== 'edit' || !fiche) return false;
+    if (clientId !== fiche.client_id) return true;
+    const originalIso = new Date(fiche.datetime).toISOString();
+    const currentIso = baseTime.toISOString();
+    if (originalIso !== currentIso) return true;
+    if ((note ?? '') !== (fiche.note ?? '')) return true;
+    if ((miscela.trim() || null) !== (fiche.miscela ?? null)) return true;
+    if ((tecnica.trim() || null) !== (fiche.tecnica ?? null)) return true;
+    if ((totalOverride ?? null) !== (fiche.total_override ?? null)) return true;
+
+    const origServices = fiche.getFicheServices();
+    if (ficheServices.length !== origServices.length) return true;
+    const origServiceIds = new Set(origServices.map((s) => s.id));
+    for (const draft of ficheServices) {
+      if (!draft.id) return true; // newly added (no persisted id yet)
+      if (!origServiceIds.has(draft.id)) return true;
+      const orig = origServices.find((s) => s.id === draft.id);
+      if (!orig) return true;
+      if (Math.round(draft.final_price * 100) !== Math.round(orig.final_price * 100)) return true;
+    }
+
+    const origProducts = fiche.getFicheProducts();
+    if (ficheProducts.length !== origProducts.length) return true;
+    const origProductIds = new Set(origProducts.map((p) => p.id));
+    for (const draft of ficheProducts) {
+      if (!draft.id) return true;
+      if (!origProductIds.has(draft.id)) return true;
+      const orig = origProducts.find((p) => p.id === draft.id);
+      if (!orig) return true;
+      if (Math.round(draft.final_price * 100) !== Math.round(orig.final_price * 100)) return true;
+      if ((draft.quantity ?? 1) !== (orig.quantity ?? 1)) return true;
+    }
+
+    return false;
+  }
+
   /** Returns true when any service in the appointment falls outside the
    *  effective shifts for its assigned operator (operator's working_hours
    *  if set, otherwise the salon's operating_hours). */
@@ -701,7 +756,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     }
     // For CONCLUSA fiches, prompt for an optional edit reason before persisting.
     // The out-of-hours dialog runs first (above) so we don't stack two confirms.
+    // Skip the prompt entirely when the form is unchanged — clicking "Salva"
+    // on a no-op should just close the modal without spawning a confirm dialog
+    // (and without writing an empty fiche_edits row).
     if (mode === 'edit' && fiche?.status === FicheStatus.COMPLETED && !showEditConfirm) {
+      if (!hasFormChanges()) {
+        onClose();
+        return;
+      }
       setShowEditConfirm(true);
       return;
     }
@@ -711,24 +773,78 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   /** Append a payment row on a closed fiche to reconcile a delta with the
    *  current total. Goes directly to fiche_payments (NOT through the audit RPC
    *  — payments are not fiche-table fields). The realtime subscription on
-   *  fiche_payments refreshes the read-only list. */
+   *  fiche_payments refreshes the read-only list.
+   *
+   *  After the payment insert succeeds we also write a `fiche_edits` row so
+   *  the post-close reconciliation shows up in the Cronologia tab — without
+   *  it the most common post-close action would leave no audit trail. The
+   *  edit insert is best-effort: if it fails we surface a popup but do NOT
+   *  roll back the payment (the money is real and shouldn't be undone).
+   *  salon_id is read from the workspace store (matches the convention in
+   *  fiches.addFiche) rather than fiche.salon_id. */
   async function handleAppendPayment() {
-    if (!fiche?.id || !fiche.salon_id) return;
+    if (!fiche?.id) return;
     if (isAppendingPayment) return;
     const amount = appendAmount ?? 0;
     if (!Number.isFinite(amount) || amount <= 0) return;
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) {
+      messagePopup.getState().error('Nessun salone attivo selezionato.');
+      return;
+    }
     setIsAppendingPayment(true);
+    const methodSnapshot = appendMethod;
+    const paidSumBefore = paidSum;
     try {
       const { error } = await supabase.from('fiche_payments').insert({
         fiche_id: fiche.id,
-        salon_id: fiche.salon_id,
-        method: appendMethod,
+        salon_id: activeSalonId,
+        method: methodSnapshot,
         amount,
       });
       if (error) throw new Error(error.message);
       messagePopup.getState().success('Pagamento aggiunto');
       setAppendAmount(null);
       setAppendMethod(FichePaymentMethod.CASH);
+
+      // Best-effort audit row — RLS requires edited_by = auth.uid(),
+      // so look up the current user. If anything here fails the payment
+      // is already persisted; surface the gap to the user but don't throw.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          messagePopup
+            .getState()
+            .error('Pagamento registrato ma cronologia non aggiornata');
+          return;
+        }
+        const { error: editError } = await supabase.from('fiche_edits').insert({
+          salon_id: activeSalonId,
+          fiche_id: fiche.id,
+          edited_by: user.id,
+          changes: {
+            payment_added: {
+              old: null,
+              new: {
+                method: methodSnapshot,
+                amount,
+                paid_sum_before: paidSumBefore,
+                paid_sum_after: paidSumBefore + amount,
+              },
+            },
+          },
+          reason: null,
+        });
+        if (editError) {
+          messagePopup
+            .getState()
+            .error('Pagamento registrato ma cronologia non aggiornata');
+        }
+      } catch {
+        messagePopup
+          .getState()
+          .error('Pagamento registrato ma cronologia non aggiornata');
+      }
     } catch (err) {
       messagePopup
         .getState()
@@ -950,7 +1066,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         <div className="flex flex-col gap-4 h-full min-h-0">
 
           {isEdit && (
-            <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+            <div role="tablist" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
               {(
                 [
                   { id: 'edit' as const, label: 'Modifica', icon: Pencil, show: true },
@@ -965,6 +1081,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                     <button
                       key={id}
                       type="button"
+                      role="tab"
+                      id={`fiche-tab-${id}`}
+                      aria-controls={`fiche-panel-${id}`}
+                      aria-selected={isActive}
                       onClick={() => {
                         // Going TO the payment tab from "edit" still requires
                         // a valid form for not-yet-closed fiches (so the
@@ -992,7 +1112,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
           {activeTopTab === 'edit' ? (
             /* ══ MODIFICA TAB ═══════════════════════════════════════════════ */
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 xl:gap-8 flex-1 min-h-0 overflow-y-auto xl:overflow-visible">
+            <div
+              role="tabpanel"
+              id="fiche-panel-edit"
+              aria-labelledby="fiche-tab-edit"
+              className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 xl:gap-8 flex-1 min-h-0 overflow-y-auto xl:overflow-visible"
+            >
 
               {/* ── LEFT: Dettagli ── */}
               <div className="flex flex-col gap-5 xl:overflow-y-auto xl:pr-1">
@@ -1488,7 +1613,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             </div>
           ) : activeTopTab === 'history' ? (
             /* ══ CRONOLOGIA TAB ═════════════════════════════════════════════ */
-            <div className="flex flex-col flex-1 min-h-0">
+            <div
+              role="tabpanel"
+              id="fiche-panel-history"
+              aria-labelledby="fiche-tab-history"
+              className="flex flex-col flex-1 min-h-0"
+            >
               {fiche?.id ? (
                 <FicheHistoryTab ficheId={fiche.id} />
               ) : (
@@ -1500,7 +1630,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             </div>
           ) : isCompleted ? (
             /* ══ PAGAMENTO TAB — fiche già chiusa (read-only + append) ══════ */
-            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '320px 1fr' }}>
+            <div
+              role="tabpanel"
+              id="fiche-panel-payment"
+              aria-labelledby="fiche-tab-payment"
+              className="grid gap-8 flex-1 min-h-0"
+              style={{ gridTemplateColumns: '320px 1fr' }}
+            >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt
                   clientName={clientName}
@@ -1621,7 +1757,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             </div>
           ) : (
             /* ══ PAGAMENTO TAB — fiche da chiudere (close-flow) ═════════════ */
-            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '320px 1fr' }}>
+            <div
+              role="tabpanel"
+              id="fiche-panel-payment"
+              aria-labelledby="fiche-tab-payment"
+              className="grid gap-8 flex-1 min-h-0"
+              style={{ gridTemplateColumns: '320px 1fr' }}
+            >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt
                   clientName={clientName}
