@@ -8,6 +8,8 @@ interface DetailChipProps {
   tone?: Tone;
   icon?: LucideIcon;
   children: React.ReactNode;
+  onClick?: () => void;
+  title?: string;
 }
 
 const toneClasses: Record<Tone, string> = {
@@ -19,9 +21,34 @@ const toneClasses: Record<Tone, string> = {
   primary: 'bg-primary/10 text-primary',
 };
 
-export function DetailChip({ tone = 'zinc', icon: Icon, children }: DetailChipProps) {
+const toneHoverClasses: Record<Tone, string> = {
+  amber: 'hover:bg-amber-500/20',
+  sky: 'hover:bg-sky-500/20',
+  emerald: 'hover:bg-emerald-500/20',
+  red: 'hover:bg-red-500/20',
+  zinc: 'hover:bg-zinc-500/20',
+  primary: 'hover:bg-primary/20',
+};
+
+export function DetailChip({ tone = 'zinc', icon: Icon, children, onClick, title }: DetailChipProps) {
+  const baseClass = `inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${toneClasses[tone]}`;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className={`${baseClass} ${toneHoverClasses[tone]} transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40`}
+      >
+        {Icon && <Icon className="size-3" />}
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${toneClasses[tone]}`}>
+    <span className={baseClass} title={title}>
       {Icon && <Icon className="size-3" />}
       {children}
     </span>

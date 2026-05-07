@@ -41,8 +41,10 @@ export function EditOperatorModal({ isOpen, onClose, editedOperator, onEditedOpe
     const e = emptyErrors();
     if (!editedOperator.firstName) e.firstName = 'Inserisci un nome';
     if (!editedOperator.lastName) e.lastName = 'Inserisci un cognome';
-    if (!editedOperator.email) e.email = 'Inserisci un email';
-    if (!editedOperator.phonePrefix || !editedOperator.phoneNumber) e.phone = 'Inserisci un numero di telefono';
+    // Email is required only for operators with a linked auth account — clearing it
+    // would orphan the auth identity. No-auth operators may keep email blank.
+    const hadAccount = !!selectedOperator.user_id;
+    if (hadAccount && !editedOperator.email) e.email = 'Inserisci un email';
     setErrors(e);
     if (Object.values(e).some(Boolean)) return;
 
@@ -139,7 +141,7 @@ export function EditOperatorModal({ isOpen, onClose, editedOperator, onEditedOpe
 
         <div className="flex flex-row items-center gap-6 w-full">
           <div className="flex flex-1 flex-col gap-2">
-            <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email *</span></label>
+            <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email{linkedToUser ? ' *' : ''}</span></label>
             <input
               type="email"
               className={linkedToUser ? lockedInputClass : inputClass}

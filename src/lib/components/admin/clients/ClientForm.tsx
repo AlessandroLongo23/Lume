@@ -198,32 +198,37 @@ export function ClientForm({
         </div>
       </div>
 
-      <div className="flex flex-row items-start gap-4 w-full flex-wrap">
-        <div className="flex flex-1 min-w-48 flex-col gap-2">
-          <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email{lockEmail ? '' : ' (opzionale)'}</span></label>
-          <input
-            type="email"
-            className={`${inputClass} ${lockEmail ? 'opacity-60 cursor-not-allowed' : ''}`}
-            value={value.email ?? ''}
-            onChange={(e) => set('email', e.target.value)}
-            autoComplete="off"
-            disabled={lockEmail}
-          />
-          {errors?.email && <p className="text-xs text-red-500">{errors.email}</p>}
-          {!lockEmail && <p className="text-xs text-zinc-400">Aggiungi un&apos;email per permettere al cliente di accedere via email.</p>}
+      <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-row items-start gap-4 w-full flex-wrap">
+          <div className="flex flex-1 min-w-48 flex-col gap-2">
+            <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email{lockEmail ? '' : ' (opzionale)'}</span></label>
+            <input
+              type="email"
+              className={`${inputClass} ${lockEmail ? 'opacity-60 cursor-not-allowed' : ''}`}
+              value={value.email ?? ''}
+              onChange={(e) => set('email', e.target.value)}
+              autoComplete="off"
+              disabled={lockEmail}
+            />
+            {errors?.email && <p className="text-xs text-red-500">{errors.email}</p>}
+          </div>
+          <div className="flex flex-1 min-w-48 flex-col gap-2">
+            <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono{lockPhone ? '' : ' (opzionale)'}</span></label>
+            <PhoneNumber
+              prefixCode={value.phonePrefix ?? '+39'}
+              phoneNumber={value.phoneNumber ?? ''}
+              onPrefixChange={(v) => set('phonePrefix', v)}
+              onPhoneChange={(v) => set('phoneNumber', v)}
+              disabled={lockPhone}
+            />
+            {errors?.phoneNumber && <p className="text-xs text-red-500">{errors.phoneNumber}</p>}
+          </div>
         </div>
-        <div className="flex flex-1 min-w-48 flex-col gap-2">
-          <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono{lockPhone ? '' : ' (opzionale)'}</span></label>
-          <PhoneNumber
-            prefixCode={value.phonePrefix ?? '+39'}
-            phoneNumber={value.phoneNumber ?? ''}
-            onPrefixChange={(v) => set('phonePrefix', v)}
-            onPhoneChange={(v) => set('phoneNumber', v)}
-            disabled={lockPhone}
-          />
-          {errors?.phoneNumber && <p className="text-xs text-red-500">{errors.phoneNumber}</p>}
-          {!lockPhone && <p className="text-xs text-zinc-400">Aggiungi un telefono per permettere al cliente di accedere via telefono.</p>}
-        </div>
+        {!lockEmail && !lockPhone && (
+          <p className="text-xs text-zinc-400">
+            Senza email o telefono il cliente non potrà accedere o prenotare online. Potrai aggiungere queste informazioni in seguito.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-row items-start gap-4 w-full flex-wrap">

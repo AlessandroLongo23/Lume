@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Link2 } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Link2, KeyRound } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
@@ -16,6 +16,7 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
+import { AddOperatorCredentialsModal } from '@/lib/components/admin/operators/AddOperatorCredentialsModal';
 import { OperatorWorkingHoursPanel } from '@/lib/components/admin/operators/OperatorWorkingHoursPanel';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
@@ -36,6 +37,7 @@ export default function OperatorDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showAddCredentials, setShowAddCredentials] = useState(false);
   const [editedOperator, setEditedOperator] = useState<Partial<Operator>>({});
 
   const operatorId = params.id as string;
@@ -122,6 +124,11 @@ export default function OperatorDetailPage() {
         onEditedOperatorChange={setEditedOperator}
       />
       <DeleteOperatorModal isOpen={showDelete} onClose={() => setShowDelete(false)} selectedOperator={operator} />
+      <AddOperatorCredentialsModal
+        isOpen={showAddCredentials}
+        onClose={() => setShowAddCredentials(false)}
+        operator={operator}
+      />
 
       <div className="flex flex-col">
         <DetailHero
@@ -134,6 +141,21 @@ export default function OperatorDetailPage() {
               {linkedToUser && (
                 <DetailChip tone="primary" icon={Link2}>
                   Account collegato
+                </DetailChip>
+              )}
+              {!linkedToUser && !operator.isArchived && canEdit && (
+                <DetailChip
+                  tone="zinc"
+                  icon={KeyRound}
+                  onClick={() => setShowAddCredentials(true)}
+                  title="Crea le credenziali per consentire all'operatore di accedere"
+                >
+                  Senza account · Aggiungi credenziali
+                </DetailChip>
+              )}
+              {!linkedToUser && (operator.isArchived || !canEdit) && (
+                <DetailChip tone="zinc" icon={KeyRound}>
+                  Senza account
                 </DetailChip>
               )}
             </>

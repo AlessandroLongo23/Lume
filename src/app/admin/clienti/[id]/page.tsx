@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle, KeyRound } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
@@ -289,6 +289,7 @@ export default function ClientDetailPage() {
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
         selectedClient={client}
+        onDeleted={() => router.push('/admin/clienti')}
       />
 
       <ConfirmDialog
@@ -317,7 +318,22 @@ export default function ClientDetailPage() {
                   Turista
                 </DetailChip>
               )}
-              {client.hasIncompleteContact && (
+              {client.user_id === null && !isEditing && !client.isArchived && (
+                <DetailChip
+                  tone="zinc"
+                  icon={KeyRound}
+                  onClick={handleEnterEdit}
+                  title="Aggiungi email o telefono per creare l'accesso"
+                >
+                  Senza account · Aggiungi credenziali
+                </DetailChip>
+              )}
+              {client.user_id === null && (isEditing || client.isArchived) && (
+                <DetailChip tone="zinc" icon={KeyRound}>
+                  Senza account
+                </DetailChip>
+              )}
+              {client.hasIncompleteContact && client.user_id !== null && (
                 <DetailChip tone="amber" icon={AlertCircle}>
                   Dati incompleti
                 </DetailChip>

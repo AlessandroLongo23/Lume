@@ -48,15 +48,13 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, clients.length, formDefaults.client_phone_prefix, formDefaults.client_default_gender]);
 
+  const willCreateAccount = !!client.email || !!client.phoneNumber;
+
   const handleSubmit = async () => {
     const newErrors: ClientFormErrors = {};
     if (!client.firstName?.trim()) newErrors.firstName = 'Inserisci un nome';
     if (!client.lastName?.trim()) newErrors.lastName = 'Inserisci un cognome';
-    if (!client.email && !client.phoneNumber) {
-      newErrors.email = "Inserisci almeno un'email o un telefono";
-      newErrors.phoneNumber = "Inserisci almeno un'email o un telefono";
-    }
-    if (!client.password) newErrors.password = 'Inserisci una password';
+    if (willCreateAccount && !client.password) newErrors.password = 'Inserisci una password';
     if (!client.gender) newErrors.gender = 'Seleziona un genere';
     if (client.birthDate) {
       const err = validateBirthDate(client.birthDate);
@@ -72,7 +70,15 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
     }
 
     try {
-      await addClient({ ...client, birthDate: formattedBirthDate ?? undefined });
+      const payload: ClientFormValue = {
+        ...client,
+        birthDate: formattedBirthDate ?? undefined,
+      };
+      // No account being created → no password to send. Avoids confusing
+      // server-side state where a placeholder password is associated with no auth user.
+      if (!willCreateAccount) payload.password = undefined;
+
+      await addClient(payload);
       messagePopup.getState().success('Cliente aggiunto con successo');
       onClose();
     } catch (error) {
@@ -83,7 +89,13 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
 
   return (
     <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Nuovo cliente" subtitle="Aggiungi un nuovo cliente" classes="max-w-3xl">
-      <ClientForm value={client} onChange={setClient} errors={errors} showNote />
+      <ClientForm
+        value={client}
+        onChange={setClient}
+        errors={errors}
+        showPassword={willCreateAccount}
+        showNote
+      />
     </AddModal>
   );
 }

@@ -10,6 +10,7 @@ interface OperatorsState {
   selectedOperator: Operator | null;
   fetchOperators: () => Promise<void>;
   addOperator: (operatorData: Partial<Operator>) => Promise<Operator>;
+  addCredentials: (operatorId: string, credentials: { email: string; password: string }) => Promise<void>;
   updateOperator: (operatorId: string, updatedOperator: Partial<Operator>) => Promise<Operator>;
   archiveOperator: (operatorId: string) => Promise<void>;
   restoreOperator: (operatorId: string) => Promise<void>;
@@ -44,7 +45,17 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
-    return new Operator(result.user);
+    return new Operator(result.operator);
+  },
+
+  addCredentials: async (operatorId, { email, password }) => {
+    const response = await fetch('/api/operators', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: operatorId, action: 'addCredentials', email, password }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
   },
 
   updateOperator: async (operatorId, updatedOperator) => {

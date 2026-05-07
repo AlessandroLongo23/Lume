@@ -50,7 +50,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
     return operators.filter((o) =>
       o.firstName.toLowerCase().includes(q) ||
       o.lastName.toLowerCase().includes(q) ||
-      o.email.toLowerCase().includes(q)
+      (o.email?.toLowerCase().includes(q) ?? false)
     );
   }, [operators, globalFilter]);
 
@@ -77,18 +77,24 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => (
-        <span
-          data-no-row-click
-          className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(`mailto:${row.original.email}`, '_blank');
-          }}
-        >
-          {row.original.email}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const email = row.original.email;
+        if (!email) {
+          return <span className="text-zinc-400 dark:text-zinc-500">—</span>;
+        }
+        return (
+          <span
+            data-no-row-click
+            className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`mailto:${email}`, '_blank');
+            }}
+          >
+            {email}
+          </span>
+        );
+      },
     },
     {
       id: 'phone',

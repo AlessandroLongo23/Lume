@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon } from '@/lib/auth/roles';
 
 function getAdminClient() {
@@ -10,22 +11,35 @@ function getAdminClient() {
   );
 }
 
-async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const supabaseAdmin = getAdminClient();
+/**
+ * Returns true if the email already belongs to an auth.users identity in the
+ * system (denormalized via profiles or clients). The cross-salon collision
+ * graceful flow lives in identity sub-problem #03; until that lands, we just
+ * surface a clean 409 here.
+ */
+async function emailAlreadyTaken(
+  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  email: string,
+): Promise<boolean> {
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('salon_id, role')
-    .eq('id', user.id)
-    .single();
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
+  if (profile?.id) return true;
 
-  return profile;
+  const { data: existingClient } = await supabaseAdmin
+    .from('clients')
+    .select('user_id')
+    .eq('email', email)
+    .not('user_id', 'is', null)
+    .limit(1)
+    .maybeSingle();
+  return !!existingClient?.user_id;
 }
 
 export async function POST(request: NextRequest) {
-  let newUserId: string | null = null;
+  let createdAuthUserId: string | null = null;
 
   try {
     const supabase = await createServerClient();
@@ -36,64 +50,106 @@ export async function POST(request: NextRequest) {
     }
 
     const { operator } = await request.json();
-    const supabaseAdmin = getAdminClient();
 
-    // 1. Create auth user for the operator
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: operator.email,
-      password: operator.password,
-      phone: `${operator.phonePrefix}${operator.phoneNumber}`,
-      email_confirm: true,
-      user_metadata: {
-        role: 'operator',
-        firstName: operator.firstName,
-        lastName: operator.lastName,
-        must_change_password: true,
-      },
-    });
-
-    if (authError) throw authError;
-    newUserId = authData.user.id;
-
-    // 2. Insert profile row (links auth user to salon)
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .insert({
-        id: newUserId,
-        salon_id: profile.salon_id,
-        first_name: operator.firstName,
-        last_name: operator.lastName,
-        email: operator.email,
-        role: 'operator',
-      });
-
-    if (profileError) {
-      await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      throw profileError;
+    if (!operator?.firstName?.trim() || !operator?.lastName?.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Nome e cognome sono obbligatori' },
+        { status: 400 },
+      );
     }
 
-    // 3. Insert operator row with salon_id and user_id
-    const { error: dbError } = await supabaseAdmin
+    const email = typeof operator.email === 'string' && operator.email.trim() !== ''
+      ? operator.email.trim()
+      : null;
+    const password = typeof operator.password === 'string' && operator.password.length > 0
+      ? operator.password
+      : null;
+    const phonePrefix = typeof operator.phonePrefix === 'string' && operator.phonePrefix.trim() !== ''
+      ? operator.phonePrefix.trim()
+      : null;
+    const phoneNumber = typeof operator.phoneNumber === 'string' && operator.phoneNumber.trim() !== ''
+      ? operator.phoneNumber.trim()
+      : null;
+
+    const supabaseAdmin = getAdminClient();
+    const wantsAccount = !!email && !!password;
+
+    // Branch 1: no-auth operator. Skip auth.users + profiles entirely.
+    // Branch 2/3: account requested. Detect collision (#03) before creating.
+    if (wantsAccount) {
+      const collision = await emailAlreadyTaken(supabaseAdmin, email!);
+      if (collision) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Questa email è già registrata. Per ora utilizza un'email diversa o crea l'operatore senza account.",
+          },
+          { status: 409 },
+        );
+      }
+
+      // Branch 3: net new email — create auth user + profile, link operator.
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email!,
+        password: password!,
+        phone: phonePrefix && phoneNumber ? `${phonePrefix}${phoneNumber}` : undefined,
+        email_confirm: true,
+        user_metadata: {
+          role: 'operator',
+          firstName: operator.firstName,
+          lastName: operator.lastName,
+          must_change_password: true,
+        },
+      });
+      if (authError) throw authError;
+      createdAuthUserId = authData.user.id;
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: createdAuthUserId,
+          salon_id: profile.salon_id,
+          first_name: operator.firstName,
+          last_name: operator.lastName,
+          email,
+          role: 'operator',
+        });
+      if (profileError) throw profileError;
+    }
+
+    const { data: insertedOperator, error: dbError } = await supabaseAdmin
       .from('operators')
       .insert({
         salon_id: profile.salon_id,
-        user_id: newUserId,
-        must_change_password: true,
+        user_id: createdAuthUserId,
+        must_change_password: wantsAccount,
         firstName: operator.firstName,
         lastName: operator.lastName,
-        email: operator.email,
-        phonePrefix: operator.phonePrefix,
-        phoneNumber: operator.phoneNumber,
-      });
+        email,
+        phonePrefix,
+        phoneNumber,
+      })
+      .select()
+      .single();
 
     if (dbError) {
-      await supabaseAdmin.from('profiles').delete().eq('id', newUserId);
-      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      if (createdAuthUserId) {
+        await supabaseAdmin.from('profiles').delete().eq('id', createdAuthUserId);
+        await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
+      }
       throw dbError;
     }
 
-    return NextResponse.json({ success: true, user: authData.user });
+    return NextResponse.json({ success: true, operator: insertedOperator });
   } catch (error) {
+    if (createdAuthUserId) {
+      try {
+        const supabaseAdmin = getAdminClient();
+        await supabaseAdmin.from('profiles').delete().eq('id', createdAuthUserId);
+        await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
+      } catch { /* best-effort cleanup */ }
+    }
     const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error creating operator:', error);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
@@ -109,26 +165,120 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id, action } = await request.json();
-    if (!id || !['archive', 'restore'].includes(action)) {
-      return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
-    }
+    const body = await request.json();
+    const { id, action } = body;
+    if (!id) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
 
     const supabaseAdmin = getAdminClient();
-    const archived_at = action === 'archive' ? new Date().toISOString() : null;
 
-    const { error: dbError } = await supabaseAdmin
-      .from('operators')
-      .update({ archived_at })
-      .eq('id', id)
-      .eq('salon_id', profile.salon_id);
+    if (action === 'archive' || action === 'restore') {
+      const archived_at = action === 'archive' ? new Date().toISOString() : null;
+      const { error: dbError } = await supabaseAdmin
+        .from('operators')
+        .update({ archived_at })
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
 
-    if (dbError) throw dbError;
+    if (action === 'addCredentials') {
+      // Promote a no-auth operator to one that can log in. Mirrors the
+      // clients `updateContact` flow but operator-shaped: email + password
+      // are mandatory, no phone-only path. Cross-salon collision lands in #03.
+      const newEmail = typeof body.email === 'string' && body.email.trim() !== ''
+        ? body.email.trim()
+        : null;
+      const newPassword = typeof body.password === 'string' && body.password.length > 0
+        ? body.password
+        : null;
 
-    return NextResponse.json({ success: true });
+      if (!newEmail || !newPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Email e password sono obbligatori' },
+          { status: 400 },
+        );
+      }
+
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from('operators')
+        .select('id, user_id, email, firstName, lastName')
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id)
+        .single();
+      if (lookupError || !existing) {
+        return NextResponse.json({ success: false, error: 'Operatore non trovato' }, { status: 404 });
+      }
+
+      if (existing.user_id) {
+        return NextResponse.json(
+          { success: false, error: 'Questo operatore ha già un account' },
+          { status: 400 },
+        );
+      }
+
+      const collision = await emailAlreadyTaken(supabaseAdmin, newEmail);
+      if (collision) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Questa email è già registrata. Utilizza un'email diversa.",
+          },
+          { status: 409 },
+        );
+      }
+
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: newEmail,
+        password: newPassword,
+        email_confirm: true,
+        user_metadata: {
+          role: 'operator',
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          must_change_password: true,
+        },
+      });
+      if (authError) throw authError;
+      const newUserId = authData.user.id;
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: newUserId,
+          salon_id: profile.salon_id,
+          first_name: existing.firstName,
+          last_name: existing.lastName,
+          email: newEmail,
+          role: 'operator',
+        });
+      if (profileError) {
+        await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        throw profileError;
+      }
+
+      const { error: dbError } = await supabaseAdmin
+        .from('operators')
+        .update({
+          user_id: newUserId,
+          email: newEmail,
+          must_change_password: true,
+        })
+        .eq('id', id)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) {
+        await supabaseAdmin.from('profiles').delete().eq('id', newUserId);
+        await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        throw dbError;
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error archiving operator:', msg);
+    console.error('Error patching operator:', msg);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
@@ -149,7 +299,6 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getAdminClient();
 
-    // Look up the operator's user_id before deleting
     const { data: operatorData } = await supabaseAdmin
       .from('operators')
       .select('user_id')
@@ -161,7 +310,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Operator not found' }, { status: 404 });
     }
 
-    // Delete operator row
     const { error: dbError } = await supabaseAdmin
       .from('operators')
       .delete()
@@ -169,7 +317,6 @@ export async function DELETE(request: NextRequest) {
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 
-    // Delete profile and auth user if linked
     if (operatorData.user_id) {
       await supabaseAdmin.from('profiles').delete().eq('id', operatorData.user_id);
       await supabaseAdmin.auth.admin.deleteUser(operatorData.user_id);

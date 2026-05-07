@@ -81,46 +81,51 @@ export async function POST(request: NextRequest) {
       ? client.phoneNumber.trim()
       : null;
 
-    if (!email && !(phonePrefix && phoneNumber)) {
+    if (!client.firstName?.trim() || !client.lastName?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'Inserisci almeno un\'email o un numero di telefono' },
+        { success: false, error: 'Nome e cognome sono obbligatori' },
         { status: 400 },
       );
     }
 
     const supabaseAdmin = getAdminClient();
 
-    // 1. Resolve the auth identity: reuse an existing user or create a new one.
-    //    A person can be an owner of another salon, or a client of another salon —
-    //    in both cases they already have an auth.users row we must not duplicate.
-    let userId = await findExistingUserId(supabaseAdmin, { email, phonePrefix, phoneNumber });
+    // 1. Resolve the auth identity. With no contact info, the client is a
+    //    no-auth ("CRM-only") record — skip auth creation entirely. Otherwise
+    //    reuse an existing user (cross-salon person) or create a new one.
+    let userId: string | null = null;
+    const hasContact = !!email || !!(phonePrefix && phoneNumber);
 
-    if (!userId) {
-      // Supabase Auth requires email OR phone on createUser. We pass whichever
-      // the operator provided (or both). The auto-generated password is shared
-      // across both channels so the client can log in with either.
-      const phoneE164 = toE164(phonePrefix, phoneNumber);
-      const createPayload: Parameters<typeof supabaseAdmin.auth.admin.createUser>[0] = {
-        password: client.password,
-        user_metadata: {
-          role: 'client',
-          firstName: client.firstName,
-          lastName: client.lastName,
-        },
-      };
-      if (email) {
-        createPayload.email = email;
-        createPayload.email_confirm = true;
-      }
-      if (phoneE164) {
-        createPayload.phone = phoneE164;
-        createPayload.phone_confirm = true;
-      }
+    if (hasContact) {
+      userId = await findExistingUserId(supabaseAdmin, { email, phonePrefix, phoneNumber });
 
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser(createPayload);
-      if (authError) throw authError;
-      userId = authData.user.id;
-      createdAuthUserId = userId; // remember we own this — roll back on failure
+      if (!userId) {
+        // Supabase Auth requires email OR phone on createUser. We pass whichever
+        // the operator provided (or both). The auto-generated password is shared
+        // across both channels so the client can log in with either.
+        const phoneE164 = toE164(phonePrefix, phoneNumber);
+        const createPayload: Parameters<typeof supabaseAdmin.auth.admin.createUser>[0] = {
+          password: client.password,
+          user_metadata: {
+            role: 'client',
+            firstName: client.firstName,
+            lastName: client.lastName,
+          },
+        };
+        if (email) {
+          createPayload.email = email;
+          createPayload.email_confirm = true;
+        }
+        if (phoneE164) {
+          createPayload.phone = phoneE164;
+          createPayload.phone_confirm = true;
+        }
+
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser(createPayload);
+        if (authError) throw authError;
+        userId = authData.user.id;
+        createdAuthUserId = userId; // remember we own this — roll back on failure
+      }
     }
 
     // 2. Insert client row linking this salon to the (existing or new) identity
@@ -245,8 +250,11 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ success: true }); // no-op
       }
 
-      // Update auth.users first (fails loudly if the identifier is already in use)
+      let resolvedUserId = existing.user_id as string | null;
+      let createdUserId: string | null = null;
+
       if (existing.user_id) {
+        // Existing auth identity — append the new identifier to it.
         const authUpdate: { email?: string; phone?: string } = {};
         if (addingEmail) authUpdate.email = newEmail!;
         if (addingPhone) {
@@ -258,21 +266,61 @@ export async function PATCH(request: NextRequest) {
           authUpdate,
         );
         if (authError) throw authError;
+      } else {
+        // No-auth client being promoted to a logged-in client. Reuse a
+        // cross-salon identity if one matches, otherwise create one.
+        resolvedUserId = await findExistingUserId(supabaseAdmin, {
+          email: addingEmail ? newEmail! : null,
+          phonePrefix: addingPhone ? newPrefix! : null,
+          phoneNumber: addingPhone ? newNumber! : null,
+        });
+
+        if (!resolvedUserId) {
+          const password = typeof body.password === 'string' && body.password.length > 0
+            ? body.password
+            : Math.random().toString(36).slice(2, 14);
+          const phoneE164 = addingPhone ? toE164(newPrefix!, newNumber!) : null;
+          const createPayload: Parameters<typeof supabaseAdmin.auth.admin.createUser>[0] = {
+            password,
+            user_metadata: { role: 'client' },
+          };
+          if (addingEmail) {
+            createPayload.email = newEmail!;
+            createPayload.email_confirm = true;
+          }
+          if (phoneE164) {
+            createPayload.phone = phoneE164;
+            createPayload.phone_confirm = true;
+          }
+
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser(createPayload);
+          if (authError) throw authError;
+          resolvedUserId = authData.user.id;
+          createdUserId = resolvedUserId;
+        }
       }
 
-      // Then update denormalized columns on clients
-      const clientUpdate: { email?: string; phonePrefix?: string; phoneNumber?: string } = {};
+      // Then update denormalized columns on clients (and link user_id when promoting)
+      const clientUpdate: { email?: string; phonePrefix?: string; phoneNumber?: string; user_id?: string } = {};
       if (addingEmail) clientUpdate.email = newEmail!;
       if (addingPhone) {
         clientUpdate.phonePrefix = newPrefix!;
         clientUpdate.phoneNumber = newNumber!;
       }
+      if (!existing.user_id && resolvedUserId) clientUpdate.user_id = resolvedUserId;
+
       const { error: dbError } = await supabaseAdmin
         .from('clients')
         .update(clientUpdate)
         .eq('id', id)
         .eq('salon_id', profile.salon_id);
-      if (dbError) throw dbError;
+      if (dbError) {
+        // Roll back the auth user we just created — the link never landed.
+        if (createdUserId) {
+          try { await supabaseAdmin.auth.admin.deleteUser(createdUserId); } catch { /* best effort */ }
+        }
+        throw dbError;
+      }
 
       return NextResponse.json({ success: true });
     }

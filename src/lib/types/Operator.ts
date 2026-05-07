@@ -9,7 +9,7 @@ export class Operator {
   must_change_password: boolean;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   phonePrefix: string;
   phoneNumber: string;
   avatar_url: string | null;
@@ -24,7 +24,7 @@ export class Operator {
     this.must_change_password = operator.must_change_password ?? false;
     this.firstName = operator.firstName;
     this.lastName = operator.lastName;
-    this.email = operator.email;
+    this.email = operator.email ?? null;
     this.phonePrefix = operator.phonePrefix;
     this.phoneNumber = operator.phoneNumber;
     this.avatar_url = operator.avatar_url ?? null;
@@ -64,8 +64,9 @@ export class Operator {
       key: 'email',
       sortable: true,
       icon: AtSign,
-      display: (operator: Operator) => operator.email,
+      display: (operator: Operator) => operator.email ?? '—',
       onclick: (operator: Operator) => {
+        if (!operator.email) return;
         window.open(`mailto:${operator.email}`, '_blank');
       },
     },

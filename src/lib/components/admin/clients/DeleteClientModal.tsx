@@ -12,9 +12,10 @@ interface DeleteClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedClient: Client | null;
+  onDeleted?: () => void;
 }
 
-export function DeleteClientModal({ isOpen, onClose, selectedClient }: DeleteClientModalProps) {
+export function DeleteClientModal({ isOpen, onClose, selectedClient, onDeleted }: DeleteClientModalProps) {
   const deleteClient = useClientsStore((s) => s.deleteClient);
   const archiveClient = useClientsStore((s) => s.archiveClient);
   const [confirmInput, setConfirmInput] = useState('');
@@ -39,6 +40,7 @@ export function DeleteClientModal({ isOpen, onClose, selectedClient }: DeleteCli
       await deleteClient(selectedClient.id);
       messagePopup.getState().success('Cliente eliminato con successo.');
       handleClose();
+      onDeleted?.();
     } catch {
       messagePopup.getState().error("Errore durante l'eliminazione.");
     }
