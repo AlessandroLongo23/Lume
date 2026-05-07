@@ -1,13 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 
 export function SubscriptionCTA() {
   const isTrialing = useSubscriptionStore((s) => s.isTrialing);
+  const pathname = usePathname();
 
-  if (!isTrialing) return null;
+  // Don't duplicate the CTA on the page where the actual plans live —
+  // it's redundant and adds a third indigo element to the same viewport.
+  if (!isTrialing || pathname === '/admin/subscribe') return null;
 
   return (
     <Link

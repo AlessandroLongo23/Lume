@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { addMonths } from 'date-fns';
 import { getStripe } from '@/lib/stripe/client';
 import Stripe from 'stripe';
+
+const REFERRAL_CAP = 6;
 
 function getAdminClient() {
   return createClient(
@@ -90,6 +93,78 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .eq('stripe_subscription_id', subscription.id);
 }
 
+// Pushes the referrer's subscription trial_end forward by one month per credit.
+// Replaces the previous Stripe customer-balance approach: now the renewal date
+// itself shifts, so the UI ("Prossimo addebito") reflects the reward directly.
+//
+// Concurrency note: when two referred salons make their first payment within
+// the same window, both webhooks read the same current_period_end from Stripe
+// and one extension can be lost. Acceptable for v1 (cap is 6 per referrer);
+// rare event, recoverable from referral_credits audit trail.
+async function applyReferralExtension(
+  supabaseAdmin: SupabaseClient,
+  referrerSalonId: string,
+  creditId: string
+): Promise<void> {
+  const { data: referrerSalon } = await supabaseAdmin
+    .from('salons')
+    .select('stripe_subscription_id')
+    .eq('id', referrerSalonId)
+    .single();
+
+  // Referrer hasn't subscribed yet — mark earned, retroactively applied
+  // when they make their own first payment (handled in handleInvoicePaymentSucceeded).
+  if (!referrerSalon?.stripe_subscription_id) {
+    await supabaseAdmin
+      .from('referral_credits')
+      .update({ status: 'earned', earned_at: new Date().toISOString() })
+      .eq('id', creditId);
+    return;
+  }
+
+  const subscription = await getStripe().subscriptions.retrieve(referrerSalon.stripe_subscription_id);
+
+  // Skip if subscription is canceling at period end — would feel punitive to
+  // auto-extend something the user has already chosen to end.
+  if (subscription.cancel_at_period_end) {
+    await supabaseAdmin
+      .from('referral_credits')
+      .update({ status: 'earned', earned_at: new Date().toISOString() })
+      .eq('id', creditId);
+    return;
+  }
+
+  const periodEndSec = subscription.items.data[0]?.current_period_end;
+  if (!periodEndSec) return;
+
+  const previousPeriodEnd = new Date(periodEndSec * 1000);
+  const baseDate = previousPeriodEnd.getTime() > Date.now() ? previousPeriodEnd : new Date();
+  const newPeriodEnd = addMonths(baseDate, 1);
+  const newTrialEndSec = Math.floor(newPeriodEnd.getTime() / 1000);
+
+  await getStripe().subscriptions.update(subscription.id, {
+    trial_end: newTrialEndSec,
+    proration_behavior: 'none',
+  });
+
+  const nowIso = new Date().toISOString();
+  await supabaseAdmin
+    .from('referral_credits')
+    .update({
+      status: 'applied',
+      earned_at: nowIso,
+      applied_at: nowIso,
+      previous_period_end: previousPeriodEnd.toISOString(),
+      new_period_end: newPeriodEnd.toISOString(),
+    })
+    .eq('id', creditId);
+
+  await supabaseAdmin
+    .from('salons')
+    .update({ referral_extension_until: newPeriodEnd.toISOString() })
+    .eq('id', referrerSalonId);
+}
+
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   // Only process the very first subscription payment (referral trigger)
   if (invoice.billing_reason !== 'subscription_create') return;
@@ -108,64 +183,54 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     .eq('stripe_customer_id', customerId)
     .single();
 
-  if (!paidSalon?.referred_by_salon_id) return;
+  if (!paidSalon) return;
 
-  // Find the pending referral credit
-  const { data: credit } = await supabaseAdmin
-    .from('referral_credits')
-    .select('id')
-    .eq('referrer_salon_id', paidSalon.referred_by_salon_id)
-    .eq('referred_salon_id', paidSalon.id)
-    .eq('status', 'pending')
-    .single();
-
-  if (!credit) return;
-
-  // Check cap: referrer must have fewer than 6 earned/applied credits
-  const { count } = await supabaseAdmin
-    .from('referral_credits')
-    .select('id', { count: 'exact', head: true })
-    .eq('referrer_salon_id', paidSalon.referred_by_salon_id)
-    .in('status', ['earned', 'applied']);
-
-  if ((count ?? 0) >= 6) {
-    // Cap reached — mark as earned but don't apply monetary credit
-    await supabaseAdmin
+  // (1) Forward credit: this salon was referred — reward the referrer.
+  if (paidSalon.referred_by_salon_id) {
+    const { data: credit } = await supabaseAdmin
       .from('referral_credits')
-      .update({ status: 'earned', earned_at: new Date().toISOString() })
-      .eq('id', credit.id);
-    return;
+      .select('id')
+      .eq('referrer_salon_id', paidSalon.referred_by_salon_id)
+      .eq('referred_salon_id', paidSalon.id)
+      .eq('status', 'pending')
+      .single();
+
+    if (credit) {
+      const { count } = await supabaseAdmin
+        .from('referral_credits')
+        .select('id', { count: 'exact', head: true })
+        .eq('referrer_salon_id', paidSalon.referred_by_salon_id)
+        .in('status', ['earned', 'applied']);
+
+      if ((count ?? 0) >= REFERRAL_CAP) {
+        await supabaseAdmin
+          .from('referral_credits')
+          .update({ status: 'earned', earned_at: new Date().toISOString() })
+          .eq('id', credit.id);
+      } else {
+        await applyReferralExtension(supabaseAdmin, paidSalon.referred_by_salon_id, credit.id);
+      }
+    }
   }
 
-  // Get the referrer salon's Stripe customer ID
-  const { data: referrerSalon } = await supabaseAdmin
-    .from('salons')
-    .select('stripe_customer_id')
-    .eq('id', paidSalon.referred_by_salon_id)
-    .single();
+  // (2) Backward credit: this salon may have referred others before subscribing.
+  // Apply any of their own 'earned' credits now that they have an active sub.
+  const { data: ownEarnedCredits } = await supabaseAdmin
+    .from('referral_credits')
+    .select('id')
+    .eq('referrer_salon_id', paidSalon.id)
+    .eq('status', 'earned');
 
-  if (referrerSalon?.stripe_customer_id) {
-    // Apply credit immediately via Stripe Customer Balance
-    await getStripe().customers.createBalanceTransaction(referrerSalon.stripe_customer_id, {
-      amount: -4990, // -€49.90 credit
-      currency: 'eur',
-      description: 'Credito referral Lume - 1 mese gratuito',
-    });
+  for (const credit of ownEarnedCredits ?? []) {
+    const { count } = await supabaseAdmin
+      .from('referral_credits')
+      .select('id', { count: 'exact', head: true })
+      .eq('referrer_salon_id', paidSalon.id)
+      .eq('status', 'applied');
 
-    await supabaseAdmin
-      .from('referral_credits')
-      .update({
-        status: 'applied',
-        earned_at: new Date().toISOString(),
-        applied_at: new Date().toISOString(),
-      })
-      .eq('id', credit.id);
-  } else {
-    // Referrer hasn't subscribed yet — mark earned, apply later
-    await supabaseAdmin
-      .from('referral_credits')
-      .update({ status: 'earned', earned_at: new Date().toISOString() })
-      .eq('id', credit.id);
+    if ((count ?? 0) >= REFERRAL_CAP) break;
+
+    await applyReferralExtension(supabaseAdmin, paidSalon.id, credit.id);
   }
 }
 

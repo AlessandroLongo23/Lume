@@ -1,13 +1,8 @@
-import { AbbonamentoPanel } from '@/lib/components/admin/settings/AbbonamentoPanel';
+import { redirect } from 'next/navigation';
 
-export default function AbbonamentoPage() {
-  return (
-    <>
-      <div className="mb-6">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Abbonamento</h2>
-        <p className="mt-0.5 text-sm text-zinc-500">Piano, fatturazione e pagamenti.</p>
-      </div>
-      <AbbonamentoPanel />
-    </>
-  );
+// The canonical billing surface lives at /admin/subscribe (plan, next charge,
+// invoices, change/cancel). Keep the settings-sidebar entry working by
+// redirecting here.
+export default function AbbonamentoSettingsPage() {
+  redirect('/admin/subscribe');
 }
