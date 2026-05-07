@@ -31,5 +31,5 @@ export async function POST() {
   cookieStore.delete('lume-active-salon-id');
   cookieStore.delete('lume-impersonating');
 
-  return NextResponse.json({ redirect: '/platform/salons' });
+  return NextResponse.json({ redirect: '/platform/dashboard' });
 }

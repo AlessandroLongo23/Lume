@@ -44,47 +44,36 @@ export default async function SalonsPage() {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
-  const [ownersRes, clientRows, monthlyFicheRows, ficheServiceRows, ficheProductRows] = await Promise.all([
+  type StatsRow = {
+    salon_id:          string;
+    clients_count:     number;
+    fiches_this_month: number;
+    services_revenue:  number;
+    products_revenue:  number;
+  };
+
+  const [ownersRes, statsRaw] = await Promise.all([
     ownerIds.length
       ? supabase.from('profiles').select('id, email, first_name, last_name').in('id', ownerIds).returns<ProfileRow[]>()
       : Promise.resolve({ data: [] as ProfileRow[] }),
     salonIds.length
-      ? supabase.from('clients').select('salon_id').in('salon_id', salonIds).returns<{ salon_id: string }[]>()
-      : Promise.resolve({ data: [] as { salon_id: string }[] }),
-    salonIds.length
-      ? supabase.from('fiches').select('id, salon_id').in('salon_id', salonIds).gte('datetime', monthStart.toISOString()).returns<{ id: string; salon_id: string }[]>()
-      : Promise.resolve({ data: [] as { id: string; salon_id: string }[] }),
-    salonIds.length
-      ? supabase.from('fiche_services').select('salon_id, final_price').in('salon_id', salonIds).gte('start_time', monthStart.toISOString()).returns<{ salon_id: string; final_price: number }[]>()
-      : Promise.resolve({ data: [] as { salon_id: string; final_price: number }[] }),
-    salonIds.length
-      ? supabase.from('fiche_products').select('salon_id, final_price, quantity, fiche_id').in('salon_id', salonIds).returns<{ salon_id: string; final_price: number; quantity: number | null; fiche_id: string }[]>()
-      : Promise.resolve({ data: [] as { salon_id: string; final_price: number; quantity: number | null; fiche_id: string }[] }),
+      ? supabase.rpc('platform_salon_stats', { p_salon_ids: salonIds, p_month_start: monthStart.toISOString() })
+      : Promise.resolve({ data: null }),
   ]);
 
   const ownerById = new Map((ownersRes.data ?? []).map((o) => [o.id, o]));
+  const statsRows = (statsRaw.data ?? []) as StatsRow[];
 
-  const clientsBySalon = new Map<string, number>();
-  for (const row of clientRows.data ?? []) {
-    clientsBySalon.set(row.salon_id, (clientsBySalon.get(row.salon_id) ?? 0) + 1);
-  }
-
-  const fichesThisMonthBySalon = new Map<string, number>();
-  const ficheIdsThisMonth = new Set<string>();
-  for (const row of monthlyFicheRows.data ?? []) {
-    fichesThisMonthBySalon.set(row.salon_id, (fichesThisMonthBySalon.get(row.salon_id) ?? 0) + 1);
-    ficheIdsThisMonth.add(row.id);
-  }
-
-  const revenueBySalon = new Map<string, number>();
-  for (const row of ficheServiceRows.data ?? []) {
-    revenueBySalon.set(row.salon_id, (revenueBySalon.get(row.salon_id) ?? 0) + (row.final_price ?? 0));
-  }
-  for (const row of ficheProductRows.data ?? []) {
-    if (!ficheIdsThisMonth.has(row.fiche_id)) continue;
-    const qty = row.quantity ?? 1;
-    revenueBySalon.set(row.salon_id, (revenueBySalon.get(row.salon_id) ?? 0) + (row.final_price ?? 0) * qty);
-  }
+  const statsBySalon = new Map(
+    statsRows.map((r) => [
+      r.salon_id,
+      {
+        clients: Number(r.clients_count),
+        fiches:  Number(r.fiches_this_month),
+        revenue: Number(r.services_revenue) + Number(r.products_revenue),
+      },
+    ])
+  );
 
   const rows: SalonCardRow[] = (salons ?? []).map((s) => {
     const owner = ownerById.get(s.owner_id);
@@ -99,9 +88,9 @@ export default async function SalonsPage() {
       subscriptionEndsAt:   s.subscription_ends_at,
       trialEndsAt:          s.trial_ends_at,
       createdAt:            s.created_at,
-      clientsCount:         clientsBySalon.get(s.id) ?? 0,
-      fichesThisMonth:      fichesThisMonthBySalon.get(s.id) ?? 0,
-      revenueThisMonth:     revenueBySalon.get(s.id) ?? 0,
+      clientsCount:         statsBySalon.get(s.id)?.clients ?? 0,
+      fichesThisMonth:      statsBySalon.get(s.id)?.fiches ?? 0,
+      revenueThisMonth:     statsBySalon.get(s.id)?.revenue ?? 0,
       isTest:               s.is_test,
     };
   });

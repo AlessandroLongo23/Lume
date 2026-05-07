@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Building2,
   Lightbulb,
   LineChart,
   MessageSquare,
+  PhoneCall,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,13 +28,15 @@ import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
+import { usePreferencesStore } from '@/lib/stores/preferences';
 
 type PlatformLink = { href: string; label: string; icon: LucideIcon; keywords?: string[] };
 
 const LINKS: PlatformLink[] = [
-  { href: '/platform/salons',   label: 'Saloni',   icon: Building2,      keywords: ['clienti', 'tenants', 'workspace'] },
-  { href: '/platform/metrics',  label: 'Metriche', icon: LineChart,      keywords: ['analytics', 'kpi', 'dashboard'] },
-  { href: '/platform/feedback', label: 'Feedback', icon: MessageSquare,  keywords: ['roadmap', 'suggerimenti'] },
+  { href: '/platform/dashboard',   label: 'Dashboard',  icon: LineChart,     keywords: ['analytics', 'kpi', 'dashboard'] },
+  { href: '/platform/prospects', label: 'Prospect',  icon: PhoneCall,     keywords: ['cold call', 'sales', 'crm', 'chiamate'] },
+  { href: '/platform/salons',    label: 'Saloni',    icon: Building2,     keywords: ['clienti', 'tenants', 'workspace'] },
+  { href: '/platform/feedback',  label: 'Feedback',  icon: MessageSquare, keywords: ['roadmap', 'suggerimenti'] },
 ];
 
 function PlatformIdentity() {
@@ -79,6 +82,9 @@ interface PlatformShellProps {
 export function PlatformShell({ firstName, lastName, email, children }: PlatformShellProps) {
   const controller = useCommandMenuController();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
+  const fetchPreferences = usePreferencesStore((s) => s.fetchPreferences);
+
+  useEffect(() => { fetchPreferences(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navGroups = useMemo<SidebarNavGroup[]>(
     () => [

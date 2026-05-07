@@ -29,11 +29,12 @@ import {
   UserPlus,
   Wallet,
 } from 'lucide-react';
+import { MilestonesCard } from '@/lib/components/platform/MilestonesCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Types (mirrors output of computeMetrics in page.tsx)
+// Types (mirrors output of computeDashboard in page.tsx)
 // ─────────────────────────────────────────────────────────────────────────────
-export type MetricsData = {
+export type DashboardData = {
   mrrCents:          number;
   mrrTrendPct:       number | null;
   arrCents:          number;
@@ -105,7 +106,7 @@ const statusStyles: Record<string, { bg: string; fg: string; label: string }> = 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main dashboard
 // ─────────────────────────────────────────────────────────────────────────────
-export function MetricsDashboard({ data }: { data: MetricsData }) {
+export function DashboardPage({ data }: { data: DashboardData }) {
   return (
     <motion.div
       className="flex flex-col gap-6"
@@ -116,6 +117,13 @@ export function MetricsDashboard({ data }: { data: MetricsData }) {
         visible: { transition: { staggerChildren: 0.06 } },
       }}
     >
+      {/* ─ Milestones ────────────────────────────────────────────────── */}
+      <Row>
+        <MilestonesCard
+          activePlusTrial={data.payingCount + (data.statusCounts.trialing ?? 0)}
+        />
+      </Row>
+
       {/* ─ Hero KPI row ──────────────────────────────────────────────── */}
       <Row>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -302,7 +310,7 @@ function Sparkline({ values, stroke, fill }: { values: number[]; stroke: string;
 // ─────────────────────────────────────────────────────────────────────────────
 // SignupsCard — 6-month signup growth (area chart)
 // ─────────────────────────────────────────────────────────────────────────────
-function SignupsCard({ data }: { data: MetricsData }) {
+function SignupsCard({ data }: { data: DashboardData }) {
   const hasData = data.monthlySignups.some((m) => m.count > 0);
   const total6m = data.monthlySignups.reduce((s, m) => s + m.count, 0);
 
@@ -418,7 +426,7 @@ const STATUS_COLORS: Record<string, string> = {
   incomplete: '#a1a1aa',
 };
 
-function StatusCard({ data }: { data: MetricsData }) {
+function StatusCard({ data }: { data: DashboardData }) {
   const entries = Object.entries(data.statusCounts)
     .filter(([, v]) => v > 0)
     .sort((a, b) => b[1] - a[1]);
@@ -487,7 +495,7 @@ function StatusCard({ data }: { data: MetricsData }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PlanSplitCard — horizontal bars for monthly vs yearly among active
 // ─────────────────────────────────────────────────────────────────────────────
-function PlanSplitCard({ data }: { data: MetricsData }) {
+function PlanSplitCard({ data }: { data: DashboardData }) {
   const totalActive = data.activeMonthly + data.activeYearly;
   const monthlyPct = totalActive > 0 ? (data.activeMonthly / totalActive) * 100 : 0;
   const yearlyPct  = totalActive > 0 ? (data.activeYearly  / totalActive) * 100 : 0;
@@ -538,7 +546,7 @@ function PlanBar({ label, count, pct, color }: { label: string; count: number; p
 // ─────────────────────────────────────────────────────────────────────────────
 // TrialsEndingCard — actionable list of trials ending soon
 // ─────────────────────────────────────────────────────────────────────────────
-function TrialsEndingCard({ data }: { data: MetricsData }) {
+function TrialsEndingCard({ data }: { data: DashboardData }) {
   return (
     <div className="flex flex-col gap-3 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card h-full">
       <div className="flex items-start justify-between gap-3">
@@ -565,7 +573,7 @@ function TrialsEndingCard({ data }: { data: MetricsData }) {
           {data.trialsEnding.map((t) => (
             <li key={t.id}>
               <Link
-                href="/platform/salons"
+                href="/platform/dashboard"
                 className="flex items-center gap-3 px-2 py-2.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
               >
                 <SalonAvatar name={t.name} logoUrl={t.logoUrl} />
@@ -601,7 +609,7 @@ function TrialsEndingCard({ data }: { data: MetricsData }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // TopSalonsCard — leaderboard by revenue (30d)
 // ─────────────────────────────────────────────────────────────────────────────
-function TopSalonsCard({ data }: { data: MetricsData }) {
+function TopSalonsCard({ data }: { data: DashboardData }) {
   const max = Math.max(...data.topSalons.map((s) => s.revenue), 1);
 
   return (
@@ -665,7 +673,7 @@ function TopSalonsCard({ data }: { data: MetricsData }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RecentSignupsCard — latest 5 salons
 // ─────────────────────────────────────────────────────────────────────────────
-function RecentSignupsCard({ data }: { data: MetricsData }) {
+function RecentSignupsCard({ data }: { data: DashboardData }) {
   return (
     <div className="flex flex-col gap-3 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card">
       <div className="flex items-start justify-between gap-3">

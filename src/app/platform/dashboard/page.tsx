@@ -2,7 +2,7 @@ import { LineChart } from 'lucide-react';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { PLANS } from '@/lib/stripe/config';
-import { MetricsDashboard, type MetricsData } from './MetricsDashboard';
+import { DashboardPage, type DashboardData } from './DashboardPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +33,7 @@ type FicheServiceRow = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export default async function MetricsPage() {
+export default async function Page() {
   const supabase = getAdminClient();
 
   const now = new Date();
@@ -48,28 +48,29 @@ export default async function MetricsPage() {
       .from('fiche_services')
       .select('salon_id, final_price, start_time')
       .gte('start_time', day60Ago.toISOString())
+      .limit(100000)
       .returns<FicheServiceRow[]>(),
   ]);
 
-  const data = computeMetrics(salonsRes.data ?? [], ficheServicesRes.data ?? [], now);
+  const data = computeDashboard(salonsRes.data ?? [], ficheServicesRes.data ?? [], now);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Metriche"
+        title="Dashboard"
         subtitle="Panoramica della piattaforma"
         icon={LineChart}
       />
-      <MetricsDashboard data={data} />
+      <DashboardPage data={data} />
     </div>
   );
 }
 
-function computeMetrics(
+function computeDashboard(
   salons: SalonRow[],
   ficheServices: FicheServiceRow[],
   now: Date,
-): MetricsData {
+): DashboardData {
   const realSalons      = salons.filter((s) => !s.is_test);
   const testSalonIds    = new Set(salons.filter((s) => s.is_test).map((s) => s.id));
   const realFicheServices = ficheServices.filter((f) => !testSalonIds.has(f.salon_id));
