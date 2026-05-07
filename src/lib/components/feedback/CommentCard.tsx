@@ -7,6 +7,7 @@ import { Bot, Pencil, Trash2 } from 'lucide-react';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackComment } from '@/lib/types/FeedbackComment';
 import { MarkdownBody } from './MarkdownBody';
@@ -106,22 +107,20 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
           {(canEdit || canDelete) && (
             <div className="ml-auto flex flex-row items-center gap-1">
               {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  <Pencil className="size-3" /> Modifica
-                </button>
+                <Button variant="ghost" size="sm" leadingIcon={Pencil} onClick={() => setIsEditing(true)}>
+                  Modifica
+                </Button>
               )}
               {canDelete && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leadingIcon={Trash2}
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10"
                 >
-                  <Trash2 className="size-3" /> Elimina
-                </button>
+                  Elimina
+                </Button>
               )}
             </div>
           )}

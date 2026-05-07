@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/lib/components/shared/ui/Button';
+
 interface DateFilterProps {
   value?: { from: string; to: string };
   onChange: (v: { from: string; to: string }) => void;
@@ -10,7 +12,9 @@ export function DateFilter({ value = { from: '', to: '' }, onChange }: DateFilte
     <div className="flex flex-col gap-2 min-w-56">
       <div className="flex items-center justify-between">
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Intervallo date</span>
-        <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline" onClick={() => onChange({ from: '', to: '' })}>Pulisci</button>
+        <Button variant="ghost" size="sm" onClick={() => onChange({ from: '', to: '' })} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+          Pulisci
+        </Button>
       </div>
       <div className="flex gap-2 items-center">
         <input

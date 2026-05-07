@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Receipt, Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { RegimeFiscale, SalonFiscal } from '@/lib/types/Salon';
@@ -223,14 +224,9 @@ export function FatturazionePanel() {
       </SettingsCard>
 
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Save className="size-4" />
+        <Button type="submit" variant="primary" leadingIcon={Save} loading={saving}>
           {saving ? 'Salvataggio…' : 'Salva'}
-        </button>
+        </Button>
       </div>
     </form>
   );

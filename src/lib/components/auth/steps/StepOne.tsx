@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -66,9 +66,9 @@ export function StepOne() {
       </motion.div>
 
       <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
-        <FormButton type="submit" fullWidth className="mt-2">
-          Avanti →
-        </FormButton>
+        <Button type="submit" variant="primary" fullWidth className="mt-2">
+          Avanti <ArrowRight className="size-4" aria-hidden />
+        </Button>
       </motion.div>
     </form>
   );

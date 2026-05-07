@@ -6,6 +6,7 @@ import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Operator } from '@/lib/types/Operator';
 
 interface EditOperatorModalProps {
@@ -91,14 +92,14 @@ export function EditOperatorModal({ isOpen, onClose, editedOperator, onEditedOpe
       subtitle="Aggiorna i dati dell'operatore"
       classes="max-w-2xl"
       footerContent={
-        <button
-          type="button"
-          className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+        <Button
+          variant="secondary"
+          leadingIcon={isArchived ? ArchiveRestore : Archive}
           onClick={handleToggleArchive}
+          className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-transparent"
         >
-          {isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
           {isArchived ? 'Ripristina' : 'Archivia'}
-        </button>
+        </Button>
       }
     >
       <div className="flex flex-col gap-6">

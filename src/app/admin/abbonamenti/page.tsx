@@ -8,6 +8,7 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { AbbonamentiTable } from '@/lib/components/admin/abbonamenti/AbbonamentiTable';
 import { AddAbbonamentoModal } from '@/lib/components/admin/abbonamenti/AddAbbonamentoModal';
@@ -83,13 +84,14 @@ export default function AbbonamentiPage() {
           icon={BadgePercent}
           actions={
             <>
-              <button
+              <Button
+                variant="primary"
+                leadingIcon={Plus}
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+                className="whitespace-nowrap"
               >
-                <Plus className="size-4" />
                 Nuovo abbonamento
-              </button>
+              </Button>
               {abbonamenti.length > 0 && (
                 <DropdownMenu items={[
                   { label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true },

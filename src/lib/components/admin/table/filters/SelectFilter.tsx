@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { FilterChoice } from '@/lib/types/dataColumn';
 
 interface SelectFilterProps {
@@ -13,7 +14,9 @@ export function SelectFilter({ options = [], value = null, onChange }: SelectFil
     <div className="flex flex-col gap-2 min-w-56">
       <div className="flex items-center justify-between">
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Seleziona</span>
-        <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline" onClick={() => onChange(null)}>Pulisci</button>
+        <Button variant="ghost" size="sm" onClick={() => onChange(null)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+          Pulisci
+        </Button>
       </div>
       <select
         className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-sm"

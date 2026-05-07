@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 import { ChevronUp, ChevronDown, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { EditOrderModal } from './EditOrderModal';
 import { DeleteOrderModal } from './DeleteOrderModal';
@@ -179,27 +180,39 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={() => router.push(`/admin/ordini/${row.original.id}`)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-primary-hover dark:hover:text-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Dettaglio"
                           title="Dettaglio"
+                          onClick={() => router.push(`/admin/ordini/${row.original.id}`)}
+                          className="text-zinc-400 hover:text-primary-hover dark:hover:text-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20"
                         >
-                          <ExternalLink className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleEditClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                          <ExternalLink />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Modifica"
                           title="Modifica"
+                          onClick={(e) => handleEditClick(e, row.original)}
+                          className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                         >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, row.original)}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          <Pencil />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Elimina"
                           title="Elimina"
+                          onClick={(e) => handleDeleteClick(e, row.original)}
+                          className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                          <Trash2 />
+                        </Button>
                       </div>
                     </td>
                   </tr>

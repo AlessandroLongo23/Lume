@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { SIDEBAR_HINT_EVENT } from './SidebarCollapseToggle';
 import { sidebarToggleLabel } from './keyboardShortcuts';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const AUTO_DISMISS_MS = 6000;
 
@@ -39,14 +40,16 @@ export function SidebarShortcutHint() {
         </kbd>{' '}
         per aprire e chiudere la barra laterale.
       </span>
-      <button
-        type="button"
-        onClick={() => setVisible(false)}
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
         aria-label="Chiudi suggerimento"
-        className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        onClick={() => setVisible(false)}
+        className="shrink-0"
       >
-        <X className="w-4 h-4" strokeWidth={1.75} />
-      </button>
+        <X />
+      </Button>
     </div>
   );
 }

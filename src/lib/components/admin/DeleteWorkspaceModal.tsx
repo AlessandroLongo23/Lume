@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TriangleAlert, Trash2, X } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
 
 interface DeleteWorkspaceModalProps {
@@ -70,13 +71,16 @@ export function DeleteWorkspaceModal({ isOpen, onClose, salonName }: DeleteWorks
             </div>
           </div>
           {!isDeleting && (
-            <button
-              className="shrink-0 ml-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-              onClick={onClose}
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
               aria-label="Chiudi"
+              onClick={onClose}
+              className="shrink-0 ml-4"
             >
-              <X className="size-5" />
-            </button>
+              <X />
+            </Button>
           )}
         </div>
 
@@ -119,24 +123,23 @@ export function DeleteWorkspaceModal({ isOpen, onClose, salonName }: DeleteWorks
 
         {/* Footer */}
         <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <button
-            type="button"
-            onClick={onClose}
+          <Button
+            variant="secondary"
+            leadingIcon={X}
             disabled={isDeleting}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onClose}
           >
-            <X className="size-4" />
             Annulla
-          </button>
-          <button
-            type="button"
-            disabled={!isConfirmed || isDeleting}
+          </Button>
+          <Button
+            variant="destructive"
+            leadingIcon={Trash2}
+            loading={isDeleting}
+            disabled={!isConfirmed}
             onClick={handleDelete}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-600"
           >
-            <Trash2 className="size-4" />
             {isDeleting ? 'Eliminazione in corso...' : 'Conferma ed Elimina'}
-          </button>
+          </Button>
         </div>
 
       </div>

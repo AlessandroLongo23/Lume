@@ -16,6 +16,7 @@ import { FichesTable } from '@/lib/components/admin/fiches/FichesTable';
 import { FichesGrid } from '@/lib/components/admin/fiches/FichesGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -144,13 +145,14 @@ export default function FichesPage() {
                 labels={['Tabella', 'Griglia']}
                 icons={[TableProperties, LayoutGrid]}
               />
-              <button
-                className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
+              <Button
+                variant="primary"
+                leadingIcon={Ticket}
                 onClick={() => setShowAdd(true)}
+                className="whitespace-nowrap"
               >
-                <Ticket className="size-5" />
-                <span>Nuova fiche</span>
-              </button>
+                Nuova fiche
+              </Button>
               <DropdownMenu items={[
                 { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
                 { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
@@ -162,7 +164,7 @@ export default function FichesPage() {
           }
         />
 
-        <div className="flex flex-col gap-6">
+        <div className="flex-1 min-h-0 flex flex-col gap-6">
           {/* Status Tabs */}
           <div className="flex items-center gap-1 border-b border-border">
             {visible.map((id) => (

@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2, Scissors, Package, Lightbulb } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useServicesStore } from '@/lib/stores/services';
@@ -181,13 +182,9 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
             <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[220px]">{clientName}</p>
           </div>
         </div>
-        <button
-          aria-label="Chiudi"
-          onClick={onClose}
-          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-        >
-          <X className="size-5" />
-        </button>
+        <Button variant="ghost" iconOnly aria-label="Chiudi" onClick={onClose}>
+          <X />
+        </Button>
       </div>
 
       {/* Main two-column grid */}
@@ -414,24 +411,30 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       size="sm"
                       width="w-28"
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      aria-label="Rimuovi"
+                      title="Rimuovi"
                       onClick={() => removeSplit(i)}
                       disabled={splits.length <= 2}
-                      className="p-1.5 rounded text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Rimuovi"
+                      className="text-zinc-400 hover:text-red-500"
                     >
-                      <Trash2 className="size-4" />
-                    </button>
+                      <Trash2 />
+                    </Button>
                   </div>
                 ))}
 
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leadingIcon={Plus}
                   onClick={addSplit}
-                  className="flex items-center gap-1.5 text-xs text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40 transition-colors self-start"
+                  className="self-start text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40"
                 >
-                  <Plus className="size-3.5" />
                   Aggiungi pagamento
-                </button>
+                </Button>
 
                 {/* Running total */}
                 <div
@@ -459,28 +462,18 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
 
       {/* Footer — action buttons spanning full modal width */}
       <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-500/25 shrink-0">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg
-            bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600
-            transition-all text-zinc-900 dark:text-zinc-100"
-        >
-          <X className="size-4" />
+        <Button variant="secondary" leadingIcon={X} onClick={onClose}>
           Annulla
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
+          leadingIcon={Check}
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg
-            bg-primary text-white hover:bg-primary-hover
-            disabled:opacity-40 disabled:cursor-not-allowed
-            transition-all"
+          loading={isSubmitting}
         >
-          <Check className="size-4" />
           {isSubmitting ? 'Chiusura...' : 'Conferma e Chiudi'}
-        </button>
+        </Button>
       </div>
     </div>
   );

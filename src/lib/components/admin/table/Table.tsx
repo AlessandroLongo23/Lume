@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Hash, ChevronUp, ChevronDown, MousePointerClick, Info, Pencil, Trash2 } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { cardStyle } from '@/lib/const/appearance';
 import { Filter } from '@/lib/types/filters/Filter';
 import { NumberMode } from '@/lib/types/filters/NumberMode';
@@ -295,29 +296,41 @@ export function Table({
                     ].join(' ')}
                   >
                     {detailPageUrl && (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        aria-label="Dettaglio"
                         onClick={() => router.push(`/admin/${detailPageUrl}/${item.id}`)}
-                        className="font-thin p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-700 text-blue-600 hover:text-blue-900 dark:text-blue-500 hover:underline"
+                        className="text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-700 hover:text-blue-900 dark:text-blue-500"
                       >
-                        <Info className="size-4" />
-                      </button>
+                        <Info />
+                      </Button>
                     )}
                     {handleEditClick && (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        aria-label="Modifica"
                         onClick={(e) => handleEditClick(e, item)}
-                        className="font-thin p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 hover:text-zinc-900 dark:text-zinc-500 hover:underline"
+                        className="text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:text-zinc-500"
                       >
-                        <Pencil className="size-4" />
-                      </button>
+                        <Pencil />
+                      </Button>
                     )}
                     {extraActions?.(item)}
                     {handleDeleteClick && (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        aria-label="Elimina"
                         onClick={(e) => handleDeleteClick(e, item)}
-                        className="font-thin p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-700 text-red-600 hover:text-red-900 dark:text-red-500 hover:underline"
+                        className="text-red-600 hover:bg-red-100 dark:hover:bg-red-700 hover:text-red-900 dark:text-red-500"
                       >
-                        <Trash2 className="size-4" />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     )}
                   </td>
                 </tr>

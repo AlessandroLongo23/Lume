@@ -1,10 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2, Loader2 } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2 } from 'lucide-react';
 import { CustomCheckbox } from '@/lib/components/shared/ui/forms/CustomCheckbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Gender } from '@/lib/types/Gender';
 import type { Client } from '@/lib/types/Client';
@@ -139,24 +140,24 @@ export function ClientForm({
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              leadingIcon={Camera}
+              loading={uploading}
+              disabled={!canUpload}
               onClick={onPickPhoto}
-              disabled={uploading || !canUpload}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors disabled:opacity-50"
             >
-              {uploading ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
               {uploading ? 'Caricamento…' : value.photoUrl ? 'Cambia immagine' : 'Carica immagine'}
-            </button>
+            </Button>
             {value.photoUrl && !uploading && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                leadingIcon={Trash2}
                 onClick={onRemovePhoto}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
               >
-                <Trash2 className="size-3.5" />
                 Rimuovi
-              </button>
+              </Button>
             )}
           </div>
           <p className="text-xs text-zinc-400">L&apos;immagine viene compressa automaticamente.</p>

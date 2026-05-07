@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Button, type ButtonVariant } from '@/lib/components/shared/ui/Button';
 
 type Tone = 'warning' | 'destructive' | 'default';
 
@@ -19,21 +20,22 @@ interface ConfirmDialogProps {
   icon?: LucideIcon;
 }
 
-const toneClasses: Record<Tone, { tile: string; iconColor: string; confirm: string }> = {
+const toneClasses: Record<Tone, { tile: string; iconColor: string; confirmVariant: ButtonVariant; confirmExtra?: string }> = {
   warning: {
     tile: 'bg-amber-500/10 ring-1 ring-inset ring-amber-500/20',
     iconColor: 'text-amber-600 dark:text-amber-400',
-    confirm: 'bg-amber-500 hover:bg-amber-600 text-white',
+    confirmVariant: 'primary',
+    confirmExtra: 'bg-amber-500 hover:bg-amber-600 text-white',
   },
   destructive: {
     tile: 'bg-red-500/10 ring-1 ring-inset ring-red-500/20',
     iconColor: 'text-red-600 dark:text-red-400',
-    confirm: 'bg-red-500 hover:bg-red-600 text-white',
+    confirmVariant: 'destructive',
   },
   default: {
     tile: 'bg-primary/10 ring-1 ring-inset ring-primary/20',
     iconColor: 'text-primary',
-    confirm: 'bg-primary hover:bg-primary-hover active:bg-primary-active text-white',
+    confirmVariant: 'primary',
   },
 };
 
@@ -125,21 +127,18 @@ export function ConfirmDialog({
             </div>
 
             <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50/60 dark:bg-zinc-950/40 border-t border-zinc-500/10">
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-9 px-3.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors active:scale-[0.97]"
-              >
+              <Button variant="ghost" size="sm" onClick={onClose}>
                 {cancelLabel}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={tones.confirmVariant}
+                size="sm"
                 onClick={onConfirm}
                 autoFocus
-                className={`h-9 px-3.5 text-sm font-medium rounded-lg transition-colors active:scale-[0.97] ${tones.confirm}`}
+                className={tones.confirmExtra}
               >
                 {confirmLabel}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </motion.div>

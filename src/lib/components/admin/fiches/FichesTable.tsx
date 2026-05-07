@@ -17,6 +17,7 @@ import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
@@ -208,12 +209,16 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
                   placeholder:text-zinc-400 outline-none transition-colors"
               />
               {globalFilter && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  aria-label="Cancella ricerca"
                   onClick={() => onGlobalFilterChange?.('')}
-                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                  className="absolute right-1"
                 >
-                  <X className="size-3.5" />
-                </button>
+                  <X />
+                </Button>
               )}
             </div>
           )}
@@ -284,13 +289,17 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange }: Fich
                     ))}
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowDelete(true); }}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Elimina"
                           title="Elimina"
+                          onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowDelete(true); }}
+                          className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                          <Trash2 />
+                        </Button>
                       </div>
                     </td>
                   </tr>

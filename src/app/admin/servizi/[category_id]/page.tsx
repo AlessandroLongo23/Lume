@@ -8,6 +8,7 @@ import { useServicesStore } from '@/lib/stores/services';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddServiceModal } from '@/lib/components/admin/services/AddServiceModal';
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
 export default function ServiceCategoryPage() {
@@ -61,7 +62,9 @@ export default function ServiceCategoryPage() {
     return (
       <div className="flex flex-col items-center justify-center p-12">
         <h2 className="text-xl font-bold">Categoria non trovata</h2>
-        <button className="mt-4 px-4 py-2 bg-zinc-200 rounded-md" onClick={() => router.push('/admin/servizi')}>Torna indietro</button>
+        <Button variant="secondary" size="sm" onClick={() => router.push('/admin/servizi')} className="mt-4">
+          Torna indietro
+        </Button>
       </div>
     );
   }
@@ -72,9 +75,15 @@ export default function ServiceCategoryPage() {
 
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/admin/servizi')} className="p-2 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors">
-            <ArrowLeft className="size-5 text-zinc-600 dark:text-zinc-300" />
-          </button>
+          <Button
+            variant="secondary"
+            size="md"
+            iconOnly
+            aria-label="Torna ai servizi"
+            onClick={() => router.push('/admin/servizi')}
+          >
+            <ArrowLeft />
+          </Button>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{category.name}</h1>
@@ -85,21 +94,19 @@ export default function ServiceCategoryPage() {
             <p className="text-sm text-zinc-500">{categoryServices.length} servizi</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
+              iconOnly
+              aria-label={category.isArchived ? 'Ripristina categoria' : 'Archivia categoria'}
               onClick={handleToggleArchive}
-              className="p-2 bg-zinc-100 hover:bg-amber-100 dark:bg-zinc-800 dark:hover:bg-amber-900/30 rounded-md transition-colors"
-              title={category.isArchived ? 'Ripristina categoria' : 'Archivia categoria'}
             >
-              {category.isArchived ? <ArchiveRestore className="size-5 text-zinc-600 dark:text-zinc-300" /> : <Archive className="size-5 text-zinc-600 dark:text-zinc-300" />}
-            </button>
+              {category.isArchived ? <ArchiveRestore /> : <Archive />}
+            </Button>
             {!category.isArchived && (
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm"
-                onClick={() => setShowAdd(true)}
-              >
-                <Plus className="size-4" />
-                <span>Nuovo servizio</span>
-              </button>
+              <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)}>
+                Nuovo servizio
+              </Button>
             )}
           </div>
         </div>

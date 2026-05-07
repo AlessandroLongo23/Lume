@@ -12,6 +12,7 @@ import { AddOperatorModal } from '@/lib/components/admin/operators/AddOperatorMo
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import { OperatorsTable } from '@/lib/components/admin/operators/OperatorsTable';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import type { Operator } from '@/lib/types/Operator';
 
@@ -107,20 +108,24 @@ export default function OperatoriPage() {
           icon={UserCog}
           actions={
             <>
-              <button
-                className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
+              <Button
+                variant="primary"
+                leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
+                className="whitespace-nowrap"
               >
-                <UserPlus className="size-5" />
-                <span>Nuovo operatore</span>
-              </button>
+                Nuovo operatore
+              </Button>
               <div className="relative" ref={menuRef}>
-                <button
-                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconOnly
+                  aria-label="Altre azioni"
                   onClick={() => setMenuOpen((v) => !v)}
                 >
-                  <EllipsisVertical className="size-4 text-zinc-500" />
-                </button>
+                  <EllipsisVertical />
+                </Button>
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
                     <button

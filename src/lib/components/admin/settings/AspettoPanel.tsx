@@ -3,6 +3,7 @@
 import { Palette, Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useTheme, type Theme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -135,14 +136,9 @@ export function AspettoPanel() {
       </SettingsCard>
 
       <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={resetAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
-        >
-          <RotateCcw className="size-3.5" />
+        <Button variant="ghost" size="sm" leadingIcon={RotateCcw} onClick={resetAll}>
           Ripristina default
-        </button>
+        </Button>
       </div>
     </div>
   );

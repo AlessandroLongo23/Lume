@@ -14,6 +14,7 @@ import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientMo
 import { ClientsTable } from '@/lib/components/admin/clients/ClientsTable';
 import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import type { Client } from '@/lib/types/Client';
 
@@ -104,23 +105,26 @@ export default function ClientiPage() {
                 labels={['Tabella', 'Griglia']}
                 icons={[TableProperties, LayoutGrid]}
               />
-              <button
-                className="btn-primary whitespace-nowrap"
+              <Button
+                variant="primary"
+                leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
+                className="whitespace-nowrap"
               >
-                <UserPlus className="size-5" />
-                <span>Nuovo cliente</span>
-              </button>
+                Nuovo cliente
+              </Button>
               <div className="relative" ref={menuRef}>
-                <button
-                  className="flex items-center justify-center size-9 rounded-lg border border-border bg-muted/40 hover:bg-muted transition-colors"
-                  onClick={() => setMenuOpen((v) => !v)}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconOnly
                   aria-label="Altre azioni"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen((v) => !v)}
                 >
-                  <EllipsisVertical className="size-4 text-muted-foreground" />
-                </button>
+                  <EllipsisVertical />
+                </Button>
                 {menuOpen && (
                   <div role="menu" className="absolute right-0 top-full mt-1 w-64 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-dropdown py-1">
                     <button

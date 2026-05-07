@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { RichTextEditor } from '@/lib/components/shared/ui/RichTextEditor';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { ImageUploader } from './ImageUploader';
 
 interface CommentFormProps {
@@ -72,23 +73,20 @@ export function CommentForm({
 
       <div className="flex flex-row items-center justify-end gap-2 pt-1">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-          >
+          <Button variant="ghost" size="sm" onClick={onCancel}>
             Annulla
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="sm"
+          leadingIcon={Send}
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          loading={isSubmitting}
         >
-          <Send className="size-3.5" />
           {isSubmitting ? 'Invio…' : submitLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Operator } from '@/lib/types/Operator';
 import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 
@@ -191,14 +192,14 @@ export function UnavailabilityModal({
         contentClasses="overflow-y-auto"
         dangerAction={
           isEdit ? (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              leadingIcon={Trash}
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+              className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border-transparent"
             >
-              <Trash className="size-4" />
               Elimina
-            </button>
+            </Button>
           ) : null
         }
       >

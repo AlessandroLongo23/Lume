@@ -6,6 +6,7 @@ import { it } from 'date-fns/locale';
 import { CalendarDays, MapPin, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 type Appointment = {
   id:        string;
@@ -61,14 +62,9 @@ export default function ClientDashboardPage() {
       {/* Minimal navbar */}
       <header className="bg-white border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
         <LumeLogo size="sm" />
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
+        <Button variant="ghost" size="sm" leadingIcon={LogOut} onClick={handleLogout}>
           Esci
-        </button>
+        </Button>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-8">

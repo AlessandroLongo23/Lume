@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check, Calendar, Users, Package, BarChart3 } from 'lucide-react';
 import { motion } from './motion';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const bullets = [
   'Calendario appuntamenti',
@@ -246,18 +247,18 @@ export function HeroSection({ onAuthClick }: HeroSectionProps) {
               transition={{ duration: 0.6, ease, delay: 0.4 }}
               className="flex flex-col sm:flex-row items-start gap-3 mb-10"
             >
-              <button
+              <Button
+                variant="primary"
+                size="lg"
+                trailingIcon={ArrowRight}
                 onClick={onAuthClick}
-                className="btn-primary px-6 py-3 text-base flex items-center gap-2 w-full sm:w-auto justify-center"
+                className="w-full sm:w-auto"
               >
-                Inizia gratis <ArrowRight className="w-4 h-4" />
-              </button>
-              <a
-                href="#funzionalita"
-                className="btn-secondary px-6 py-3 text-base flex w-full sm:w-auto justify-center items-center"
-              >
-                Scopri le funzionalità
-              </a>
+                Inizia gratis
+              </Button>
+              <Button variant="secondary" size="lg" asChild className="w-full sm:w-auto">
+                <a href="#funzionalita">Scopri le funzionalità</a>
+              </Button>
             </motion.div>
 
             <motion.div

@@ -9,6 +9,7 @@ import { SidebarCollapseContext, MobileMenuContext, SidebarForceExpandedContext 
 import { SidebarEdgeToggle } from './SidebarCollapseToggle';
 import { SidebarShortcutHint } from './SidebarShortcutHint';
 import { BugButton } from './BugButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface AppShellProps {
   impersonationBanner?: React.ReactNode;
@@ -70,7 +71,8 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
     pathname === '/admin/fiches' ||
     pathname === '/admin/magazzino' ||
     pathname === '/admin/ordini' ||
-    pathname === '/admin/servizi';
+    pathname === '/admin/servizi' ||
+    pathname === '/platform/prospects';
 
   return (
     <SidebarCollapseContext.Provider value={collapseState}>
@@ -101,14 +103,15 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             <>
               <aside className="md:hidden fixed left-0 bottom-0 z-drawer top-[var(--shell-banner-h)] w-72 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
                 <div className="flex justify-end p-3">
-                  <button
-                    type="button"
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
                     aria-label="Chiudi menu"
+                    onClick={() => setMobileOpen(false)}
                   >
-                    <X className="w-5 h-5" />
-                  </button>
+                    <X />
+                  </Button>
                 </div>
                 <SidebarForceExpandedContext.Provider value={true}>
                   {sidebar}

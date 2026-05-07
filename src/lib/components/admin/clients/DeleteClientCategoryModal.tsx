@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TriangleAlert, Trash2, X } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useClientCategoriesStore } from '@/lib/stores/client_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { ClientCategory } from '@/lib/types/ClientCategory';
@@ -58,13 +59,9 @@ export function DeleteClientCategoryModal({ isOpen, onClose, category }: DeleteC
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Azione irreversibile — leggi attentamente</p>
             </div>
           </div>
-          <button
-            className="shrink-0 ml-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            onClick={handleClose}
-            aria-label="Chiudi"
-          >
-            <X className="size-5" />
-          </button>
+          <Button variant="ghost" iconOnly aria-label="Chiudi" onClick={handleClose}>
+            <X />
+          </Button>
         </div>
 
         {/* Body */}
@@ -107,23 +104,17 @@ export function DeleteClientCategoryModal({ isOpen, onClose, category }: DeleteC
 
         {/* Footer */}
         <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
-          >
-            <X className="size-4" />
+          <Button variant="secondary" leadingIcon={X} onClick={handleClose}>
             Annulla
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="destructive"
+            leadingIcon={Trash2}
             disabled={!isConfirmed}
             onClick={handleDelete}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-600"
           >
-            <Trash2 className="size-4" />
             Elimina categoria
-          </button>
+          </Button>
         </div>
 
       </div>

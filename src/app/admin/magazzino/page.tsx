@@ -12,6 +12,7 @@ import { FornitoriTab } from '@/lib/components/admin/magazzino/FornitoriTab';
 import { MarchiTab } from '@/lib/components/admin/magazzino/MarchiTab';
 import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
@@ -159,45 +160,32 @@ export default function MagazzinoPage() {
           actions={
             <>
               {activeTab === 'prodotti' ? (
-                <button
-                  onClick={openAddSheet}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={openAddSheet}>
                   Nuovo Prodotto
-                </button>
+                </Button>
               ) : activeTab === 'categorie' ? (
-                <button
-                  onClick={() => setCategorieAddTrigger((n) => n + 1)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setCategorieAddTrigger((n) => n + 1)}>
                   Nuova Categoria
-                </button>
+                </Button>
               ) : activeTab === 'fornitori' ? (
-                <button
-                  onClick={() => setFornitoriAddTrigger((n) => n + 1)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setFornitoriAddTrigger((n) => n + 1)}>
                   Nuovo Fornitore
-                </button>
+                </Button>
               ) : (
-                <button
-                  onClick={() => setMarchiAddTrigger((n) => n + 1)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setMarchiAddTrigger((n) => n + 1)}>
                   Nuovo Marchio
-                </button>
+                </Button>
               )}
               <div className="relative" ref={menuRef}>
-                <button
-                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconOnly
+                  aria-label="Altre azioni"
                   onClick={() => setMenuOpen((v) => !v)}
                 >
-                  <EllipsisVertical className="size-4 text-zinc-500" />
-                </button>
+                  <EllipsisVertical />
+                </Button>
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
                     {archivableTab && (

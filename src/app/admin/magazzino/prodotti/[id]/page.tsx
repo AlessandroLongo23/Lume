@@ -22,6 +22,7 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { DeleteProductModal } from '@/lib/components/admin/magazzino/DeleteProductModal';
 import { ProductForm, emptyProductForm, type ProductFormValue, type ProductFormErrors } from '@/lib/components/admin/magazzino/ProductForm';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Product } from '@/lib/types/Product';
 
 function formatEur(amount: number | null): string {
@@ -232,12 +233,14 @@ export default function ProductDetailPage() {
         <PackageX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
         <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Prodotto non trovato</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il prodotto non esiste o è stato rimosso.'}</p>
-        <button
-          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => router.push('/admin/magazzino')}
+          className="mt-6"
         >
           Torna al magazzino
-        </button>
+        </Button>
       </div>
     );
   }

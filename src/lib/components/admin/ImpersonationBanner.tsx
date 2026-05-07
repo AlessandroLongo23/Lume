@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 function readImpersonatingCookie(): boolean {
   if (typeof document === 'undefined') return false;
@@ -49,15 +50,16 @@ export function ImpersonationBanner() {
           Stai visualizzando <span className="font-semibold">{salonName || 'questo salone'}</span> come admin
         </span>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
+        loading={isExiting}
+        leadingIcon={ArrowLeft}
         onClick={handleExit}
-        disabled={isExiting}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition-colors disabled:opacity-60 shrink-0"
+        className="shrink-0 bg-white/15 hover:bg-white/25 text-white text-xs"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
         {isExiting ? 'Uscita…' : 'Torna alla piattaforma'}
-      </button>
+      </Button>
     </div>
   );
 }

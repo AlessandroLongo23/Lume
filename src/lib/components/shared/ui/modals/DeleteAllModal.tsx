@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { TriangleAlert, Trash2, X } from 'lucide-react';
 import { Modal } from './Modal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const CONFIRM_PHRASE = 'ELIMINA TUTTO';
 
@@ -73,13 +74,17 @@ export function DeleteAllModal({
               </p>
             </div>
           </div>
-          <button
-            className="shrink-0 ml-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40"
+          <Button
+            variant="ghost"
+            size="md"
+            iconOnly
+            aria-label="Chiudi"
             onClick={handleClose}
             disabled={isDeleting}
+            className="shrink-0 ml-4"
           >
-            <X className="size-5" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         <div className="p-6 flex flex-col gap-5">
@@ -118,24 +123,17 @@ export function DeleteAllModal({
         </div>
 
         <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isDeleting}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <X className="size-4" />
+          <Button variant="secondary" leadingIcon={X} onClick={handleClose} disabled={isDeleting}>
             Annulla
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="destructive"
+            leadingIcon={Trash2}
             disabled={!isConfirmed || isDeleting}
             onClick={handleDelete}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-600"
           >
-            <Trash2 className="size-4" />
             {isDeleting ? 'Eliminazione…' : `Elimina tutti (${count})`}
-          </button>
+          </Button>
         </div>
 
       </div>

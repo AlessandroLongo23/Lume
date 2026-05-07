@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { motion, sectionVariants, itemVariants, viewportConfig } from './motion';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const included = [
   'Calendario appuntamenti',
@@ -102,12 +103,9 @@ export function MarqueeStrip({ onAuthClick }: MarqueeStripProps) {
               ))}
             </ul>
 
-            <button
-              onClick={onAuthClick}
-              className="btn-primary w-full py-3 text-sm font-medium"
-            >
+            <Button variant="primary" fullWidth onClick={onAuthClick}>
               Inizia gratis
-            </button>
+            </Button>
             <p className="text-center text-xs text-zinc-400 mt-3">Nessuna carta richiesta</p>
           </div>
         </motion.div>

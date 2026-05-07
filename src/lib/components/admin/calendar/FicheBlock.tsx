@@ -161,8 +161,16 @@ export function FicheBlock({
       }`}
       style={{
         height: `${(totalMinutes / timeStep) * 2}rem`,
-        borderLeft: `3px solid ${accentColor}`,
-        ...(blockBorderColor ? { borderColor: blockBorderColor } : {}),
+        borderLeftWidth: '3px',
+        borderLeftStyle: 'solid',
+        borderLeftColor: blockBorderColor ?? accentColor,
+        ...(blockBorderColor
+          ? {
+              borderTopColor: blockBorderColor,
+              borderRightColor: blockBorderColor,
+              borderBottomColor: blockBorderColor,
+            }
+          : {}),
       }}
     >
       {/* Top resize handle (first service start time) */}

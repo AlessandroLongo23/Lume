@@ -15,6 +15,7 @@ import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -161,29 +162,24 @@ export default function ServiziPage() {
           actions={
             <>
               {isServiziTab ? (
-                <button
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                  onClick={() => setShowAdd(true)}
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)}>
                   Nuovo Servizio
-                </button>
+                </Button>
               ) : (
-                <button
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                  onClick={() => setShowAddCategory(true)}
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAddCategory(true)}>
                   Nuova Categoria
-                </button>
+                </Button>
               )}
               <div className="relative" ref={menuRef}>
-                <button
-                  className="flex items-center justify-center size-9 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconOnly
+                  aria-label="Altre azioni"
                   onClick={() => setMenuOpen((v) => !v)}
                 >
-                  <EllipsisVertical className="size-4 text-zinc-500" />
-                </button>
+                  <EllipsisVertical />
+                </Button>
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
                     <button

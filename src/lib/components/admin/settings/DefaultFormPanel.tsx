@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Loader2, RotateCcw, Scissors, Gift, BadgePercent, User } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { FACTORY_FORM_DEFAULTS } from '@/lib/const/factory-defaults';
@@ -235,23 +236,12 @@ export function DefaultFormPanel() {
       </p>
 
       <div className="flex justify-between items-center">
-        <button
-          type="button"
-          onClick={onReset}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
-        >
-          <RotateCcw className="size-3.5" />
+        <Button variant="ghost" size="sm" leadingIcon={RotateCcw} onClick={onReset}>
           Ripristina default
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Save className="size-4" />
+        </Button>
+        <Button variant="primary" leadingIcon={Save} loading={saving} onClick={onSave}>
           {saving ? 'Salvataggio…' : 'Salva'}
-        </button>
+        </Button>
       </div>
     </div>
   );

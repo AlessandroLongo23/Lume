@@ -5,7 +5,7 @@ import { useObiettiviStore } from '@/lib/stores/obiettivi';
 import { BilancioObiettiviSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { formatCurrency } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
@@ -145,7 +145,7 @@ export function BilancioObiettiviTab() {
           </div>
 
           <div className="pt-2">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full">
+            <Button variant="primary" loading={isSaving} fullWidth onClick={handleSave}>
               {isSaving ? 'Salvataggio…' : 'Salva Obiettivi'}
             </Button>
           </div>

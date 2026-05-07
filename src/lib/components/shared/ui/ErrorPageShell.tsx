@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 type ErrorPageShellProps = {
   code?: string;
@@ -90,26 +91,12 @@ export function ErrorPageShell({
         </div>
 
         <div className="flex flex-wrap justify-center gap-3">
-          <button type="button" className="btn-primary" onClick={goNow}>
-            Vai ora
-          </button>
+          <Button variant="primary" onClick={goNow}>Vai ora</Button>
           {!cancelled && (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setCancelled(true)}
-            >
-              Annulla
-            </button>
+            <Button variant="secondary" onClick={() => setCancelled(true)}>Annulla</Button>
           )}
           {extraAction && (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={extraAction.onClick}
-            >
-              {extraAction.label}
-            </button>
+            <Button variant="secondary" onClick={extraAction.onClick}>{extraAction.label}</Button>
           )}
         </div>
       </div>

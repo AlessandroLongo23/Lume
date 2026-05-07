@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface ImageLightboxProps {
   urls: string[];
@@ -52,34 +53,40 @@ export function ImageLightbox({ urls, index, onClose, onIndexChange }: ImageLigh
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
       >
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="md"
+          iconOnly
           aria-label="Chiudi"
           onClick={onClose}
-          className="absolute top-4 right-4 size-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+          className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
         >
-          <X className="size-6" />
-        </button>
+          <X />
+        </Button>
 
         {hasPrev && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            iconOnly
             aria-label="Precedente"
             onClick={(e) => { e.stopPropagation(); onIndexChange(index - 1); }}
-            className="absolute left-4 size-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            className="absolute left-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
-            <ChevronLeft className="size-7" />
-          </button>
+            <ChevronLeft />
+          </Button>
         )}
         {hasNext && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            iconOnly
             aria-label="Successiva"
             onClick={(e) => { e.stopPropagation(); onIndexChange(index + 1); }}
-            className="absolute right-4 size-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            className="absolute right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
-            <ChevronRight className="size-7" />
-          </button>
+            <ChevronRight />
+          </Button>
         )}
 
         {urls.length > 1 && (

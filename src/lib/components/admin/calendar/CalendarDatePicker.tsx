@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { isSameDay, setMonth, setYear, startOfMonth } from 'date-fns';
 import { addMonths, subMonths, getMonthDays, formatDateString, weekDays } from '@/lib/utils/date';
 import { capitalize } from '@/lib/utils/string';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 type PickerMode = 'day' | 'month' | 'year';
 
@@ -176,19 +177,19 @@ export function CalendarDatePicker({
         >
           {/* Header: prev / (clickable label) / next */}
           <div className="flex items-center justify-between mb-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              aria-label="Precedente"
               onClick={() => {
                 if (mode === 'day') setDisplayMonth(subMonths(displayMonth, 1));
                 else if (mode === 'month') setDisplayMonth(setYear(displayMonth, displayMonth.getFullYear() - 1));
                 else setYearPageStart((p) => p - YEAR_SPAN);
               }}
-              aria-label="Precedente"
-              className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400
-                hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
             >
-              <ChevronLeft size={16} />
-            </button>
+              <ChevronLeft />
+            </Button>
 
             <button
               type="button"
@@ -205,19 +206,19 @@ export function CalendarDatePicker({
               {mode === 'year' && `${yearList[0]} — ${yearList[yearList.length - 1]}`}
             </button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              aria-label="Successivo"
               onClick={() => {
                 if (mode === 'day') setDisplayMonth(addMonths(displayMonth, 1));
                 else if (mode === 'month') setDisplayMonth(setYear(displayMonth, displayMonth.getFullYear() + 1));
                 else setYearPageStart((p) => p + YEAR_SPAN);
               }}
-              aria-label="Successivo"
-              className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400
-                hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
             >
-              <ChevronRight size={16} />
-            </button>
+              <ChevronRight />
+            </Button>
           </div>
 
           {/* Day grid */}

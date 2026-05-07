@@ -2,6 +2,7 @@
 
 import { CircleAlert, Trash2, X, type LucideIcon } from 'lucide-react';
 import { Modal } from './Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -53,12 +54,9 @@ export function DeleteModal({
               <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
-          <button
-            className="text-muted-foreground hover:text-foreground transition-colors rounded-full p-2 hover:bg-muted"
-            onClick={onClose}
-          >
-            <X className="size-5" />
-          </button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={onClose}>
+            <X />
+          </Button>
         </div>
 
         {hasBody && (
@@ -70,22 +68,12 @@ export function DeleteModal({
         <div className="flex flex-row items-center justify-between p-6 border-t border-zinc-500/25">
           <div>{footerContent}</div>
           <div className="flex flex-row items-center gap-3">
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-foreground"
-              onClick={onClose}
-            >
-              <X className="size-4" />
+            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
               {cancelText}
-            </button>
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
-              onClick={onConfirm}
-            >
-              <ConfirmIcon className="size-4" />
+            </Button>
+            <Button variant="destructive" leadingIcon={ConfirmIcon} onClick={onConfirm}>
               {confirmText}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -2,10 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { User, Store, Upload } from 'lucide-react';
+import { User, Store, Upload, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -169,12 +169,13 @@ export function StepTwo() {
 
       <motion.div custom={3} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
-          <FormButton type="button" variant="ghost" onClick={prevStep} className="flex-1">
-            ← Indietro
-          </FormButton>
-          <FormButton type="submit" className="flex-2">
-            Avanti →
-          </FormButton>
+          <Button type="button" variant="ghost" onClick={prevStep} className="flex-1">
+            <ArrowLeft className="size-4" aria-hidden />
+            Indietro
+          </Button>
+          <Button type="submit" variant="primary" className="flex-2">
+            Avanti <ArrowRight className="size-4" aria-hidden />
+          </Button>
         </div>
       </motion.div>
     </form>

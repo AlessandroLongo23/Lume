@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Mail, Key, Shield, ShieldCheck, ShieldOff, LogOut, Eye, EyeOff, Loader2, Save, type LucideIcon } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -260,15 +261,15 @@ export function SicurezzaPanel() {
             onChange={(e) => setNewEmail(e.target.value)}
             className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
           />
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            leadingIcon={Save}
+            loading={emailSaving}
+            disabled={!newEmail.trim()}
             onClick={onChangeEmail}
-            disabled={emailSaving || !newEmail.trim()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="size-4" />
             {emailSaving ? 'Invio…' : 'Cambia email'}
-          </button>
+          </Button>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
           {"Riceverai un'email di conferma al nuovo indirizzo."}
@@ -317,15 +318,14 @@ export function SicurezzaPanel() {
           />
         </div>
         <div className="mt-3 flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            leadingIcon={Save}
+            loading={pwdSaving}
             onClick={onChangePassword}
-            disabled={pwdSaving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="size-4" />
             {pwdSaving ? 'Salvataggio…' : 'Aggiorna password'}
-          </button>
+          </Button>
         </div>
       </SettingsCard>
 
@@ -346,15 +346,14 @@ export function SicurezzaPanel() {
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
               Stato: <span className="font-medium text-zinc-900 dark:text-zinc-100">non attiva</span>
             </p>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              leadingIcon={Shield}
+              loading={mfaBusy}
               onClick={onEnrollMfa}
-              disabled={mfaBusy}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Shield className="size-4" />
               {mfaBusy ? 'Attivazione…' : 'Attiva 2FA'}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -391,23 +390,18 @@ export function SicurezzaPanel() {
                   </code>
                 </details>
                 <div className="flex items-center gap-2 mt-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    leadingIcon={ShieldCheck}
+                    loading={mfaBusy}
+                    disabled={mfaCode.length !== 6}
                     onClick={onVerifyMfa}
-                    disabled={mfaBusy || mfaCode.length !== 6}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ShieldCheck className="size-4" />
                     Verifica e attiva
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onCancelEnroll}
-                    disabled={mfaBusy}
-                    className="px-3 py-2 rounded-lg text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
-                  >
+                  </Button>
+                  <Button variant="ghost" disabled={mfaBusy} onClick={onCancelEnroll}>
                     Annulla
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -420,14 +414,14 @@ export function SicurezzaPanel() {
               <ShieldCheck className="size-4" />
               Attiva
             </p>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              loading={mfaBusy}
               onClick={onDisableMfa}
-              disabled={mfaBusy}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
+              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             >
               {mfaBusy ? 'Disattivazione…' : 'Disattiva'}
-            </button>
+            </Button>
           </div>
         )}
       </SettingsCard>
@@ -441,15 +435,14 @@ export function SicurezzaPanel() {
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             Termina tutte le sessioni attive, incluso questo dispositivo.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            leadingIcon={LogOut}
+            loading={signoutBusy}
             onClick={onSignOutEverywhere}
-            disabled={signoutBusy}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors disabled:opacity-50"
           >
-            <LogOut className="size-4" />
             {signoutBusy ? 'Disconnessione…' : 'Esci ovunque'}
-          </button>
+          </Button>
         </div>
       </SettingsCard>
 

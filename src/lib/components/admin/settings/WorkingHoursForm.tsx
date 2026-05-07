@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Clock, Plus, Trash2, Save } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { OperatingHourDay } from '@/lib/stores/salonSettings';
 
 const shiftSchema = z.object({
@@ -195,27 +196,30 @@ export function WorkingHoursForm({
                             className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
                           />
                           {!readOnly && field.shifts.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeShift(index, shiftIndex)}
-                              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
                               aria-label="Rimuovi fascia oraria"
+                              onClick={() => removeShift(index, shiftIndex)}
+                              className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                             >
-                              <Trash2 className="size-3.5" />
-                            </button>
+                              <Trash2 />
+                            </Button>
                           )}
                         </div>
                       ))}
 
                       {!readOnly && field.shifts.length < 3 && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leadingIcon={Plus}
                           onClick={() => addShift(index)}
-                          className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-active dark:hover:text-primary/70 transition-colors w-fit mt-0.5"
+                          className="w-fit text-primary hover:text-primary-active dark:hover:text-primary/70 mt-0.5"
                         >
-                          <Plus className="size-3.5" />
                           Aggiungi fascia oraria
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}
@@ -228,14 +232,15 @@ export function WorkingHoursForm({
 
       {!readOnly && (
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
-            disabled={saving || !isDirty}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active active:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
+            leadingIcon={Save}
+            loading={saving}
+            disabled={!isDirty}
           >
-            <Save className="size-4" />
             {saving ? 'Salvataggio...' : 'Salva'}
-          </button>
+          </Button>
         </div>
       )}
     </form>

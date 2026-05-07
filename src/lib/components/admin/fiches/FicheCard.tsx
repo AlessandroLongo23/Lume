@@ -9,6 +9,7 @@ import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
 
@@ -183,30 +184,29 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
         ) : (
           <div className="grid grid-cols-2 gap-2">
             <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onDelete(fiche)}
-                className="py-2 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40 transition-all active:scale-95"
-                title="Elimina"
+              <Button
+                variant="secondary"
+                iconOnly
                 aria-label="Elimina"
+                title="Elimina"
+                onClick={() => onDelete(fiche)}
+                className="text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40"
               >
-                <Trash2 className="size-4" />
-              </button>
-              <button
-                onClick={() => onEdit(fiche)}
-                className="py-2 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95"
-                title="Modifica"
+                <Trash2 />
+              </Button>
+              <Button
+                variant="secondary"
+                iconOnly
                 aria-label="Modifica"
+                title="Modifica"
+                onClick={() => onEdit(fiche)}
               >
-                <Pencil className="size-4" />
-              </button>
+                <Pencil />
+              </Button>
             </div>
-            <button
-              onClick={() => onCheckout(fiche)}
-              className="py-2 flex items-center justify-center gap-1.5 text-sm font-medium bg-primary-hover hover:bg-primary-active active:bg-primary-active text-white rounded-md transition-all active:scale-[0.98] shadow-sm hover:shadow-md"
-            >
-              <Receipt className="size-4" />
+            <Button variant="primary" leadingIcon={Receipt} onClick={() => onCheckout(fiche)}>
               Chiudi Fiche
-            </button>
+            </Button>
           </div>
         )}
       </div>

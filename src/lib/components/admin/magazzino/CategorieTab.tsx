@@ -18,6 +18,7 @@ import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImport
 import { ProductCategory } from '@/lib/types/ProductCategory';
 import { AddCategoryModal } from './AddCategoryModal';
 import { DeleteCategorieModal } from './DeleteCategorieModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
@@ -176,12 +177,16 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                   placeholder:text-zinc-400 outline-none transition-colors"
               />
               {globalFilter && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  aria-label="Cancella ricerca"
                   onClick={() => setGlobalFilter('')}
-                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                  className="absolute right-1"
                 >
-                  <X className="size-3.5" />
-                </button>
+                  <X />
+                </Button>
               )}
             </div>
             <ColumnPicker tableId="product-categories" columns={columns} className="ml-auto" />
@@ -250,29 +255,41 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                       <td className="px-4 py-2">
                         <div className="flex flex-row items-center justify-end gap-1">
                           {showArchived ? (
-                            <button
-                              onClick={(e) => handleRestore(e, row.original)}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              aria-label="Ripristina"
                               title="Ripristina"
+                              onClick={(e) => handleRestore(e, row.original)}
+                              className="text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             >
-                              <ArchiveRestore className="size-3.5" />
-                            </button>
+                              <ArchiveRestore />
+                            </Button>
                           ) : (
-                            <button
-                              onClick={(e) => handleEditClick(e, row.original)}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              aria-label="Modifica"
                               title="Modifica"
+                              onClick={(e) => handleEditClick(e, row.original)}
+                              className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             >
-                              <Pencil className="size-3.5" />
-                            </button>
+                              <Pencil />
+                            </Button>
                           )}
-                          <button
-                            onClick={(e) => handleDeleteClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Elimina"
                             title="Elimina"
+                            onClick={(e) => handleDeleteClick(e, row.original)}
+                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                            <Trash2 />
+                          </Button>
                         </div>
                       </td>
                     </tr>

@@ -2,6 +2,7 @@
 
 import { SquarePen, X, Check } from 'lucide-react';
 import { Modal } from './Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface EditModalProps {
   isOpen: boolean;
@@ -43,12 +44,9 @@ export function EditModal({
               <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
-          <button
-            className="text-muted-foreground hover:text-foreground transition-colors rounded-full p-2 hover:bg-muted"
-            onClick={onClose}
-          >
-            <X className="size-5" />
-          </button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={onClose}>
+            <X />
+          </Button>
         </div>
 
         <div className={`p-6 ${contentClasses}`}>{children}</div>
@@ -56,22 +54,12 @@ export function EditModal({
         <div className="flex flex-row items-center justify-between p-6 border-t border-zinc-500/25">
           <div>{footerContent}</div>
           <div className="flex flex-row items-center gap-3">
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-              onClick={onClose}
-            >
-              <X className="size-4" />
+            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
               {cancelText}
-            </button>
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-              onClick={onSubmit}
-            >
-              <Check className="size-4" />
+            </Button>
+            <Button variant="primary" leadingIcon={Check} onClick={onSubmit}>
               {confirmText}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

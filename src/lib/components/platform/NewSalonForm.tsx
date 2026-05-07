@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import type { BusinessType } from '@/lib/types/Salon';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'barber',        label: 'Barbiere' },
@@ -84,14 +84,14 @@ export function NewSalonForm() {
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <button
+      <Button
         type="submit"
-        disabled={isSaving}
-        className="mt-2 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-60"
+        variant="primary"
+        loading={isSaving}
+        className="mt-2"
       >
-        {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-        <span>{isSaving ? 'Creazione…' : 'Crea salone'}</span>
-      </button>
+        {isSaving ? 'Creazione…' : 'Crea salone'}
+      </Button>
     </form>
   );
 }

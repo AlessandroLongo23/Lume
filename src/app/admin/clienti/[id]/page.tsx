@@ -25,6 +25,7 @@ import {
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from '@/lib/components/admin/clients/ClientForm';
 import { TreatmentHistory } from '@/lib/components/admin/clients/TreatmentHistory';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Client } from '@/lib/types/Client';
 
 const STAR_TO_PERCENTILE: Record<number, string> = {
@@ -261,12 +262,14 @@ export default function ClientDetailPage() {
         <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
         <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Cliente non trovato</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il cliente non esiste o è stato rimosso.'}</p>
-        <button
-          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => router.push('/admin/clienti')}
+          className="mt-6"
         >
           Torna alla lista clienti
-        </button>
+        </Button>
       </div>
     );
   }

@@ -17,6 +17,7 @@ import {
 import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperatorModal';
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import { OperatorWorkingHoursPanel } from '@/lib/components/admin/operators/OperatorWorkingHoursPanel';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { canManageSalon } from '@/lib/auth/roles';
 import type { Operator } from '@/lib/types/Operator';
@@ -94,12 +95,14 @@ export default function OperatorDetailPage() {
         <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
         <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Operatore non trovato</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? "L'operatore non esiste o è stato rimosso."}</p>
-        <button
-          className="mt-6 px-4 py-2 text-sm bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md transition-colors"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => router.push('/admin/operatori')}
+          className="mt-6"
         >
           Torna alla lista operatori
-        </button>
+        </Button>
       </div>
     );
   }

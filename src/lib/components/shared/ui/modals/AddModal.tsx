@@ -2,6 +2,7 @@
 
 import { Plus, X, Check, type LucideIcon } from 'lucide-react';
 import { Modal } from './Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface AddModalProps {
   isOpen: boolean;
@@ -49,13 +50,9 @@ export function AddModal({
               <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
-          <button
-            aria-label="Chiudi"
-            className="text-muted-foreground hover:text-foreground transition-colors rounded-full p-2 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            onClick={onClose}
-          >
-            <X className="size-5" />
-          </button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={onClose}>
+            <X />
+          </Button>
         </div>
 
         <div className={`p-6 flex-1 min-h-0 overflow-hidden ${contentClasses}`}>{children}</div>
@@ -64,23 +61,17 @@ export function AddModal({
           <div>{footerContent}</div>
           <div className="flex flex-row flex-wrap items-center gap-3">
             {dangerAction}
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              onClick={onClose}
-            >
-              <X className="size-4" />
+            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
               {cancelText}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              leadingIcon={Check}
               disabled={confirmDisabled}
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
               onClick={onSubmit}
             >
-              <Check className="size-4" />
               {confirmText}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

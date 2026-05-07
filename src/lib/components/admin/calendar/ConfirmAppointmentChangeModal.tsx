@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Mail, MessageCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import type { Client } from '@/lib/types/Client';
 import type { PreviewSegment } from '@/lib/stores/calendarDrag';
@@ -137,23 +138,17 @@ export function ConfirmAppointmentChangeModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50/60 dark:bg-zinc-950/40 border-t border-zinc-500/10">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="h-9 px-3.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors active:scale-[0.97] disabled:opacity-50"
-          >
+          <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
             Annulla
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm({ email: notifyEmail, whatsapp: notifyWhatsApp })}
-            disabled={isSubmitting}
+          </Button>
+          <Button
+            variant="primary"
+            loading={isSubmitting}
             autoFocus
-            className="h-9 px-3.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-hover active:bg-primary-active text-white transition-colors active:scale-[0.97] disabled:opacity-50"
+            onClick={() => onConfirm({ email: notifyEmail, whatsapp: notifyWhatsApp })}
           >
             {isSubmitting ? 'Salvataggio…' : 'Conferma'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

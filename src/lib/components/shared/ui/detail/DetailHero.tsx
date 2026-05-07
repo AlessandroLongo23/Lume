@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface DetailHeroProps {
   onBack: () => void;
@@ -23,13 +24,16 @@ export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions 
       className="px-6 lg:px-10 pt-6 pb-5 border-b border-zinc-500/15"
     >
       <div className="max-w-5xl mx-auto w-full flex items-center gap-4">
-        <button
-          onClick={onBack}
-          className="size-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+        <Button
+          variant="ghost"
+          size="md"
+          iconOnly
           aria-label="Torna indietro"
+          onClick={onBack}
+          className="rounded-full shrink-0"
         >
-          <ArrowLeft className="size-4" />
-        </button>
+          <ArrowLeft />
+        </Button>
 
         <div className="shrink-0">{avatar}</div>
 

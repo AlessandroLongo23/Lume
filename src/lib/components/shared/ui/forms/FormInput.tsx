@@ -4,13 +4,42 @@ import { useId, useState, type InputHTMLAttributes } from 'react';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
+type ControlSize = 'sm' | 'md' | 'lg';
+
+interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  size?: ControlSize;
 }
 
-export function FormInput({ label, error, icon, className = '', type, ...props }: FormInputProps) {
+const sizeClasses: Record<ControlSize, string> = {
+  sm: 'h-[var(--lume-control-h-sm)] px-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)]',
+  md: 'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)]',
+  lg: 'h-[var(--lume-control-h-lg)] px-[var(--lume-control-px-lg)] text-[length:var(--lume-control-text-lg)]',
+};
+
+const iconPaddingClasses: Record<ControlSize, string> = {
+  sm: 'pl-8',
+  md: 'pl-9',
+  lg: 'pl-11',
+};
+
+const iconLeftClasses: Record<ControlSize, string> = {
+  sm: 'left-2',
+  md: 'left-3',
+  lg: 'left-3.5',
+};
+
+export function FormInput({
+  label,
+  error,
+  icon,
+  size: inputSize = 'md',
+  className = '',
+  type,
+  ...props
+}: FormInputProps) {
   const hasError = !!error;
   const generatedId = useId();
   const id = props.id || generatedId;
@@ -30,7 +59,7 @@ export function FormInput({ label, error, icon, className = '', type, ...props }
 
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+          <div className={cn('absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none', iconLeftClasses[inputSize])}>
             {icon}
           </div>
         )}
@@ -39,10 +68,11 @@ export function FormInput({ label, error, icon, className = '', type, ...props }
           id={id}
           type={inputType}
           className={cn(
-            'w-full px-3 py-2 rounded-md border bg-card text-foreground placeholder:text-muted-foreground',
+            'w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground',
             'transition-[border-color,box-shadow] duration-200 ease-[var(--ease-in-out)]',
             'focus:outline-none focus:ring-2 focus:ring-ring/20',
-            icon && 'pl-10',
+            sizeClasses[inputSize],
+            icon && iconPaddingClasses[inputSize],
             isPassword && 'pr-10',
             hasError
               ? 'border-destructive focus:border-destructive focus:ring-destructive/20'

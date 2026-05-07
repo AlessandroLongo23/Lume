@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { TriangleAlert, Trash2, LogOut } from 'lucide-react';
 import { DeleteWorkspaceModal } from '@/lib/components/admin/DeleteWorkspaceModal';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { isOwner, isOperator } from '@/lib/auth/roles';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -76,15 +77,15 @@ export function AccountPanel() {
                     {"Cancella definitivamente il salone, tutti i suoi dati e disconnette l'account."}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
+                <Button
+                  variant="secondary"
+                  leadingIcon={Trash2}
                   disabled={salonName === null}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="shrink-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
-                  <Trash2 className="size-4" />
                   Elimina Salone
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -98,15 +99,15 @@ export function AccountPanel() {
                     Stacca il tuo account dal salone. La tua scheda operatore viene archiviata.
                   </p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  leadingIcon={LogOut}
+                  loading={leaving}
                   onClick={() => setShowLeaveConfirm(true)}
-                  disabled={leaving}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="shrink-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
-                  <LogOut className="size-4" />
                   {leaving ? 'Uscita…' : 'Esci dal salone'}
-                </button>
+                </Button>
               </div>
             </div>
           )}

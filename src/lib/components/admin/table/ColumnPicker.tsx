@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Reorder } from 'motion/react';
 import { Columns3, GripVertical, Check, RotateCcw } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 
@@ -145,14 +146,15 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
           </Reorder.Group>
 
           <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              leadingIcon={RotateCcw}
               onClick={resetToDefault}
-              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+              className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
             >
-              <RotateCcw className="size-3" />
               Ripristina default
-            </button>
+            </Button>
           </div>
         </div>
       )}

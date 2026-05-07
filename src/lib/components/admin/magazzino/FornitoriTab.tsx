@@ -16,6 +16,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { Supplier } from '@/lib/types/Supplier';
 import { AddFornitoreModal } from './AddFornitoreModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -209,12 +210,16 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
                   placeholder:text-zinc-400 outline-none transition-colors"
               />
               {globalFilter && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  aria-label="Cancella ricerca"
                   onClick={() => setGlobalFilter('')}
-                  className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                  className="absolute right-1"
                 >
-                  <X className="size-3.5" />
-                </button>
+                  <X />
+                </Button>
               )}
             </div>
             <ColumnPicker tableId="suppliers" columns={columns} className="ml-auto" />
@@ -282,20 +287,28 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
                       ))}
                       <td className="px-4 py-2">
                         <div className="flex flex-row items-center justify-end gap-1">
-                          <button
-                            onClick={(e) => handleEditClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Modifica"
                             title="Modifica"
+                            onClick={(e) => handleEditClick(e, row.original)}
+                            className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                           >
-                            <Pencil className="size-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, row.original)}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            <Pencil />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Elimina"
                             title="Elimina"
+                            onClick={(e) => handleDeleteClick(e, row.original)}
+                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                            <Trash2 />
+                          </Button>
                         </div>
                       </td>
                     </tr>

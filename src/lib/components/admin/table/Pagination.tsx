@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 interface PaginationProps {
@@ -36,9 +37,6 @@ export function Pagination({
     }
   }, [totalPages, currentPage, onPageChange]);
 
-  const btnClass =
-    'font-thin p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors';
-
   return (
     <div className="flex flex-row justify-between items-center w-full">
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -58,27 +56,27 @@ export function Pagination({
       {totalPages > 1 && (
         <div className="flex items-center gap-1">
           <Tooltip label="Prima pagina">
-            <button onClick={() => goToPage(1)} disabled={currentPage === 1} className={btnClass}>
-              <ChevronsLeft className="size-4" />
-            </button>
+            <Button variant="secondary" size="sm" iconOnly aria-label="Prima pagina" onClick={() => goToPage(1)} disabled={currentPage === 1}>
+              <ChevronsLeft />
+            </Button>
           </Tooltip>
           <Tooltip label="Pagina precedente">
-            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className={btnClass}>
-              <ChevronLeft className="size-4" />
-            </button>
+            <Button variant="secondary" size="sm" iconOnly aria-label="Pagina precedente" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <ChevronLeft />
+            </Button>
           </Tooltip>
           <span className="text-xs text-zinc-700 dark:text-zinc-300 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg">
             {currentPage} / {totalPages}
           </span>
           <Tooltip label="Pagina successiva">
-            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className={btnClass}>
-              <ChevronRight className="size-4" />
-            </button>
+            <Button variant="secondary" size="sm" iconOnly aria-label="Pagina successiva" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+              <ChevronRight />
+            </Button>
           </Tooltip>
           <Tooltip label="Ultima pagina">
-            <button onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} className={btnClass}>
-              <ChevronsRight className="size-4" />
-            </button>
+            <Button variant="secondary" size="sm" iconOnly aria-label="Ultima pagina" onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages}>
+              <ChevronsRight />
+            </Button>
           </Tooltip>
         </div>
       )}

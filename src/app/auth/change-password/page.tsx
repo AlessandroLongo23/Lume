@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { AlertCircle, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 
 export default function ChangePasswordPage() {
@@ -93,16 +93,14 @@ export default function ChangePasswordPage() {
 
             {error && (
               <div className="flex items-center gap-2 text-red-600 text-sm">
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <AlertCircle className="w-4 h-4 shrink-0" aria-hidden />
                 <span>{error}</span>
               </div>
             )}
 
-            <FormButton type="submit" fullWidth loading={isLoading}>
+            <Button type="submit" variant="primary" fullWidth loading={isLoading}>
               Aggiorna password
-            </FormButton>
+            </Button>
           </form>
         </div>
 

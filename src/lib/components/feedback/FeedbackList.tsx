@@ -7,6 +7,7 @@ import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import {
   useFeedbackStore,
@@ -159,13 +160,9 @@ export function FeedbackList({ mode }: FeedbackListProps) {
             : 'Suggerisci, segnala, vota. Costruiamo Lume insieme.'}
           icon={MessageSquare}
           actions={!isPlatformView ? (
-            <button
-              className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
-              onClick={() => setShowAdd(true)}
-            >
-              <Plus className="size-5" />
-              <span>{newLabel}</span>
-            </button>
+            <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)}>
+              {newLabel}
+            </Button>
           ) : undefined}
         />
 
@@ -207,13 +204,16 @@ export function FeedbackList({ mode }: FeedbackListProps) {
                 placeholder:text-zinc-400 outline-none transition-colors"
             />
             {searchQuery && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                aria-label="Azzera ricerca"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
+                className="absolute right-2"
               >
-                <X className="size-3.5" />
-              </button>
+                <X />
+              </Button>
             )}
           </div>
 

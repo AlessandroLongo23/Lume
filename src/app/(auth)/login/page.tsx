@@ -8,7 +8,7 @@ import { AtSign, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { isEmailLike, normalizeLoginPhone } from '@/lib/utils/phone';
 
 const AUTH_ERRORS: Record<string, string> = {
@@ -127,9 +127,9 @@ export default function LoginPage() {
         </AnimatePresence>
 
         <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
-          <FormButton type="submit" fullWidth loading={isLoading} className="mt-2">
+          <Button type="submit" variant="primary" fullWidth loading={isLoading} className="mt-2">
             Accedi
-          </FormButton>
+          </Button>
         </motion.div>
       </form>
 

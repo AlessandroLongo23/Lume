@@ -5,6 +5,14 @@ import { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react'
 import { createPortal } from 'react-dom';
 import { ChevronDown, X, Check } from 'lucide-react';
 
+type ControlSize = 'sm' | 'md' | 'lg';
+
+const triggerSizeClasses: Record<ControlSize, string> = {
+  sm: 'h-[var(--lume-control-h-sm)] px-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)]',
+  md: 'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)]',
+  lg: 'h-[var(--lume-control-h-lg)] px-[var(--lume-control-px-lg)] text-[length:var(--lume-control-text-lg)]',
+};
+
 interface CustomSelectProps {
   value: any;
   onChange: (value: any) => void;
@@ -18,6 +26,7 @@ interface CustomSelectProps {
   maxHeight?: string;
   classes?: string;
   width?: string;
+  size?: ControlSize;
 }
 
 export function CustomSelect({
@@ -33,6 +42,7 @@ export function CustomSelect({
   maxHeight = 'max-h-40',
   classes = '',
   width = 'w-full',
+  size = 'md',
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -183,7 +193,8 @@ export function CustomSelect({
         ref={triggerRef}
         role="combobox"
         tabIndex={disabled ? -1 : 0}
-        className={`w-full px-3 py-2 text-left bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg
+        className={`w-full text-left bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md
+          ${triggerSizeClasses[size]}
           transition-all flex items-center justify-between
           focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}

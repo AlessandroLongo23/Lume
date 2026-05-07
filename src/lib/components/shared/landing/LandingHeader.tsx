@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
+import { ArrowRight, LogIn, LogOut } from 'lucide-react';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface LandingHeaderProps {
   session: Session | null;
@@ -44,42 +46,40 @@ export function LandingHeader({ session }: LandingHeaderProps) {
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <a href="/dashboard" className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-                Dashboard
-              </a>
-              <button
-                type="button"
+              <Button variant="primary" size="md" asChild>
+                <a href="/dashboard">
+                  <LogIn className="size-4" aria-hidden />
+                  Dashboard
+                </a>
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="md"
+                leadingIcon={LogOut}
                 onClick={async () => {
                   await fetch('/auth/logout', { method: 'POST' });
                   window.location.href = '/';
                 }}
-                className="text-sm text-zinc-500 hover:text-foreground transition-colors flex items-center gap-1.5"
                 aria-label="Esci"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
                 Esci
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <Link
-                href="/login"
-                className="hidden sm:block text-sm text-zinc-500 hover:text-foreground transition-colors"
-              >
-                Accedi
-              </Link>
-              <Link href="/register" className="btn-primary text-sm px-4 py-2">
-                Inizia gratis
-              </Link>
+              <Button variant="ghost" size="md" className="hidden sm:inline-flex" asChild>
+                <Link href="/login">
+                  <LogIn className="size-4" aria-hidden />
+                  Accedi
+                </Link>
+              </Button>
+              <Button variant="primary" size="md" asChild>
+                <Link href="/register">
+                  Inizia gratis
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </Button>
             </>
           )}
         </div>

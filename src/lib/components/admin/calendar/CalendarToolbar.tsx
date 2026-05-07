@@ -6,6 +6,7 @@ import { addMonths, subMonths, formatDateString, getWeekDays } from '@/lib/utils
 import { capitalize } from '@/lib/utils/string';
 import { startOfMonth } from 'date-fns';
 import { useCalendarStore } from '@/lib/stores/calendar';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { CalendarDatePicker } from './CalendarDatePicker';
 import { OperatorChips } from './OperatorChips';
 import { HoveredTimePreview } from './CalendarHeader';
@@ -72,15 +73,9 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
 
       {/* Center: prev / date (click = today) / next */}
       <div className="flex items-center gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={navigatePrev}
-          aria-label="Precedente"
-          className="p-2 rounded-md text-zinc-500 dark:text-zinc-400
-            hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-        >
-          <ChevronLeft size={18} />
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label="Precedente" onClick={navigatePrev}>
+          <ChevronLeft />
+        </Button>
 
         {/* Date label opens a dropdown to pick year / month / day */}
         <CalendarDatePicker
@@ -99,15 +94,9 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
           onGoToToday={goToToday}
         />
 
-        <button
-          type="button"
-          onClick={navigateNext}
-          aria-label="Successivo"
-          className="p-2 rounded-md text-zinc-500 dark:text-zinc-400
-            hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-        >
-          <ChevronRight size={18} />
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label="Successivo" onClick={navigateNext}>
+          <ChevronRight />
+        </Button>
       </div>
 
       {/* Right: operator chips + view toggle */}

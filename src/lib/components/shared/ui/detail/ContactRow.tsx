@@ -2,6 +2,7 @@
 
 import { Copy, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface ContactRowProps {
   icon: LucideIcon;
@@ -24,13 +25,16 @@ export function ContactRow({ icon: Icon, value, emptyLabel, onCopy }: ContactRow
       <Icon className="size-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
       <span className="truncate">{value}</span>
       <Tooltip label="Copia negli appunti">
-        <button
-          onClick={() => onCopy(value)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0"
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
           aria-label="Copia negli appunti"
+          onClick={() => onCopy(value)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
         >
-          <Copy className="size-3.5" />
-        </button>
+          <Copy />
+        </Button>
       </Tooltip>
     </div>
   );

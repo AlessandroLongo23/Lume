@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { NumberMode, type NumberFilterValue } from '@/lib/types/filters/NumberMode';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 
@@ -58,7 +59,9 @@ export function NumberFilter({
     <div className="flex flex-col gap-2 min-w-56">
       <div className="flex items-center justify-between">
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Numero</span>
-        <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline" onClick={clear}>Pulisci</button>
+        <Button variant="ghost" size="sm" onClick={clear} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+          Pulisci
+        </Button>
       </div>
       <CustomSelect
         value={currentMode}

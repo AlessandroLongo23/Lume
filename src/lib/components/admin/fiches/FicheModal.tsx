@@ -25,6 +25,7 @@ import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
 import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
@@ -755,14 +756,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                     width="w-32"
                   />
                   {totalOverride !== null && (
-                    <button
-                      type="button"
-                      onClick={() => setTotalOverride(null)}
-                      className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      aria-label="Rimuovi sconto"
                       title="Rimuovi sconto"
+                      onClick={() => setTotalOverride(null)}
                     >
-                      <X className="size-3.5" />
-                    </button>
+                      <X />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -773,37 +776,36 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           isEdit ? (
             <>
               {activeTopTab === 'edit' && !isCompleted && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  leadingIcon={ReceiptText}
                   onClick={() => {
                     if (!validateForm()) return;
                     setActiveTopTab('payment');
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+                  className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
                 >
-                  <ReceiptText className="size-4" />
                   Procedi al pagamento
-                </button>
+                </Button>
               )}
               {activeTopTab === 'payment' && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  leadingIcon={ArrowLeft}
                   onClick={() => setActiveTopTab('edit')}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                 >
-                  <ArrowLeft className="size-4" />
                   Torna alla modifica
-                </button>
+                </Button>
               )}
               {activeTopTab === 'edit' && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  leadingIcon={Trash2}
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                 >
-                  <Trash2 className="size-4" />
                   Elimina
-                </button>
+                </Button>
               )}
             </>
           ) : undefined
@@ -1067,15 +1069,17 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                           aria-label="Nome servizio"
                                         />
                                         {isOverridden && (
-                                          <button
-                                            type="button"
-                                            onClick={() => resetServiceName(i)}
-                                            className="shrink-0 p-1 rounded-md text-zinc-400 hover:text-primary hover:bg-primary/10 transition-colors"
-                                            title="Ripristina nome originale"
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            iconOnly
                                             aria-label="Ripristina nome originale"
+                                            title="Ripristina nome originale"
+                                            onClick={() => resetServiceName(i)}
+                                            className="shrink-0 text-zinc-400 hover:text-primary hover:bg-primary/10"
                                           >
-                                            <RotateCcw className="size-3.5" />
-                                          </button>
+                                            <RotateCcw />
+                                          </Button>
                                         )}
                                       </div>
                                     );
@@ -1151,14 +1155,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   />
 
                                   <div className="flex justify-end">
-                                    <button
-                                      type="button"
-                                      onClick={() => removeService(i)}
-                                      className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      iconOnly
                                       aria-label="Rimuovi servizio"
+                                      onClick={() => removeService(i)}
+                                      className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                                     >
-                                      <Trash2 className="size-3.5" />
-                                    </button>
+                                      <Trash2 />
+                                    </Button>
                                   </div>
                                 </div>
                               ))}
@@ -1284,14 +1290,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                     <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
                                   </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => removeProduct(prod.product_id)}
-                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    iconOnly
                                     aria-label="Rimuovi prodotto"
+                                    onClick={() => removeProduct(prod.product_id)}
+                                    className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                                   >
-                                    <Trash2 className="size-3.5" />
-                                  </button>
+                                    <Trash2 />
+                                  </Button>
                                 </div>
                               </div>
                             ))}

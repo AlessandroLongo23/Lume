@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { SlidersHorizontal, Check } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 
 export interface FacetedFilterOption {
@@ -84,12 +85,14 @@ export function FacetedFilter({ label, options, selected, onChange }: FacetedFil
           </div>
           {selected.length > 0 && (
             <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange([])}
-                className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 Azzera filtri
-              </button>
+              </Button>
             </div>
           )}
         </div>

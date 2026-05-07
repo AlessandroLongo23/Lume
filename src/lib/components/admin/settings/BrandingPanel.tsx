@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ImagePlus, Save, Trash2, Loader2, Palette } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -88,25 +89,24 @@ function ImageUploader({
       <div className="flex flex-col gap-2 flex-1 min-w-0">
         <p className="text-xs text-zinc-500">{description}</p>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            leadingIcon={ImagePlus}
+            loading={busy}
             onClick={onPick}
-            disabled={busy}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors disabled:opacity-50"
           >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
             {url ? 'Sostituisci' : 'Carica'}
-          </button>
+          </Button>
           {url && (
-            <button
-              type="button"
-              onClick={onRemove}
+            <Button
+              variant="ghost"
+              leadingIcon={Trash2}
               disabled={busy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
+              onClick={onRemove}
+              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             >
-              <Trash2 className="size-3.5" />
               Rimuovi
-            </button>
+            </Button>
           )}
         </div>
         <input
@@ -220,15 +220,16 @@ export function BrandingPanel() {
               />
             ))}
           </div>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            leadingIcon={Save}
+            loading={savingColor}
+            disabled={!colorIsDirty}
             onClick={onSaveColor}
-            disabled={savingColor || !colorIsDirty}
-            className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-auto"
           >
-            <Save className="size-4" />
             {savingColor ? 'Salvataggio…' : 'Salva'}
-          </button>
+          </Button>
         </div>
       </SettingsCard>
     </div>

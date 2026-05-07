@@ -2,6 +2,7 @@
 
 import { Bell, RotateCcw } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { SettingsCard } from './SettingsCard';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -75,14 +76,9 @@ export function NotifichePanel() {
       </SettingsCard>
 
       <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={reset}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
-        >
-          <RotateCcw className="size-3.5" />
+        <Button variant="ghost" size="sm" leadingIcon={RotateCcw} onClick={reset}>
           Ripristina default
-        </button>
+        </Button>
       </div>
     </div>
   );

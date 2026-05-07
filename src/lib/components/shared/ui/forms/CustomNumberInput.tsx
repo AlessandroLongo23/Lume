@@ -6,6 +6,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 type InputSize = 'sm' | 'md' | 'lg';
 
 const sizeConfig: Record<InputSize, {
+  containerHeight: string;
   arrowWidth: string;
   iconClass: string;
   textClass: string;
@@ -13,25 +14,28 @@ const sizeConfig: Record<InputSize, {
   inputPadding: string;
 }> = {
   sm: {
+    containerHeight: 'h-[var(--lume-control-h-sm)]',
     arrowWidth: 'w-5',
     iconClass: 'size-3',
-    textClass: 'text-sm',
+    textClass: 'text-[length:var(--lume-control-text-sm)]',
     suffixClass: 'text-xs pr-2',
-    inputPadding: 'px-1.5 py-0.5',
+    inputPadding: 'px-[var(--lume-control-px-sm)]',
   },
   md: {
+    containerHeight: 'h-[var(--lume-control-h-md)]',
     arrowWidth: 'w-6',
     iconClass: 'size-3.5',
-    textClass: 'text-sm',
+    textClass: 'text-[length:var(--lume-control-text-md)]',
     suffixClass: 'text-sm pr-2',
-    inputPadding: 'px-2 py-1',
+    inputPadding: 'px-[var(--lume-control-px-md)]',
   },
   lg: {
+    containerHeight: 'h-[var(--lume-control-h-lg)]',
     arrowWidth: 'w-7',
     iconClass: 'size-4',
-    textClass: 'text-sm',
+    textClass: 'text-[length:var(--lume-control-text-lg)]',
     suffixClass: 'text-sm pr-2',
-    inputPadding: 'px-2 py-1.5',
+    inputPadding: 'px-[var(--lume-control-px-lg)]',
   },
 };
 
@@ -65,7 +69,7 @@ export function CustomNumberInput({
   className = '',
   width = 'w-full',
   decimals = 0,
-  size = 'lg',
+  size = 'md',
 }: CustomNumberInputProps) {
   const sc = sizeConfig[size];
   const [displayValue, setDisplayValue] = useState(value?.toString() ?? '');
@@ -135,12 +139,12 @@ export function CustomNumberInput({
   };
 
   const arrows = (
-    <div className={`flex flex-col border-zinc-500/25 items-stretch ${sc.arrowWidth} ${arrowPlacement === 'left' ? 'border-r rounded-l-lg' : 'border-l rounded-r-lg'}`}>
+    <div className={`flex flex-col border-zinc-500/25 items-stretch ${sc.arrowWidth} ${arrowPlacement === 'left' ? 'border-r rounded-l-md' : 'border-l rounded-r-md'}`}>
       <button
         type="button"
         onClick={increment}
         disabled={disabled}
-        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors ${arrowPlacement === 'left' ? 'rounded-tl-lg' : 'rounded-tr-lg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors ${arrowPlacement === 'left' ? 'rounded-tl-md' : 'rounded-tr-md'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <ChevronUp className={`${sc.iconClass} text-zinc-500 dark:text-zinc-400`} />
       </button>
@@ -148,7 +152,7 @@ export function CustomNumberInput({
         type="button"
         onClick={decrement}
         disabled={disabled}
-        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors border-t border-zinc-500/25 ${arrowPlacement === 'left' ? 'rounded-bl-lg' : 'rounded-br-lg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors border-t border-zinc-500/25 ${arrowPlacement === 'left' ? 'rounded-bl-md' : 'rounded-br-md'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <ChevronDown className={`${sc.iconClass} text-zinc-500 dark:text-zinc-400`} />
       </button>
@@ -157,7 +161,7 @@ export function CustomNumberInput({
 
   return (
     <div className={`relative ${width} ${className}`}>
-      <div className={`w-full bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors flex items-stretch ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <div className={`w-full ${sc.containerHeight} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors flex items-stretch ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         {arrowPlacement === 'left' && arrows}
         <input
           ref={inputRef}

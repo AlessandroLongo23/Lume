@@ -2,6 +2,7 @@
 
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { messagePopup } from './messagePopup';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 export function MessagePopupContainer() {
   const messages = messagePopup((s) => s.messages);
@@ -29,12 +30,16 @@ export function MessagePopupContainer() {
             )}
             <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{msg.message}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label="Chiudi"
             onClick={() => dismiss(msg.id)}
-            className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            className="shrink-0"
           >
-            <X className="size-3.5" />
-          </button>
+            <X />
+          </Button>
         </div>
       ))}
     </div>

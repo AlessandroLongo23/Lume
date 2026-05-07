@@ -17,6 +17,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { Operator } from '@/lib/types/Operator';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { DeleteOperatorModal } from './DeleteOperatorModal';
@@ -243,21 +244,27 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Ripristina"
                             title="Ripristina"
+                            onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
                           >
-                            <ArchiveRestore className="size-3.5" />
-                          </button>
+                            <ArchiveRestore />
+                          </Button>
                         )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedOperator(row.original); setShowDelete(true); }}
-                          className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Elimina"
                           title="Elimina"
+                          onClick={(e) => { e.stopPropagation(); setSelectedOperator(row.original); setShowDelete(true); }}
                         >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                          <Trash2 />
+                        </Button>
                       </div>
                     </td>
                   </tr>

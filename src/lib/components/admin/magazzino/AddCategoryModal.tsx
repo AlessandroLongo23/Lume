@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Archive, ArchiveRestore } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import type { ProductCategory } from '@/lib/types/ProductCategory';
@@ -82,14 +83,14 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
       classes="max-w-sm"
       footerContent={
         selectedCategory && (
-          <button
-            type="button"
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+          <Button
+            variant="ghost"
+            leadingIcon={selectedCategory.isArchived ? ArchiveRestore : Archive}
             onClick={handleToggleArchive}
+            className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
           >
-            {selectedCategory.isArchived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {selectedCategory.isArchived ? 'Ripristina' : 'Archivia'}
-          </button>
+          </Button>
         )
       }
     >

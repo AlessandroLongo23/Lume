@@ -18,6 +18,7 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Order } from '@/lib/types/Order';
 
 export default function OrdiniPage() {
@@ -113,13 +114,14 @@ export default function OrdiniPage() {
                 labels={['Tabella', 'Calendario']}
                 icons={[TableProperties, CalendarDays]}
               />
-              <button
-                className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
+              <Button
+                variant="primary"
+                leadingIcon={ShoppingCart}
                 onClick={() => setShowAdd(true)}
+                className="whitespace-nowrap"
               >
-                <ShoppingCart className="size-5" strokeWidth={1.5} />
-                <span className="font-thin">Nuovo Ordine</span>
-              </button>
+                Nuovo Ordine
+              </Button>
               <DropdownMenu items={[
                 { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
                 { label: 'Scarica PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },

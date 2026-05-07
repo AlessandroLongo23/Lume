@@ -1,6 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface EmptyStateAction {
   label: string;
@@ -27,16 +28,14 @@ export function EmptyState({ icon: Icon, title, description, action, secondaryAc
       {(action || secondaryAction) && (
         <div className="flex flex-row items-center gap-3">
           {secondaryAction && (
-            <button className="btn-secondary" onClick={secondaryAction.onClick}>
-              {secondaryAction.icon && <secondaryAction.icon className="size-4" />}
-              <span>{secondaryAction.label}</span>
-            </button>
+            <Button variant="secondary" leadingIcon={secondaryAction.icon} onClick={secondaryAction.onClick}>
+              {secondaryAction.label}
+            </Button>
           )}
           {action && (
-            <button className="btn-primary" onClick={action.onClick}>
-              {action.icon && <action.icon className="size-4" />}
-              <span>{action.label}</span>
-            </button>
+            <Button variant="primary" leadingIcon={action.icon} onClick={action.onClick}>
+              {action.label}
+            </Button>
           )}
         </div>
       )}

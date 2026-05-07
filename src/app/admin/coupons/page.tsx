@@ -9,6 +9,7 @@ import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { CouponsTable } from '@/lib/components/admin/coupons/CouponsTable';
 import { GiftCouponModal } from '@/lib/components/admin/coupons/GiftCouponModal';
@@ -95,21 +96,13 @@ export default function CouponsPage() {
           actions={
             <>
               {activeTab === 'gift' ? (
-                <button
-                  onClick={() => setGiftModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftModalOpen(true)}>
                   Nuovo coupon
-                </button>
+                </Button>
               ) : (
-                <button
-                  onClick={() => setGiftCardModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-black dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
-                >
-                  <Plus className="size-4" />
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftCardModalOpen(true)}>
                   Vendi gift card
-                </button>
+                </Button>
               )}
               {coupons.length > 0 && (
                 <DropdownMenu items={[

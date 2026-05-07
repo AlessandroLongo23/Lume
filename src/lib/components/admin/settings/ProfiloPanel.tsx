@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { User, Camera, Save, Trash2, Loader2, Phone } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -155,24 +156,23 @@ export function ProfiloPanel() {
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                leadingIcon={Camera}
+                loading={uploading}
                 onClick={onPickFile}
-                disabled={uploading}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors disabled:opacity-50"
               >
-                {uploading ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
                 {uploading ? 'Caricamento…' : avatarUrl ? 'Cambia immagine' : 'Carica immagine'}
-              </button>
+              </Button>
               {avatarUrl && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  leadingIcon={Trash2}
                   onClick={onRemoveAvatar}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                  className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
-                  <Trash2 className="size-3.5" />
                   Rimuovi
-                </button>
+                </Button>
               )}
             </div>
             <input
@@ -243,15 +243,15 @@ export function ProfiloPanel() {
         </div>
 
         <div className="mt-5 flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            leadingIcon={Save}
+            loading={saving}
+            disabled={!isDirty}
             onClick={onSaveName}
-            disabled={saving || !isDirty}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="size-4" />
             {saving ? 'Salvataggio…' : 'Salva'}
-          </button>
+          </Button>
         </div>
       </SettingsCard>
     </div>

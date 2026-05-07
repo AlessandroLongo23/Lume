@@ -1,11 +1,11 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { Tag } from 'lucide-react';
+import { ArrowLeft, Tag } from 'lucide-react';
 import type { OriginType } from '@/lib/types/Salon';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const ORIGIN_OPTIONS: { value: OriginType; label: string }[] = [
   { value: 'word_of_mouth', label: 'Passaparola' },
@@ -99,17 +99,19 @@ export function StepFour({ onSubmit }: StepFourProps) {
 
       <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
-          <FormButton type="button" variant="ghost" onClick={prevStep} disabled={isLoading} className="flex-1">
-            ← Indietro
-          </FormButton>
-          <FormButton
+          <Button type="button" variant="ghost" onClick={prevStep} disabled={isLoading} className="flex-1">
+            <ArrowLeft className="size-4" aria-hidden />
+            Indietro
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             loading={isLoading}
             disabled={!origin}
             className="flex-2"
           >
             Crea Account
-          </FormButton>
+          </Button>
         </div>
       </motion.div>
     </form>

@@ -29,6 +29,7 @@ import { DeleteClientModal } from './DeleteClientModal';
 import { TreatmentHistory } from './TreatmentHistory';
 import { SidePanel } from '@/lib/components/shared/ui/SidePanel';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { cardStyle } from '@/lib/const/appearance';
 
 interface ClientsTableProps {
@@ -415,30 +416,39 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                     <td className="px-4 py-2">
                       <div className="flex flex-row items-center justify-end gap-1">
                         <Tooltip label="Scheda tecnica">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Scheda tecnica"
                             onClick={(e) => { e.stopPropagation(); setSchedaClient(row.original); }}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-primary dark:hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors"
                           >
-                            <NotebookText className="size-3.5" />
-                          </button>
+                            <NotebookText />
+                          </Button>
                         </Tooltip>
                         {showArchived ? (
                           <Tooltip label="Ripristina">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              aria-label="Ripristina"
                               onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                             >
-                              <ArchiveRestore className="size-3.5" />
-                            </button>
+                              <ArchiveRestore />
+                            </Button>
                           </Tooltip>
                         ) : (
                           <Tooltip label="Elimina">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              aria-label="Elimina"
                               onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setShowDelete(true); }}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
-                              <Trash2 className="size-3.5" />
-                            </button>
+                              <Trash2 />
+                            </Button>
                           </Tooltip>
                         )}
                       </div>

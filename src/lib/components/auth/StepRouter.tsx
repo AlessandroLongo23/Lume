@@ -17,10 +17,10 @@ const stepVariants = {
 };
 
 const STEP_META: Record<1 | 2 | 3 | 4, { label: string; subtitle: string }> = {
-  1: { label: 'La Chiave',              subtitle: 'Crea le tue credenziali di accesso' },
-  2: { label: "L'Identikit",            subtitle: 'Dicci chi sei e come si chiama il tuo salone' },
-  3: { label: 'Il Modello di Business', subtitle: 'Che tipo di attività gestisci?' },
-  4: { label: "L'Origine",             subtitle: 'Ultime informazioni, poi sei pronto' },
+  1: { label: 'Account',                subtitle: 'Crea le tue credenziali di accesso' },
+  2: { label: 'Profilo',                subtitle: 'Dicci chi sei e come si chiama il tuo salone' },
+  3: { label: 'Attività',               subtitle: 'Che tipo di attività gestisci?' },
+  4: { label: 'Ultimi dettagli',        subtitle: 'Ultime informazioni, poi sei pronto' },
 };
 
 const STEPS: Record<number, React.ComponentType<{ onSubmit?: () => void }>> = {

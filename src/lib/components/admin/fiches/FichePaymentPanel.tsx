@@ -2,6 +2,7 @@
 
 import { CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2 } from 'lucide-react';
 import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 
 export type PaymentView = FichePaymentMethod | 'mixed' | null;
@@ -210,26 +211,30 @@ export function FichePaymentPanel({
                   size="sm"
                   width="w-28"
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  aria-label="Rimuovi"
+                  title="Rimuovi"
                   onClick={() => removeSplit(i)}
                   disabled={splits.length <= 2}
-                  className="p-1.5 rounded text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Rimuovi"
+                  className="text-zinc-400 hover:text-red-500"
                 >
-                  <Trash2 className="size-4" />
-                </button>
+                  <Trash2 />
+                </Button>
               </div>
             ))}
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              leadingIcon={Plus}
               onClick={addSplit}
-              className="flex items-center gap-1.5 text-xs text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40 transition-colors self-start"
+              className="self-start text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40"
             >
-              <Plus className="size-3.5" />
               Aggiungi pagamento
-            </button>
+            </Button>
 
             <div
               className={`flex items-center justify-between p-3 rounded-lg mt-1 ${

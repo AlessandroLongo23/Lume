@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 interface SidePanelProps {
   isOpen: boolean;
@@ -57,14 +58,9 @@ export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm
           >
             <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-500/25 shrink-0">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                aria-label="Chiudi"
-              >
-                <X className="size-4" />
-              </button>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Chiudi" onClick={onClose}>
+                <X />
+              </Button>
             </header>
             <div className="flex-1 overflow-y-auto p-6">
               {children}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, X, Upload, Paperclip, FileX, Send, Plus } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
 import type { ImportEntity } from '@/lib/imports/entities/types';
 
@@ -170,12 +171,9 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Inclusa nel tuo abbonamento</p>
             </div>
           </div>
-          <button
-            className="shrink-0 ml-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            onClick={handleClose}
-          >
-            <X className="size-5" />
-          </button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={handleClose} className="shrink-0 ml-4">
+            <X />
+          </Button>
         </div>
 
         {/* Body */}
@@ -206,13 +204,16 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
                   <div key={f.fileName} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900">
                     <Paperclip className="size-4 shrink-0 text-primary" />
                     <span className="flex-1 text-sm text-zinc-700 dark:text-zinc-300 truncate">{f.fileName}</span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      aria-label={`Rimuovi ${f.fileName}`}
                       onClick={() => handleRemoveFile(f.fileName)}
-                      className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                      className="shrink-0"
                     >
-                      <FileX className="size-4" />
-                    </button>
+                      <FileX />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -243,25 +244,19 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
 
         {/* Footer */}
         <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
-          >
-            <X className="size-4" />
+          <Button variant="secondary" leadingIcon={X} onClick={handleClose}>
             Annulla
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            leadingIcon={Send}
             disabled={files.length === 0 || isSubmitting}
             onClick={handleSubmit}
-            className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-primary-hover"
           >
-            <Send className="size-4" />
             {isSubmitting
               ? (showAutoHint ? 'Caricamento...' : 'Invio...')
               : (showAutoHint ? 'Importa subito' : 'Invia al team')}
-          </button>
+          </Button>
         </div>
 
       </div>

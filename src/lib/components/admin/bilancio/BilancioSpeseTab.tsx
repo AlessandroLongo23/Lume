@@ -15,6 +15,7 @@ import { useSpeseStore } from '@/lib/stores/spese';
 import { Spesa } from '@/lib/types/Spesa';
 import { BilancioSpeseSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
@@ -176,13 +177,9 @@ export function BilancioSpeseTab() {
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Registra una nuova spesa</p>
               </div>
             </div>
-            <button
-              aria-label="Chiudi"
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              onClick={() => setDialogOpen(false)}
-            >
-              <X className="size-5" />
-            </button>
+            <Button variant="ghost" iconOnly aria-label="Chiudi" onClick={() => setDialogOpen(false)}>
+              <X />
+            </Button>
           </div>
 
           <div className="flex flex-col gap-6 p-6">
@@ -209,23 +206,18 @@ export function BilancioSpeseTab() {
           </div>
 
           <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25 shrink-0">
-            <button
-              type="button"
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              onClick={() => setDialogOpen(false)}
-            >
-              <X className="size-4" />
+            <Button variant="secondary" leadingIcon={X} onClick={() => setDialogOpen(false)}>
               Annulla
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              leadingIcon={Check}
               disabled={isSaving}
-              className="flex flex-row items-center justify-center gap-2 px-4 py-2.5 text-sm font-thin rounded-lg bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-800"
+              loading={isSaving}
               onClick={handleAdd}
             >
-              <Check className="size-4" />
               {isSaving ? 'Salvataggio…' : 'Aggiungi'}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>
@@ -241,13 +233,9 @@ export function BilancioSpeseTab() {
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         <div className="flex items-center justify-end gap-2">
           <ColumnPicker tableId="expenses" columns={columns} />
-          <button
-            className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
-            onClick={openDialog}
-          >
-            <Plus className="size-4" />
-            <span>Nuova Spesa</span>
-          </button>
+          <Button variant="primary" leadingIcon={Plus} onClick={openDialog}>
+            Nuova Spesa
+          </Button>
         </div>
 
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
@@ -296,13 +284,17 @@ export function BilancioSpeseTab() {
                   ))}
                   <td className="px-4 py-2">
                     <div className="flex justify-end">
-                      <button
-                        onClick={() => handleDelete(row.original.id)}
-                        className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        aria-label="Elimina"
                         title="Elimina"
+                        onClick={() => handleDelete(row.original.id)}
+                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     </div>
                   </td>
                 </tr>

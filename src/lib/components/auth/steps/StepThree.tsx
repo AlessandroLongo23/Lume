@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Scissors, Sparkles, Flower2, Hand, MoreHorizontal } from 'lucide-react';
+import { Scissors, Sparkles, Flower2, Hand, MoreHorizontal, ArrowLeft, ArrowRight } from 'lucide-react';
 import type { BusinessType } from '@/lib/types/Salon';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
-import { FormButton } from '@/lib/components/shared/ui/forms/FormButton';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 const BUSINESS_TYPES: { value: BusinessType; label: string; icon: React.ReactNode }[] = [
   { value: 'barber',        label: 'Barbiere',              icon: <Scissors   className="w-6 h-6" /> },
@@ -66,16 +66,18 @@ export function StepThree() {
 
       <motion.div variants={buttonVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
-          <FormButton type="button" variant="ghost" onClick={prevStep} className="flex-1">
-            ← Indietro
-          </FormButton>
-          <FormButton
+          <Button type="button" variant="ghost" onClick={prevStep} className="flex-1">
+            <ArrowLeft className="size-4" aria-hidden />
+            Indietro
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             disabled={!businessType}
             className="flex-2"
           >
-            Avanti →
-          </FormButton>
+            Avanti <ArrowRight className="size-4" aria-hidden />
+          </Button>
         </div>
       </motion.div>
     </form>

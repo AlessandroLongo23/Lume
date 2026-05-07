@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackEntry, FeedbackStatus, FeedbackType } from '@/lib/types/FeedbackEntry';
@@ -136,14 +137,15 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
+        leadingIcon={ArrowLeft}
         onClick={() => router.push(backHref)}
-        className="self-start flex flex-row items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+        className="self-start"
       >
-        <ArrowLeft className="size-4" />
         Torna al feedback
-      </button>
+      </Button>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-8 xl:gap-10">
         {/* Main column */}

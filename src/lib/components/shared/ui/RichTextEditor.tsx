@@ -15,8 +15,10 @@ import {
   Quote,
   Strikethrough,
   Unlink,
+  type LucideIcon,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { Button } from './Button';
 import { formatShortcut } from '@/lib/utils/platform';
 
 interface RichTextEditorProps {
@@ -208,76 +210,67 @@ export function RichTextEditor({
         <ToolbarButton
           label="Grassetto"
           shortcut={shortcuts.bold}
+          icon={Bold}
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={toolbarState.isBold}
           disabled={disabled}
-        >
-          <Bold className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
         <ToolbarButton
           label="Corsivo"
           shortcut={shortcuts.italic}
+          icon={Italic}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           active={toolbarState.isItalic}
           disabled={disabled}
-        >
-          <Italic className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
         <ToolbarButton
           label="Barrato"
           shortcut={shortcuts.strike}
+          icon={Strikethrough}
           onClick={() => editor.chain().focus().toggleStrike().run()}
           active={toolbarState.isStrike}
           disabled={disabled}
-        >
-          <Strikethrough className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
 
         <div className="mx-1 h-4 w-px bg-zinc-500/20" />
 
         <ToolbarButton
           label="Elenco puntato"
           shortcut={shortcuts.bulletList}
+          icon={List}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           active={toolbarState.isBulletList}
           disabled={disabled}
-        >
-          <List className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
         <ToolbarButton
           label="Elenco numerato"
           shortcut={shortcuts.orderedList}
+          icon={ListOrdered}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           active={toolbarState.isOrderedList}
           disabled={disabled}
-        >
-          <ListOrdered className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
         <ToolbarButton
           label="Citazione"
           shortcut={shortcuts.blockquote}
+          icon={Quote}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           active={toolbarState.isBlockquote}
           disabled={disabled}
-        >
-          <Quote className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
 
         <div className="mx-1 h-4 w-px bg-zinc-500/20" />
 
         <ToolbarButton
           label={toolbarState.isLink ? 'Modifica link' : 'Inserisci link'}
           shortcut={shortcuts.link}
+          icon={LinkIcon}
           onClick={promptLink}
           active={toolbarState.isLink}
           disabled={disabled}
-        >
-          <LinkIcon className="size-3.5" strokeWidth={2.25} />
-        </ToolbarButton>
+        />
         {toolbarState.isLink && (
-          <ToolbarButton label="Rimuovi link" onClick={unsetLink} disabled={disabled}>
-            <Unlink className="size-3.5" strokeWidth={2.25} />
-          </ToolbarButton>
+          <ToolbarButton label="Rimuovi link" icon={Unlink} onClick={unsetLink} disabled={disabled} />
         )}
       </div>
 
@@ -289,34 +282,37 @@ export function RichTextEditor({
 function ToolbarButton({
   label,
   shortcut,
+  icon: Icon,
   onClick,
   active = false,
   disabled = false,
-  children,
 }: {
   label: string;
   shortcut?: string;
+  icon: LucideIcon;
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
-  children: React.ReactNode;
 }) {
   return (
     <Tooltip label={label} shortcut={shortcut} side="bottom" sideOffset={6}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        aria-label={label}
+        aria-pressed={active}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onClick}
         disabled={disabled}
-        aria-label={label}
-        className={`flex items-center justify-center size-7 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={
           active
             ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
-            : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/60'
-        }`}
+            : ''
+        }
       >
-        {children}
-      </button>
+        <Icon />
+      </Button>
     </Tooltip>
   );
 }

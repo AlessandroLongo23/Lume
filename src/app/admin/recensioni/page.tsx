@@ -8,6 +8,7 @@ import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { RichTextEditor } from '@/lib/components/shared/ui/RichTextEditor';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useReviewsStore } from '@/lib/stores/reviews';
 import { formatDateDisplay } from '@/lib/utils/format';
 
@@ -148,24 +149,19 @@ export default function ReviewsPage() {
 
               <div className="flex flex-row items-center gap-3 shrink-0">
                 {isEdit && (
-                  <button
-                    type="button"
-                    onClick={() => setShowDelete(true)}
-                    className="flex flex-row items-center gap-2 px-3 py-2 text-sm font-thin rounded-lg text-red-600 dark:text-red-400 hover:bg-red-500/5 transition-colors"
-                  >
-                    <Trash2 className="size-4" strokeWidth={1.5} />
-                    <span>Elimina</span>
-                  </button>
+                  <Button variant="ghost" leadingIcon={Trash2} onClick={() => setShowDelete(true)}>
+                    Elimina
+                  </Button>
                 )}
-                <button
-                  type="button"
-                  onClick={handleSave}
+                <Button
+                  variant="primary"
+                  leadingIcon={Save}
+                  loading={isSaving}
                   disabled={!canSave}
-                  className="flex flex-row items-center gap-2 px-4 py-2 text-sm font-thin rounded-lg bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 border border-zinc-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={handleSave}
                 >
-                  <Save className="size-4" strokeWidth={1.5} />
-                  <span>{isSaving ? 'Salvataggio…' : isEdit ? 'Aggiorna' : 'Salva'}</span>
-                </button>
+                  {isSaving ? 'Salvataggio…' : isEdit ? 'Aggiorna' : 'Salva'}
+                </Button>
               </div>
             </div>
           </div>

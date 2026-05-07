@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, Save, Loader2, Ban } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Button } from '@/lib/components/shared/ui/Button';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
@@ -126,15 +127,15 @@ export function CalendarioSalonePanel() {
       </SettingsCard>
 
       <div className="flex justify-end">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          leadingIcon={Save}
+          loading={saving}
+          disabled={!isDirty}
           onClick={onSave}
-          disabled={saving || !isDirty}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-hover hover:bg-primary-active text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Save className="size-4" />
           {saving ? 'Salvataggio…' : 'Salva'}
-        </button>
+        </Button>
       </div>
     </div>
   );
