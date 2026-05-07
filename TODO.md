@@ -96,16 +96,16 @@ Currently in flight. Keep this section short; promote items here only when start
 - [x] [ux] Combobox a due livelli per servizi e prodotti nella fiche
 
 ### Features
+- [ ] [feat] (M) Logs page, with a list of every CRUD action taken, by who, when, in natural italian language 
+- [ ] [feat] (M) Notification page, for birthdays and more
 - [ ] [feat] (M) Export data with format selection (.csv, .xlsl, .pdf, sql dump)
 - [ ] [feat] (L) recurrent expenses (Spotify, servizi, …)
 - [ ] [feat] (M) Notifica auguri sul gestionale
 - [ ] [feat] (L) Tessera cliente
 - [ ] [feat] (L) AI image generation for products and services
 - [ ] [feat] (M) Recurring appointments — clients on "every 4 weeks" rhythm without manual rebooking _(proposed)_
-- [ ] [feat] (S) Buffer time between appointments — clean-up minutes after color services _(proposed)_
 - [ ] [feat] (M) Wait list / lista d'attesa — capture demand when slots are full, auto-offer cancellations _(proposed)_
 - [ ] [feat] (S) Codice fiscale field on client — needed for invoicing _(proposed)_
-- [ ] [feat] (M) Foto cliente before/after on profile — high engagement, retention driver _(proposed)_
 - [x] [feat] (M) In-product free-trial gating — countdown banner, paywall after expiry, upgrade flow _(proposed)_
 - [x] [feat] (L) Referral program — "give a month, get a month", tracked in-product _(proposed)_
 - [x] [feat] Vacation in calendar
