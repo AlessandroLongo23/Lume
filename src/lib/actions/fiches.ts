@@ -123,3 +123,49 @@ export async function validateFicheConflicts(
 
   return {};
 }
+
+/**
+ * Updates a fiche through the `update_fiche_with_audit` RPC, which validates
+ * the patch against a whitelist, applies it, and inserts a `fiche_edits` row
+ * with the diff (and optional reason) inside the same transaction.
+ *
+ * The RPC validates auth via `auth.uid()` itself — we don't need to look up
+ * the caller profile here.
+ */
+export async function updateFicheWithAudit(
+  ficheId: string,
+  patch: Record<string, unknown>,
+  reason?: string | null,
+): Promise<{ data?: unknown; error?: string }> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('update_fiche_with_audit', {
+    p_fiche_id: ficheId,
+    p_patch: patch,
+    p_reason: reason ?? null,
+  });
+
+  if (error) {
+    switch (error.code) {
+      case '42501':
+        return { error: 'Non sei autorizzato a modificare questa fiche.' };
+      case '22023': {
+        // Try to extract the offending field name from messages like
+        // 'Field "foo" is not editable' or 'campo "foo" non modificabile'.
+        const match = error.message.match(/"([^"]+)"/);
+        const field = match?.[1];
+        return {
+          error: field
+            ? `Campo non modificabile: ${field}`
+            : 'Campo non modificabile: campo non valido',
+        };
+      }
+      case 'P0002':
+        return { error: 'Fiche non trovata.' };
+      default:
+        return { error: 'Impossibile aggiornare la fiche.' };
+    }
+  }
+
+  return { data };
+}

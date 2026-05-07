@@ -19,6 +19,7 @@ import { useCouponsStore } from '@/lib/stores/coupons';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
+import { useFicheEditsStore } from '@/lib/stores/fiche_edits';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
@@ -50,6 +51,7 @@ export function StoreInitializer() {
   const fetchAbbonamenti = useAbbonamentiStore((s) => s.fetchAbbonamenti);
   const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
   const fetchFichePayments = useFichePaymentsStore((s) => s.fetchFichePayments);
+  const fetchFicheEdits = useFicheEditsStore((s) => s.fetchFicheEdits);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPreferences = usePreferencesStore((s) => s.fetchPreferences);
   const fetchSalonSettings = useSalonSettingsStore((s) => s.fetchSettings);
@@ -82,6 +84,7 @@ export function StoreInitializer() {
       fetchAbbonamenti(),
       fetchFicheProducts(),
       fetchFichePayments(),
+      fetchFicheEdits(),
       fetchSubscription(),
       fetchPreferences(),
       fetchSalonSettings(),
@@ -130,6 +133,7 @@ export function StoreInitializer() {
   useRealtimeStore('coupon_redemptions', fetchCouponRedemptions, activeSalonId);
   useRealtimeStore('abbonamenti', fetchAbbonamenti, activeSalonId);
   useRealtimeStore('fiche_payments', fetchFichePayments, activeSalonId);
+  useRealtimeStore('fiche_edits', fetchFicheEdits, activeSalonId);
   useRealtimeStore('operator_unavailabilities', fetchOperatorUnavailabilities, activeSalonId);
   // Feedback is global — no salon_id filter.
   useRealtimeStore('feedback_entries', fetchFeedback);

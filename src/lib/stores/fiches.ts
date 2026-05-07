@@ -3,6 +3,20 @@ import { supabase } from '@/lib/supabase/client';
 import { Fiche } from '@/lib/types/Fiche';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
+import { updateFicheWithAudit } from '@/lib/actions/fiches';
+
+const PENDING_TTL_MS = 1500; // covers the 300ms realtime debounce + roundtrip
+
+const FICHE_EDITABLE_FIELDS = [
+  'datetime',
+  'client_id',
+  'note',
+  'status',
+  'total_override',
+  'miscela',
+  'tecnica',
+  'paid',
+] as const;
 
 export interface PaymentSplit {
   method: FichePaymentMethod;
@@ -18,7 +32,11 @@ interface FichesState {
   pendingMutationIds: Set<string>;
   fetchFiches: () => Promise<void>;
   addFiche: (fiche: Partial<Fiche>) => Promise<Fiche>;
-  updateFiche: (ficheId: string, updatedFiche: Partial<Fiche>) => Promise<Fiche>;
+  updateFiche: (
+    ficheId: string,
+    updatedFiche: Partial<Fiche>,
+    reason?: string | null,
+  ) => Promise<Fiche>;
   deleteFiche: (ficheId: string) => Promise<void>;
   deleteAllFiches: () => Promise<void>;
   setSelectedFiche: (fiche: Fiche | null) => void;
@@ -58,16 +76,45 @@ export const useFichesStore = create<FichesState>((set) => ({
     return newFiche;
   },
 
-  updateFiche: async (ficheId, updatedFiche) => {
-    const { data, error } = await supabase
-      .from('fiches')
-      .update(updatedFiche)
-      .eq('id', ficheId)
-      .select()
-      .single();
-    if (error) throw new Error('Impossibile aggiornare la fiche.');
-    const updated = new Fiche(data);
+  updateFiche: async (ficheId, updatedFiche, reason) => {
+    // Build a plain patch from the whitelisted editable fields, coercing
+    // Date values to ISO strings for the JSONB payload.
+    const patch: Record<string, unknown> = {};
+    for (const k of FICHE_EDITABLE_FIELDS) {
+      if (k in updatedFiche) {
+        const v = (updatedFiche as Record<string, unknown>)[k];
+        patch[k] = v instanceof Date ? v.toISOString() : v;
+      }
+    }
+
+    // Mark the id as pending BEFORE the network call so realtime echo dedup
+    // (see StoreInitializer.onFichesChange) catches the round-trip.
+    set((s) => ({
+      pendingMutationIds: new Set([...s.pendingMutationIds, ficheId]),
+    }));
+
+    const result = await updateFicheWithAudit(ficheId, patch, reason ?? null);
+
+    if (result.error) {
+      set((s) => {
+        const next = new Set(s.pendingMutationIds);
+        next.delete(ficheId);
+        return { pendingMutationIds: next };
+      });
+      throw new Error(result.error ?? 'Impossibile aggiornare la fiche.');
+    }
+
+    const updated = new Fiche(result.data as ConstructorParameters<typeof Fiche>[0]);
     set((s) => ({ fiches: s.fiches.map((f) => (f.id === ficheId ? updated : f)) }));
+
+    setTimeout(() => {
+      useFichesStore.setState((s) => {
+        const next = new Set(s.pendingMutationIds);
+        next.delete(ficheId);
+        return { pendingMutationIds: next };
+      });
+    }, PENDING_TTL_MS);
+
     return updated;
   },
 
