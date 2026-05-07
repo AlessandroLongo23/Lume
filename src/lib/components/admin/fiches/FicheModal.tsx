@@ -4,11 +4,12 @@ import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
   Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
-  FlaskConical, Sparkles, RotateCcw,
+  FlaskConical, Sparkles, RotateCcw, History,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { useFichePaymentsStore } from '@/lib/stores/fiche_payments';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useServicesStore } from '@/lib/stores/services';
@@ -40,6 +41,10 @@ import {
 } from '@/lib/components/admin/fiches/FichePaymentPanel';
 import { CouponSuggestionsPanel, type SelectedCoupon } from '@/lib/components/admin/fiches/CouponSuggestionsPanel';
 import { AbbonamentoCell } from '@/lib/components/admin/fiches/AbbonamentoCell';
+import { FicheHistoryTab } from '@/lib/components/admin/fiches/FicheHistoryTab';
+import { ConfirmEditClosedFicheDialog } from '@/lib/components/admin/fiches/ConfirmEditClosedFicheDialog';
+import { formatCurrency } from '@/lib/utils/format';
+import { supabase } from '@/lib/supabase/client';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { Operator } from '@/lib/types/Operator';
@@ -49,6 +54,7 @@ import type { FicheProduct } from '@/lib/types/FicheProduct';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
 import { isRangeWithinHours, effectiveScheduleFor, type DaySchedule } from '@/lib/utils/operating-hours';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface FicheModalProps {
   mode: 'add' | 'edit';
@@ -196,6 +202,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const { addFicheProduct, updateFicheProduct, deleteFicheProduct } = useFicheProductsStore();
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
   const salonHours = useSalonSettingsStore((s) => s.settings?.operating_hours ?? null);
+  const fichePayments = useFichePaymentsStore((s) => s.fiche_payments);
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
@@ -213,10 +220,18 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [prodQuery, setProdQuery] = useState('');
   const [prodOpen, setProdOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
-  const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment'>('edit');
+  const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment' | 'history'>('edit');
   const [treatmentTab, setTreatmentTab] = useState<'new' | 'last'>('new');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<'submit' | null>(null);
+
+  // Confirm dialog state for editing a CONCLUSA fiche
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
+
+  // Append-payment row (only used when fiche is CONCLUSA and total drifted)
+  const [appendMethod, setAppendMethod] = useState<FichePaymentMethod>(FichePaymentMethod.CASH);
+  const [appendAmount, setAppendAmount] = useState<number | null>(null);
+  const [isAppendingPayment, setIsAppendingPayment] = useState(false);
 
   // Payment state
   const [paymentView, setPaymentView] = useState<PaymentView>(FichePaymentMethod.CASH);
@@ -240,19 +255,30 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setTecnica(fiche.tecnica ?? '');
       setTotalOverride(fiche.total_override ?? null);
       setFicheServices(
-        fiche.getFicheServices().map((fs) => {
-          const svc = services.find((s) => s.id === fs.service_id);
-          return {
-            id: fs.id,
-            service_id: fs.service_id,
-            name: fs.name || svc?.name || 'Servizio',
-            operator_id: fs.operator_id ?? '',
-            duration: fs.duration,
-            list_price: fs.list_price,
-            final_price: fs.final_price,
-            abbonamento_id: fs.abbonamento_id ?? null,
-          };
-        }),
+        fiche
+          .getFicheServices()
+          // Sort chronologically: the store fetches without ORDER BY, and the
+          // modal drops start_time then re-derives display times sequentially
+          // from the array, so an unsorted array would both mis-render the
+          // services and (on Save) clobber the persisted order.
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+          )
+          .map((fs) => {
+            const svc = services.find((s) => s.id === fs.service_id);
+            return {
+              id: fs.id,
+              service_id: fs.service_id,
+              name: fs.name || svc?.name || 'Servizio',
+              operator_id: fs.operator_id ?? '',
+              duration: fs.duration,
+              list_price: fs.list_price,
+              final_price: fs.final_price,
+              abbonamento_id: fs.abbonamento_id ?? null,
+            };
+          }),
       );
       setFicheProducts(
         fiche.getFicheProducts().map((fp: FicheProduct) => {
@@ -292,6 +318,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     setSelectedCoupons([]);
     setIsSubmitting(false);
     setPendingAction(null);
+    setShowEditConfirm(false);
+    setAppendMethod(FichePaymentMethod.CASH);
+    setAppendAmount(null);
+    setIsAppendingPayment(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fiche, mode, initialView]);
 
@@ -303,6 +333,58 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   useEffect(() => {
     if (mode === 'add') setDatetimeStr(toDatetimeLocal(datetime));
   }, [datetime, mode]);
+
+  // ── Closed-fiche payment derivations ──────────────────────────────────────
+  // Hoisted up here (instead of grouped with the other render-time constants
+  // below) so the "pre-fill the append-payment delta" effect can depend on
+  // them without TDZ issues.
+  const isCompleted = fiche?.status === FicheStatus.COMPLETED;
+
+  const existingPayments = useMemo(() => {
+    if (!isCompleted || !fiche?.id) return [];
+    return fichePayments
+      .filter((p) => p.fiche_id === fiche.id)
+      .sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
+  }, [fichePayments, isCompleted, fiche?.id]);
+
+  const paidSum = useMemo(
+    () => existingPayments.reduce((acc, p) => acc + p.amount, 0),
+    [existingPayments],
+  );
+  // For closed fiches the "current total" honours an override but ignores
+  // unsaved totalOverride changes — base it on the fiche.getTotal() so it
+  // stays consistent with the persisted state shown on the receipt.
+  const closedFicheCurrentTotal = useMemo(() => {
+    if (!isCompleted || !fiche) return 0;
+    return fiche.getTotal();
+  }, [isCompleted, fiche]);
+  const paymentDelta = closedFicheCurrentTotal - paidSum;
+  const showPaymentMismatch = isCompleted && Math.abs(paymentDelta) >= 0.01;
+
+  // Pre-fill the append-payment row with the current delta so the user can
+  // confirm with one click. We only nudge the value when the user hasn't
+  // typed something else (appendAmount === null) to avoid clobbering manual edits.
+  useEffect(() => {
+    if (!isCompleted) return;
+    if (activeTopTab !== 'payment') return;
+    if (appendAmount !== null) return;
+    if (paymentDelta > 0.005) {
+      setAppendAmount(Number(paymentDelta.toFixed(2)));
+    }
+  }, [isCompleted, activeTopTab, paymentDelta, appendAmount]);
+
+  // When the realtime echo lands a new payment row, reset appendAmount so the
+  // prefill effect above re-runs against the fresh delta. Trade-off: a manual
+  // edit the user typed before the echo arrived is wiped, but it would no
+  // longer match the displayed mismatch banner anyway. Manual edits within a
+  // single payments-list snapshot are still preserved.
+  const existingPaymentsCount = existingPayments.length;
+  useEffect(() => {
+    setAppendAmount(null);
+  }, [existingPaymentsCount]);
 
   // Close service dropdown on outside click
   useEffect(() => {
@@ -508,8 +590,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     }
   }
 
-  /** Persist all fiche fields + services + products. Returns the fiche id on success, throws on failure. */
-  async function persistFiche(): Promise<string> {
+  /** Persist all fiche fields + services + products. Returns the fiche id on success, throws on failure.
+   *  `reason` is forwarded to the audit log and only consumed by the RPC when the patch
+   *  contains whitelisted fiche-table fields (see `updateFiche` in the store). */
+  async function persistFiche(reason?: string): Promise<string> {
     const validation = await validateFicheConflicts(
       clientId,
       servicesWithTimes.map((svc) => ({
@@ -555,7 +639,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
     if (!fiche) throw new Error('Fiche mancante');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
+    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null }, reason);
 
     const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
     for (const fs of fiche.getFicheServices()) {
@@ -617,6 +701,50 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     return !Object.values(newErrors).some(Boolean);
   }
 
+  /** Detects whether the form has changed against the original fiche snapshot
+   *  on the whitelisted fields (the same set forwarded to update_fiche_with_audit:
+   *  client_id, datetime, note, total_override, miscela, tecnica) plus the
+   *  fiche services/products lists (count + per-row id and final_price). The
+   *  scope is intentionally narrow — status/paid live outside this form, and
+   *  service/product mutations don't go through update_fiche_with_audit, so
+   *  they're tracked separately by their own stores' realtime echo. */
+  function hasFormChanges(): boolean {
+    if (mode !== 'edit' || !fiche) return false;
+    if (clientId !== fiche.client_id) return true;
+    const originalIso = new Date(fiche.datetime).toISOString();
+    const currentIso = baseTime.toISOString();
+    if (originalIso !== currentIso) return true;
+    if ((note ?? '') !== (fiche.note ?? '')) return true;
+    if ((miscela.trim() || null) !== (fiche.miscela ?? null)) return true;
+    if ((tecnica.trim() || null) !== (fiche.tecnica ?? null)) return true;
+    if ((totalOverride ?? null) !== (fiche.total_override ?? null)) return true;
+
+    const origServices = fiche.getFicheServices();
+    if (ficheServices.length !== origServices.length) return true;
+    const origServiceIds = new Set(origServices.map((s) => s.id));
+    for (const draft of ficheServices) {
+      if (!draft.id) return true; // newly added (no persisted id yet)
+      if (!origServiceIds.has(draft.id)) return true;
+      const orig = origServices.find((s) => s.id === draft.id);
+      if (!orig) return true;
+      if (Math.round(draft.final_price * 100) !== Math.round(orig.final_price * 100)) return true;
+    }
+
+    const origProducts = fiche.getFicheProducts();
+    if (ficheProducts.length !== origProducts.length) return true;
+    const origProductIds = new Set(origProducts.map((p) => p.id));
+    for (const draft of ficheProducts) {
+      if (!draft.id) return true;
+      if (!origProductIds.has(draft.id)) return true;
+      const orig = origProducts.find((p) => p.id === draft.id);
+      if (!orig) return true;
+      if (Math.round(draft.final_price * 100) !== Math.round(orig.final_price * 100)) return true;
+      if ((draft.quantity ?? 1) !== (orig.quantity ?? 1)) return true;
+    }
+
+    return false;
+  }
+
   /** Returns true when any service in the appointment falls outside the
    *  effective shifts for its assigned operator (operator's working_hours
    *  if set, otherwise the salon's operating_hours). */
@@ -637,9 +765,113 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setPendingAction('submit');
       return;
     }
+    // For CONCLUSA fiches, prompt for an optional edit reason before persisting.
+    // The out-of-hours dialog runs first (above) so we don't stack two confirms.
+    // Skip the prompt entirely when the form is unchanged — clicking "Salva"
+    // on a no-op should just close the modal without spawning a confirm dialog
+    // (and without writing an empty fiche_edits row).
+    if (mode === 'edit' && fiche?.status === FicheStatus.COMPLETED && !showEditConfirm) {
+      if (!hasFormChanges()) {
+        onClose();
+        return;
+      }
+      setShowEditConfirm(true);
+      return;
+    }
+    await runPersist();
+  }
+
+  /** Append a payment row on a closed fiche to reconcile a delta with the
+   *  current total. Goes directly to fiche_payments (NOT through the audit RPC
+   *  — payments are not fiche-table fields). The realtime subscription on
+   *  fiche_payments refreshes the read-only list.
+   *
+   *  After the payment insert succeeds we also write a `fiche_edits` row so
+   *  the post-close reconciliation shows up in the Cronologia tab — without
+   *  it the most common post-close action would leave no audit trail. The
+   *  edit insert is best-effort: if it fails we surface a popup but do NOT
+   *  roll back the payment (the money is real and shouldn't be undone).
+   *  salon_id is read from the workspace store (matches the convention in
+   *  fiches.addFiche) rather than fiche.salon_id. */
+  async function handleAppendPayment() {
+    if (!fiche?.id) return;
+    if (isAppendingPayment) return;
+    const amount = appendAmount ?? 0;
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+    if (!activeSalonId) {
+      messagePopup.getState().error('Nessun salone attivo selezionato.');
+      return;
+    }
+    setIsAppendingPayment(true);
+    const methodSnapshot = appendMethod;
+    const paidSumBefore = paidSum;
+    try {
+      const { error } = await supabase.from('fiche_payments').insert({
+        fiche_id: fiche.id,
+        salon_id: activeSalonId,
+        method: methodSnapshot,
+        amount,
+      });
+      if (error) throw new Error(error.message);
+      messagePopup.getState().success('Pagamento aggiunto');
+      setAppendAmount(null);
+      setAppendMethod(FichePaymentMethod.CASH);
+
+      // Best-effort audit row — RLS requires edited_by = auth.uid(),
+      // so look up the current user. If anything here fails the payment
+      // is already persisted; surface the gap to the user but don't throw.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          messagePopup
+            .getState()
+            .error('Pagamento registrato ma cronologia non aggiornata');
+          return;
+        }
+        const { error: editError } = await supabase.from('fiche_edits').insert({
+          salon_id: activeSalonId,
+          fiche_id: fiche.id,
+          edited_by: user.id,
+          changes: {
+            payment_added: {
+              old: null,
+              new: {
+                method: methodSnapshot,
+                amount,
+                paid_sum_before: paidSumBefore,
+                paid_sum_after: paidSumBefore + amount,
+              },
+            },
+          },
+          reason: null,
+        });
+        if (editError) {
+          messagePopup
+            .getState()
+            .error('Pagamento registrato ma cronologia non aggiornata');
+        }
+      } catch {
+        messagePopup
+          .getState()
+          .error('Pagamento registrato ma cronologia non aggiornata');
+      }
+    } catch (err) {
+      messagePopup
+        .getState()
+        .error(err instanceof Error ? err.message : 'Errore durante l\'aggiunta del pagamento');
+    } finally {
+      setIsAppendingPayment(false);
+    }
+  }
+
+  /** Persist the form. When invoked from the closed-fiche confirm dialog,
+   *  `reason` flows through to fiche_edits.reason. */
+  async function runPersist(reason?: string) {
     setIsSubmitting(true);
     try {
-      await persistFiche();
+      await persistFiche(reason);
+      setShowEditConfirm(false);
       onClose();
       messagePopup.getState().success(mode === 'add' ? 'Appuntamento creato con successo' : 'Appuntamento aggiornato con successo');
     } catch (err) {
@@ -692,7 +924,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   const isEdit = mode === 'edit';
-  const isCompleted = fiche?.status === FicheStatus.COMPLETED;
   const currentBucket = getFicheBucket({
     datetime: baseTime,
     status: fiche?.status ?? FicheStatus.CREATED,
@@ -704,6 +935,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       [FicheBucket.CONCLUSA]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     };
   const paymentValid = isPaymentValid(paymentView, effectiveTotal, cashGiven, splits);
+
+  // The Payment tab on a CONCLUSA fiche is read-only at the top level
+  // (existing splits + a delta-reconcile row that has its own button), so
+  // we hide the modal's primary confirm to avoid a misleading second action.
+  const hideConfirm =
+    activeTopTab === 'history' ||
+    (activeTopTab === 'payment' && isCompleted);
 
   const confirmText = activeTopTab === 'payment'
     ? (isSubmitting ? 'Chiusura…' : 'Conferma pagamento')
@@ -722,22 +960,39 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         onSubmit={onConfirm}
         title={
           isEdit
-            ? (activeTopTab === 'payment' ? 'Chiudi fiche' : 'Modifica fiche')
+            ? activeTopTab === 'payment'
+              ? isCompleted
+                ? 'Pagamenti'
+                : 'Chiudi fiche'
+              : activeTopTab === 'history'
+                ? 'Cronologia fiche'
+                : 'Modifica fiche'
             : 'Nuova fiche'
         }
         subtitle={
           isEdit
-            ? (activeTopTab === 'payment' ? 'Incassa e chiudi la fiche' : "Aggiorna i dettagli dell'appuntamento")
+            ? activeTopTab === 'payment'
+              ? isCompleted
+                ? 'Riepilogo dei pagamenti registrati'
+                : 'Incassa e chiudi la fiche'
+              : activeTopTab === 'history'
+                ? 'Tutte le modifiche registrate per questa fiche'
+                : "Aggiorna i dettagli dell'appuntamento"
             : 'Crea un nuovo appuntamento'
         }
         icon={
           isEdit
-            ? (activeTopTab === 'payment' ? ReceiptText : Pencil)
+            ? activeTopTab === 'payment'
+              ? ReceiptText
+              : activeTopTab === 'history'
+                ? History
+                : Pencil
             : Plus
         }
         classes="max-w-7xl w-[95vw] h-[92vh]"
         confirmText={confirmText}
         confirmDisabled={confirmDisabled}
+        hideConfirm={hideConfirm}
         footerContent={
           <div className="flex items-center gap-5">
             <div className="flex flex-col gap-0.5">
@@ -796,7 +1051,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   Procedi al pagamento
                 </Button>
               )}
-              {activeTopTab === 'payment' && (
+              {activeTopTab === 'payment' && !isCompleted && (
                 <Button
                   variant="ghost"
                   leadingIcon={ArrowLeft}
@@ -821,9 +1076,59 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       >
         <div className="flex flex-col gap-4 h-full min-h-0">
 
+          {isEdit && (
+            <div role="tablist" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+              {(
+                [
+                  { id: 'edit' as const, label: 'Modifica', icon: Pencil, show: true },
+                  { id: 'payment' as const, label: 'Pagamento', icon: ReceiptText, show: true },
+                  { id: 'history' as const, label: 'Cronologia', icon: History, show: true },
+                ]
+              )
+                .filter((t) => t.show)
+                .map(({ id, label, icon: Icon }) => {
+                  const isActive = activeTopTab === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      id={`fiche-tab-${id}`}
+                      aria-controls={`fiche-panel-${id}`}
+                      aria-selected={isActive}
+                      onClick={() => {
+                        // Going TO the payment tab from "edit" still requires
+                        // a valid form for not-yet-closed fiches (so the
+                        // close-fiche flow has the right data). For closed
+                        // fiches the payment tab is read-only / append-only,
+                        // so no validation is needed.
+                        if (id === 'payment' && !isCompleted) {
+                          if (!validateForm()) return;
+                        }
+                        setActiveTopTab(id);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                        isActive
+                          ? 'border-primary text-primary-hover dark:text-primary/70'
+                          : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
+                      }`}
+                    >
+                      <Icon className="size-4" />
+                      {label}
+                    </button>
+                  );
+                })}
+            </div>
+          )}
+
           {activeTopTab === 'edit' ? (
             /* ══ MODIFICA TAB ═══════════════════════════════════════════════ */
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 xl:gap-8 flex-1 min-h-0 overflow-y-auto xl:overflow-visible">
+            <div
+              role="tabpanel"
+              id="fiche-panel-edit"
+              aria-labelledby="fiche-tab-edit"
+              className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 xl:gap-8 flex-1 min-h-0 overflow-y-auto xl:overflow-visible"
+            >
 
               {/* ── LEFT: Dettagli ── */}
               <div className="flex flex-col gap-5 xl:overflow-y-auto xl:pr-1">
@@ -1317,9 +1622,159 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                 {errorMessage && <p className="text-xs text-red-500 shrink-0">{errorMessage}</p>}
               </div>
             </div>
+          ) : activeTopTab === 'history' ? (
+            /* ══ CRONOLOGIA TAB ═════════════════════════════════════════════ */
+            <div
+              role="tabpanel"
+              id="fiche-panel-history"
+              aria-labelledby="fiche-tab-history"
+              className="flex flex-col flex-1 min-h-0"
+            >
+              {fiche?.id ? (
+                <FicheHistoryTab ficheId={fiche.id} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-3 text-zinc-400">
+                  <History className="size-10 opacity-30" />
+                  <p className="text-sm">Cronologia non disponibile.</p>
+                </div>
+              )}
+            </div>
+          ) : isCompleted ? (
+            /* ══ PAGAMENTO TAB — fiche già chiusa (read-only + append) ══════ */
+            <div
+              role="tabpanel"
+              id="fiche-panel-payment"
+              aria-labelledby="fiche-tab-payment"
+              className="grid gap-8 flex-1 min-h-0"
+              style={{ gridTemplateColumns: '320px 1fr' }}
+            >
+              <div className="overflow-y-auto min-h-0">
+                <FicheReceipt
+                  clientName={clientName}
+                  ficheId={fiche?.id}
+                  datetime={baseTime}
+                  services={ficheServices}
+                  products={ficheProducts}
+                  subtotal={subtotal}
+                  totalOverride={totalOverride}
+                  salonName={salonName}
+                  couponDiscounts={selectedCoupons.map((c) => ({
+                    label: c.coupon.kind === 'gift_card' ? 'Gift card' : 'Coupon',
+                    detail: c.coupon.displayDiscount(),
+                    amount: c.amount,
+                  }))}
+                />
+              </div>
+              <div className="flex flex-col gap-4 overflow-y-auto min-h-0">
+                {showPaymentMismatch && (
+                  <div
+                    role="status"
+                    className="rounded-lg border border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)] px-4 py-3 text-sm text-[var(--lume-warning-fg)]"
+                  >
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                      <p>
+                        Incassato <span className="font-semibold">{formatCurrency(paidSum)}</span>,
+                        totale ora <span className="font-semibold">{formatCurrency(closedFicheCurrentTotal)}</span>.{' '}
+                        {paymentDelta > 0
+                          ? `Aggiungi un pagamento da ${formatCurrency(paymentDelta)} per pareggiare.`
+                          : `Cliente in credito di ${formatCurrency(Math.abs(paymentDelta))}.`}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Pagamenti registrati
+                  </p>
+                  {existingPayments.length === 0 ? (
+                    <p className="text-sm text-zinc-400">Nessun pagamento registrato.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-2 list-none pl-0">
+                      {existingPayments.map((p) => {
+                        const methodLabel =
+                          p.method === FichePaymentMethod.CASH
+                            ? 'Contanti'
+                            : p.method === FichePaymentMethod.POS
+                              ? 'POS'
+                              : 'Altro';
+                        return (
+                          <li
+                            key={p.id}
+                            className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-zinc-500/20 bg-zinc-50/60 dark:bg-zinc-800/40 text-sm"
+                          >
+                            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+                              {methodLabel}
+                            </span>
+                            <span className="text-zinc-700 dark:text-zinc-200 font-mono">
+                              {formatCurrency(p.amount)}
+                            </span>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-auto">
+                              {format(new Date(p.created_at), 'd MMM yyyy', { locale: it })}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Append a new payment row to reconcile a delta. */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Aggiungi pagamento
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <CustomSelect
+                      value={appendMethod}
+                      onChange={(v) => setAppendMethod(v as FichePaymentMethod)}
+                      options={[
+                        { value: FichePaymentMethod.CASH, label: 'Contanti' },
+                        { value: FichePaymentMethod.POS, label: 'POS' },
+                        { value: FichePaymentMethod.OTHER, label: 'Altro' },
+                      ]}
+                      labelKey="label"
+                      valueKey="value"
+                      searchable={false}
+                      size="sm"
+                      classes="flex-1"
+                    />
+                    <CustomNumberInput
+                      value={appendAmount}
+                      onChange={(v) => setAppendAmount(v)}
+                      min={0}
+                      step={0.5}
+                      decimals={2}
+                      placeholder="0,00"
+                      suffix="€"
+                      size="sm"
+                      width="w-32"
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leadingIcon={Plus}
+                      onClick={handleAppendPayment}
+                      disabled={
+                        isAppendingPayment || !((appendAmount ?? 0) > 0)
+                      }
+                    >
+                      {isAppendingPayment ? 'Salvataggio…' : 'Aggiungi pagamento'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            /* ══ PAGAMENTO TAB ══════════════════════════════════════════════ */
-            <div className="grid gap-8 flex-1 min-h-0" style={{ gridTemplateColumns: '320px 1fr' }}>
+            /* ══ PAGAMENTO TAB — fiche da chiudere (close-flow) ═════════════ */
+            <div
+              role="tabpanel"
+              id="fiche-panel-payment"
+              aria-labelledby="fiche-tab-payment"
+              className="grid gap-8 flex-1 min-h-0"
+              style={{ gridTemplateColumns: '320px 1fr' }}
+            >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt
                   clientName={clientName}
@@ -1398,6 +1853,17 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           </p>
         )}
       </DeleteModal>
+
+      <ConfirmEditClosedFicheDialog
+        isOpen={showEditConfirm}
+        onClose={() => {
+          if (!isSubmitting) setShowEditConfirm(false);
+        }}
+        onConfirm={(reason) => {
+          void runPersist(reason);
+        }}
+        isSubmitting={isSubmitting}
+      />
     </>
   );
 }

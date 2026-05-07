@@ -19,6 +19,10 @@ interface AddModalProps {
   confirmText?: string;
   cancelText?: string;
   confirmDisabled?: boolean;
+  /** When true, the primary "confirm" button is omitted from the footer.
+   *  Useful for read-only views (e.g. an audit log tab) where the modal acts
+   *  as a viewer and there is no save action. */
+  hideConfirm?: boolean;
 }
 
 export function AddModal({
@@ -36,6 +40,7 @@ export function AddModal({
   confirmText = 'Aggiungi',
   cancelText = 'Annulla',
   confirmDisabled = false,
+  hideConfirm = false,
 }: AddModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
@@ -64,14 +69,16 @@ export function AddModal({
             <Button variant="secondary" leadingIcon={X} onClick={onClose}>
               {cancelText}
             </Button>
-            <Button
-              variant="primary"
-              leadingIcon={Check}
-              disabled={confirmDisabled}
-              onClick={onSubmit}
-            >
-              {confirmText}
-            </Button>
+            {!hideConfirm && (
+              <Button
+                variant="primary"
+                leadingIcon={Check}
+                disabled={confirmDisabled}
+                onClick={onSubmit}
+              >
+                {confirmText}
+              </Button>
+            )}
           </div>
         </div>
       </div>

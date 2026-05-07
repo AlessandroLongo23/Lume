@@ -107,9 +107,7 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
           ? 'Fuori orari di apertura'
           : conflict.reason === 'closed-day'
             ? 'Giorno di chiusura'
-            : conflict.reason === 'past'
-              ? 'Orario nel passato'
-              : 'Intervallo non valido'
+            : 'Intervallo non valido'
     : null;
 
   const warning = isWarningReason(conflict.reason);

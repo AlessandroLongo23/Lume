@@ -171,7 +171,9 @@ export function Calendar() {
         pendingDrop.after[0].end,
       );
 
-      if (client && (notify.email || notify.whatsapp)) {
+      const isPastMove = newStart.getTime() < Date.now();
+
+      if (!isPastMove && client && (notify.email || notify.whatsapp)) {
         const message = buildAppointmentChangeMessage({
           client: { firstName: client.firstName },
           oldStart,
@@ -268,6 +270,10 @@ export function Calendar() {
         onConfirm={handleConfirmChange}
         onCancel={handleCancelChange}
         isSubmitting={isPersisting}
+        isPastMove={
+          !!pendingDrop &&
+          Math.min(...pendingDrop.after.map((s) => s.start.getTime())) < Date.now()
+        }
       />
 
       <CalendarDragGhost pixelsPerSlot={PIXELS_PER_SLOT} timeStep={timeStep} />
