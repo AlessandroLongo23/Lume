@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Fiche } from '@/lib/types/Fiche';
+import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { updateFicheWithAudit } from '@/lib/actions/fiches';
@@ -142,12 +143,14 @@ export const useFichesStore = create<FichesState>((set) => ({
   closeFiche: async (ficheId, salonId, payments) => {
     const previousStatus = useFichesStore.getState().fiches.find((f) => f.id === ficheId)?.status;
 
-    // Step 1: mark fiche as completed
-    const { error: ficheErr } = await supabase
-      .from('fiches')
-      .update({ status: 'completed' })
-      .eq('id', ficheId);
-    if (ficheErr) throw new Error('Impossibile aggiornare lo stato della fiche.');
+    // Step 1: mark fiche as completed via the audit-aware RPC so the
+    // created → completed transition lands in fiche_edits. updateFiche
+    // also handles the optimistic local-state update and pendingMutationIds.
+    try {
+      await useFichesStore.getState().updateFiche(ficheId, { status: FicheStatus.COMPLETED });
+    } catch {
+      throw new Error('Impossibile aggiornare lo stato della fiche.');
+    }
 
     // Step 2: insert payment rows — rollback if this fails
     const rows = payments.map((p) => ({
@@ -158,20 +161,20 @@ export const useFichesStore = create<FichesState>((set) => ({
     }));
     const { error: payErr } = await supabase.from('fiche_payments').insert(rows);
     if (payErr) {
-      // Rollback: restore previous status
+      // Rollback: restore previous status. Routed through the RPC too so
+      // the rollback is itself audited (a second fiche_edits row showing
+      // completed → previousStatus). Best-effort: ignore failure here.
       if (previousStatus) {
-        await supabase.from('fiches').update({ status: previousStatus }).eq('id', ficheId);
+        try {
+          await useFichesStore.getState().updateFiche(ficheId, { status: previousStatus });
+        } catch {
+          // Surface to the original throw below; nothing else to do.
+        }
       }
       throw new Error('Impossibile registrare il pagamento. Stato della fiche ripristinato.');
     }
 
-    // Update local fiches state
-    set((s) => ({
-      fiches: s.fiches.map((f) =>
-        f.id === ficheId ? new Fiche({ ...f, status: 'completed' as typeof f.status }) : f
-      ),
-    }));
-
-    // fiche_payments store will be synced via realtime subscription in StoreInitializer
+    // Local fiches state already updated by updateFiche above; fiche_payments
+    // will be synced via realtime subscription in StoreInitializer.
   },
 }));

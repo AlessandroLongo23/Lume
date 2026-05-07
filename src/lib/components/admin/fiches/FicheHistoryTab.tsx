@@ -195,20 +195,36 @@ export function FicheHistoryTab({ ficheId }: FicheHistoryTabProps) {
 
   if (edits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3 text-zinc-400">
+      <div className="flex flex-col items-center justify-center flex-1 gap-3 text-zinc-400">
         <History className="size-10 opacity-30" />
         <p className="text-sm">Nessuna modifica registrata.</p>
+        <TrackedFieldsLegend />
       </div>
     );
   }
 
   return (
-    <div className="overflow-y-auto min-h-0 flex-1">
+    <div className="overflow-y-auto min-h-0 flex-1 flex flex-col">
       <ul className="flex flex-col divide-y divide-zinc-500/10 list-none pl-0">
         {edits.map((e) => (
           <EditRow key={e.id} edit={e} />
         ))}
       </ul>
+      <div className="mt-auto pt-3 border-t border-zinc-500/10">
+        <TrackedFieldsLegend />
+      </div>
     </div>
+  );
+}
+
+function TrackedFieldsLegend() {
+  // Sets expectations about scope: line-item churn (singolo servizio o
+  // prodotto aggiunto/rimosso) is intentionally not tracked here in v1.
+  return (
+    <p className="text-2xs text-zinc-400 dark:text-zinc-500 px-3 py-2 leading-relaxed">
+      La cronologia traccia modifiche a data, cliente, note, miscela, tecnica,
+      totale, stato della fiche e pagamenti. Le modifiche ai singoli servizi
+      o prodotti non sono ancora tracciate.
+    </p>
   );
 }

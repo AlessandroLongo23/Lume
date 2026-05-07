@@ -189,15 +189,13 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
       );
 
       if (ficheDatetimeUpdates.length > 0) {
+        // Route fiche.datetime updates through useFichesStore.updateFiche so
+        // the audit-aware RPC writes a fiche_edits row for each calendar
+        // drag. Without this, the most common edit on a closed/past fiche
+        // leaves no Cronologia entry — defeating the feature's promise.
         await Promise.all(
           ficheDatetimeUpdates.map((u) =>
-            supabase
-              .from('fiches')
-              .update({ datetime: u.next.toISOString() })
-              .eq('id', u.ficheId)
-              .then((res) => {
-                if (res.error) throw new Error(res.error.message);
-              }),
+            useFichesStore.getState().updateFiche(u.ficheId, { datetime: u.next }),
           ),
         );
       }

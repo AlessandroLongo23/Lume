@@ -149,17 +149,11 @@ export async function updateFicheWithAudit(
     switch (error.code) {
       case '42501':
         return { error: 'Non sei autorizzato a modificare questa fiche.' };
-      case '22023': {
-        // Try to extract the offending field name from messages like
-        // 'Field "foo" is not editable' or 'campo "foo" non modificabile'.
-        const match = error.message.match(/"([^"]+)"/);
-        const field = match?.[1];
-        return {
-          error: field
-            ? `Campo non modificabile: ${field}`
-            : 'Campo non modificabile: campo non valido',
-        };
-      }
+      case '22023':
+        // RPC raises 'Invalid patch fields: {a,b}' — passing the raw list
+        // through is more useful to the user than a generic message and
+        // saves us from brittle quoted-string parsing.
+        return { error: `Campo non modificabile: ${error.message}` };
       case 'P0002':
         return { error: 'Fiche non trovata.' };
       default:
