@@ -255,19 +255,30 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setTecnica(fiche.tecnica ?? '');
       setTotalOverride(fiche.total_override ?? null);
       setFicheServices(
-        fiche.getFicheServices().map((fs) => {
-          const svc = services.find((s) => s.id === fs.service_id);
-          return {
-            id: fs.id,
-            service_id: fs.service_id,
-            name: fs.name || svc?.name || 'Servizio',
-            operator_id: fs.operator_id ?? '',
-            duration: fs.duration,
-            list_price: fs.list_price,
-            final_price: fs.final_price,
-            abbonamento_id: fs.abbonamento_id ?? null,
-          };
-        }),
+        fiche
+          .getFicheServices()
+          // Sort chronologically: the store fetches without ORDER BY, and the
+          // modal drops start_time then re-derives display times sequentially
+          // from the array, so an unsorted array would both mis-render the
+          // services and (on Save) clobber the persisted order.
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+          )
+          .map((fs) => {
+            const svc = services.find((s) => s.id === fs.service_id);
+            return {
+              id: fs.id,
+              service_id: fs.service_id,
+              name: fs.name || svc?.name || 'Servizio',
+              operator_id: fs.operator_id ?? '',
+              duration: fs.duration,
+              list_price: fs.list_price,
+              final_price: fs.final_price,
+              abbonamento_id: fs.abbonamento_id ?? null,
+            };
+          }),
       );
       setFicheProducts(
         fiche.getFicheProducts().map((fp: FicheProduct) => {
