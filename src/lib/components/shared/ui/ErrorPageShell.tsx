@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { ArrowRight, LucideIcon, X } from 'lucide-react';
 
 type ErrorPageShellProps = {
   code?: string;
@@ -15,6 +16,7 @@ type ErrorPageShellProps = {
   extraAction?: {
     label: string;
     onClick: () => void;
+    icon?: LucideIcon;
   };
 };
 
@@ -91,13 +93,13 @@ export function ErrorPageShell({
         </div>
 
         <div className="flex flex-wrap justify-center gap-3">
-          <Button variant="primary" onClick={goNow}>Vai ora</Button>
           {!cancelled && (
-            <Button variant="secondary" onClick={() => setCancelled(true)}>Annulla</Button>
+            <Button variant="secondary" leadingIcon={X} onClick={() => setCancelled(true)}>Annulla</Button>
           )}
           {extraAction && (
-            <Button variant="secondary" onClick={extraAction.onClick}>{extraAction.label}</Button>
+            <Button variant="secondary" leadingIcon={extraAction.icon} onClick={extraAction.onClick}>{extraAction.label}</Button>
           )}
+          <Button variant="primary" trailingIcon={ArrowRight} onClick={goNow}>Vai ora</Button>
         </div>
       </div>
     </main>
