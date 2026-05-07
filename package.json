@@ -33,7 +33,6 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "html-to-image": "^1.11.13",
-    "inngest": "^4.2.6",
     "libphonenumber-js": "^1.12.42",
     "lucide-react": "^1.7.0",
     "motion": "^12.38.0",
