@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Link2, KeyRound } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Link2, KeyRound, Clock, Send, XCircle } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
@@ -30,6 +30,8 @@ export default function OperatorDetailPage() {
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const archiveOperator = useOperatorsStore((s) => s.archiveOperator);
   const restoreOperator = useOperatorsStore((s) => s.restoreOperator);
+  const pendingInvites = useOperatorsStore((s) => s.pendingInvites);
+  const fetchPendingInvites = useOperatorsStore((s) => s.fetchPendingInvites);
   const role = useSubscriptionStore((s) => s.role);
   const canEdit = canManageSalon(role);
 
@@ -40,7 +42,47 @@ export default function OperatorDetailPage() {
   const [showAddCredentials, setShowAddCredentials] = useState(false);
   const [editedOperator, setEditedOperator] = useState<Partial<Operator>>({});
 
+  const pendingInvite = operator
+    ? (pendingInvites.find(
+        (inv) => operator.email && inv.email.toLowerCase() === operator.email!.toLowerCase(),
+      ) ?? null)
+    : null;
+
   const operatorId = params.id as string;
+
+  const handleReinvite = async () => {
+    if (!operator) return;
+    try {
+      const res = await fetch('/api/memberships/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operatorId: operator.id }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      messagePopup.getState().success('Invito inviato nuovamente.');
+      await fetchPendingInvites();
+    } catch (err) {
+      messagePopup.getState().error(err instanceof Error ? err.message : 'Errore.');
+    }
+  };
+
+  const handleRevokeInvite = async () => {
+    if (!pendingInvite) return;
+    try {
+      const res = await fetch('/api/memberships/invite', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteId: pendingInvite.id }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      messagePopup.getState().success('Invito revocato.');
+      await fetchPendingInvites();
+    } catch (err) {
+      messagePopup.getState().error(err instanceof Error ? err.message : 'Errore.');
+    }
+  };
 
   const handleToggleArchive = async () => {
     if (!operator) return;
@@ -143,6 +185,11 @@ export default function OperatorDetailPage() {
                   Account collegato
                 </DetailChip>
               )}
+              {pendingInvite && !operator.isArchived && (
+                <DetailChip tone="amber" icon={Clock}>
+                  Invito in attesa
+                </DetailChip>
+              )}
               {!linkedToUser && !operator.isArchived && canEdit && (
                 <DetailChip
                   tone="zinc"
@@ -169,6 +216,20 @@ export default function OperatorDetailPage() {
               onCancel={() => {}}
               onSave={() => {}}
               menuItems={[
+                ...(pendingInvite && canEdit
+                  ? [
+                      {
+                        label: 'Invia di nuovo l\'invito',
+                        icon: Send,
+                        onClick: handleReinvite,
+                      },
+                      {
+                        label: 'Revoca invito',
+                        icon: XCircle,
+                        onClick: handleRevokeInvite,
+                      },
+                    ]
+                  : []),
                 {
                   label: operator.isArchived ? 'Ripristina' : 'Archivia',
                   icon: operator.isArchived ? ArchiveRestore : Archive,
