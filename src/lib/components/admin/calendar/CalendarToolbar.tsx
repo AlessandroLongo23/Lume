@@ -9,7 +9,7 @@ import { useCalendarStore } from '@/lib/stores/calendar';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CalendarDatePicker } from './CalendarDatePicker';
-import { OperatorChips } from './OperatorChips';
+import { OperatorFilterButton } from './OperatorFilterButton';
 import { HoveredTimePreview } from './CalendarHeader';
 import type { Operator } from '@/lib/types/Operator';
 
@@ -97,12 +97,8 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
         </Button>
       </div>
 
-      {/* Right: operator chips + view toggle */}
-      <div className="flex items-center justify-end gap-3 min-w-0 basis-0 grow shrink">
-        <div className="min-w-0 flex">
-          <OperatorChips onAddFerie={onAddFerie} />
-        </div>
-
+      {/* Right: view toggle + operator filter */}
+      <div className="flex items-center justify-end gap-2 min-w-0 basis-0 grow shrink">
         <ToggleButton
           options={[...VIEW_VALUES]}
           value={currentView}
@@ -110,6 +106,7 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
           labels={VIEW_LABELS}
           className="shrink-0"
         />
+        <OperatorFilterButton onAddFerie={onAddFerie} />
       </div>
     </div>
   );
