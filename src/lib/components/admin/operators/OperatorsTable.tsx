@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, ArchiveRestore } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Trash2, ArchiveRestore, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -32,6 +32,11 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
   const router = useRouter();
   const isLoading = useOperatorsStore((s) => s.isLoading);
   const restoreOperator = useOperatorsStore((s) => s.restoreOperator);
+  const pendingInvites = useOperatorsStore((s) => s.pendingInvites);
+  const pendingEmailSet = useMemo(
+    () => new Set(pendingInvites.map((inv) => inv.email.toLowerCase())),
+    [pendingInvites],
+  );
 
   const [showDelete, setShowDelete] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -97,6 +102,21 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       },
     },
     {
+      id: 'invite_status',
+      header: '',
+      cell: ({ row }) => {
+        const email = row.original.email?.toLowerCase();
+        if (!email || !pendingEmailSet.has(email)) return null;
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400 whitespace-nowrap">
+            <Clock className="size-3 shrink-0" />
+            Invito in attesa
+          </span>
+        );
+      },
+      enableSorting: false,
+    },
+    {
       id: 'phone',
       header: 'Telefono',
       cell: ({ row }) => (
@@ -114,7 +134,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       ),
       enableSorting: false,
     },
-  ], []);
+  ], [pendingEmailSet]);
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('operators', columns);
