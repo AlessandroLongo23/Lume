@@ -163,8 +163,8 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
       <div className="relative">
         <Button
           ref={triggerRef}
-          variant="ghost"
-          size="sm"
+          variant="secondary"
+          size="md"
           iconOnly
           aria-label="Filtra operatori"
           aria-expanded={open}
