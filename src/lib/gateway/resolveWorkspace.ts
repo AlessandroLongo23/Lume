@@ -1,7 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { normalizeProfileRole } from '@/lib/auth/roles';
 import type { GatewayResult, WorkspaceContext } from '@/lib/types/Workspace';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — mirrors /api/platform/enter-salon
@@ -13,39 +12,31 @@ function getAdminClient() {
   );
 }
 
+type SalonJoin = { id: string; name: string; onboarded_at: string | null };
+
 /**
  * Resolves all workspace contexts for a given auth user ID.
  *
- * Runs three DB queries in parallel:
- *  - salons they own (owner_id = userId)
- *  - salons they operate in (operators.user_id = userId)
- *  - salons they are clients of (clients.user_id = userId)
- *
- * Returns a GatewayResult with pre-computed redirect and activeSalonId
- * so callers never need to re-implement the routing logic.
+ * Source of truth for "which salons does this person belong to" is now
+ * public.user_salon_memberships. Client contexts still come from clients.user_id.
  */
 export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const supabaseAdmin = getAdminClient();
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('role')
+    .select('is_platform_admin')
     .eq('id', userId)
-    .maybeSingle<{ role: string | null }>();
+    .maybeSingle<{ is_platform_admin: boolean }>();
 
-  const isAdmin = normalizeProfileRole(profile) === 'admin';
+  const isAdmin = !!profile?.is_platform_admin;
 
-  const [ownedResult, operatorResult, clientResult] = await Promise.all([
+  const [membershipsResult, clientResult] = await Promise.all([
     supabaseAdmin
-      .from('salons')
-      .select('id, name, onboarded_at')
-      .eq('owner_id', userId),
-
-    supabaseAdmin
-      .from('operators')
-      .select('salon_id, salons(id, name)')
+      .from('user_salon_memberships')
+      .select('salon_id, role, is_primary, salons:salons(id, name, onboarded_at)')
       .eq('user_id', userId)
-      .is('archived_at', null),
+      .order('joined_at', { ascending: true }),
 
     supabaseAdmin
       .from('clients')
@@ -53,24 +44,25 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
       .eq('user_id', userId),
   ]);
 
-  // --- Build businessContexts (owner takes precedence over operator for same salon) ---
+  // --- Build businessContexts from memberships ---
   const businessContexts: WorkspaceContext[] = [];
-  const seenSalonIds = new Set<string>();
-  // Track which owned salons haven't completed onboarding so we can route the
-  // owner to /onboarding/import instead of straight to the calendar.
+  // Track owned-salon onboarding state so a fresh owner with one salon lands
+  // in the import wizard rather than the empty calendar.
   const ownedNeedingOnboarding = new Set<string>();
 
-  for (const salon of (ownedResult.data ?? []) as Array<{ id: string; name: string; onboarded_at: string | null }>) {
-    businessContexts.push({ type: 'business', salonId: salon.id, salonName: salon.name, role: 'owner' });
-    seenSalonIds.add(salon.id);
-    if (!salon.onboarded_at) ownedNeedingOnboarding.add(salon.id);
-  }
-
-  for (const row of operatorResult.data ?? []) {
-    const salon = row.salons as unknown as { id: string; name: string } | null;
-    if (!salon || seenSalonIds.has(salon.id)) continue;
-    businessContexts.push({ type: 'business', salonId: salon.id, salonName: salon.name, role: 'operator' });
-    seenSalonIds.add(salon.id);
+  for (const row of membershipsResult.data ?? []) {
+    const salon = row.salons as unknown as SalonJoin | null;
+    if (!salon) continue;
+    const role = row.role as 'owner' | 'operator';
+    businessContexts.push({
+      type:      'business',
+      salonId:   salon.id,
+      salonName: salon.name,
+      role,
+    });
+    if (role === 'owner' && !salon.onboarded_at) {
+      ownedNeedingOnboarding.add(salon.id);
+    }
   }
 
   // --- Build clientContexts ---
@@ -87,9 +79,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
 
   if (isAdmin) {
     // The super_admin_impersonation table is the source of truth for RLS. The
-    // cookies are fast-path UI hints that should mirror it. If they disagree
-    // (legacy cookies, a stale httpOnly cookie surviving a logout, direct DB
-    // edits, etc.), trust the table and resync the cookies to match.
+    // cookies are fast-path UI hints that should mirror it. Resync if they drift.
     const cookieStore = await cookies();
     const cookieSalonId = cookieStore.get('lume-active-salon-id')?.value ?? null;
     const cookieImpersonating = cookieStore.get('lume-impersonating')?.value === '1';
@@ -154,8 +144,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   if (hasBusiness && !hasClient) {
     if (businessContexts.length === 1) {
       const onlySalonId = businessContexts[0].salonId;
-      // First-run: an owner with one salon that hasn't completed onboarding
-      // lands in the bulk-import wizard rather than the empty calendar.
+      // First-run: an owner with one un-onboarded salon lands in the import wizard.
       redirect      = ownedNeedingOnboarding.has(onlySalonId) ? '/onboarding/import' : '/admin/calendario';
       activeSalonId = onlySalonId;
     } else {
