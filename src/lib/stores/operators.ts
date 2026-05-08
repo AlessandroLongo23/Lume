@@ -8,7 +8,9 @@ interface OperatorsState {
   isLoading: boolean;
   error: string | null;
   selectedOperator: Operator | null;
+  pendingInvites: { id: string; email: string }[];
   fetchOperators: () => Promise<void>;
+  fetchPendingInvites: () => Promise<void>;
   addOperator: (operatorData: Partial<Operator>) => Promise<{ operator: Operator; invited: boolean }>;
   addCredentials: (operatorId: string, credentials: { email: string; password: string }) => Promise<void>;
   updateOperator: (operatorId: string, updatedOperator: Partial<Operator>) => Promise<Operator>;
@@ -26,6 +28,7 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
   isLoading: true,
   error: null,
   selectedOperator: null,
+  pendingInvites: [],
 
   fetchOperators: async () => {
     set((s) => ({ ...s, isLoading: true }));
@@ -35,6 +38,23 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
       return;
     }
     set({ operators: data.map((o) => new Operator(o)), isLoading: false, error: null });
+    const { data: invites } = await supabase
+      .from('pending_membership_invites')
+      .select('id, email')
+      .is('claimed_at', null)
+      .is('declined_at', null)
+      .gt('expires_at', new Date().toISOString());
+    set({ pendingInvites: invites ?? [] });
+  },
+
+  fetchPendingInvites: async () => {
+    const { data } = await supabase
+      .from('pending_membership_invites')
+      .select('id, email')
+      .is('claimed_at', null)
+      .is('declined_at', null)
+      .gt('expires_at', new Date().toISOString());
+    set({ pendingInvites: data ?? [] });
   },
 
   addOperator: async (operatorData) => {
