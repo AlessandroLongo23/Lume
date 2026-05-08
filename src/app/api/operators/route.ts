@@ -3,6 +3,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon } from '@/lib/auth/roles';
+import { randomBytes } from 'crypto';
+import { sendMembershipInviteEmail } from '@/lib/email/membershipInvite';
 
 function getAdminClient() {
   return createClient(
@@ -11,31 +13,104 @@ function getAdminClient() {
   );
 }
 
-/**
- * Returns true if the email already belongs to an auth.users identity in the
- * system (denormalized via profiles or clients). The cross-salon collision
- * graceful flow lives in identity sub-problem #03; until that lands, we just
- * surface a clean 409 here.
- */
-async function emailAlreadyTaken(
+type ExistingUserLookup = {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+} | null;
+
+async function findExistingUser(
   supabaseAdmin: ReturnType<typeof getAdminClient>,
   email: string,
-): Promise<boolean> {
+): Promise<ExistingUserLookup> {
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-  if (profile?.id) return true;
+    .select('id, first_name, last_name')
+    .eq('email', email.toLowerCase())
+    .maybeSingle<{ id: string; first_name: string | null; last_name: string | null }>();
+
+  if (profile?.id) {
+    return { userId: profile.id, firstName: profile.first_name, lastName: profile.last_name };
+  }
 
   const { data: existingClient } = await supabaseAdmin
     .from('clients')
     .select('user_id')
-    .eq('email', email)
+    .eq('email', email.toLowerCase())
     .not('user_id', 'is', null)
     .limit(1)
-    .maybeSingle();
-  return !!existingClient?.user_id;
+    .maybeSingle<{ user_id: string }>();
+
+  if (existingClient?.user_id) {
+    return { userId: existingClient.user_id, firstName: null, lastName: null };
+  }
+
+  return null;
+}
+
+const NEUTRAL_INVITE_RESPONSE =
+  "Se l'email è già registrata su Lume, l'operatore riceverà un invito a unirsi al tuo salone. Altrimenti, l'account è stato creato con la password indicata.";
+
+async function issueInvite(
+  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  params: {
+    salonId: string;
+    email: string;
+    invitedBy: string;
+    inviteeFirstName: string;
+  },
+): Promise<void> {
+  await supabaseAdmin
+    .from('pending_membership_invites')
+    .update({ declined_at: new Date().toISOString() })
+    .eq('salon_id', params.salonId)
+    .eq('email', params.email.toLowerCase())
+    .is('claimed_at', null)
+    .is('declined_at', null);
+
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count } = await supabaseAdmin
+    .from('pending_membership_invites')
+    .select('id', { count: 'exact', head: true })
+    .eq('salon_id', params.salonId)
+    .gte('created_at', since);
+
+  if ((count ?? 0) >= 10) {
+    throw Object.assign(new Error('rate_limited'), { status: 429 });
+  }
+
+  const token = randomBytes(32).toString('base64url');
+
+  const { error: inviteError } = await supabaseAdmin
+    .from('pending_membership_invites')
+    .insert({
+      token,
+      salon_id:    params.salonId,
+      email:       params.email.toLowerCase(),
+      target_role: 'operator',
+      invited_by:  params.invitedBy,
+    });
+
+  if (inviteError) throw inviteError;
+
+  const [salonData, ownerData] = await Promise.all([
+    supabaseAdmin.from('salons').select('name').eq('id', params.salonId).single(),
+    supabaseAdmin.from('profiles').select('first_name, last_name').eq('id', params.invitedBy).single(),
+  ]);
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.lumeapp.it';
+  const ownerName = ownerData.data
+    ? `${ownerData.data.first_name ?? ''} ${ownerData.data.last_name ?? ''}`.trim()
+    : 'Il titolare del salone';
+
+  await sendMembershipInviteEmail({
+    toEmail:     params.email,
+    toFirstName: params.inviteeFirstName,
+    ownerName,
+    salonName:   salonData.data?.name ?? 'il salone',
+    token,
+    baseUrl,
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -77,16 +152,56 @@ export async function POST(request: NextRequest) {
     // Branch 1: no-auth operator. Skip auth.users + profiles entirely.
     // Branch 2/3: account requested. Detect collision (#03) before creating.
     if (wantsAccount) {
-      const collision = await emailAlreadyTaken(supabaseAdmin, email!);
-      if (collision) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Questa email è già registrata. Per ora utilizza un'email diversa o crea l'operatore senza account.",
-          },
-          { status: 409 },
-        );
+      const existingUser = await findExistingUser(supabaseAdmin, email!);
+      if (existingUser) {
+        // Idempotency: if an operator row already exists for this user at this salon, reuse it.
+        const { data: existingOp } = await supabaseAdmin
+          .from('operators')
+          .select('*')
+          .eq('user_id', existingUser.userId)
+          .eq('salon_id', profile.salon_id)
+          .maybeSingle();
+
+        let operatorRow: Record<string, unknown>;
+        if (existingOp) {
+          operatorRow = existingOp as Record<string, unknown>;
+        } else {
+          const { data: insertedOp, error: opError } = await supabaseAdmin
+            .from('operators')
+            .insert({
+              salon_id:            profile.salon_id,
+              user_id:             existingUser.userId,
+              must_change_password: false,
+              firstName:           operator.firstName,
+              lastName:            operator.lastName,
+              email:               email!.toLowerCase(),
+              phonePrefix,
+              phoneNumber,
+            })
+            .select()
+            .single();
+          if (opError) throw opError;
+          operatorRow = insertedOp as Record<string, unknown>;
+        }
+
+        try {
+          await issueInvite(supabaseAdmin, {
+            salonId:          profile.salon_id,
+            email:            email!,
+            invitedBy:        profile.id,
+            inviteeFirstName: existingUser.firstName ?? operator.firstName ?? 'Operatore',
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error && 'status' in err && (err as { status: number }).status === 429) {
+            return NextResponse.json(
+              { success: false, error: "Troppe invitazioni in un'ora. Riprova più tardi." },
+              { status: 429 },
+            );
+          }
+          console.error('issueInvite failed in POST (invite row may still exist):', err);
+        }
+
+        return NextResponse.json({ success: true, operator: operatorRow, invited: true, message: NEUTRAL_INVITE_RESPONSE });
       }
 
       // Branch 3: net new email — create auth user + profile, link operator.
@@ -232,15 +347,33 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      const collision = await emailAlreadyTaken(supabaseAdmin, newEmail);
-      if (collision) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Questa email è già registrata. Utilizza un'email diversa.",
-          },
-          { status: 409 },
-        );
+      const existingUser = await findExistingUser(supabaseAdmin, newEmail);
+      if (existingUser) {
+        const { error: updateError } = await supabaseAdmin
+          .from('operators')
+          .update({ user_id: existingUser.userId, email: newEmail.toLowerCase() })
+          .eq('id', id)
+          .eq('salon_id', profile.salon_id);
+        if (updateError) throw updateError;
+
+        try {
+          await issueInvite(supabaseAdmin, {
+            salonId:          profile.salon_id,
+            email:            newEmail,
+            invitedBy:        profile.id,
+            inviteeFirstName: existingUser.firstName ?? existing.firstName ?? 'Operatore',
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error && 'status' in err && (err as { status: number }).status === 429) {
+            return NextResponse.json(
+              { success: false, error: "Troppe invitazioni in un'ora. Riprova più tardi." },
+              { status: 429 },
+            );
+          }
+          console.error('issueInvite failed in addCredentials (invite row may still exist):', err);
+        }
+
+        return NextResponse.json({ success: true, invited: true, message: NEUTRAL_INVITE_RESPONSE });
       }
 
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
