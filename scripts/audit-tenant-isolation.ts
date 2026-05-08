@@ -59,6 +59,7 @@ const TENANT_TABLES = [
   // (rows with salon_id != expectedSalonId) is the correct invariant.
   'user_active_salon',
   'user_salon_memberships',
+  'pending_membership_invites',
 ] as const;
 
 type Creds = { email: string; password: string };
