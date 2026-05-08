@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
@@ -8,18 +9,6 @@ function getAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
-}
-
-async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getAdminClient();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('id, salon_id, role')
-    .eq('id', user.id)
-    .single();
-  return profile;
 }
 
 type IncomingAbbonamento = {

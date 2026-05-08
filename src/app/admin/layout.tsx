@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeftOpen, Repeat } from 'lucide-react';
 import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
@@ -26,6 +26,7 @@ import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { usePreferencesStore } from '@/lib/stores/preferences';
+import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useAppearanceSync } from '@/lib/hooks/useAppearanceSync';
 import { useViewsHydration } from '@/lib/hooks/useViewsHydration';
 import { isOwner, normalizeProfileRole } from '@/lib/auth/roles';
@@ -129,6 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isAdmin = useSubscriptionStore((s) => s.isAdmin);
   const avatarUrl = usePreferencesStore((s) => s.avatarUrl);
   const isImpersonating = useIsImpersonating();
+  const businessContextsCount = useWorkspaceStore((s) => s.businessContexts.length);
 
   const controller = useCommandMenuController();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
@@ -208,6 +210,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         icon: CreditCard,
       });
     }
+    if (businessContextsCount > 1) {
+      items.push({
+        type: 'link',
+        label: 'Cambia salone',
+        href: '/select-salon',
+        icon: Repeat,
+      });
+    }
     items.push({
       type: 'button',
       label: 'Esci',
@@ -223,7 +233,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       },
     });
     return items;
-  }, [role]);
+  }, [role, businessContextsCount]);
 
   const sidebar = (
     <Sidebar

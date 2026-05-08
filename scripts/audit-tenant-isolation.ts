@@ -54,6 +54,11 @@ const TENANT_TABLES = [
   'services',
   'spese',
   'suppliers',
+  // Identity refactor #04 — both have salon_id and RLS that combines a
+  // user-scoped policy with a salon-staff policy. The audit's leak detector
+  // (rows with salon_id != expectedSalonId) is the correct invariant.
+  'user_active_salon',
+  'user_salon_memberships',
 ] as const;
 
 type Creds = { email: string; password: string };
