@@ -9,7 +9,7 @@ interface OperatorsState {
   error: string | null;
   selectedOperator: Operator | null;
   fetchOperators: () => Promise<void>;
-  addOperator: (operatorData: Partial<Operator>) => Promise<Operator>;
+  addOperator: (operatorData: Partial<Operator>) => Promise<{ operator: Operator; invited: boolean }>;
   addCredentials: (operatorId: string, credentials: { email: string; password: string }) => Promise<void>;
   updateOperator: (operatorId: string, updatedOperator: Partial<Operator>) => Promise<Operator>;
   archiveOperator: (operatorId: string) => Promise<void>;
@@ -45,7 +45,7 @@ export const useOperatorsStore = create<OperatorsState>((set) => ({
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
-    return new Operator(result.operator);
+    return { operator: new Operator(result.operator), invited: result.invited ?? false };
   },
 
   addCredentials: async (operatorId, { email, password }) => {

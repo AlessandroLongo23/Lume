@@ -48,11 +48,12 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
     if (Object.values(e).some(Boolean)) return;
 
     try {
-      // Don't send a placeholder password when no account is being created —
-      // the API uses the presence of password to decide whether to provision auth.
       const payload = willCreateAccount ? { ...op } : { ...op, password: '' };
-      await addOperator(payload);
-      messagePopup.getState().success('Operatore aggiunto con successo');
+      const result = await addOperator(payload);
+      const msg = result.invited
+        ? "Se l'email è già registrata su Lume, l'operatore riceverà un invito a unirsi al tuo salone. Altrimenti, l'account è stato creato con la password indicata."
+        : 'Operatore aggiunto con successo';
+      messagePopup.getState().success(msg);
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
