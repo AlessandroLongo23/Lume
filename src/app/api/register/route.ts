@@ -155,6 +155,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
     }
 
+    // 3b. Insert membership (canonical "this user is owner of this salon").
+    //     profiles.role and profiles.salon_id stay populated until PR C drops them.
+    //     is_primary=true because this is the user's first/only salon today; if
+    //     they already have other memberships (rare during transition), the
+    //     unique partial index will prevent dual primaries — handle by clearing
+    //     the existing primary first.
+    const { data: existingPrimary } = await supabaseAdmin
+      .from('user_salon_memberships')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_primary', true)
+      .maybeSingle();
+
+    if (existingPrimary) {
+      await supabaseAdmin
+        .from('user_salon_memberships')
+        .update({ is_primary: false })
+        .eq('id', existingPrimary.id);
+    }
+
+    const { error: membershipError } = await supabaseAdmin
+      .from('user_salon_memberships')
+      .insert({
+        user_id:    userId,
+        salon_id:   salonId,
+        role:       'owner',
+        is_primary: true,
+      });
+
+    if (membershipError) {
+      console.error('Membership insert failed:', membershipError);
+      await rollbackProfile(supabaseAdmin, userId);
+      await rollbackSalon(supabaseAdmin, salonId!);
+      if (createdAuthUser) await rollbackUser(supabaseAdmin, userId);
+      return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
+    }
+
+    // 3c. Set user_active_salon so the next request to getCallerProfile
+    //     resolves cleanly without falling back through the COALESCE chain.
+    await supabaseAdmin
+      .from('user_active_salon')
+      .upsert({ user_id: userId, salon_id: salonId }, { onConflict: 'user_id' });
+
     // 4. Auto-insert Owner as an Operator (bookable resource on the calendar)
     const { error: operatorError } = await supabaseAdmin
       .from('operators')
@@ -197,5 +240,13 @@ async function rollbackSalon(admin: ReturnType<typeof getAdminClient>, salonId: 
     await admin.from('salons').delete().eq('id', salonId);
   } catch (e) {
     console.error('Rollback: failed to delete salon', salonId, e);
+  }
+}
+
+async function rollbackProfile(admin: ReturnType<typeof getAdminClient>, userId: string) {
+  try {
+    await admin.from('profiles').delete().eq('id', userId);
+  } catch (e) {
+    console.error('Rollback: failed to delete profile', userId, e);
   }
 }

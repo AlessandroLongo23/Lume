@@ -116,6 +116,19 @@ export async function POST(request: NextRequest) {
           role: 'operator',
         });
       if (profileError) throw profileError;
+
+      // Membership: this operator can act as an operator at this salon.
+      // is_primary=false because operators added by an owner shouldn't take over
+      // the user's primary-salon flag (the user might be an owner elsewhere).
+      const { error: membershipError } = await supabaseAdmin
+        .from('user_salon_memberships')
+        .insert({
+          user_id:    createdAuthUserId,
+          salon_id:   profile.salon_id,
+          role:       'operator',
+          is_primary: false,
+        });
+      if (membershipError) throw membershipError;
     }
 
     const { data: insertedOperator, error: dbError } = await supabaseAdmin
@@ -135,6 +148,7 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       if (createdAuthUserId) {
+        await supabaseAdmin.from('user_salon_memberships').delete().eq('user_id', createdAuthUserId);
         await supabaseAdmin.from('profiles').delete().eq('id', createdAuthUserId);
         await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
       }
@@ -146,6 +160,7 @@ export async function POST(request: NextRequest) {
     if (createdAuthUserId) {
       try {
         const supabaseAdmin = getAdminClient();
+        await supabaseAdmin.from('user_salon_memberships').delete().eq('user_id', createdAuthUserId);
         await supabaseAdmin.from('profiles').delete().eq('id', createdAuthUserId);
         await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
       } catch { /* best-effort cleanup */ }
@@ -257,6 +272,21 @@ export async function PATCH(request: NextRequest) {
         throw profileError;
       }
 
+      // Same membership write as the POST/auth path.
+      const { error: membershipError } = await supabaseAdmin
+        .from('user_salon_memberships')
+        .insert({
+          user_id:    newUserId,
+          salon_id:   profile.salon_id,
+          role:       'operator',
+          is_primary: false,
+        });
+      if (membershipError) {
+        await supabaseAdmin.from('profiles').delete().eq('id', newUserId);
+        await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        throw membershipError;
+      }
+
       const { error: dbError } = await supabaseAdmin
         .from('operators')
         .update({
@@ -267,6 +297,7 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
         .eq('salon_id', profile.salon_id);
       if (dbError) {
+        await supabaseAdmin.from('user_salon_memberships').delete().eq('user_id', newUserId);
         await supabaseAdmin.from('profiles').delete().eq('id', newUserId);
         await supabaseAdmin.auth.admin.deleteUser(newUserId);
         throw dbError;
@@ -318,8 +349,45 @@ export async function DELETE(request: NextRequest) {
     if (dbError) throw dbError;
 
     if (operatorData.user_id) {
-      await supabaseAdmin.from('profiles').delete().eq('id', operatorData.user_id);
-      await supabaseAdmin.auth.admin.deleteUser(operatorData.user_id);
+      // Drop the membership for this salon. This is unconditional — even if
+      // there's no row (e.g. legacy operator created before memberships
+      // existed), the delete is a no-op.
+      await supabaseAdmin
+        .from('user_salon_memberships')
+        .delete()
+        .eq('user_id', operatorData.user_id)
+        .eq('salon_id', profile.salon_id);
+
+      // Only delete the auth identity if this user has no remaining
+      // attachments to ANY salon. With multi-salon memberships, the user might
+      // be an owner or operator elsewhere — preserve their account.
+      const [otherMemberships, clientLinks] = await Promise.all([
+        supabaseAdmin
+          .from('user_salon_memberships')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', operatorData.user_id),
+        supabaseAdmin
+          .from('clients')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', operatorData.user_id),
+      ]);
+
+      const hasOtherMemberships = (otherMemberships.count ?? 0) > 0;
+      const hasClientLinks      = (clientLinks.count ?? 0) > 0;
+
+      if (!hasOtherMemberships && !hasClientLinks) {
+        await supabaseAdmin.from('user_active_salon').delete().eq('user_id', operatorData.user_id);
+        await supabaseAdmin.from('profiles').delete().eq('id', operatorData.user_id);
+        await supabaseAdmin.auth.admin.deleteUser(operatorData.user_id);
+      } else {
+        // Keep the auth user but make sure their active salon isn't this
+        // (now-removed) one.
+        await supabaseAdmin
+          .from('user_active_salon')
+          .delete()
+          .eq('user_id', operatorData.user_id)
+          .eq('salon_id', profile.salon_id);
+      }
     }
 
     return NextResponse.json({ success: true });

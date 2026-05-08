@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -41,6 +49,11 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(`${origin}${result.redirect}`);
 
     if (result.activeSalonId) {
+      // Mirror cookie + DB. Cookie is the UI hint, user_active_salon is the
+      // RLS-side truth (read by get_user_salon_id() before falling back to
+      // the primary membership). Without the DB write, every subsequent
+      // request would fall through the COALESCE chain — usually fine, but
+      // tightens behavior when a user has 1 membership + clients.user_id.
       response.cookies.set('lume-active-salon-id', result.activeSalonId, {
         httpOnly: true,
         secure:   process.env.NODE_ENV === 'production',
@@ -48,6 +61,14 @@ export async function GET(request: NextRequest) {
         path:     '/',
         maxAge:   COOKIE_MAX_AGE,
       });
+
+      const supabaseAdmin = getAdminClient();
+      await supabaseAdmin
+        .from('user_active_salon')
+        .upsert(
+          { user_id: data.user.id, salon_id: result.activeSalonId, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' },
+        );
     }
 
     return response;
