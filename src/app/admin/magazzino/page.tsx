@@ -278,7 +278,6 @@ export default function MagazzinoPage() {
           ) : (
             <ProductsTab
               products={visibleProducts}
-              trackInventory={trackInventory}
               onAdd={openAddSheet}
               showArchived={productsShowArchived}
             />

@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Package, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
+import { Package, Plus, Minus, ArrowDownToLine, ChevronUp, ChevronDown, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useProductsStore } from '@/lib/stores/products';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -44,6 +44,64 @@ function StockBadge({ stock_quantity, min_threshold }: { stock_quantity: number;
       {isLow && <Package className="size-3" />}
       {stock_quantity}
     </span>
+  );
+}
+
+// ─── Stock adjuster (inline +/− with debounced API write) ────────────────────
+
+function StockAdjuster({ productId, initialQuantity, minThreshold }: {
+  productId: string;
+  initialQuantity: number;
+  minThreshold: number;
+}) {
+  const adjustStock = useProductsStore((s) => s.adjustStock);
+  const [localQty, setLocalQty] = useState(initialQuantity);
+  const pendingDeltaRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Sync with external stock changes (realtime) when no user edit is in flight
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (pendingDeltaRef.current === 0) setLocalQty(initialQuantity);
+  }, [initialQuantity]);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  const adjust = (e: React.MouseEvent, delta: number) => {
+    e.stopPropagation();
+    setLocalQty((q) => q + delta);
+    pendingDeltaRef.current += delta;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      const d = pendingDeltaRef.current;
+      pendingDeltaRef.current = 0;
+      if (d === 0) return;
+      adjustStock(productId, d).catch(() => {
+        setLocalQty((q) => q - d);
+      });
+    }, 300);
+  };
+
+  return (
+    <div className="flex items-center gap-1" data-no-row-click>
+      <button
+        onClick={(e) => adjust(e, -1)}
+        className="size-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        aria-label="Riduci giacenza"
+      >
+        <Minus className="size-3" />
+      </button>
+      <StockBadge stock_quantity={localQty} min_threshold={minThreshold} />
+      <button
+        onClick={(e) => adjust(e, +1)}
+        className="size-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        aria-label="Aumenta giacenza"
+      >
+        <Plus className="size-3" />
+      </button>
+    </div>
   );
 }
 
@@ -144,12 +202,11 @@ function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProp
 
 interface ProductsTabProps {
   products: Product[];
-  trackInventory: boolean;
   onAdd: () => void;
   showArchived?: boolean;
 }
 
-export function ProductsTab({ products, trackInventory, onAdd, showArchived = false }: ProductsTabProps) {
+export function ProductsTab({ products, onAdd, showArchived = false }: ProductsTabProps) {
   const router = useRouter();
   const isLoading = useProductsStore((s) => s.isLoading);
   const restoreProduct = useProductsStore((s) => s.restoreProduct);
@@ -211,90 +268,144 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
     [suppliers]
   );
 
-  const columns = useMemo<ColumnDef<Product>[]>(() => {
-    const base: ColumnDef<Product>[] = [
-      {
-        accessorKey: 'name',
-        header: 'Nome',
-        cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
-        ),
-        meta: { requiredVisible: true },
+  const columns = useMemo<ColumnDef<Product>[]>(() => [
+    {
+      accessorKey: 'name',
+      header: 'Nome',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+      ),
+      meta: { requiredVisible: true },
+    },
+    {
+      accessorKey: 'manufacturer_id',
+      header: 'Marca',
+      cell: ({ row }) => {
+        const m = manufacturers.find((x) => x.id === row.original.manufacturer_id);
+        return <span>{m?.name ?? '—'}</span>;
       },
-      {
-        accessorKey: 'manufacturer_id',
-        header: 'Marca',
-        cell: ({ row }) => {
-          const m = manufacturers.find((x) => x.id === row.original.manufacturer_id);
-          return <span>{m?.name ?? '—'}</span>;
-        },
-        sortingFn: (a, b) => {
-          const mA = manufacturers.find((x) => x.id === a.original.manufacturer_id)?.name ?? '';
-          const mB = manufacturers.find((x) => x.id === b.original.manufacturer_id)?.name ?? '';
-          return mA.localeCompare(mB, 'it');
-        },
+      sortingFn: (a, b) => {
+        const mA = manufacturers.find((x) => x.id === a.original.manufacturer_id)?.name ?? '';
+        const mB = manufacturers.find((x) => x.id === b.original.manufacturer_id)?.name ?? '';
+        return mA.localeCompare(mB, 'it');
       },
-      {
-        accessorKey: 'product_category_id',
-        header: 'Categoria',
-        cell: ({ row }) => {
-          const c = categories.find((x) => x.id === row.original.product_category_id);
-          return <span>{c?.name ?? '—'}</span>;
-        },
-        sortingFn: (a, b) => {
-          const cA = categories.find((x) => x.id === a.original.product_category_id)?.name ?? '';
-          const cB = categories.find((x) => x.id === b.original.product_category_id)?.name ?? '';
-          return cA.localeCompare(cB, 'it');
-        },
+    },
+    {
+      accessorKey: 'product_category_id',
+      header: 'Categoria',
+      cell: ({ row }) => {
+        const c = categories.find((x) => x.id === row.original.product_category_id);
+        return <span>{c?.name ?? '—'}</span>;
       },
-      {
-        accessorKey: 'supplier_id',
-        header: 'Fornitore',
-        cell: ({ row }) => {
-          const s = suppliers.find((x) => x.id === row.original.supplier_id);
-          return <span>{s?.name ?? '—'}</span>;
-        },
-        sortingFn: (a, b) => {
-          const sA = suppliers.find((x) => x.id === a.original.supplier_id)?.name ?? '';
-          const sB = suppliers.find((x) => x.id === b.original.supplier_id)?.name ?? '';
-          return sA.localeCompare(sB, 'it');
-        },
+      sortingFn: (a, b) => {
+        const cA = categories.find((x) => x.id === a.original.product_category_id)?.name ?? '';
+        const cB = categories.find((x) => x.id === b.original.product_category_id)?.name ?? '';
+        return cA.localeCompare(cB, 'it');
       },
-      {
-        accessorKey: 'price',
-        header: () => <span className="block w-full text-right">Prezzo Acquisto</span>,
-        cell: ({ getValue }) => (
-          <span className="block text-right tabular-nums">{Number(getValue() as number).toFixed(2)} €</span>
-        ),
+    },
+    {
+      accessorKey: 'supplier_id',
+      header: 'Fornitore',
+      cell: ({ row }) => {
+        const s = suppliers.find((x) => x.id === row.original.supplier_id);
+        return <span>{s?.name ?? '—'}</span>;
       },
-    ];
-
-    if (trackInventory) {
-      base.push(
-        {
-          accessorKey: 'stock_quantity',
-          header: () => <span className="block w-full text-right">Giacenza</span>,
-          cell: ({ row }) => (
-            <div className="flex justify-end">
-              <StockBadge
-                stock_quantity={row.original.stock_quantity ?? 0}
-                min_threshold={row.original.min_threshold ?? 0}
-              />
-            </div>
-          ),
-        },
-        {
-          accessorKey: 'min_threshold',
-          header: () => <span className="block w-full text-right">Soglia Min.</span>,
-          cell: ({ getValue }) => (
-            <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
-          ),
+      sortingFn: (a, b) => {
+        const sA = suppliers.find((x) => x.id === a.original.supplier_id)?.name ?? '';
+        const sB = suppliers.find((x) => x.id === b.original.supplier_id)?.name ?? '';
+        return sA.localeCompare(sB, 'it');
+      },
+    },
+    {
+      accessorKey: 'is_for_retail',
+      header: 'Vendita',
+      cell: ({ getValue }) => {
+        const v = getValue() as boolean;
+        return v ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary dark:text-primary/80">
+            Vendita
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            Uso interno
+          </span>
+        );
+      },
+      meta: { pickerLabel: 'Vendita' },
+    },
+    {
+      accessorKey: 'price',
+      header: () => <span className="block w-full text-right">Prezzo Acquisto</span>,
+      cell: ({ getValue }) => (
+        <span className="block text-right tabular-nums">{Number(getValue() as number).toFixed(2)} €</span>
+      ),
+      meta: { pickerLabel: 'Prezzo Acquisto' },
+    },
+    {
+      accessorKey: 'sell_price',
+      header: () => <span className="block w-full text-right">Prezzo Vendita</span>,
+      cell: ({ getValue }) => {
+        const v = getValue() as number | null;
+        return <span className="block text-right tabular-nums">{v != null ? `${v.toFixed(2)} €` : '—'}</span>;
+      },
+      meta: { pickerLabel: 'Prezzo Vendita' },
+    },
+    {
+      id: 'margine',
+      header: () => <span className="block w-full text-right">Margine</span>,
+      cell: ({ row }) => {
+        const { sell_price, price, is_for_retail } = row.original;
+        if (!is_for_retail || sell_price == null) {
+          return <span className="block text-right text-zinc-400">—</span>;
         }
-      );
-    }
-
-    return base;
-  }, [trackInventory, manufacturers, categories, suppliers]);
+        const margin = sell_price - price;
+        return (
+          <span className={`block text-right tabular-nums ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+            {margin >= 0 ? '+' : ''}{margin.toFixed(2)} €
+          </span>
+        );
+      },
+      meta: { pickerLabel: 'Margine' },
+    },
+    {
+      accessorKey: 'total_purchased',
+      header: () => <span className="block w-full text-right">Acquistati</span>,
+      cell: ({ getValue }) => (
+        <span className="block text-right tabular-nums">{getValue() as number}</span>
+      ),
+      meta: { pickerLabel: 'Acquistati' },
+    },
+    {
+      accessorKey: 'total_sold',
+      header: () => <span className="block w-full text-right">Venduti</span>,
+      cell: ({ getValue }) => (
+        <span className="block text-right tabular-nums">{getValue() as number}</span>
+      ),
+      meta: { pickerLabel: 'Venduti' },
+    },
+    {
+      accessorKey: 'stock_quantity',
+      header: () => <span className="block w-full text-right">Giacenza</span>,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <StockAdjuster
+            productId={row.original.id}
+            initialQuantity={row.original.stock_quantity ?? 0}
+            minThreshold={row.original.min_threshold ?? 0}
+          />
+        </div>
+      ),
+      meta: { pickerLabel: 'Giacenza' },
+    },
+    {
+      accessorKey: 'min_threshold',
+      header: () => <span className="block w-full text-right">Soglia Min.</span>,
+      cell: ({ getValue }) => (
+        <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
+      ),
+      meta: { pickerLabel: 'Soglia Min.' },
+    },
+  ], [manufacturers, categories, suppliers]);
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('products', columns);
@@ -352,7 +463,7 @@ export function ProductsTab({ products, trackInventory, onAdd, showArchived = fa
     );
   }
 
-  const numericColumns = new Set(['price', 'stock_quantity', 'min_threshold']);
+  const numericColumns = new Set(['price', 'sell_price', 'margine', 'total_purchased', 'total_sold', 'stock_quantity', 'min_threshold']);
 
   return (
     <>
