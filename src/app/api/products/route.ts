@@ -55,8 +55,21 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id, action, product } = await request.json();
+    const { id, action, product, delta } = await request.json();
     const supabaseAdmin = getAdminClient();
+
+    if (action === 'adjust-stock') {
+      if (!id || typeof delta !== 'number' || !Number.isInteger(delta) || delta === 0) {
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      }
+      const { error: dbError } = await supabaseAdmin.rpc('adjust_product_stock', {
+        p_id: id,
+        p_salon_id: profile.salon_id,
+        p_delta: delta,
+      });
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
 
     if (action === 'archive' || action === 'restore') {
       if (!id) {
