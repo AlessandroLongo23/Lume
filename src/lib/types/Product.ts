@@ -15,6 +15,8 @@ export class Product {
   min_threshold: number;
   quantity_ml: number | null;
   archived_at: string | null;
+  total_purchased: number;
+  total_sold: number;
 
   constructor(product: Product) {
     this.id = product.id;
@@ -30,6 +32,8 @@ export class Product {
     this.min_threshold = product.min_threshold ?? 0;
     this.quantity_ml = product.quantity_ml ?? null;
     this.archived_at = product.archived_at ?? null;
+    this.total_purchased = product.total_purchased ?? 0;
+    this.total_sold = product.total_sold ?? 0;
   }
 
   get isArchived(): boolean {
@@ -43,7 +47,6 @@ export class Product {
       sortable: true,
       icon: Tag,
       display: (product: Product) => {
-        // Resolved at render time via store getState
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { useProductCategoriesStore } = require('@/lib/stores/product_categories');
         const { product_categories } = useProductCategoriesStore.getState();
