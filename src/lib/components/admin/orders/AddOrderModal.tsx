@@ -6,7 +6,7 @@ import { useOrdersStore } from '@/lib/stores/orders';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 
 interface AddOrderModalProps {
   isOpen: boolean;
@@ -51,7 +51,7 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Truck className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Fornitore *</span></label>
-          <CustomSelect options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => set('supplier_id', v)} placeholder="Seleziona fornitore" />
+          <Select options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => set('supplier_id', v)} placeholder="Seleziona fornitore" />
           {errors.supplier_id && <p className="text-xs text-red-500">{errors.supplier_id}</p>}
         </div>
 
@@ -63,7 +63,7 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          <CustomSelect
+          <Select
             value={order.status}
             onChange={(v) => set('status', v)}
             options={[

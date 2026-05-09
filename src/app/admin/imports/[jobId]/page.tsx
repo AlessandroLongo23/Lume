@@ -20,7 +20,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import { useImportsStore } from '@/lib/stores/imports';
 import { getEntityConfig } from '@/lib/imports/entities/registry';
@@ -393,7 +393,7 @@ function MappingRow({
       <ArrowRight className="size-4 text-muted-foreground/60 mt-2" />
       <div className="flex flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-2">
-          <CustomSelect
+          <Select
             value={mapping.destField ?? null}
             onChange={(v) => onChange((v as string) ?? null)}
             options={destFields.map((f) => ({ value: f, label: destFieldLabels[f] ?? f }))}

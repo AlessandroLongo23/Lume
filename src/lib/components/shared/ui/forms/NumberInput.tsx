@@ -39,7 +39,7 @@ const sizeConfig: Record<ControlSize, {
   },
 };
 
-interface CustomNumberInputProps {
+interface NumberInputProps {
   value: number | null;
   onChange: (value: number | null) => void;
   placeholder?: string;
@@ -56,7 +56,7 @@ interface CustomNumberInputProps {
   size?: ControlSize;
 }
 
-export function CustomNumberInput({
+export function NumberInput({
   value,
   onChange,
   placeholder = '',
@@ -70,7 +70,7 @@ export function CustomNumberInput({
   width = 'w-full',
   decimals = 0,
   size = 'md',
-}: CustomNumberInputProps) {
+}: NumberInputProps) {
   const sc = sizeConfig[size];
   const [displayValue, setDisplayValue] = useState(value?.toString() ?? '');
   const inputRef = useRef<HTMLInputElement>(null);

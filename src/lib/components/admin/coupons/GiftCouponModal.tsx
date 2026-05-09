@@ -9,8 +9,8 @@ import { useProductsStore } from '@/lib/stores/products';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponScopePicker';
 import { CouponNotifySuccess } from './CouponNotifySuccess';
@@ -162,7 +162,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}><User className="size-3.5" />Destinatario *</label>
-            <CustomSelect
+            <Select
               options={clientOptions}
               labelKey="fullName"
               valueKey="id"
@@ -185,7 +185,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
 
             {discountType === 'fixed' && (
               <div className="flex items-center gap-2">
-                <CustomNumberInput
+                <NumberInput
                   value={discountValue}
                   onChange={(v) => setDiscountValue(v)}
                   min={0}
@@ -200,7 +200,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
             )}
             {discountType === 'percent' && (
               <div className="flex items-center gap-2">
-                <CustomNumberInput
+                <NumberInput
                   value={discountValue}
                   onChange={(v) => setDiscountValue(v)}
                   min={0}
@@ -223,7 +223,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
                   onChange={(v) => { setFreeItemKind(v as CouponFreeItemKind); setFreeItemId(''); }}
                   className="w-full"
                 />
-                <CustomSelect
+                <Select
                   options={freeItemKind === 'service' ? activeServices : activeProducts}
                   labelKey="name"
                   valueKey="id"

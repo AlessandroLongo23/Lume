@@ -7,8 +7,8 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { ServicesMultiSelect } from './ServicesMultiSelect';
@@ -153,7 +153,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}><User className="size-3.5" />Cliente *</label>
-          <CustomSelect
+          <Select
             options={clientOptions}
             labelKey="fullName"
             valueKey="id"
@@ -177,7 +177,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
 
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}><Hash className="size-3.5" />Sedute totali *</label>
-          <CustomNumberInput
+          <NumberInput
             value={totalTreatments}
             onChange={setTotalTreatments}
             min={1}
@@ -202,7 +202,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           {pricingMode === 'percent' ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <CustomNumberInput
+                <NumberInput
                   value={discountPercent}
                   onChange={setDiscountPercent}
                   min={0}
@@ -228,7 +228,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <CustomNumberInput
+              <NumberInput
                 value={totalPaid}
                 onChange={setTotalPaid}
                 min={0}

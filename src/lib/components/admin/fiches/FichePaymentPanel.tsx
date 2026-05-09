@@ -1,8 +1,8 @@
 'use client';
 
 import { CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2 } from 'lucide-react';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 
@@ -152,7 +152,7 @@ export function FichePaymentPanel({
               <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
                 Soldi ricevuti (€)
               </label>
-              <CustomNumberInput
+              <NumberInput
                 value={cashGiven}
                 onChange={(v) => onCashGivenChange(v)}
                 min={0}
@@ -195,7 +195,7 @@ export function FichePaymentPanel({
           <div className="flex flex-col gap-3">
             {splits.map((split, i) => (
               <div key={i} className="flex items-center gap-2">
-                <CustomSelect
+                <Select
                   value={split.method}
                   onChange={(v) => updateSplitMethod(i, v as string)}
                   options={PAYMENT_METHOD_OPTIONS}
@@ -205,7 +205,7 @@ export function FichePaymentPanel({
                   size="sm"
                   classes="flex-1"
                 />
-                <CustomNumberInput
+                <NumberInput
                   value={split.amount}
                   onChange={(v) => updateSplitAmount(i, v)}
                   min={0}

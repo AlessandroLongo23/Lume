@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2 } from 'lucide-react';
-import { CustomCheckbox } from '@/lib/components/shared/ui/forms/CustomCheckbox';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -194,7 +194,7 @@ export function ClientForm({
         </div>
         <div className="flex shrink-0 flex-col items-center gap-2">
           <label className={labelClass}><Plane className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Turista</span></label>
-          <CustomCheckbox checked={value.isTourist ?? false} onChange={(v) => set('isTourist', v)} />
+          <Checkbox checked={value.isTourist ?? false} onChange={(v) => set('isTourist', v)} />
         </div>
       </div>
 

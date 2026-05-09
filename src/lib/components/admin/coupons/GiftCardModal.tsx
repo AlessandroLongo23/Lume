@@ -7,9 +7,9 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
-import { CustomCheckbox } from '@/lib/components/shared/ui/forms/CustomCheckbox';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponScopePicker';
 import { CouponNotifySuccess } from './CouponNotifySuccess';
@@ -157,7 +157,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}><UserPlus className="size-3.5" />Acquirente *</label>
-              <CustomSelect
+              <Select
                 options={clientOptions}
                 labelKey="fullName"
                 valueKey="id"
@@ -176,7 +176,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                   readOnly
                 />
               ) : (
-                <CustomSelect
+                <Select
                   options={clientOptions}
                   labelKey="fullName"
                   valueKey="id"
@@ -189,13 +189,13 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <CustomCheckbox checked={forSelf} onChange={(v) => { setForSelf(v); if (v) setRecipientId(''); }} />
+            <Checkbox checked={forSelf} onChange={(v) => { setForSelf(v); if (v) setRecipientId(''); }} />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">L&apos;acquirente la usa per sé</span>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}><Wallet className="size-3.5" />Valore della gift card *</label>
-            <CustomNumberInput
+            <NumberInput
               value={amount}
               onChange={setAmount}
               min={0}

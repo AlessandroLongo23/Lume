@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { NumberMode, type NumberFilterValue } from '@/lib/types/filters/NumberMode';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 
 const modeOptions = [
   { value: NumberMode.EXACT, label: 'Uguale a' },
@@ -63,7 +63,7 @@ export function NumberFilter({
           Pulisci
         </Button>
       </div>
-      <CustomSelect
+      <Select
         value={currentMode}
         options={modeOptions}
         labelKey="label"
@@ -75,7 +75,7 @@ export function NumberFilter({
 
       {isBetween ? (
         <div className="flex gap-2 items-center w-full">
-          <CustomNumberInput
+          <NumberInput
             value={betweenValue.min}
             placeholder="Min"
             step={step}
@@ -84,7 +84,7 @@ export function NumberFilter({
             onChange={(v) => onChange({ ...betweenValue, min: v })}
           />
           <span className="text-xs text-zinc-500">-</span>
-          <CustomNumberInput
+          <NumberInput
             value={betweenValue.max}
             placeholder="Max"
             step={step}
@@ -94,7 +94,7 @@ export function NumberFilter({
           />
         </div>
       ) : (
-        <CustomNumberInput
+        <NumberInput
           value={singleValue.value}
           placeholder="Valore"
           step={step}

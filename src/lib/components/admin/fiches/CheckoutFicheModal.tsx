@@ -4,8 +4,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { X, Check, CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2, Scissors, Package, Lightbulb } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useServicesStore } from '@/lib/stores/services';
 import { useProductsStore } from '@/lib/stores/products';
@@ -343,7 +343,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
                     Soldi ricevuti (€)
                   </label>
-                  <CustomNumberInput
+                  <NumberInput
                     value={cashGiven}
                     onChange={(v) => setCashGiven(v)}
                     min={0}
@@ -388,7 +388,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
               <div className="flex flex-col gap-3">
                 {splits.map((split, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <CustomSelect
+                    <Select
                       value={split.method}
                       onChange={(v) => updateSplitMethod(i, v as string)}
                       options={[
@@ -402,7 +402,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                       size="sm"
                       classes="flex-1"
                     />
-                    <CustomNumberInput
+                    <NumberInput
                       value={split.amount}
                       onChange={(v) => updateSplitAmount(i, v)}
                       min={0}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Building2, Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -132,7 +132,7 @@ export function AnagraficaPanel() {
             <label htmlFor="salon-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Tipo di attività <span className="text-red-500">*</span>
             </label>
-            <CustomSelect
+            <Select
               value={form.type || null}
               onChange={(v) => setField('type', (v ?? '') as FormState['type'])}
               options={BUSINESS_OPTIONS}

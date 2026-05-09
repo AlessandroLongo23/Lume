@@ -4,7 +4,7 @@ import { Calendar, Check } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import type { Order } from '@/lib/types/Order';
 
 const ORDER_STATUS_OPTIONS = [
@@ -54,7 +54,7 @@ export function EditOrderModal({ isOpen, onClose, editedOrder, onEditedOrderChan
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          <CustomSelect
+          <Select
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             value={(editedOrder as any).status ?? null}
             onChange={(v) => set('status', v)}

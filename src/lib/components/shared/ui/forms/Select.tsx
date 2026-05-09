@@ -13,7 +13,7 @@ const triggerSizeClasses: Record<ControlSize, string> = {
   lg: 'h-[var(--lume-control-h-lg)] px-[var(--lume-control-px-lg)] text-[length:var(--lume-control-text-lg)]',
 };
 
-interface CustomSelectProps {
+interface SelectProps {
   value: any;
   onChange: (value: any) => void;
   options: any[];
@@ -29,7 +29,7 @@ interface CustomSelectProps {
   size?: ControlSize;
 }
 
-export function CustomSelect({
+export function Select({
   value,
   onChange,
   options,
@@ -43,7 +43,7 @@ export function CustomSelect({
   classes = '',
   width = 'w-full',
   size = 'md',
-}: CustomSelectProps) {
+}: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);

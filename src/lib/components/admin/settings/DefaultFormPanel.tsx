@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Save, Loader2, RotateCcw, Scissors, Gift, BadgePercent, User } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { FACTORY_FORM_DEFAULTS } from '@/lib/const/factory-defaults';
@@ -127,7 +127,7 @@ export function DefaultFormPanel() {
             <label htmlFor="gcoupon-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Tipo di sconto predefinito (coupon regalo)
             </label>
-            <CustomSelect
+            <Select
               value={form.gift_coupon_discount_type}
               onChange={(v) => setField('gift_coupon_discount_type', v as FormState['gift_coupon_discount_type'])}
               options={[
@@ -182,7 +182,7 @@ export function DefaultFormPanel() {
             <label htmlFor="abb-payment" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Metodo di pagamento
             </label>
-            <CustomSelect
+            <Select
               value={form.abbonamento_payment_method}
               onChange={(v) => setField('abbonamento_payment_method', v as FormState['abbonamento_payment_method'])}
               options={[
@@ -222,7 +222,7 @@ export function DefaultFormPanel() {
             <label htmlFor="cl-gender" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Genere predefinito
             </label>
-            <CustomSelect
+            <Select
               value={form.client_default_gender}
               onChange={(v) => setField('client_default_gender', v as FormState['client_default_gender'])}
               options={[

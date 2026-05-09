@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import {
   PROSPECT_STATUSES,
   STATUS_LABEL,
@@ -81,7 +81,7 @@ export function ProspectFilters({ value, onChange, prospects, trailing }: Prospe
           )}
         </div>
 
-        <CustomSelect
+        <Select
           value={value.region}
           onChange={(v) => onChange({ ...value, region: (v as string | null) ?? null })}
           options={regionOptions}

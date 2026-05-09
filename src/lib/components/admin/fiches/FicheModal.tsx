@@ -28,8 +28,8 @@ import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
 import {
   FichePaymentPanel,
@@ -1007,7 +1007,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   Totale finale (€)
                 </label>
                 <div className="flex items-center gap-1.5">
-                  <CustomNumberInput
+                  <NumberInput
                     value={totalOverride}
                     onChange={(v) => setTotalOverride(v)}
                     min={0}
@@ -1148,7 +1148,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                   <div className="flex flex-col gap-1.5">
                     <label className={labelClass}><User className="size-3.5" />Cliente *</label>
-                    <CustomSelect
+                    <Select
                       options={clientOptions}
                       labelKey="fullName"
                       valueKey="id"
@@ -1396,7 +1396,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   })()}
 
                                   <div className="pr-2">
-                                    <CustomSelect
+                                    <Select
                                       options={operatorOptions}
                                       labelKey="fullName"
                                       valueKey="id"
@@ -1409,7 +1409,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   </div>
 
                                   <div className="flex justify-center">
-                                    <CustomNumberInput
+                                    <NumberInput
                                       value={svc.duration}
                                       onChange={(v) => updateServiceDuration(i, v ?? 5)}
                                       min={5}
@@ -1426,7 +1426,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   </span>
 
                                   <div className="flex justify-end">
-                                    <CustomNumberInput
+                                    <NumberInput
                                       value={svc.final_price}
                                       onChange={(v) => updateServicePrice(i, v ?? 0)}
                                       min={0}
@@ -1726,7 +1726,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                     Aggiungi pagamento
                   </p>
                   <div className="flex items-center gap-2">
-                    <CustomSelect
+                    <Select
                       value={appendMethod}
                       onChange={(v) => setAppendMethod(v as FichePaymentMethod)}
                       options={[
@@ -1740,7 +1740,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                       size="sm"
                       classes="flex-1"
                     />
-                    <CustomNumberInput
+                    <NumberInput
                       value={appendAmount}
                       onChange={(v) => setAppendAmount(v)}
                       min={0}

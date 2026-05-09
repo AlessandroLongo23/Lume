@@ -2,8 +2,8 @@
 
 import { ALargeSmall, Tag, Clock, Euro, FileText, ShoppingCart } from 'lucide-react';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import type { Service } from '@/lib/types/Service';
 
 export type ServiceFormValue = Partial<Service>;
@@ -33,7 +33,7 @@ export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
         </div>
         <div className="flex flex-1 min-w-48 flex-col gap-2">
           <label className={labelClass}><Tag className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Categoria *</span></label>
-          <CustomSelect
+          <Select
             options={categories}
             labelKey="name"
             valueKey="id"
@@ -48,16 +48,16 @@ export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
       <div className="flex flex-row gap-4 flex-wrap">
         <div className="flex flex-1 min-w-32 flex-col gap-2">
           <label className={labelClass}><Clock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Durata (min)</span></label>
-          <CustomNumberInput value={value.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
+          <NumberInput value={value.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
         </div>
         <div className="flex flex-1 min-w-32 flex-col gap-2">
           <label className={labelClass}><Euro className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Prezzo</span></label>
-          <CustomNumberInput value={value.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
+          <NumberInput value={value.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
           {errors?.price && <p className="text-xs text-red-500">{errors.price}</p>}
         </div>
         <div className="flex flex-1 min-w-32 flex-col gap-2">
           <label className={labelClass}><ShoppingCart className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Costo prodotti</span></label>
-          <CustomNumberInput value={value.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
+          <NumberInput value={value.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
         </div>
       </div>
 

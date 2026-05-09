@@ -2,7 +2,7 @@
 
 import { Check } from 'lucide-react';
 
-interface CustomCheckboxProps {
+interface CheckboxProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
@@ -10,13 +10,13 @@ interface CustomCheckboxProps {
   className?: string;
 }
 
-export function CustomCheckbox({
+export function Checkbox({
   checked,
   onChange,
   label,
   disabled = false,
   className = '',
-}: CustomCheckboxProps) {
+}: CheckboxProps) {
   const toggle = () => { if (!disabled) onChange(!checked); };
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import type { FilterChoice } from '@/lib/types/dataColumn';
 
 interface SelectFilterProps {
@@ -19,7 +19,7 @@ export function SelectFilter({ options = [], value = null, onChange }: SelectFil
           Pulisci
         </Button>
       </div>
-      <CustomSelect
+      <Select
         value={value}
         onChange={(v) => onChange((v ?? null) as string | number | null)}
         options={options}

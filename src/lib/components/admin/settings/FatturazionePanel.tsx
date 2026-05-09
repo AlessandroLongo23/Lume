@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Receipt, Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { RegimeFiscale, SalonFiscal } from '@/lib/types/Salon';
@@ -158,7 +158,7 @@ export function FatturazionePanel() {
             <label htmlFor="regime" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               Regime fiscale
             </label>
-            <CustomSelect
+            <Select
               value={form.regime || null}
               onChange={(v) => setField('regime', (v ?? '') as FormState['regime'])}
               options={[
@@ -177,7 +177,7 @@ export function FatturazionePanel() {
             <label htmlFor="default-iva" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
               IVA predefinita
             </label>
-            <CustomSelect
+            <Select
               value={form.default_iva_pct === '' ? null : form.default_iva_pct}
               onChange={(v) => setField('default_iva_pct', v === null || v === undefined ? '' : (v as number))}
               options={IVA_OPTIONS.map((p) => ({ value: p, label: `${p}%` }))}

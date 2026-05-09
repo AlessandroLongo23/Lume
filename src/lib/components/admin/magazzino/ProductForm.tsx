@@ -1,7 +1,7 @@
 'use client';
 
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
@@ -69,14 +69,14 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
         </div>
         <div className="flex w-36 flex-col gap-1.5">
           <label className={labelClass}>Quantità</label>
-          <CustomNumberInput value={value.quantity_ml} onChange={(v) => set('quantity_ml', v)} min={0} step={50} suffix="mL" />
+          <NumberInput value={value.quantity_ml} onChange={(v) => set('quantity_ml', v)} min={0} step={50} suffix="mL" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Marca</label>
-          <CustomSelect
+          <Select
             options={manufacturers}
             labelKey="name"
             valueKey="id"
@@ -89,7 +89,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
 
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Categoria</label>
-          <CustomSelect
+          <Select
             options={categories}
             labelKey="name"
             valueKey="id"
@@ -104,7 +104,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Fornitore</label>
-          <CustomSelect
+          <Select
             options={suppliers}
             labelKey="name"
             valueKey="id"
@@ -117,7 +117,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
 
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Prezzo Acquisto (€) *</label>
-          <CustomNumberInput value={value.price} onChange={(v) => set('price', v)} min={0} step={0.5} decimals={2} suffix="€" />
+          <NumberInput value={value.price} onChange={(v) => set('price', v)} min={0} step={0.5} decimals={2} suffix="€" />
           {errors?.price && <p className={errorClass}>{errors.price}</p>}
         </div>
       </div>
@@ -133,7 +133,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
       {value.is_for_retail && (
         <div className="flex flex-col gap-1.5 sm:max-w-[calc(50%-8px)]">
           <label className={labelClass}>Prezzo Vendita (€)</label>
-          <CustomNumberInput value={value.sell_price} onChange={(v) => set('sell_price', v)} min={0} step={0.5} decimals={2} suffix="€" />
+          <NumberInput value={value.sell_price} onChange={(v) => set('sell_price', v)} min={0} step={0.5} decimals={2} suffix="€" />
         </div>
       )}
 
@@ -143,11 +143,11 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Giacenza Iniziale</label>
-              <CustomNumberInput value={value.stock_quantity} onChange={(v) => set('stock_quantity', v ?? 0)} min={0} step={1} />
+              <NumberInput value={value.stock_quantity} onChange={(v) => set('stock_quantity', v ?? 0)} min={0} step={1} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Soglia Minima</label>
-              <CustomNumberInput value={value.min_threshold} onChange={(v) => set('min_threshold', v ?? 0)} min={0} step={1} />
+              <NumberInput value={value.min_threshold} onChange={(v) => set('min_threshold', v ?? 0)} min={0} step={1} />
               <p className="text-xs text-zinc-500">Alert rosso quando la giacenza scende sotto questa soglia.</p>
             </div>
           </div>

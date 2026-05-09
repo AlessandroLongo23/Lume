@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { BusinessType } from '@/lib/types/Salon';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 
 const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'barber',        label: 'Barbiere' },
@@ -57,7 +57,7 @@ export function NewSalonForm() {
 
       <label className="flex flex-col gap-1">
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Tipo</span>
-        <CustomSelect
+        <Select
           value={businessType}
           onChange={(v) => setBusinessType(v as BusinessType)}
           options={BUSINESS_TYPES}

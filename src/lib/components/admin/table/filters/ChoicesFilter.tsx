@@ -2,7 +2,7 @@
 
 import type { FilterChoice } from '@/lib/types/dataColumn';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomCheckbox } from '@/lib/components/shared/ui/forms/CustomCheckbox';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 
 interface ChoicesFilterProps {
   options?: FilterChoice[];
@@ -34,7 +34,7 @@ export function ChoicesFilter({ options = [], value = [], onChange }: ChoicesFil
             onClick={() => toggle(opt.value)}
           >
             <div className="pointer-events-none">
-              <CustomCheckbox
+              <Checkbox
                 checked={isChecked(opt.value)}
                 onChange={() => toggle(opt.value)}
                 className="cursor-pointer bg-blue-600 dark:bg-blue-500"

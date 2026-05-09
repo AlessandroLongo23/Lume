@@ -6,7 +6,7 @@ import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useServicesStore } from '@/lib/stores/services';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { ServicesMultiSelect } from './ServicesMultiSelect';
@@ -155,7 +155,7 @@ export function EditAbbonamentoModal({ isOpen, onClose, abbonamento }: EditAbbon
 
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}><Hash className="size-3.5" />Sedute totali *</label>
-          <CustomNumberInput
+          <NumberInput
             value={totalTreatments}
             onChange={setTotalTreatments}
             min={Math.max(1, usedCount)}
@@ -184,7 +184,7 @@ export function EditAbbonamentoModal({ isOpen, onClose, abbonamento }: EditAbbon
           {pricingMode === 'percent' ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <CustomNumberInput
+                <NumberInput
                   value={discountPercent}
                   onChange={setDiscountPercent}
                   min={0} max={100} step={1} decimals={0}
@@ -205,7 +205,7 @@ export function EditAbbonamentoModal({ isOpen, onClose, abbonamento }: EditAbbon
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <CustomNumberInput
+              <NumberInput
                 value={totalPaid}
                 onChange={setTotalPaid}
                 min={0} step={1} decimals={2}

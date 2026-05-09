@@ -6,7 +6,7 @@ import type { OriginType } from '@/lib/types/Salon';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { CustomSelect } from '@/lib/components/shared/ui/forms/CustomSelect';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 
 const ORIGIN_OPTIONS: { value: OriginType; label: string }[] = [
   { value: 'word_of_mouth', label: 'Passaparola' },
@@ -41,7 +41,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
           <label className="block text-sm font-thin text-zinc-700 mb-2">
             Come hai conosciuto Lume? <span className="text-red-500 ml-1">*</span>
           </label>
-          <CustomSelect
+          <Select
             value={origin}
             onChange={(v) => setField('origin', (v as OriginType) || null)}
             options={ORIGIN_OPTIONS}

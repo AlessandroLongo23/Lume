@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Mail, MessageCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import type { Client } from '@/lib/types/Client';
 import type { PreviewSegment } from '@/lib/stores/calendarDrag';
@@ -176,16 +177,15 @@ interface NotifyOptionProps {
 
 function NotifyOption({ icon: Icon, label, description, checked, onChange, disabled = false }: NotifyOptionProps) {
   return (
-    <label
+    <div
       className={`flex items-center gap-3 px-3 py-2 rounded-lg ring-1 ring-zinc-500/15 ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 cursor-pointer'
       }`}
+      onClick={() => !disabled && onChange(!checked)}
     >
-      <input
-        type="checkbox"
-        className="size-4 accent-primary"
+      <Checkbox
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={onChange}
         disabled={disabled}
       />
       <Icon className="size-4 text-zinc-500 shrink-0" />
@@ -195,6 +195,6 @@ function NotifyOption({ icon: Icon, label, description, checked, onChange, disab
           <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{description}</p>
         )}
       </div>
-    </label>
+    </div>
   );
 }

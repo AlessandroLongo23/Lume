@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { formatCurrency } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { CustomNumberInput } from '@/lib/components/shared/ui/forms/CustomNumberInput';
+import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 
 const emptyForm = () => ({
   casa: null as number | null,
@@ -110,7 +110,7 @@ export function BilancioObiettiviTab() {
           {fields.map(({ key, label }) => (
             <div key={key} className="flex flex-col gap-1.5">
               <label className={labelClass}>{label}</label>
-              <CustomNumberInput
+              <NumberInput
                 value={form[key] as number | null}
                 onChange={(v) => set(key, v)}
                 min={0}
