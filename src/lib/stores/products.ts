@@ -14,10 +14,11 @@ interface ProductsState {
   restoreProduct: (id: string) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   deleteAllProducts: () => Promise<void>;
+  adjustStock: (id: string, delta: number) => Promise<void>;
   setShowArchived: (show: boolean) => void;
 }
 
-export const useProductsStore = create<ProductsState>((set) => ({
+export const useProductsStore = create<ProductsState>((set, get) => ({
   products: [],
   showArchived: false,
   isLoading: true,
@@ -25,7 +26,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
 
   fetchProducts: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('products').select('*');
+    const { data, error } = await supabase.from('products_with_stats').select('*');
     if (error) { set({ isLoading: false, error: error.message }); return; }
     set({ products: data.map((p) => new Product(p)), isLoading: false, error: null });
   },
@@ -91,6 +92,29 @@ export const useProductsStore = create<ProductsState>((set) => ({
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
     set({ products: [] });
+  },
+
+  adjustStock: async (id, delta) => {
+    const previous = get().products.find((p) => p.id === id)?.stock_quantity ?? 0;
+    set((s) => ({
+      products: s.products.map((p) =>
+        p.id === id ? new Product({ ...p, stock_quantity: p.stock_quantity + delta } as Product) : p
+      ),
+    }));
+    const response = await fetch('/api/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'adjust-stock', delta }),
+    });
+    const result = await response.json();
+    if (!result.success) {
+      set((s) => ({
+        products: s.products.map((p) =>
+          p.id === id ? new Product({ ...p, stock_quantity: previous } as Product) : p
+        ),
+      }));
+      throw new Error(result.error);
+    }
   },
 
   setShowArchived: (show) => set({ showArchived: show }),
