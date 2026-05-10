@@ -183,11 +183,13 @@ function NotifyOption({ icon: Icon, label, description, checked, onChange, disab
       }`}
       onClick={() => !disabled && onChange(!checked)}
     >
-      <Checkbox
-        checked={checked}
-        onChange={onChange}
-        disabled={disabled}
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+        />
+      </div>
       <Icon className="size-4 text-zinc-500 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-zinc-900 dark:text-zinc-100">{label}</p>

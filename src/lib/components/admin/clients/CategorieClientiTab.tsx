@@ -57,6 +57,7 @@ export function CategorieClientiTab() {
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
         ),
+        meta: { pickerLabel: 'Clienti' },
       },
     ],
     []

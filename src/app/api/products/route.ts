@@ -55,8 +55,33 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id, action, product, delta } = await request.json();
+    const { id, action, product, delta, ids, patch } = await request.json();
     const supabaseAdmin = getAdminClient();
+
+    if (action === 'bulk-update') {
+      if (!Array.isArray(ids) || ids.length === 0 || !patch)
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      const { error: dbError } = await supabaseAdmin
+        .from('products')
+        .update(pickAllowed(patch, PRODUCT_WRITE_FIELDS))
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'bulk-archive' || action === 'bulk-restore') {
+      if (!Array.isArray(ids) || ids.length === 0)
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      const archived_at = action === 'bulk-archive' ? new Date().toISOString() : null;
+      const { error: dbError } = await supabaseAdmin
+        .from('products')
+        .update({ archived_at })
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
 
     if (action === 'adjust-stock') {
       if (!id || typeof delta !== 'number' || !Number.isInteger(delta) || delta === 0) {
@@ -113,12 +138,22 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id } = await request.json();
+    const { id, ids } = await request.json();
+    const supabaseAdmin = getAdminClient();
+
+    if (Array.isArray(ids) && ids.length > 0) {
+      const { error: dbError } = await supabaseAdmin
+        .from('products')
+        .delete()
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
     if (!id) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
-
-    const supabaseAdmin = getAdminClient();
 
     const { error: dbError } = await supabaseAdmin
       .from('products')

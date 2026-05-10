@@ -16,6 +16,10 @@ interface ProductsState {
   deleteAllProducts: () => Promise<void>;
   adjustStock: (id: string, delta: number) => Promise<void>;
   setShowArchived: (show: boolean) => void;
+  bulkUpdateProducts: (ids: string[], patch: Partial<Pick<Product, 'manufacturer_id' | 'product_category_id' | 'supplier_id'>>) => Promise<void>;
+  bulkArchiveProducts: (ids: string[]) => Promise<void>;
+  bulkRestoreProducts: (ids: string[]) => Promise<void>;
+  bulkDeleteProducts: (ids: string[]) => Promise<void>;
 }
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
@@ -118,4 +122,61 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   },
 
   setShowArchived: (show) => set({ showArchived: show }),
+
+  bulkUpdateProducts: async (ids, patch) => {
+    const response = await fetch('/api/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-update', ids, patch }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      products: s.products.map((p) =>
+        ids.includes(p.id) ? new Product({ ...p, ...patch } as Product) : p
+      ),
+    }));
+  },
+
+  bulkArchiveProducts: async (ids) => {
+    const response = await fetch('/api/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-archive', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    const archived_at = new Date().toISOString();
+    set((s) => ({
+      products: s.products.map((p) =>
+        ids.includes(p.id) ? new Product({ ...p, archived_at } as Product) : p
+      ),
+    }));
+  },
+
+  bulkRestoreProducts: async (ids) => {
+    const response = await fetch('/api/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-restore', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      products: s.products.map((p) =>
+        ids.includes(p.id) ? new Product({ ...p, archived_at: null } as Product) : p
+      ),
+    }));
+  },
+
+  bulkDeleteProducts: async (ids) => {
+    const response = await fetch('/api/products', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({ products: s.products.filter((p) => !ids.includes(p.id)) }));
+  },
 }));

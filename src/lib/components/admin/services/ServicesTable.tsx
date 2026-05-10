@@ -117,6 +117,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{getValue() as number} min</span>
         ),
+        meta: { pickerLabel: 'Durata' },
       },
       {
         accessorKey: 'price',
@@ -124,6 +125,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
         ),
+        meta: { pickerLabel: 'Prezzo' },
       },
       {
         accessorKey: 'product_cost',
@@ -131,6 +133,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
         ),
+        meta: { pickerLabel: 'Costo prodotti' },
       },
       {
         id: 'usage_count',
@@ -139,6 +142,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{getValue() as number}</span>
         ),
+        meta: { pickerLabel: 'Esecuzioni' },
       },
     ],
     [categories, usageCounts]

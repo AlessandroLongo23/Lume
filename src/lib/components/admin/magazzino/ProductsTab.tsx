@@ -29,6 +29,7 @@ import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { Portal } from '@/lib/components/shared/ui/Portal';
 import type { Product } from '@/lib/types/Product';
 
@@ -290,28 +291,27 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       size: 40,
       meta: { requiredVisible: true },
       header: ({ table }) => (
-        <input
-          type="checkbox"
-          checked={table.getIsAllPageRowsSelected()}
-          ref={(el) => {
-            if (el) el.indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected();
-          }}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-          onClick={(e) => e.stopPropagation()}
-          className="bulk-cb size-4 accent-primary cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity rounded"
-          aria-label="Seleziona tutti"
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            size="sm"
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+            aria-label="Seleziona tutti"
+            className="bulk-cb opacity-0 group-hover:opacity-100 transition-opacity"
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <input
-          type="checkbox"
-          checked={row.getIsSelected()}
-          onChange={row.getToggleSelectedHandler()}
-          onClick={(e) => e.stopPropagation()}
-          data-no-row-click=""
-          className="bulk-cb size-4 accent-primary cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity rounded"
-          aria-label="Seleziona riga"
-        />
+        <div onClick={(e) => e.stopPropagation()} data-no-row-click>
+          <Checkbox
+            size="sm"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            aria-label="Seleziona riga"
+            className="bulk-cb opacity-0 group-hover:opacity-100 transition-opacity"
+          />
+        </div>
       ),
     },
     {

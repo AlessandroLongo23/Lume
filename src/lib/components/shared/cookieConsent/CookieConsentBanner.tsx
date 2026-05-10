@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useCookieConsentStore } from '@/lib/stores/cookieConsent';
+import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 
 export function CookieConsentBanner() {
   const hydrated = useCookieConsentStore((s) => s.hydrated);
@@ -168,12 +169,12 @@ function ToggleRow({ name, label, description, defaultChecked, disabled }: Toggl
         disabled ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
       }`}
     >
-      <input
-        type="checkbox"
+      <Checkbox
+        size="sm"
         name={name}
         defaultChecked={defaultChecked}
         disabled={disabled}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-ring focus:ring-offset-0"
+        className="mt-0.5 shrink-0"
       />
       <div className="flex-1">
         <div className="text-sm font-medium text-foreground">{label}</div>

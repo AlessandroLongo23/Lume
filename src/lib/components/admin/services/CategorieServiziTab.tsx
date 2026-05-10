@@ -90,6 +90,7 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
         cell: ({ getValue }) => (
           <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
         ),
+        meta: { pickerLabel: 'Servizi' },
       },
     ],
     []

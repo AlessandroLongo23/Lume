@@ -189,7 +189,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Checkbox checked={forSelf} onChange={(v) => { setForSelf(v); if (v) setRecipientId(''); }} />
+            <Checkbox checked={forSelf} onChange={(e) => { const v = e.target.checked; setForSelf(v); if (v) setRecipientId(''); }} />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">L&apos;acquirente la usa per sé</span>
           </div>
 

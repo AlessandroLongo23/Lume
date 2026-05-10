@@ -194,7 +194,7 @@ export function ClientForm({
         </div>
         <div className="flex shrink-0 flex-col items-center gap-2">
           <label className={labelClass}><Plane className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Turista</span></label>
-          <Checkbox checked={value.isTourist ?? false} onChange={(v) => set('isTourist', v)} />
+          <Checkbox checked={value.isTourist ?? false} onChange={(e) => set('isTourist', e.target.checked)} />
         </div>
       </div>
 
