@@ -204,13 +204,14 @@ export function computeServiceLeaderboard(
     map.set(fs.service_id, { ...curr, count: curr.count + 1, incasso: curr.incasso + fs.final_price });
   }
 
-  const rows = Array.from(map.values()).sort((a, b) => b.incasso - a.incasso);
-  const totalIncasso = rows.reduce((s, r) => s + r.incasso, 0);
-  return rows.map((r, i) => ({
-    serviceId: Array.from(map.keys())[i],
-    ...r,
-    pctIncasso: totalIncasso > 0 ? (r.incasso / totalIncasso) * 100 : 0,
-  }));
+  const totalIncasso = Array.from(map.values()).reduce((s, r) => s + r.incasso, 0);
+  return Array.from(map.entries())
+    .map(([serviceId, r]) => ({
+      serviceId,
+      ...r,
+      pctIncasso: totalIncasso > 0 ? (r.incasso / totalIncasso) * 100 : 0,
+    }))
+    .sort((a, b) => b.incasso - a.incasso);
 }
 
 // ── Services by category ─────────────────────────────────────────────────────
