@@ -11,7 +11,6 @@ import { FicheService } from '@/lib/types/FicheService';
 import { FicheProduct } from '@/lib/types/FicheProduct';
 import { FichePayment } from '@/lib/types/FichePayment';
 import { FicheStatus } from '@/lib/types/ficheStatus';
-import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 
 export type Preset = '7d' | 'month' | '3m' | 'year';
 
@@ -129,27 +128,46 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       set({ isHistoricalLoading: true });
       const since = startOfMonth(subMonths(new Date(), 12));
 
-      const [fichesRes, servicesRes] = await Promise.all([
-        supabase
-          .from('fiches')
-          .select('id, datetime, total_override')
-          .eq('status', FicheStatus.COMPLETED)
-          .gte('datetime', since.toISOString()),
-        supabase
-          .from('fiche_services')
-          .select('fiche_id, final_price')
-          .gte('start_time', since.toISOString()),
+      const fichesRes = await supabase
+        .from('fiches')
+        .select('id, datetime, total_override')
+        .eq('status', FicheStatus.COMPLETED)
+        .gte('datetime', since.toISOString());
+
+      if (fichesRes.error) {
+        set({ isHistoricalLoading: false });
+        return;
+      }
+
+      const allHistoricalFicheIds = (fichesRes.data ?? []).map((f) => f.id);
+
+      if (allHistoricalFicheIds.length === 0) {
+        // Build months array with all zeros
+        const months: MonthlyEarnings[] = [];
+        for (let i = 12; i >= 0; i--) {
+          const d = subMonths(new Date(), i);
+          months.push({ label: format(d, 'MMM yy', { locale: it }), earnings: 0 });
+        }
+        set({ historicalEarnings: months, isHistoricalLoading: false });
+        return;
+      }
+
+      const [servicesRes, productsRes] = await Promise.all([
+        supabase.from('fiche_services').select('fiche_id, final_price').in('fiche_id', allHistoricalFicheIds),
+        supabase.from('fiche_products').select('fiche_id, final_price, quantity').in('fiche_id', allHistoricalFicheIds),
       ]);
 
-      const allFicheProducts = useFicheProductsStore.getState().fiche_products;
+      if (servicesRes.error || productsRes.error) {
+        set({ isHistoricalLoading: false });
+        return;
+      }
 
-      // Build per-fiche sum maps
       const serviceSums = new Map<string, number>();
       for (const s of servicesRes.data ?? []) {
         serviceSums.set(s.fiche_id, (serviceSums.get(s.fiche_id) ?? 0) + s.final_price);
       }
       const productSums = new Map<string, number>();
-      for (const p of allFicheProducts) {
+      for (const p of productsRes.data ?? []) {
         productSums.set(p.fiche_id, (productSums.get(p.fiche_id) ?? 0) + p.final_price * p.quantity);
       }
 
