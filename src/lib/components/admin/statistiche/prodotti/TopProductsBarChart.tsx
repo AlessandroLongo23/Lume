@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { formatCurrency } from '@/lib/utils/format';
+import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
 import type { ProductRow } from '../statHelpers';
 
 const readVar = (name: string, fallback: string) => {
@@ -12,18 +13,20 @@ const readVar = (name: string, fallback: string) => {
   return v || fallback;
 };
 
+const CHART_PALETTE = ['#6366F1', '#F59E0B', '#22C55E', '#8B5CF6', '#06B6D4', '#F43F5E'];
+
+const tooltip = makeRechartsTooltip((v) => [formatCurrency(v as number), 'Incasso']);
+
 interface Props { rows: ProductRow[] }
 
 export function TopProductsBarChart({ rows }: Props) {
   const { resolvedTheme: theme } = useTheme();
   const colors = useMemo(() => ({
-    primary: readVar('--color-brand-primary-500', '#6366F1'),
-    muted:   readVar('--lume-text-muted', '#A1A1AA'),
+    muted: readVar('--lume-text-muted', '#A1A1AA'),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [theme]);
 
   const top10 = rows.slice(0, 10).map((r) => ({ name: r.name, incasso: r.incasso }));
-  const max   = Math.max(...top10.map((r) => r.incasso), 1);
 
   if (top10.length === 0) {
     return <p className="text-xs text-zinc-400 px-5 pb-5">Nessun prodotto venduto nel periodo.</p>;
@@ -37,10 +40,10 @@ export function TopProductsBarChart({ rows }: Props) {
             tick={{ fontSize: 10, fill: colors.muted }} tickFormatter={(v) => `€${v}`} />
           <YAxis type="category" dataKey="name" width={130} axisLine={false} tickLine={false}
             tick={{ fontSize: 11, fill: colors.muted }} />
-          <Tooltip formatter={(v) => [formatCurrency(v as number), 'Incasso']} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
+          <Tooltip content={tooltip} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
           <Bar dataKey="incasso" radius={[0, 4, 4, 0]}>
-            {top10.map((r, i) => (
-              <Cell key={i} fill={r.incasso === max ? colors.primary : `${colors.primary}60`} />
+            {top10.map((_, i) => (
+              <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />
             ))}
           </Bar>
         </BarChart>

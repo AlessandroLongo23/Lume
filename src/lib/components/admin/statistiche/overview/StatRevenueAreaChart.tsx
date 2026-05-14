@@ -7,6 +7,7 @@ import {
 import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { formatCurrency } from '@/lib/utils/format';
 import type { MonthlyEarnings } from '@/lib/stores/statistiche';
+import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
 
 const readVar = (name: string, fallback: string) => {
   if (typeof window === 'undefined') return fallback;
@@ -14,16 +15,7 @@ const readVar = (name: string, fallback: string) => {
   return v || fallback;
 };
 
-interface CustomTooltipProps { active?: boolean; payload?: { value: number }[]; label?: string; }
-function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 shadow-sm">
-      <p className="text-xs text-zinc-500 mb-0.5">{label}</p>
-      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{formatCurrency(payload[0].value)}</p>
-    </div>
-  );
-}
+const areaTooltip = makeRechartsTooltip((v) => [formatCurrency(v as number), '']);
 
 function yTick(v: number) {
   if (v >= 1000) return `€${(v / 1000).toFixed(0)}k`;
@@ -55,7 +47,7 @@ export function StatRevenueAreaChart({ data }: Props) {
             tick={{ fontSize: 10, fill: colors.muted }} dy={4} interval="preserveStartEnd" />
           <YAxis axisLine={{ stroke: colors.border }} tickLine={false}
             tick={{ fontSize: 10, fill: colors.muted }} tickFormatter={yTick} width={48} />
-          <Tooltip content={<CustomTooltip />}
+          <Tooltip content={areaTooltip}
             cursor={{ stroke: colors.primary, strokeWidth: 1, strokeDasharray: '4 4' }} />
           <Area type="monotone" dataKey="earnings" stroke={colors.primary} strokeWidth={2}
             fill="url(#statGrad)" dot={false} activeDot={{ r: 4, fill: colors.primary, strokeWidth: 0 }} />

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
+import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
 import type { DayCount } from '../statHelpers';
 
 const readVar = (name: string, fallback: string) => {
@@ -11,13 +12,15 @@ const readVar = (name: string, fallback: string) => {
   return v || fallback;
 };
 
+const tooltip = makeRechartsTooltip((v) => [`${v} fiches`, '']);
+
 interface Props { data: DayCount[] }
 
 export function DayDistributionBar({ data }: Props) {
   const { resolvedTheme: theme } = useTheme();
   const colors = useMemo(() => ({
     primary: readVar('--color-brand-primary-500', '#6366F1'),
-    border:  readVar('--lume-border', '#E4E4E7'),
+    dim:     readVar('--color-brand-primary-300', '#A5B4FC'),
     muted:   readVar('--lume-text-muted', '#A1A1AA'),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [theme]);
@@ -31,10 +34,10 @@ export function DayDistributionBar({ data }: Props) {
           <XAxis dataKey="day" axisLine={false} tickLine={false}
             tick={{ fontSize: 11, fill: colors.muted }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: colors.muted }} />
-          <Tooltip formatter={(v) => [`${v} fiches`, '']} cursor={{ fill: 'transparent' }} />
+          <Tooltip content={tooltip} cursor={{ fill: 'transparent' }} />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {data.map((d, i) => (
-              <Cell key={i} fill={d.count === max ? colors.primary : `${colors.primary}40`} />
+              <Cell key={i} fill={d.count === max ? colors.primary : colors.dim} />
             ))}
           </Bar>
         </BarChart>
