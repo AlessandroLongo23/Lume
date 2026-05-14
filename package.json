@@ -14,7 +14,8 @@
     "test:e2e:debug": "PWDEBUG=1 playwright test",
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "shoot:landing": "tsx scripts/screenshots/landing-hero.ts",
-    "audit:tenancy": "tsx scripts/audit-tenant-isolation.ts"
+    "audit:tenancy": "tsx scripts/audit-tenant-isolation.ts",
+    "demo:create-user": "tsx scripts/demo/create-demo-user.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
@@ -39,6 +40,7 @@
     "motion": "^12.38.0",
     "next": "16.2.1",
     "papaparse": "^5.5.3",
+    "posthog-js": "^1.373.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.0",

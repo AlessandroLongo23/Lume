@@ -5,6 +5,7 @@ import '@/lib/types/tableMeta';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/MessagePopupContainer';
 import { CookieConsentBanner } from '@/lib/components/shared/cookieConsent/CookieConsentBanner';
+import { PostHogProvider } from '@/lib/posthog/PostHogProvider';
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -36,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="it" className={cn(jetbrainsMono.variable, "font-sans", geist.variable)}>
       <body>
-        <ThemeProvider>
-          {children}
-          <MessagePopupContainer />
-          <CookieConsentBanner />
-        </ThemeProvider>
+        <PostHogProvider>
+          <ThemeProvider>
+            {children}
+            <MessagePopupContainer />
+            <CookieConsentBanner />
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
