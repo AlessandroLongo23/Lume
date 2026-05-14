@@ -89,7 +89,7 @@ export async function validateFicheConflicts(
 
     const { data: opConflicts, error: opErr } = await supabase
       .from('fiche_services')
-      .select('id')
+      .select('id, start_time, end_time')
       .eq('operator_id', service.operator_id)
       .in('fiche_id', activeFicheIds)
       .lt('start_time', service.end_time)
@@ -99,8 +99,13 @@ export async function validateFicheConflicts(
     if (opErr) throw new Error(opErr.message);
 
     if (opConflicts && opConflicts.length > 0) {
+      const conflict = opConflicts[0];
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
       return {
-        error: `L'operatore ${service.operator_name} è già occupato in questo orario.`,
+        error: `L'operatore ${service.operator_name} è già occupato in questo orario (appuntamento esistente: ${fmt(conflict.start_time)} – ${fmt(conflict.end_time)}).`,
       };
     }
 
