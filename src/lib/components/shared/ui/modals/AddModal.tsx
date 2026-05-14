@@ -23,6 +23,9 @@ interface AddModalProps {
    *  Useful for read-only views (e.g. an audit log tab) where the modal acts
    *  as a viewer and there is no save action. */
   hideConfirm?: boolean;
+  /** Forwarded to Modal. Default true; pass false for stacked modals so the
+   *  dimmed area click doesn't cascade to the modal behind. */
+  closeOnOutsideClick?: boolean;
 }
 
 export function AddModal({
@@ -41,9 +44,10 @@ export function AddModal({
   cancelText = 'Annulla',
   confirmDisabled = false,
   hideConfirm = false,
+  closeOnOutsideClick = true,
 }: AddModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
+    <Modal isOpen={isOpen} onClose={onClose} classes={classes} closeOnOutsideClick={closeOnOutsideClick}>
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
         <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">

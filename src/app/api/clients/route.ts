@@ -69,7 +69,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { client } = await request.json();
+    const body = await request.json();
+    const { client } = body;
+    // createAccount=false forces a CRM-only client (no auth.users row) even
+    // when phone/email are present. Used by the in-fiche quick-add flow.
+    const createAccount = body.createAccount !== false;
 
     const email = typeof client.email === 'string' && client.email.trim() !== ''
       ? client.email.trim()
@@ -90,13 +94,14 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = getAdminClient();
 
-    // 1. Resolve the auth identity. With no contact info, the client is a
-    //    no-auth ("CRM-only") record — skip auth creation entirely. Otherwise
-    //    reuse an existing user (cross-salon person) or create a new one.
+    // 1. Resolve the auth identity. With no contact info OR when the caller
+    //    explicitly opts out via createAccount=false, the client is a no-auth
+    //    ("CRM-only") record — skip auth creation entirely. Otherwise reuse
+    //    an existing user (cross-salon person) or create a new one.
     let userId: string | null = null;
     const hasContact = !!email || !!(phonePrefix && phoneNumber);
 
-    if (hasContact) {
+    if (hasContact && createAccount) {
       userId = await findExistingUserId(supabaseAdmin, { email, phonePrefix, phoneNumber });
 
       if (!userId) {

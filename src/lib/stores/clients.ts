@@ -4,6 +4,13 @@ import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Client } from '@/lib/types/Client';
 
+interface AddClientOptions {
+  /** When false, skips creating an auth.users row even if phone/email is set. */
+  createAccount?: boolean;
+  /** Tag for analytics — e.g. 'fiche_quick_add' to track the quick-add flow. */
+  source?: string;
+}
+
 interface ClientsState {
   clients: Client[];
   showArchived: boolean;
@@ -11,7 +18,7 @@ interface ClientsState {
   error: string | null;
   selectedClient: Client | null;
   fetchClients: () => Promise<void>;
-  addClient: (clientData: Partial<Client>) => Promise<Client>;
+  addClient: (clientData: Partial<Client>, opts?: AddClientOptions) => Promise<Client>;
   updateClient: (clientId: string, updatedClient: Partial<Client>) => Promise<Client>;
   updateClientContact: (clientId: string, contact: { email?: string; phonePrefix?: string; phoneNumber?: string }) => Promise<void>;
   archiveClient: (clientId: string) => Promise<void>;
@@ -46,17 +53,22 @@ export const useClientsStore = create<ClientsState>((set) => ({
     set({ clients: data.map((c) => new Client(c)), isLoading: false, error: null });
   },
 
-  addClient: async (clientData) => {
+  addClient: async (clientData, opts) => {
+    const body: { client: Partial<Client>; createAccount?: boolean } = { client: clientData };
+    if (opts?.createAccount === false) body.createAccount = false;
     const response = await fetch('/api/clients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client: clientData }),
+      body: JSON.stringify(body),
     });
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
     const newClient = new Client(result.client);
     set((s) => ({ clients: [...s.clients, newClient] }));
-    posthog.capture('client_created', { client_id: newClient.id });
+    posthog.capture('client_created', {
+      client_id: newClient.id,
+      ...(opts?.source ? { source: opts.source } : {}),
+    });
     return newClient;
   },
 

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, X, Check } from 'lucide-react';
+import { ChevronDown, X, Check, Plus } from 'lucide-react';
 
 type ControlSize = 'sm' | 'md' | 'lg';
 
@@ -27,6 +27,12 @@ interface SelectProps {
   classes?: string;
   width?: string;
   size?: ControlSize;
+  /** Generic "create new" affordance rendered in the search row. Closes the
+   *  dropdown when clicked — the consumer typically opens a modal next. */
+  createAction?: { label: string; onClick: () => void };
+  /** When set, an empty-result state is replaced by a "+ Crea «query»" row.
+   *  Fires with the trimmed search text and closes the dropdown. */
+  onCreateFromSearch?: (typedText: string) => void;
 }
 
 export function Select({
@@ -43,6 +49,8 @@ export function Select({
   classes = '',
   width = 'w-full',
   size = 'md',
+  createAction,
+  onCreateFromSearch,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,22 +246,52 @@ export function Select({
           }}
           className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden z-popover"
         >
-          {searchable && (
-            <div className="p-2 border-b border-zinc-500/25">
-              <input
-                ref={inputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
-                placeholder="Cerca..."
-                onKeyDown={handleKeyNavigation}
-              />
+          {(searchable || createAction) && (
+            <div className="p-2 border-b border-zinc-500/25 flex items-center gap-2">
+              {searchable && (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
+                  className="flex-1 min-w-0 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
+                  placeholder="Cerca..."
+                  onKeyDown={handleKeyNavigation}
+                />
+              )}
+              {createAction && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeDropdown();
+                    createAction.onClick();
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary-hover dark:text-primary/80 hover:bg-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors"
+                >
+                  <Plus className="size-4" />
+                  {createAction.label}
+                </button>
+              )}
             </div>
           )}
           <div ref={optionsRef} id={listboxId} role="listbox" className={`${maxHeight} overflow-y-auto`}>
             {filteredOptions.length === 0 ? (
-              <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
+              onCreateFromSearch && searchQuery.trim() ? (
+                <button
+                  type="button"
+                  className="w-full p-2 cursor-pointer transition-colors text-left flex items-center gap-2 text-primary-hover dark:text-primary/80 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  onClick={() => {
+                    const trimmed = searchQuery.trim();
+                    closeDropdown();
+                    onCreateFromSearch(trimmed);
+                  }}
+                >
+                  <Plus className="size-4 shrink-0" />
+                  <span className="truncate">Crea «{searchQuery.trim()}»</span>
+                </button>
+              ) : (
+                <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
+              )
             ) : (
               filteredOptions.map((option, i) => {
                 const isSelected = value === option[valueKey];

@@ -27,6 +27,7 @@ import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
@@ -215,6 +216,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickAddPrefill, setQuickAddPrefill] = useState<{ firstName: string; lastName: string }>({ firstName: '', lastName: '' });
   const [svcQuery, setSvcQuery] = useState('');
   const [svcOpen, setSvcOpen] = useState(false);
   const [prodQuery, setProdQuery] = useState('');
@@ -1156,6 +1159,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                       onChange={setClientId}
                       placeholder="Cerca cliente…"
                       maxHeight="max-h-48"
+                      createAction={{
+                        label: 'Nuovo',
+                        onClick: () => {
+                          setQuickAddPrefill({ firstName: '', lastName: '' });
+                          setQuickAddOpen(true);
+                        },
+                      }}
+                      onCreateFromSearch={(text) => {
+                        const trimmed = text.trim();
+                        const i = trimmed.indexOf(' ');
+                        const firstName = i === -1 ? trimmed : trimmed.slice(0, i);
+                        const lastName = i === -1 ? '' : trimmed.slice(i + 1);
+                        setQuickAddPrefill({ firstName, lastName });
+                        setQuickAddOpen(true);
+                      }}
                     />
                     {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
                   </div>
@@ -1863,6 +1881,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           void runPersist(reason);
         }}
         isSubmitting={isSubmitting}
+      />
+
+      <QuickAddClientModal
+        isOpen={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        initialFirstName={quickAddPrefill.firstName}
+        initialLastName={quickAddPrefill.lastName}
+        onCreated={(client) => setClientId(client.id)}
       />
     </>
   );
