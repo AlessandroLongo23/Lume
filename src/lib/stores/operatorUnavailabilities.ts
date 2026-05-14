@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
@@ -40,16 +41,21 @@ export const useOperatorUnavailabilitiesStore = create<OperatorUnavailabilitiesS
     // floor so the calendar never shows torn data when navigating backward.
     const since = new Date();
     since.setFullYear(since.getFullYear() - 1);
-    const { data, error } = await supabase
-      .from('operator_unavailabilities')
-      .select('*')
-      .gte('end_at', since.toISOString());
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof OperatorUnavailability>[0]>(
+      (from, to) =>
+        supabase
+          .from('operator_unavailabilities')
+          .select('*')
+          .gte('end_at', since.toISOString())
+          .order('start_at', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({
-      items: (data ?? []).map((row) => new OperatorUnavailability(row)),
+      items: data.map((row) => new OperatorUnavailability(row)),
       isLoading: false,
       error: null,
     });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheProduct } from '@/lib/types/FicheProduct';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
@@ -20,9 +21,16 @@ export const useFicheProductsStore = create<FicheProductsState>((set) => ({
 
   fetchFicheProducts: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('fiche_products').select('*');
+    const { data, error } = await fetchAllPages<FicheProduct>(
+      (from, to) =>
+        supabase
+          .from('fiche_products')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ fiche_products: data.map((fp) => new FicheProduct(fp)), isLoading: false, error: null });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Coupon, type CouponRedemption } from '@/lib/types/Coupon';
 
 interface CouponsState {
@@ -28,18 +29,32 @@ export const useCouponsStore = create<CouponsState>((set) => ({
 
   fetchCoupons: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('coupons').select('*');
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Coupon>[0]>(
+      (from, to) =>
+        supabase
+          .from('coupons')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ coupons: data.map((c) => new Coupon(c)), isLoading: false, error: null });
   },
 
   fetchRedemptions: async () => {
-    const { data, error } = await supabase.from('coupon_redemptions').select('*');
+    const { data, error } = await fetchAllPages<CouponRedemption>(
+      (from, to) =>
+        supabase
+          .from('coupon_redemptions')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) return;
-    set({ redemptions: data as CouponRedemption[] });
+    set({ redemptions: data });
   },
 
   addCoupon: async (coupon) => {

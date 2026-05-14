@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Order } from '@/lib/types/Order';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
@@ -21,8 +22,15 @@ export const useOrdersStore = create<OrdersState>((set) => ({
 
   fetchOrders: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('orders').select('*');
-    if (error) { set({ isLoading: false, error: error.message }); return; }
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Order>[0]>(
+      (from, to) =>
+        supabase
+          .from('orders')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
+    if (error) { set({ isLoading: false, error }); return; }
     set({ orders: data.map((o) => new Order(o)), isLoading: false, error: null });
   },
 

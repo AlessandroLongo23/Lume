@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Abbonamento } from '@/lib/types/Abbonamento';
 
 interface AbbonamentiState {
@@ -20,9 +21,16 @@ export const useAbbonamentiStore = create<AbbonamentiState>((set) => ({
 
   fetchAbbonamenti: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('abbonamenti').select('*');
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Abbonamento>[0]>(
+      (from, to) =>
+        supabase
+          .from('abbonamenti')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ abbonamenti: data.map((a) => new Abbonamento(a)), isLoading: false, error: null });

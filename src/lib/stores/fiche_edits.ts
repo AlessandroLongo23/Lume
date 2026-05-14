@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheEdit } from '@/lib/types/FicheEdit';
 
 interface FicheEditsState {
@@ -17,12 +18,16 @@ export const useFicheEditsStore = create<FicheEditsState>((set, get) => ({
 
   fetchFicheEdits: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabase
-      .from('fiche_edits')
-      .select('*')
-      .order('edited_at', { ascending: false });
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof FicheEdit>[0]>(
+      (from, to) =>
+        supabase
+          .from('fiche_edits')
+          .select('*')
+          .order('edited_at', { ascending: false })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ fiche_edits: data.map((fe) => new FicheEdit(fe)), isLoading: false, error: null });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheService } from '@/lib/types/FicheService';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useFichesStore } from '@/lib/stores/fiches';
@@ -50,12 +51,17 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
     set((s) => ({ ...s, isLoading: true }));
     const since = new Date();
     since.setDate(since.getDate() - 90);
-    const { data, error } = await supabase
-      .from('fiche_services')
-      .select('*')
-      .gte('start_time', since.toISOString());
+    const { data, error } = await fetchAllPages<FicheService>(
+      (from, to) =>
+        supabase
+          .from('fiche_services')
+          .select('*')
+          .gte('start_time', since.toISOString())
+          .order('start_time', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ fiche_services: data.map((fs) => new FicheService(fs)), isLoading: false, error: null });

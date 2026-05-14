@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FichePayment } from '@/lib/types/FichePayment';
 
 interface FichePaymentsState {
@@ -16,9 +17,16 @@ export const useFichePaymentsStore = create<FichePaymentsState>((set) => ({
 
   fetchFichePayments: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabase.from('fiche_payments').select('*');
+    const { data, error } = await fetchAllPages<FichePayment>(
+      (from, to) =>
+        supabase
+          .from('fiche_payments')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ fiche_payments: data.map((fp) => new FichePayment(fp)), isLoading: false, error: null });

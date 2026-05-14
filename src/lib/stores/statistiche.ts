@@ -6,6 +6,7 @@ import {
 } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages, fetchAllByIn } from '@/lib/supabase/paginate';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheService } from '@/lib/types/FicheService';
 import { FicheProduct } from '@/lib/types/FicheProduct';
@@ -83,18 +84,23 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
 
     fetchForPeriod: async (from, to) => {
       set({ isLoading: true, error: null });
-      const { data: fichesData, error: fichesErr } = await supabase
-        .from('fiches')
-        .select('*')
-        .eq('status', FicheStatus.COMPLETED)
-        .gte('datetime', from.toISOString())
-        .lte('datetime', to.toISOString());
+      const fichesRes = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
+        (rangeFrom, rangeTo) =>
+          supabase
+            .from('fiches')
+            .select('*')
+            .eq('status', FicheStatus.COMPLETED)
+            .gte('datetime', from.toISOString())
+            .lte('datetime', to.toISOString())
+            .order('datetime', { ascending: true })
+            .range(rangeFrom, rangeTo),
+      );
 
-      if (fichesErr) {
-        set({ isLoading: false, error: fichesErr.message });
+      if (fichesRes.error) {
+        set({ isLoading: false, error: fichesRes.error });
         return;
       }
-      const fiches = (fichesData ?? []).map((f) => new Fiche(f));
+      const fiches = fichesRes.data.map((f) => new Fiche(f));
       const ficheIds = fiches.map((f) => f.id);
 
       if (ficheIds.length === 0) {
@@ -109,18 +115,39 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       }
 
       const [servRes, prodRes, payRes] = await Promise.all([
-        supabase.from('fiche_services').select('*').in('fiche_id', ficheIds),
-        supabase.from('fiche_products').select('*').in('fiche_id', ficheIds),
-        supabase.from('fiche_payments').select('*').in('fiche_id', ficheIds),
+        fetchAllByIn<FicheService>(ficheIds, (chunk, rangeFrom, rangeTo) =>
+          supabase
+            .from('fiche_services')
+            .select('*')
+            .in('fiche_id', chunk)
+            .order('id', { ascending: true })
+            .range(rangeFrom, rangeTo),
+        ),
+        fetchAllByIn<FicheProduct>(ficheIds, (chunk, rangeFrom, rangeTo) =>
+          supabase
+            .from('fiche_products')
+            .select('*')
+            .in('fiche_id', chunk)
+            .order('id', { ascending: true })
+            .range(rangeFrom, rangeTo),
+        ),
+        fetchAllByIn<FichePayment>(ficheIds, (chunk, rangeFrom, rangeTo) =>
+          supabase
+            .from('fiche_payments')
+            .select('*')
+            .in('fiche_id', chunk)
+            .order('id', { ascending: true })
+            .range(rangeFrom, rangeTo),
+        ),
       ]);
 
       set({
         statFiches: fiches,
-        statFicheServices: (servRes.data ?? []).map((s) => new FicheService(s)),
-        statFicheProducts: (prodRes.data ?? []).map((p) => new FicheProduct(p)),
-        statFichePayments: (payRes.data ?? []).map((p) => new FichePayment(p)),
+        statFicheServices: servRes.data.map((s) => new FicheService(s)),
+        statFicheProducts: prodRes.data.map((p) => new FicheProduct(p)),
+        statFichePayments: payRes.data.map((p) => new FichePayment(p)),
         isLoading: false,
-        error: servRes.error?.message ?? prodRes.error?.message ?? payRes.error?.message ?? null,
+        error: servRes.error ?? prodRes.error ?? payRes.error ?? null,
       });
     },
 
@@ -128,18 +155,24 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       set({ isHistoricalLoading: true });
       const since = startOfMonth(subMonths(new Date(), 12));
 
-      const fichesRes = await supabase
-        .from('fiches')
-        .select('id, datetime, total_override')
-        .eq('status', FicheStatus.COMPLETED)
-        .gte('datetime', since.toISOString());
+      type HistoricalFicheRow = { id: string; datetime: string; total_override: number | null };
+      const fichesRes = await fetchAllPages<HistoricalFicheRow>(
+        (rangeFrom, rangeTo) =>
+          supabase
+            .from('fiches')
+            .select('id, datetime, total_override')
+            .eq('status', FicheStatus.COMPLETED)
+            .gte('datetime', since.toISOString())
+            .order('datetime', { ascending: true })
+            .range(rangeFrom, rangeTo),
+      );
 
       if (fichesRes.error) {
         set({ isHistoricalLoading: false });
         return;
       }
 
-      const allHistoricalFicheIds = (fichesRes.data ?? []).map((f) => f.id);
+      const allHistoricalFicheIds = fichesRes.data.map((f) => f.id);
 
       if (allHistoricalFicheIds.length === 0) {
         // Build months array with all zeros
@@ -152,9 +185,25 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
         return;
       }
 
+      type ServiceSumRow = { fiche_id: string; final_price: number };
+      type ProductSumRow = { fiche_id: string; final_price: number; quantity: number };
       const [servicesRes, productsRes] = await Promise.all([
-        supabase.from('fiche_services').select('fiche_id, final_price').in('fiche_id', allHistoricalFicheIds),
-        supabase.from('fiche_products').select('fiche_id, final_price, quantity').in('fiche_id', allHistoricalFicheIds),
+        fetchAllByIn<ServiceSumRow>(allHistoricalFicheIds, (chunk, rangeFrom, rangeTo) =>
+          supabase
+            .from('fiche_services')
+            .select('fiche_id, final_price')
+            .in('fiche_id', chunk)
+            .order('fiche_id', { ascending: true })
+            .range(rangeFrom, rangeTo),
+        ),
+        fetchAllByIn<ProductSumRow>(allHistoricalFicheIds, (chunk, rangeFrom, rangeTo) =>
+          supabase
+            .from('fiche_products')
+            .select('fiche_id, final_price, quantity')
+            .in('fiche_id', chunk)
+            .order('fiche_id', { ascending: true })
+            .range(rangeFrom, rangeTo),
+        ),
       ]);
 
       if (servicesRes.error || productsRes.error) {
@@ -163,17 +212,17 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       }
 
       const serviceSums = new Map<string, number>();
-      for (const s of servicesRes.data ?? []) {
+      for (const s of servicesRes.data) {
         serviceSums.set(s.fiche_id, (serviceSums.get(s.fiche_id) ?? 0) + s.final_price);
       }
       const productSums = new Map<string, number>();
-      for (const p of productsRes.data ?? []) {
+      for (const p of productsRes.data) {
         productSums.set(p.fiche_id, (productSums.get(p.fiche_id) ?? 0) + p.final_price * p.quantity);
       }
 
       // Group by YYYY-MM
       const byMonth = new Map<string, number>();
-      for (const f of fichesRes.data ?? []) {
+      for (const f of fichesRes.data) {
         const key = f.datetime.slice(0, 7); // "YYYY-MM"
         const total = f.total_override ?? ((serviceSums.get(f.id) ?? 0) + (productSums.get(f.id) ?? 0));
         byMonth.set(key, (byMonth.get(key) ?? 0) + total);

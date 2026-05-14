@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
@@ -55,13 +56,17 @@ export const useFichesStore = create<FichesState>((set) => ({
     set((s) => ({ ...s, isLoading: true }));
     const since = new Date();
     since.setDate(since.getDate() - 90);
-    const { data, error } = await supabase
-      .from('fiches')
-      .select('*')
-      .gte('datetime', since.toISOString())
-      .limit(10000);
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
+      (from, to) =>
+        supabase
+          .from('fiches')
+          .select('*')
+          .gte('datetime', since.toISOString())
+          .order('datetime', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ fiches: data.map((f) => new Fiche(f)), isLoading: false, error: null });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Client } from '@/lib/types/Client';
 
 interface ClientsState {
@@ -29,9 +30,16 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
   fetchClients: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('clients').select('*').limit(10000);
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Client>[0]>(
+      (from, to) =>
+        supabase
+          .from('clients')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
     if (error) {
-      set({ isLoading: false, error: error.message });
+      set({ isLoading: false, error });
       return;
     }
     set({ clients: data.map((c) => new Client(c)), isLoading: false, error: null });
