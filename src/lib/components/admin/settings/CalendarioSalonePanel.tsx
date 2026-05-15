@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Save, Loader2, Ban } from 'lucide-react';
+import { Calendar, Save, Loader2, Ban, Palette } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -21,6 +21,9 @@ export function CalendarioSalonePanel() {
   const [allowSelfUnavail, setAllowSelfUnavail] = useState<boolean>(
     settings?.allow_operator_self_unavailability ?? false,
   );
+  const [colorByClient, setColorByClient] = useState<boolean>(
+    settings?.color_by_client ?? true,
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -28,13 +31,15 @@ export function CalendarioSalonePanel() {
     setSlotMin(settings.slot_granularity_min ?? 15);
     setDefaultDuration(settings.default_appointment_duration_min ?? 30);
     setAllowSelfUnavail(settings.allow_operator_self_unavailability ?? false);
+    setColorByClient(settings.color_by_client ?? true);
   }, [isLoaded, settings]);
 
   const isDirty =
     settings !== null &&
     (settings.slot_granularity_min !== slotMin ||
       settings.default_appointment_duration_min !== defaultDuration ||
-      settings.allow_operator_self_unavailability !== allowSelfUnavail);
+      settings.allow_operator_self_unavailability !== allowSelfUnavail ||
+      settings.color_by_client !== colorByClient);
 
   const onSave = async () => {
     if (!Number.isInteger(defaultDuration) || defaultDuration < 5 || defaultDuration > 480) {
@@ -47,6 +52,7 @@ export function CalendarioSalonePanel() {
         slot_granularity_min: slotMin,
         default_appointment_duration_min: defaultDuration,
         allow_operator_self_unavailability: allowSelfUnavail,
+        color_by_client: colorByClient,
       });
       messagePopup.getState().success('Impostazioni calendario salvate');
     } catch {
@@ -123,6 +129,19 @@ export function CalendarioSalonePanel() {
             Permetti agli operatori di gestire le proprie non disponibilità
           </span>
           <Switch checked={allowSelfUnavail} onChange={() => setAllowSelfUnavail((v) => !v)} />
+        </div>
+      </SettingsCard>
+
+      <SettingsCard
+        icon={Palette}
+        title="Colore appuntamenti"
+        description="Quando attivo, tutti gli appuntamenti dello stesso cliente hanno lo stesso colore — utile per riconoscere a colpo d’occhio una visita divisa tra più operatori. Disattiva per colorare gli appuntamenti in base alla categoria del servizio."
+      >
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm text-zinc-700 dark:text-zinc-200">
+            Stesso colore per cliente
+          </span>
+          <Switch checked={colorByClient} onChange={() => setColorByClient((v) => !v)} />
         </div>
       </SettingsCard>
 

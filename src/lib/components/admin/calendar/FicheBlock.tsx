@@ -8,11 +8,15 @@ import { GripVertical, ChevronUp, ChevronDown, Info } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useClientsStore } from '@/lib/stores/clients';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { useCalendarDragContext } from './CalendarDragContext';
 import { HoverPopover } from '@/lib/components/shared/ui/HoverPopover';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { colorForClient } from '@/lib/utils/clientColor';
+import { ClientColorDot } from '@/lib/components/admin/clients/ClientColorDot';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheService } from '@/lib/types/FicheService';
 
@@ -54,6 +58,8 @@ export function FicheBlock({
   const services = useServicesStore((s) => s.services);
   const categories = useServiceCategoriesStore((s) => s.service_categories);
   const clients = useClientsStore((s) => s.clients);
+  const updateClient = useClientsStore((s) => s.updateClient);
+  const colorByClient = useSalonSettingsStore((s) => s.settings?.color_by_client ?? true);
   const { beginMove, beginResize } = useCalendarDragContext();
 
   const dragActive = useCalendarDragStore((s) => s.active);
@@ -68,11 +74,12 @@ export function FicheBlock({
   const lastService = operatorServices[operatorServices.length - 1];
 
   const accentColor = useMemo(() => {
+    if (colorByClient && client) return colorForClient(client);
     if (!firstService) return DEFAULT_CATEGORY_COLOR;
     const svc = services.find((s) => s.id === firstService.service_id);
     const cat = svc ? categories.find((c) => c.id === svc.category_id) : null;
     return cat?.color ?? DEFAULT_CATEGORY_COLOR;
-  }, [firstService, services, categories]);
+  }, [colorByClient, client, firstService, services, categories]);
 
   /** This block is itself the source of an active drag. */
   const isThisFicheDragging = dragActive && dragFicheId === fiche.id;
@@ -190,7 +197,7 @@ export function FicheBlock({
       {operatorServices.map((fs, index) => {
         const service = services.find((s) => s.id === fs.service_id);
         const category = service ? categories.find((c) => c.id === service.category_id) : null;
-        const color = category?.color ?? DEFAULT_CATEGORY_COLOR;
+        const color = colorByClient ? accentColor : (category?.color ?? DEFAULT_CATEGORY_COLOR);
         const blockHeightRem = (fs.duration / timeStep) * 2;
         const startTime = format(new Date(fs.start_time), 'HH:mm');
         const endTime = format(new Date(fs.end_time), 'HH:mm');
@@ -241,6 +248,19 @@ export function FicheBlock({
                     <div className="overflow-hidden flex shrink-0 w-0 -mr-1 group-hover/seg:w-3 group-hover/seg:mr-0 transition-[width,margin] duration-200 ease-out">
                       <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/seg:translate-x-0 transition-transform duration-200 ease-out" />
                     </div>
+                  )}
+                  {client && (
+                    <ClientColorDot
+                      clientId={client.id}
+                      color={client.color}
+                      onChange={async (next) => {
+                        try {
+                          await updateClient(client.id, { color: next });
+                        } catch {
+                          messagePopup.getState().error('Impossibile aggiornare il colore');
+                        }
+                      }}
+                    />
                   )}
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight min-w-0">
                     {headerLabel}

@@ -37,7 +37,7 @@ export async function GET() {
 
   const { data: salon } = await ctx.admin
     .from('salons')
-    .select('name, type, operating_hours, track_inventory, address, city, cap, province, phone, public_email, logo_url, favicon_url, brand_color, fiscal, slot_granularity_min, default_appointment_duration_min, default_low_stock_threshold, form_defaults, email_notifications, allow_operator_self_unavailability')
+    .select('name, type, operating_hours, track_inventory, address, city, cap, province, phone, public_email, logo_url, favicon_url, brand_color, fiscal, slot_granularity_min, default_appointment_duration_min, default_low_stock_threshold, form_defaults, email_notifications, allow_operator_self_unavailability, color_by_client')
     .eq('id', ctx.salonId)
     .single();
 
@@ -64,6 +64,7 @@ export async function GET() {
     form_defaults: (salon.form_defaults ?? {}) as SalonFormDefaults,
     email_notifications: (salon.email_notifications ?? {}) as SalonEmailNotifications,
     allow_operator_self_unavailability: salon.allow_operator_self_unavailability ?? false,
+    color_by_client: salon.color_by_client ?? true,
   });
 }
 
@@ -361,6 +362,10 @@ export async function PATCH(req: NextRequest) {
 
   if (body.allow_operator_self_unavailability !== undefined) {
     updates.allow_operator_self_unavailability = Boolean(body.allow_operator_self_unavailability);
+  }
+
+  if (body.color_by_client !== undefined) {
+    updates.color_by_client = Boolean(body.color_by_client);
   }
 
   if (Object.keys(updates).length === 0) {

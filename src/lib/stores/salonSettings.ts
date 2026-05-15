@@ -36,6 +36,10 @@ export interface SalonSettings {
   email_notifications: SalonEmailNotifications;
   /** When true, operators can create/edit/delete their own unavailabilities. */
   allow_operator_self_unavailability: boolean;
+  /** When true, calendar fiche blocks are colored by client (same client →
+   *  same color, useful for split appointments). When false, blocks fall
+   *  back to the service-category color. */
+  color_by_client: boolean;
 }
 
 interface SalonSettingsState {
@@ -70,6 +74,7 @@ const EMPTY: SalonSettings = {
   form_defaults: {},
   email_notifications: {},
   allow_operator_self_unavailability: false,
+  color_by_client: true,
 };
 
 export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({
