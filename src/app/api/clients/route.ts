@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 import { toE164 } from '@/lib/utils/phone';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
+import { pickAllowed } from '@/lib/utils/pickAllowed';
+
+const CLIENT_BULK_WRITE_FIELDS = ['gender', 'isTourist'] as const;
 
 function getAdminClient() {
   return createClient(
@@ -189,9 +192,51 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const { id, action } = body;
-    if (!id) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
 
     const supabaseAdmin = getAdminClient();
+
+    if (action === 'bulk-update') {
+      if (!canManageSalon(profile.role)) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+      const { ids, patch } = body;
+      if (!Array.isArray(ids) || ids.length === 0 || !patch) {
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      }
+      const safePatch = pickAllowed(patch, CLIENT_BULK_WRITE_FIELDS);
+      if (Object.keys(safePatch).length === 0) {
+        return NextResponse.json({ success: false, error: 'No allowed fields to update' }, { status: 400 });
+      }
+      const { error: dbError } = await supabaseAdmin
+        .from('clients')
+        .update(safePatch)
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'bulk-archive' || action === 'bulk-restore') {
+      if (!canManageSalon(profile.role)) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+      const { ids } = body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      }
+      const archived_at = action === 'bulk-archive' ? new Date().toISOString() : null;
+
+      const { error: dbError } = await supabaseAdmin
+        .from('clients')
+        .update({ archived_at })
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
+    if (!id) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
 
     if (action === 'archive' || action === 'restore') {
       if (!canManageSalon(profile.role)) {
@@ -347,30 +392,35 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id } = await request.json();
-    if (!id) {
+    const { id, ids } = await request.json();
+    const targetIds: string[] = Array.isArray(ids) && ids.length > 0 ? ids : (id ? [id] : []);
+    if (targetIds.length === 0) {
       return NextResponse.json({ success: false, error: 'Client ID is required' }, { status: 400 });
     }
 
     const supabaseAdmin = getAdminClient();
 
-    // Look up the client's user_id before deleting
-    const { data: clientData } = await supabaseAdmin
+    // Look up user_ids for each target client (for orphan cleanup afterwards)
+    const { data: clientsData, error: lookupError } = await supabaseAdmin
       .from('clients')
       .select('user_id')
-      .eq('id', id)
-      .eq('salon_id', profile.salon_id)
-      .single();
+      .in('id', targetIds)
+      .eq('salon_id', profile.salon_id);
+    if (lookupError) throw lookupError;
 
-    if (!clientData) {
+    if (!clientsData || clientsData.length === 0) {
       return NextResponse.json({ success: false, error: 'Client not found' }, { status: 404 });
     }
 
-    // 1. Collect all fiche IDs for this client so we can cascade manually
+    const userIdsToCheck = clientsData
+      .map((c: { user_id: string | null }) => c.user_id)
+      .filter((u): u is string => !!u);
+
+    // 1. Collect all fiche IDs for these clients so we can cascade manually
     const { data: clientFiches, error: fichesLookupError } = await supabaseAdmin
       .from('fiches')
       .select('id')
-      .eq('client_id', id)
+      .in('client_id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (fichesLookupError) throw fichesLookupError;
 
@@ -389,15 +439,15 @@ export async function DELETE(request: NextRequest) {
     const { error: fichesError } = await supabaseAdmin
       .from('fiches')
       .delete()
-      .eq('client_id', id)
+      .in('client_id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (fichesError) throw fichesError;
 
-    // 5. Delete client row
+    // 4. Delete client rows
     const { error: dbError } = await supabaseAdmin
       .from('clients')
       .delete()
-      .eq('id', id)
+      .in('id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 
@@ -408,9 +458,7 @@ export async function DELETE(request: NextRequest) {
     //   • an operator at a salon (operators.user_id)
     //   • a client of a different salon (clients.user_id)
     // Any of these still being present means the identity must be preserved.
-    if (clientData.user_id) {
-      const userId = clientData.user_id;
-
+    for (const userId of userIdsToCheck) {
       const [
         { count: salonOwnerCount },
         { count: operatorCount },

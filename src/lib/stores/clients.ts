@@ -27,6 +27,10 @@ interface ClientsState {
   deleteAllClients: () => Promise<void>;
   setSelectedClient: (client: Client | null) => void;
   setShowArchived: (show: boolean) => void;
+  bulkUpdateClients: (ids: string[], patch: Partial<Pick<Client, 'gender'>>) => Promise<void>;
+  bulkArchiveClients: (ids: string[]) => Promise<void>;
+  bulkRestoreClients: (ids: string[]) => Promise<void>;
+  bulkDeleteClients: (ids: string[]) => Promise<void>;
 }
 
 export const useClientsStore = create<ClientsState>((set) => ({
@@ -136,4 +140,61 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
   setSelectedClient: (client) => set({ selectedClient: client }),
   setShowArchived: (show) => set({ showArchived: show }),
+
+  bulkUpdateClients: async (ids, patch) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-update', ids, patch }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      clients: s.clients.map((c) =>
+        ids.includes(c.id) ? new Client({ ...c, ...patch } as Client) : c
+      ),
+    }));
+  },
+
+  bulkArchiveClients: async (ids) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-archive', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    const archived_at = new Date().toISOString();
+    set((s) => ({
+      clients: s.clients.map((c) =>
+        ids.includes(c.id) ? new Client({ ...c, archived_at } as Client) : c
+      ),
+    }));
+  },
+
+  bulkRestoreClients: async (ids) => {
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-restore', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      clients: s.clients.map((c) =>
+        ids.includes(c.id) ? new Client({ ...c, archived_at: null } as Client) : c
+      ),
+    }));
+  },
+
+  bulkDeleteClients: async (ids) => {
+    const response = await fetch('/api/clients', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({ clients: s.clients.filter((c) => !ids.includes(c.id)) }));
+  },
 }));

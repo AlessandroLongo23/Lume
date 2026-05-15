@@ -6,7 +6,10 @@ import { Modal } from './Modal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Button } from '@/lib/components/shared/ui/Button';
 
-const CONFIRM_PHRASE = 'ELIMINA TUTTO';
+const CONFIRM_PHRASE_BY_MODE = {
+  all: 'ELIMINA TUTTO',
+  selected: 'ELIMINA',
+} as const;
 
 interface DeleteAllModalProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ interface DeleteAllModalProps {
   count: number;
   cascadeNotice?: React.ReactNode;
   onConfirm: () => Promise<void>;
+  mode?: 'all' | 'selected';
 }
 
 export function DeleteAllModal({
@@ -24,11 +28,23 @@ export function DeleteAllModal({
   count,
   cascadeNotice,
   onConfirm,
+  mode = 'all',
 }: DeleteAllModalProps) {
   const [confirmInput, setConfirmInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isConfirmed = confirmInput.trim() === CONFIRM_PHRASE;
+  const confirmPhrase = CONFIRM_PHRASE_BY_MODE[mode];
+  const isConfirmed = confirmInput.trim() === confirmPhrase;
+  const label = entityLabel.toLowerCase();
+  const title = mode === 'all'
+    ? `Elimina tutti i ${label}`
+    : `Elimina ${count} ${label}`;
+  const submitLabel = mode === 'all'
+    ? `Elimina tutti (${count})`
+    : `Elimina (${count})`;
+  const successMessage = mode === 'all'
+    ? `Tutti i ${label} sono stati eliminati.`
+    : `${count} ${label} eliminati.`;
 
   useEffect(() => {
     if (isOpen) setConfirmInput('');
@@ -45,7 +61,7 @@ export function DeleteAllModal({
     setIsDeleting(true);
     try {
       await onConfirm();
-      messagePopup.getState().success(`Tutti i ${entityLabel.toLowerCase()} sono stati eliminati.`);
+      messagePopup.getState().success(successMessage);
       setConfirmInput('');
       onClose();
     } catch (error) {
@@ -67,7 +83,7 @@ export function DeleteAllModal({
             </div>
             <div className="flex flex-col min-w-0">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Elimina tutti i {entityLabel.toLowerCase()}
+                {title}
               </h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
                 Azione irreversibile — leggi attentamente
@@ -91,7 +107,7 @@ export function DeleteAllModal({
           <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
             <p className="text-sm text-red-800 dark:text-red-300 leading-relaxed">
               <strong>Attenzione:</strong> stai per eliminare permanentemente{' '}
-              <strong>{count} {entityLabel.toLowerCase()}</strong> e tutti i dati collegati.
+              <strong>{count} {label}</strong> e tutti i dati collegati.
               Questa operazione <strong>non potrà essere annullata in nessun modo</strong>.
             </p>
             {cascadeNotice && (
@@ -105,7 +121,7 @@ export function DeleteAllModal({
             <label className="text-sm text-zinc-600 dark:text-zinc-400">
               Digita{' '}
               <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
-                {CONFIRM_PHRASE}
+                {confirmPhrase}
               </strong>{' '}
               per confermare
             </label>
@@ -114,7 +130,7 @@ export function DeleteAllModal({
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && isConfirmed) handleDelete(); }}
-              placeholder={CONFIRM_PHRASE}
+              placeholder={confirmPhrase}
               autoComplete="off"
               disabled={isDeleting}
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors disabled:opacity-50"
@@ -132,7 +148,7 @@ export function DeleteAllModal({
             disabled={!isConfirmed || isDeleting}
             onClick={handleDelete}
           >
-            {isDeleting ? 'Eliminazione…' : `Elimina tutti (${count})`}
+            {isDeleting ? 'Eliminazione…' : submitLabel}
           </Button>
         </div>
 

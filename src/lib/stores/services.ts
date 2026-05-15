@@ -15,6 +15,10 @@ interface ServicesState {
   deleteService: (id: string) => Promise<void>;
   deleteAllServices: () => Promise<void>;
   setShowArchived: (show: boolean) => void;
+  bulkUpdateServices: (ids: string[], patch: Partial<Pick<Service, 'category_id'>>) => Promise<void>;
+  bulkArchiveServices: (ids: string[]) => Promise<void>;
+  bulkRestoreServices: (ids: string[]) => Promise<void>;
+  bulkDeleteServices: (ids: string[]) => Promise<void>;
 }
 
 export const useServicesStore = create<ServicesState>((set) => ({
@@ -94,4 +98,61 @@ export const useServicesStore = create<ServicesState>((set) => ({
   },
 
   setShowArchived: (show) => set({ showArchived: show }),
+
+  bulkUpdateServices: async (ids, patch) => {
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-update', ids, patch }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      services: s.services.map((sv) =>
+        ids.includes(sv.id) ? new Service({ ...sv, ...patch } as Service) : sv
+      ),
+    }));
+  },
+
+  bulkArchiveServices: async (ids) => {
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-archive', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    const archived_at = new Date().toISOString();
+    set((s) => ({
+      services: s.services.map((sv) =>
+        ids.includes(sv.id) ? new Service({ ...sv, archived_at } as Service) : sv
+      ),
+    }));
+  },
+
+  bulkRestoreServices: async (ids) => {
+    const response = await fetch('/api/services', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-restore', ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({
+      services: s.services.map((sv) =>
+        ids.includes(sv.id) ? new Service({ ...sv, archived_at: null } as Service) : sv
+      ),
+    }));
+  },
+
+  bulkDeleteServices: async (ids) => {
+    const response = await fetch('/api/services', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    set((s) => ({ services: s.services.filter((sv) => !ids.includes(sv.id)) }));
+  },
 }));

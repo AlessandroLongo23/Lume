@@ -53,8 +53,33 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id, action, service } = await request.json();
+    const { id, action, service, ids, patch } = await request.json();
     const supabaseAdmin = getAdminClient();
+
+    if (action === 'bulk-update') {
+      if (!Array.isArray(ids) || ids.length === 0 || !patch)
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      const { error: dbError } = await supabaseAdmin
+        .from('services')
+        .update(pickAllowed(patch, SERVICE_WRITE_FIELDS))
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'bulk-archive' || action === 'bulk-restore') {
+      if (!Array.isArray(ids) || ids.length === 0)
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+      const archived_at = action === 'bulk-archive' ? new Date().toISOString() : null;
+      const { error: dbError } = await supabaseAdmin
+        .from('services')
+        .update({ archived_at })
+        .in('id', ids)
+        .eq('salon_id', profile.salon_id);
+      if (dbError) throw dbError;
+      return NextResponse.json({ success: true });
+    }
 
     if (action === 'archive' || action === 'restore') {
       if (!id) {
@@ -99,18 +124,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id } = await request.json();
-    if (!id) {
+    const { id, ids } = await request.json();
+    const targetIds: string[] = Array.isArray(ids) && ids.length > 0 ? ids : (id ? [id] : []);
+    if (targetIds.length === 0) {
       return NextResponse.json({ success: false, error: 'Service ID is required' }, { status: 400 });
     }
 
     const supabaseAdmin = getAdminClient();
 
-    // Cascade: find fiches that reference this service, delete fiche_services + fiches
+    // Cascade: find fiches that reference any of these services, delete fiche_services + fiches
     const { data: ficheServicesData, error: fsQueryError } = await supabaseAdmin
       .from('fiche_services')
       .select('fiche_id')
-      .eq('service_id', id);
+      .in('service_id', targetIds);
     if (fsQueryError) throw fsQueryError;
 
     const ficheIds = [...new Set((ficheServicesData ?? []).map((fs: { fiche_id: string }) => fs.fiche_id))];
@@ -133,7 +159,7 @@ export async function DELETE(request: NextRequest) {
     const { error: dbError } = await supabaseAdmin
       .from('services')
       .delete()
-      .eq('id', id)
+      .in('id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
 

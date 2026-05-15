@@ -23,6 +23,8 @@ import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { DeleteProductModal } from './DeleteProductModal';
+import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
+import { ProductCategoryBadge } from './ProductCategoryBadge';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
@@ -137,7 +139,9 @@ function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProp
       <button
         onClick={() => setOpen((o) => !o)}
         className={[
-          'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
+          'inline-flex items-center rounded-lg border transition-colors',
+          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
+          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
           selected.length > 0
             ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
             : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
@@ -289,7 +293,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       id: 'select',
       enableSorting: false,
       size: 40,
-      meta: { requiredVisible: true },
+      meta: { requiredVisible: true, pinned: 'start' },
       header: ({ table }) => (
         <div onClick={(e) => e.stopPropagation()}>
           <Checkbox
@@ -298,7 +302,6 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
             indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
             onChange={table.getToggleAllPageRowsSelectedHandler()}
             aria-label="Seleziona tutti"
-            className="bulk-cb opacity-0 group-hover:opacity-100 transition-opacity"
           />
         </div>
       ),
@@ -309,7 +312,6 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
             aria-label="Seleziona riga"
-            className="bulk-cb opacity-0 group-hover:opacity-100 transition-opacity"
           />
         </div>
       ),
@@ -338,10 +340,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
     {
       accessorKey: 'product_category_id',
       header: 'Categoria',
-      cell: ({ row }) => {
-        const c = categories.find((x) => x.id === row.original.product_category_id);
-        return <span>{c?.name ?? '—'}</span>;
-      },
+      cell: ({ row }) => <ProductCategoryBadge category_id={row.original.product_category_id} />,
       sortingFn: (a, b) => {
         const cA = categories.find((x) => x.id === a.original.product_category_id)?.name ?? '';
         const cB = categories.find((x) => x.id === b.original.product_category_id)?.name ?? '';
@@ -549,7 +548,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Marca"
               disabled={bulkLoading}
-              size="sm"
+              size="md"
               width="w-36"
             />
 
@@ -571,7 +570,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Categoria"
               disabled={bulkLoading}
-              size="sm"
+              size="md"
               width="w-36"
             />
 
@@ -593,7 +592,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Fornitore"
               disabled={bulkLoading}
-              size="sm"
+              size="md"
               width="w-36"
             />
 
@@ -601,18 +600,18 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               <button
                 onClick={() => setBulkRestoreConfirm(true)}
                 disabled={bulkLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-3" />
+                <ArchiveRestore className="size-4" />
                 Ripristina
               </button>
             ) : (
               <button
                 onClick={() => setBulkArchiveConfirm(true)}
                 disabled={bulkLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-3" />
+                <ArchiveRestore className="size-4" />
                 Archivia
               </button>
             )}
@@ -620,17 +619,17 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
             <button
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="size-3" />
+              <Trash2 className="size-4" />
               Elimina
             </button>
 
             <button
               onClick={() => setRowSelection({})}
-              className="ml-auto flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              className="ml-auto inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
             >
-              <X className="size-3" />
+              <X className="size-4" />
               Annulla
             </button>
           </div>
@@ -643,7 +642,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                 placeholder="Cerca prodotto..."
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
+                className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
                   border-zinc-200 dark:border-zinc-800
                   focus:border-zinc-300 dark:focus:border-zinc-700
                   text-zinc-900 dark:text-zinc-100
@@ -727,7 +726,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                 </tr>
               ))}
             </thead>
-            <tbody className={`divide-y divide-zinc-100 dark:divide-zinc-800${hasSelection ? ' [&_.bulk-cb]:opacity-100' : ''}`}>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
@@ -764,7 +763,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                         <td
                           key={cell.id}
                           className={[
-                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300',
+                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap',
                             isNumeric ? 'text-right' : '',
                           ].join(' ')}
                         >
@@ -772,7 +771,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                         </td>
                       );
                     })}
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived ? (
                           <Button
@@ -892,42 +891,23 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
         </Portal>
       )}
 
-      {/* Bulk delete confirm */}
-      {bulkDeleteConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Eliminare {selectedIds.length} {selectedIds.length === 1 ? 'prodotto' : 'prodotti'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                Questa azione è irreversibile.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkDeleteConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="destructive"
-                  onClick={async () => {
-                    setBulkDeleteConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkDeleteProducts(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} prodotti eliminati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante l\'eliminazione');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Elimina
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <DeleteAllModal
+        isOpen={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        entityLabel="prodotti"
+        count={selectedIds.length}
+        mode="selected"
+        cascadeNotice={
+          <>
+            Verranno rimossi anche dagli ordini, dalle fiche e dai servizi che li utilizzano.
+            Lo storico dei prezzi e dei movimenti di magazzino andrà perso.
+          </>
+        }
+        onConfirm={async () => {
+          await bulkDeleteProducts(selectedIds);
+          setRowSelection({});
+        }}
+      />
     </>
   );
 }
