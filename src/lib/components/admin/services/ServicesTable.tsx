@@ -23,6 +23,8 @@ import { CategoryBadge } from './CategoryBadge';
 import { DeleteServiceModal } from './DeleteServiceModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -195,6 +197,20 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('services', columns);
+
+  const exportColumns: ExportColumn<Service>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (s) => s.name },
+      { label: 'Categoria', accessor: (s) => categories.find((c) => c.id === s.category_id)?.name ?? '' },
+      { label: 'Durata (min)', accessor: (s) => s.duration },
+      { label: 'Prezzo (€)', accessor: (s) => s.price },
+      { label: 'Costo prodotti (€)', accessor: (s) => s.product_cost },
+      { label: 'Margine (€)', accessor: (s) => s.price - s.product_cost },
+      { label: 'Esecuzioni', accessor: (s) => usageCounts?.get(s.id) ?? 0 },
+      { label: 'Descrizione', accessor: (s) => s.description },
+    ],
+    [categories, usageCounts],
+  );
 
   const table = useReactTable({
     data: filteredData,
@@ -413,7 +429,15 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
               )}
             </div>
 
-            <ColumnPicker tableId="services" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredData}
+                columns={exportColumns}
+                baseName={showArchived ? 'servizi-archiviati' : 'servizi'}
+                pdfTitle={showArchived ? 'Servizi archiviati' : 'Listino servizi'}
+              />
+              <ColumnPicker tableId="services" columns={columns} />
+            </div>
           </div>
         )}
 

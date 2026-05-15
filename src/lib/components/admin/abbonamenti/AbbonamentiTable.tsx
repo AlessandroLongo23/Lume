@@ -16,6 +16,8 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
@@ -162,6 +164,23 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('subscriptions', columns);
 
+  const exportColumns: ExportColumn<Abbonamento>[] = useMemo(
+    () => [
+      { label: 'Cliente', accessor: (a) => clientName(a.client_id) },
+      {
+        label: 'Servizi',
+        accessor: (a) => a.scope_service_ids.map((id) => servicesMap.get(id) ?? '').filter(Boolean).join(', '),
+      },
+      { label: 'Trattamenti rimanenti', accessor: (a) => a.remainingTreatments },
+      { label: 'Trattamenti totali', accessor: (a) => a.total_treatments },
+      { label: 'Incasso (€)', accessor: (a) => a.total_paid },
+      { label: 'Scadenza', accessor: (a) => (a.valid_until ? new Date(a.valid_until) : null) },
+      { label: 'Creato', accessor: (a) => new Date(a.created_at) },
+      { label: 'Stato', accessor: (a) => a.displayStatus() },
+    ],
+    [clientName, servicesMap],
+  );
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -205,7 +224,15 @@ export function AbbonamentiTable({ abbonamenti }: AbbonamentiTableProps) {
               </button>
             )}
           </div>
-          <ColumnPicker tableId="subscriptions" columns={columns} className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu
+              rows={filteredData}
+              columns={exportColumns}
+              baseName="abbonamenti"
+              pdfTitle="Abbonamenti"
+            />
+            <ColumnPicker tableId="subscriptions" columns={columns} />
+          </div>
         </div>
 
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">

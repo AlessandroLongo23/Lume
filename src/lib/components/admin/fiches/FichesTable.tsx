@@ -20,6 +20,8 @@ import { Button } from '@/lib/components/shared/ui/Button';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
@@ -166,6 +168,30 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('fiches', columns);
 
+  const exportColumns: ExportColumn<Fiche>[] = useMemo(
+    () => [
+      {
+        label: 'Cliente',
+        accessor: (f) => {
+          const c = clientMap.get(f.client_id);
+          return c ? `${c.firstName} ${c.lastName}` : '';
+        },
+      },
+      { label: 'Data', accessor: (f) => new Date(f.datetime) },
+      {
+        label: 'Servizi',
+        accessor: (f) =>
+          (ficheServicesByFiche.get(f.id) ?? [])
+            .map((fs) => serviceMap.get(fs.service_id)?.name)
+            .filter(Boolean)
+            .join(', '),
+      },
+      { label: 'Totale (€)', accessor: (f) => f.getTotal() },
+      { label: 'Stato', accessor: (f) => FICHE_BUCKET_LABELS[getFicheBucket(f)] },
+    ],
+    [clientMap, ficheServicesByFiche, serviceMap],
+  );
+
   const table = useReactTable({
     data: fiches,
     columns,
@@ -198,7 +224,15 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
               onChange={(v) => onGlobalFilterChange?.(v)}
             />
           )}
-          <ColumnPicker tableId="fiches" columns={columns} className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu
+              rows={fiches}
+              columns={exportColumns}
+              baseName="fiches"
+              pdfTitle="Elenco fiches"
+            />
+            <ColumnPicker tableId="fiches" columns={columns} />
+          </div>
         </div>
 
         {/* Table */}

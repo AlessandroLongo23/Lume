@@ -25,6 +25,8 @@ import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { ClientRatingBadge } from './ClientRatingBadge';
@@ -345,6 +347,29 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('clients', columns);
 
+  // Export descriptors — flat primitives, separate from the React/TanStack
+  // column defs because the rendered cells contain badges, icons and links.
+  const exportColumns: ExportColumn<Client>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (c) => c.firstName },
+      { label: 'Cognome', accessor: (c) => c.lastName },
+      { label: 'Email', accessor: (c) => c.email },
+      { label: 'Prefisso', accessor: (c) => c.phonePrefix },
+      { label: 'Telefono', accessor: (c) => c.phoneNumber },
+      { label: 'Genere', accessor: (c) => (c.gender === 'M' ? 'Uomo' : c.gender === 'F' ? 'Donna' : '') },
+      { label: 'Data di nascita', accessor: (c) => (c.birthDate ? new Date(c.birthDate) : null) },
+      { label: 'Turista', accessor: (c) => c.isTourist },
+      { label: 'Visite', accessor: (c) => stats[c.id]?.visit_count ?? 0 },
+      { label: 'Speso (€)', accessor: (c) => stats[c.id]?.total_spent ?? 0 },
+      { label: 'Scontrino medio (€)', accessor: (c) => stats[c.id]?.avg_ticket ?? 0 },
+      { label: 'Prima visita', accessor: (c) => stats[c.id]?.first_visit ?? null },
+      { label: 'Ultima visita', accessor: (c) => stats[c.id]?.last_visit ?? null },
+      { label: 'Servizio preferito', accessor: (c) => stats[c.id]?.top_service_name ?? '' },
+      { label: 'Operatore preferito', accessor: (c) => stats[c.id]?.top_operator_name ?? '' },
+    ],
+    [stats],
+  );
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -479,7 +504,15 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
               )}
             </div>
             <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
-            <ColumnPicker tableId="clients" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredData}
+                columns={exportColumns}
+                baseName={showArchived ? 'clienti-archiviati' : 'clienti'}
+                pdfTitle={showArchived ? 'Clienti archiviati' : 'Anagrafica clienti'}
+              />
+              <ColumnPicker tableId="clients" columns={columns} />
+            </div>
           </div>
         )}
 

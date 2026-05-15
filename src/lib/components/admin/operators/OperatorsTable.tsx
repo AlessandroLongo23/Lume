@@ -17,6 +17,8 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { Operator } from '@/lib/types/Operator';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
@@ -139,6 +141,18 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('operators', columns);
 
+  const exportColumns: ExportColumn<Operator>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (o) => o.firstName },
+      { label: 'Cognome', accessor: (o) => o.lastName },
+      { label: 'Email', accessor: (o) => o.email },
+      { label: 'Prefisso', accessor: (o) => o.phonePrefix },
+      { label: 'Telefono', accessor: (o) => o.phoneNumber },
+      { label: 'Invito in attesa', accessor: (o) => !!(o.email && pendingEmailSet.has(o.email.toLowerCase())) },
+    ],
+    [pendingEmailSet],
+  );
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -192,7 +206,15 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
               </button>
             )}
           </div>
-          <ColumnPicker tableId="operators" columns={columns} className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu
+              rows={filteredData}
+              columns={exportColumns}
+              baseName={showArchived ? 'operatori-archiviati' : 'operatori'}
+              pdfTitle={showArchived ? 'Operatori archiviati' : 'Operatori del salone'}
+            />
+            <ColumnPicker tableId="operators" columns={columns} />
+          </div>
         </div>
 
         {/* Table */}

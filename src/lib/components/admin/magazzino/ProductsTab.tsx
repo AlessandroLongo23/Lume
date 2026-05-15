@@ -27,6 +27,8 @@ import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal
 import { ProductCategoryBadge } from './ProductCategoryBadge';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -454,6 +456,19 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('products', columns);
 
+  const exportColumns: ExportColumn<Product>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (p) => p.name },
+      { label: 'Categoria', accessor: (p) => categories.find((c) => c.id === p.product_category_id)?.name ?? '' },
+      { label: 'Marchio', accessor: (p) => manufacturers.find((m) => m.id === p.manufacturer_id)?.name ?? '' },
+      { label: 'Fornitore', accessor: (p) => suppliers.find((s) => s.id === p.supplier_id)?.name ?? '' },
+      { label: 'Prezzo acquisto (€)', accessor: (p) => p.price },
+      { label: 'Prezzo vendita (€)', accessor: (p) => p.sell_price ?? '' },
+      { label: 'Giacenza', accessor: (p) => p.stock_quantity },
+    ],
+    [categories, manufacturers, suppliers],
+  );
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -681,7 +696,15 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               onChange={setSelectedSuppliers}
             />
 
-            <ColumnPicker tableId="products" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredData}
+                columns={exportColumns}
+                baseName={showArchived ? 'prodotti-archiviati' : 'prodotti'}
+                pdfTitle={showArchived ? 'Prodotti archiviati' : 'Inventario prodotti'}
+              />
+              <ColumnPicker tableId="products" columns={columns} />
+            </div>
           </div>
         )}
 

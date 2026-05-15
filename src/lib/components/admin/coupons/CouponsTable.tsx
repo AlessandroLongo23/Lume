@@ -16,6 +16,8 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { DeleteCouponModal } from './DeleteCouponModal';
@@ -179,6 +181,23 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs(tableId, columns);
 
+  const exportColumns: ExportColumn<Coupon>[] = useMemo(() => {
+    const cols: ExportColumn<Coupon>[] = [
+      { label: 'Destinatario', accessor: (c) => clientName(c.recipient_client_id) },
+    ];
+    if (variant === 'gift_card') {
+      cols.push({ label: 'Acquirente', accessor: (c) => clientName(c.purchaser_client_id) });
+      cols.push({ label: 'Saldo', accessor: (c) => c.displayDiscount() });
+      cols.push({ label: 'Incasso (€)', accessor: (c) => c.sale_amount ?? '' });
+    } else {
+      cols.push({ label: 'Sconto', accessor: (c) => c.displayDiscount() });
+    }
+    cols.push({ label: 'Scadenza', accessor: (c) => new Date(c.valid_until) });
+    cols.push({ label: 'Creato', accessor: (c) => new Date(c.created_at) });
+    cols.push({ label: 'Stato', accessor: (c) => c.displayStatus() });
+    return cols;
+  }, [variant, clientName]);
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -228,7 +247,15 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
               </Button>
             )}
           </div>
-          <ColumnPicker tableId={tableId} columns={columns} className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu
+              rows={filteredData}
+              columns={exportColumns}
+              baseName={tableId}
+              pdfTitle={variant === 'gift_card' ? 'Gift card' : 'Coupon'}
+            />
+            <ColumnPicker tableId={tableId} columns={columns} />
+          </div>
         </div>
 
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">

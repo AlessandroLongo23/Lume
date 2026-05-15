@@ -21,6 +21,8 @@ import { DeleteCategorieModal } from './DeleteCategorieModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -100,6 +102,15 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('product-categories', columns);
+
+  const exportColumns: ExportColumn<ProductCategory>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (c) => c.name },
+      { label: 'Descrizione', accessor: (c) => c.description },
+      { label: 'Colore', accessor: (c) => c.color },
+    ],
+    [],
+  );
 
   const table = useReactTable({
     data: filteredCategories,
@@ -196,7 +207,15 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                 </Button>
               )}
             </div>
-            <ColumnPicker tableId="product-categories" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredCategories}
+                columns={exportColumns}
+                baseName={showArchived ? 'categorie-prodotti-archiviate' : 'categorie-prodotti'}
+                pdfTitle={showArchived ? 'Categorie prodotti archiviate' : 'Categorie prodotti'}
+              />
+              <ColumnPicker tableId="product-categories" columns={columns} />
+            </div>
           </div>
 
           <div ref={tableCardRef} className="flex-1 min-h-0 w-full">

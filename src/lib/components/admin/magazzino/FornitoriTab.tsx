@@ -21,6 +21,8 @@ import { Supplier } from '@/lib/types/Supplier';
 import { AddFornitoreModal } from './AddFornitoreModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -109,6 +111,16 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('suppliers', columns);
+
+  const exportColumns: ExportColumn<Supplier>[] = useMemo(
+    () => [
+      { label: 'Nome', accessor: (s) => s.name },
+      { label: 'Città', accessor: (s) => s.city },
+      { label: 'Telefono', accessor: (s) => s.phone },
+      { label: 'Email', accessor: (s) => s.email },
+    ],
+    [],
+  );
 
   const table = useReactTable({
     data: filteredSuppliers,
@@ -222,7 +234,15 @@ export function FornitoriTab({ addTrigger }: FornitoriTabProps) {
                 </Button>
               )}
             </div>
-            <ColumnPicker tableId="suppliers" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredSuppliers}
+                columns={exportColumns}
+                baseName="fornitori"
+                pdfTitle="Fornitori"
+              />
+              <ColumnPicker tableId="suppliers" columns={columns} />
+            </div>
           </div>
 
           <div ref={tableCardRef} className="flex-1 min-h-0 w-full">

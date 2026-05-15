@@ -22,6 +22,8 @@ import { Manufacturer } from '@/lib/types/Manufacturer';
 import { AddMarchioModal } from './AddMarchioModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -82,6 +84,11 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('brands', columns);
+
+  const exportColumns: ExportColumn<Manufacturer>[] = useMemo(
+    () => [{ label: 'Nome', accessor: (m) => m.name }],
+    [],
+  );
 
   const table = useReactTable({
     data: filteredManufacturers,
@@ -197,7 +204,15 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
                 </Button>
               )}
             </div>
-            <ColumnPicker tableId="brands" columns={columns} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-2">
+              <ExportMenu
+                rows={filteredManufacturers}
+                columns={exportColumns}
+                baseName="marchi"
+                pdfTitle="Marchi"
+              />
+              <ColumnPicker tableId="brands" columns={columns} />
+            </div>
           </div>
 
           <div ref={tableCardRef} className="flex-1 min-h-0 w-full">

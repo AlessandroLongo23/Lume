@@ -18,6 +18,8 @@ import { EditOrderModal } from './EditOrderModal';
 import { DeleteOrderModal } from './DeleteOrderModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
+import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
+import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
@@ -76,6 +78,15 @@ export function OrdersTable({ orders }: OrdersTableProps) {
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
     useTableColumnPrefs('orders', columns);
 
+  const exportColumns: ExportColumn<Order>[] = useMemo(
+    () => [
+      { label: 'ID', accessor: (o) => o.id },
+      { label: 'Data', accessor: (o) => o.datetime },
+      { label: 'Stato', accessor: (o) => o.status },
+    ],
+    [],
+  );
+
   const table = useReactTable({
     data: orders,
     columns,
@@ -115,7 +126,15 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     <>
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         <div className="flex items-center gap-2">
-          <ColumnPicker tableId="orders" columns={columns} className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu
+              rows={orders}
+              columns={exportColumns}
+              baseName="ordini"
+              pdfTitle="Ordini"
+            />
+            <ColumnPicker tableId="orders" columns={columns} />
+          </div>
         </div>
 
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
