@@ -64,8 +64,8 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [data] (M) Onboarding step to bulk-load salon data
 - [ ] [data] (M) Goes over the most important settings, like opening time, authorizations and permissions, online booking service and setup, etc. (all clarifying that it could be done at any time and with a "Salta" button), for an initial setup
 - [*] [data] (XL) Automatic import via Anthropic API + Supabase MCP
-  - [ ] [data] (M) Passare tutti i dati da Stiv
-  - [ ] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
+  - [x] [data] (M) Passare tutti i dati da Stiv
+  - [x] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
 
 ### Mobile
 - [ ] [design] (L) Responsive pass on every page; intuitive phone interactions especially for tables and calendar
@@ -78,9 +78,9 @@ Currently in flight. Keep this section short; promote items here only when start
 ### UX
 - [ ] [ux] (M) Applicazione abbonamento e dove trovare i dettagli
 - [ ] [ux] (L) Patch-notes overlay on login, auto-generated from commits; pulsating badge for new tutorials and features
-- [ ] [ux] (M) Organize fiches in "Future/Prenotate", "Arretrate" and "Concluse"
 - [ ] [ux] (S) More navigation opportunities, with between-pages links
 - [ ] [ux] (M) Add spotify integration to control the music from the CMS
+- [x] [ux] (M) Organize fiches in "Future/Prenotate", "Arretrate" and "Concluse"
 - [x] [ux] (M) Bug button bottom-right (aligned with theme button) — screenshots current page, opens feedback modal with bug preselected and screenshot uploaded
 - [x] [ux] (S) Drag handle (six dots) on calendar service blocks on hover (animation pushes text)
 - [x] [ux] (S) Breadcrumb navigation + entity detail pages in trail
@@ -128,11 +128,11 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [design] (M) Page fly-in for nested dynamic routes (à la Cursum AI)
 - [ ] [design] (S) Three-dots dropdown — match btn-to-dropdown spacing with btn-to-btn spacing
 - [ ] [design] (S) Animate archive / delete icons on client cards
-- [ ] [design] (S) Replace native `<select>` with custom dropdown component
+- [x] [design] (S) Replace native `<select>` with custom dropdown component
 
 ### Admin / dashboard
 - [x] [admin] (M) Contacts page for noting down who to call, who has already been called, google maps link, reason why not, phone number, material sent (boolean) via whatsapp
-- [*] [admin] (M) "1% market coverage" milestones component — custom circular progress bar
+- [x] [admin] (M) "1% market coverage" milestones component — custom circular progress bar
 - [ ] [admin] (M) Aggregate stats on settings chosen by businesses
 - [ ] [admin] (M) Revenue dashboards — per service, per operator, year-over-year comparisons _(proposed)_
 - [ ] [admin] (L) Export IVA / report mensile per il commercialista _(proposed)_
