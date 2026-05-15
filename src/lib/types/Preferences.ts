@@ -19,6 +19,11 @@ export interface TableColumnsPreference {
   hidden: string[];
 }
 
+export interface BirthdayReminderPreference {
+  enabled: boolean;
+  daysAhead: number;
+}
+
 export interface ProfilePreferences {
   appearance?: {
     theme?: Theme;
@@ -42,5 +47,8 @@ export interface ProfilePreferences {
     noShow?: boolean;
     newBooking?: boolean;
     dailyDigest?: boolean;
+  };
+  clientsTable?: {
+    birthdayReminder?: BirthdayReminderPreference;
   };
 }

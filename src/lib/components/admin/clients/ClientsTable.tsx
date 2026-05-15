@@ -16,8 +16,11 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useClientStatsStore } from '@/lib/stores/client_stats';
+import { usePreferencesStore } from '@/lib/stores/preferences';
 import { Client } from '@/lib/types/Client';
 import { formatCurrency } from '@/lib/utils/format';
+import { daysUntilBirthday } from '@/lib/utils/date';
+import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -25,6 +28,7 @@ import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { ClientRatingBadge } from './ClientRatingBadge';
 import { IncompleteContactBadge } from './IncompleteContactBadge';
+import { BirthdayBadge } from './BirthdayBadge';
 import { DeleteClientModal } from './DeleteClientModal';
 import { TreatmentHistory } from './TreatmentHistory';
 import { SidePanel } from '@/lib/components/shared/ui/SidePanel';
@@ -48,6 +52,9 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const restoreClient = useClientsStore((s) => s.restoreClient);
   const ratings = useClientRatingsStore((s) => s.ratings);
   const stats = useClientStatsStore((s) => s.stats);
+  const birthdayReminder =
+    usePreferencesStore((s) => s.preferences.clientsTable?.birthdayReminder) ??
+    FACTORY_PREFERENCES.clientsTable.birthdayReminder;
 
   const [showDelete, setShowDelete] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -171,7 +178,16 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: 'Data di nascita',
         cell: ({ getValue }) => {
           const v = getValue() as string;
-          return v ? new Date(v).toLocaleDateString('it-IT') : <span className="text-zinc-400">—</span>;
+          if (!v) return <span className="text-zinc-400">—</span>;
+          const daysLeft = birthdayReminder.enabled ? daysUntilBirthday(v) : null;
+          const showBadge =
+            daysLeft !== null && daysLeft <= birthdayReminder.daysAhead;
+          return (
+            <span className="inline-flex items-center gap-2">
+              <span className="tabular-nums">{new Date(v).toLocaleDateString('it-IT')}</span>
+              {showBadge && <BirthdayBadge daysLeft={daysLeft} />}
+            </span>
+          );
         },
       },
       {
@@ -273,7 +289,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         meta: { pickerLabel: 'Turista' },
       },
     ],
-    [ratings, stats]
+    [ratings, stats, birthdayReminder]
   );
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =

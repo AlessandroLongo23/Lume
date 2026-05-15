@@ -48,3 +48,24 @@ export function getWeekDays(date: Date): Date[] {
 }
 
 export { addMonths, subMonths };
+
+export function daysUntilBirthday(birthDate: string | Date, now: Date = new Date()): number | null {
+  const dob = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  if (!dob || Number.isNaN(dob.getTime())) return null;
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const month = dob.getMonth();
+  const day = dob.getDate();
+
+  const candidate = (year: number) => {
+    const d = new Date(year, month, day);
+    // Feb 29 → Feb 28 on non-leap years so the badge still fires that week.
+    if (d.getMonth() !== month) return new Date(year, month + 1, 0);
+    return d;
+  };
+
+  let next = candidate(today.getFullYear());
+  if (next < today) next = candidate(today.getFullYear() + 1);
+
+  return Math.round((next.getTime() - today.getTime()) / 86_400_000);
+}

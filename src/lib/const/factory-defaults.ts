@@ -26,6 +26,12 @@ export const FACTORY_PREFERENCES = {
     newBooking: true,
     dailyDigest: false,
   },
+  clientsTable: {
+    birthdayReminder: {
+      enabled: true,
+      daysAhead: 10,
+    },
+  },
 } as const;
 
 /**
