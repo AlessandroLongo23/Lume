@@ -21,7 +21,7 @@ export function ClientRatingBadge({ stars, kind, size = 'sm' }: ClientRatingBadg
     return (
       <span className="inline-flex items-center gap-1 text-zinc-400">
         <Icon className={iconClass} />
-        <span className="text-xs">—</span>
+        <span className="text-xs leading-none">—</span>
       </span>
     );
   }

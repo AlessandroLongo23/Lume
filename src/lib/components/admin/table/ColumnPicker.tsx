@@ -46,7 +46,10 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
   const metaById = useMemo(() => new Map(meta.map((c) => [c.id, c])), [meta]);
 
   const visibleIds = useMemo(
-    () => columnOrder.filter((id) => !metaById.get(id)?.lockedInPicker),
+    () => columnOrder.filter((id) => {
+      const info = metaById.get(id);
+      return !info?.lockedInPicker && info?.pinned !== 'start';
+    }),
     [columnOrder, metaById],
   );
 
@@ -58,8 +61,9 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
   const isHidden = (id: string) => columnVisibility[id] === false;
 
   const onReorder = (next: string[]) => {
+    const pinnedHead = columnOrder.filter((id) => metaById.get(id)?.pinned === 'start');
     const lockedTail = columnOrder.filter((id) => metaById.get(id)?.lockedInPicker);
-    setColumnOrder([...next, ...lockedTail]);
+    setColumnOrder([...pinnedHead, ...next, ...lockedTail]);
   };
 
   const toggle = (id: string) => {

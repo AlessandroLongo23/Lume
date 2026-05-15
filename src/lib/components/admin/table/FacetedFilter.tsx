@@ -38,7 +38,9 @@ export function FacetedFilter({ label, options, selected, onChange }: FacetedFil
       <button
         onClick={() => setOpen((o) => !o)}
         className={[
-          'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
+          'inline-flex items-center rounded-lg border transition-colors',
+          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
+          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
           selected.length > 0
             ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
             : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',

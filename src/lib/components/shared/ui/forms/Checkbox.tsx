@@ -83,7 +83,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           aria-hidden
           className={[
             boxClass,
-            'flex items-center justify-center border transition-all duration-200',
+            'inline-flex align-middle items-center justify-center border transition-all duration-200',
             isActive
               ? 'border-primary/50 bg-primary/10'
               : 'border-zinc-500/25 bg-white dark:bg-zinc-800',

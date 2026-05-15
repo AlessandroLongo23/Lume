@@ -10,6 +10,7 @@ export interface ColumnMetaInfo {
   label: string;
   lockedInPicker: boolean;
   requiredVisible: boolean;
+  pinned?: 'start';
 }
 
 function getColumnId<T>(def: ColumnDef<T>): string | undefined {
@@ -24,7 +25,7 @@ export function describeColumns<T>(columns: ColumnDef<T>[]): ColumnMetaInfo[] {
   for (const def of columns) {
     const id = getColumnId(def);
     if (!id) continue;
-    const meta = (def.meta ?? {}) as { pickerLabel?: string; lockedInPicker?: boolean; requiredVisible?: boolean };
+    const meta = (def.meta ?? {}) as { pickerLabel?: string; lockedInPicker?: boolean; requiredVisible?: boolean; pinned?: 'start' };
     const label =
       meta.pickerLabel ??
       (typeof def.header === 'string' ? def.header : '') ??
@@ -34,6 +35,7 @@ export function describeColumns<T>(columns: ColumnDef<T>[]): ColumnMetaInfo[] {
       label: label || id,
       lockedInPicker: meta.lockedInPicker === true,
       requiredVisible: meta.requiredVisible === true,
+      pinned: meta.pinned,
     });
   }
   return out;
@@ -59,8 +61,9 @@ export function useTableColumnPrefs<T>(
 
   const { columnOrder, columnVisibility } = useMemo(() => {
     const known = new Map(meta.map((c) => [c.id, c]));
-    const seen = new Set<string>();
-    const order: string[] = [];
+    const pinnedStart = meta.filter((c) => c.pinned === 'start').map((c) => c.id);
+    const seen = new Set<string>(pinnedStart);
+    const order: string[] = [...pinnedStart];
 
     for (const id of pref?.order ?? []) {
       if (known.has(id) && !seen.has(id)) {

@@ -250,7 +250,7 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
                         <td
                           key={cell.id}
                           className={[
-                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300',
+                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap',
                             isNumeric ? 'text-right' : '',
                           ].join(' ')}
                         >
@@ -258,7 +258,7 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
                         </td>
                       );
                     })}
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived ? (
                           <Button
