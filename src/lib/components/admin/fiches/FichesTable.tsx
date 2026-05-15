@@ -15,6 +15,8 @@ import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
+import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { Fiche, FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
@@ -46,9 +48,11 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
   const clients = useClientsStore((s) => s.clients);
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
   const services = useServicesStore((s) => s.services);
+  const categories = useServiceCategoriesStore((s) => s.service_categories);
 
   const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
   const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
+  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const ficheServicesByFiche = useMemo(() => {
     const map = new Map<string, typeof ficheServices>();
     for (const fs of ficheServices) {
@@ -117,15 +121,25 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
         cell: ({ row }) => {
           const fServices = ficheServicesByFiche.get(row.original.id) ?? [];
           const entries = fServices
-            .map((fs) => ({ id: fs.id, name: serviceMap.get(fs.service_id)?.name }))
-            .filter((e): e is { id: string; name: string } => Boolean(e.name));
+            .map((fs) => {
+              const svc = serviceMap.get(fs.service_id);
+              if (!svc) return null;
+              const color = categoryMap.get(svc.category_id)?.color ?? DEFAULT_CATEGORY_COLOR;
+              return { id: fs.id, name: svc.name, color };
+            })
+            .filter((e): e is { id: string; name: string; color: string } => e !== null);
           if (entries.length === 0) return <span className="text-zinc-400">—</span>;
           return (
             <div className="flex flex-wrap gap-1">
               {entries.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70 border border-primary/20"
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
+                  style={{
+                    backgroundColor: `${entry.color}1A`,
+                    borderColor: `${entry.color}33`,
+                    color: entry.color,
+                  }}
                 >
                   {entry.name}
                 </span>
@@ -162,7 +176,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
         },
       },
     ],
-    [clientMap, ficheServicesByFiche, serviceMap]
+    [clientMap, ficheServicesByFiche, serviceMap, categoryMap]
   );
 
   const { columnVisibility, columnOrder, setColumnVisibility, setColumnOrder } =
