@@ -27,9 +27,11 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
   const ficheServices = useFicheServicesStore((s) => s.fiche_services);
   const services = useServicesStore((s) => s.services);
   const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
-  // Per-operator metrics only when the user has isolated a single operator.
-  const selectedOperatorId =
-    selectedOperatorIds && selectedOperatorIds.length === 1 ? selectedOperatorIds[0] : null;
+  // null = all operators (no filter); a Set means the user picked a specific subset (any size).
+  const operatorFilter = useMemo(
+    () => (selectedOperatorIds === null ? null : new Set(selectedOperatorIds)),
+    [selectedOperatorIds],
+  );
   const monthDays = useMemo(() => getMonthDays(currentMonth), [currentMonth]);
 
   // Pre-compute metrics per day in a single pass
@@ -65,7 +67,7 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
           const price = priceById.get(fs.service_id) ?? 0;
           totalMinutes += fs.duration;
           totalEarnings += price;
-          if (selectedOperatorId && fs.operator_id === selectedOperatorId) {
+          if (operatorFilter && operatorFilter.has(fs.operator_id)) {
             operatorMinutes += fs.duration;
             operatorEarnings += price;
           }
@@ -76,7 +78,7 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
     }
 
     return metrics;
-  }, [fiches, ficheServices, services, monthDays, selectedOperatorId]);
+  }, [fiches, ficheServices, services, monthDays, operatorFilter]);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
@@ -99,8 +101,8 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
               selectedDate={selectedDate}
               totalMinutes={metrics.totalMinutes}
               totalEarnings={metrics.totalEarnings}
-              operatorMinutes={selectedOperatorId ? metrics.operatorMinutes : null}
-              operatorEarnings={selectedOperatorId ? metrics.operatorEarnings : null}
+              operatorMinutes={operatorFilter ? metrics.operatorMinutes : null}
+              operatorEarnings={operatorFilter ? metrics.operatorEarnings : null}
               onClick={onDayClick}
             />
           );
