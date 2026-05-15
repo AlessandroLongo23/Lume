@@ -44,6 +44,19 @@ function RowCheckbox({ checked }: { checked: boolean }) {
   );
 }
 
+function RowRadio({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={[
+        'size-4 rounded-full border flex items-center justify-center shrink-0 transition-colors',
+        checked ? 'border-primary' : 'border-zinc-300 dark:border-zinc-600',
+      ].join(' ')}
+    >
+      {checked && <span className="size-2 rounded-full bg-primary" />}
+    </span>
+  );
+}
+
 interface OperatorFilterButtonProps {
   onAddFerie?: (operator: Operator) => void;
 }
@@ -52,8 +65,10 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
   const operators = useOperatorsStore((s) => s.operators);
   const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
   const focusedOperatorId = useCalendarStore((s) => s.focusedOperatorId);
+  const currentView = useCalendarStore((s) => s.currentView);
   const setSelectedOperatorIds = useCalendarStore((s) => s.setSelectedOperatorIds);
   const setFocusedOperatorId = useCalendarStore((s) => s.setFocusedOperatorId);
+  const isWeek = currentView === 'week';
 
   const [open, setOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ operator: Operator; x: number; y: number } | null>(null);
@@ -172,7 +187,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
         >
           <Users />
         </Button>
-        {!allSelected && (
+        {!isWeek && !allSelected && (
           <span
             aria-hidden
             className="absolute top-0.5 right-0.5 size-2 rounded-full bg-primary pointer-events-none"
@@ -186,36 +201,54 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
             ref={panelRef}
             className="fixed w-56 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden py-1"
             style={{ top: pos.top, right: pos.right }}
+            role={isWeek ? 'radiogroup' : undefined}
+            aria-label={isWeek ? 'Operatore visibile' : undefined}
           >
-            {/* Select-all row */}
-            <button
-              type="button"
-              onClick={selectAll}
-              className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
-            >
-              <RowCheckbox checked={allSelected} />
-              <span className="grow text-left font-medium">Tutti gli operatori</span>
-            </button>
+            {/* Select-all row — only in multi-select (day/month) view */}
+            {!isWeek && (
+              <>
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
+                >
+                  <RowCheckbox checked={allSelected} />
+                  <span className="grow text-left font-medium">Tutti gli operatori</span>
+                </button>
 
-            <div className="border-t border-zinc-500/15 mx-3 my-0.5" />
+                <div className="border-t border-zinc-500/15 mx-3 my-0.5" />
+              </>
+            )}
 
             {/* Per-operator rows */}
-            {activeOperators.map((op) => (
-              <button
-                key={op.id}
-                type="button"
-                onClick={() => toggleMembership(op.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
-                }}
-                className="flex w-full items-center gap-3 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
-              >
-                <OperatorAvatar operator={op} />
-                <span className="grow text-left truncate">{op.getFullName()}</span>
-                <RowCheckbox checked={effectiveDayIds.has(op.id)} />
-              </button>
-            ))}
+            {activeOperators.map((op) => {
+              const checked = isWeek ? focusedOperatorId === op.id : effectiveDayIds.has(op.id);
+              return (
+                <button
+                  key={op.id}
+                  type="button"
+                  role={isWeek ? 'radio' : undefined}
+                  aria-checked={isWeek ? checked : undefined}
+                  onClick={() => {
+                    if (isWeek) {
+                      setFocusedOperatorId(op.id);
+                      setOpen(false);
+                    } else {
+                      toggleMembership(op.id);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
+                >
+                  <OperatorAvatar operator={op} />
+                  <span className="grow text-left truncate">{op.getFullName()}</span>
+                  {isWeek ? <RowRadio checked={checked} /> : <RowCheckbox checked={checked} />}
+                </button>
+              );
+            })}
           </div>
         </Portal>
       )}
@@ -228,14 +261,16 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
             className="fixed z-popover min-w-44 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden text-sm"
             style={{ left: Math.min(contextMenu.x, window.innerWidth - 200), top: Math.min(contextMenu.y, window.innerHeight - 100) }}
           >
-            <button
-              type="button"
-              onClick={() => { isolate(contextMenu.operator.id); setContextMenu(null); }}
-              className="flex w-full items-center gap-2 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
-            >
-              <Crosshair className="size-4" />
-              Isola
-            </button>
+            {!isWeek && (
+              <button
+                type="button"
+                onClick={() => { isolate(contextMenu.operator.id); setContextMenu(null); }}
+                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
+              >
+                <Crosshair className="size-4" />
+                Isola
+              </button>
+            )}
             {onAddFerie && (
               <button
                 type="button"

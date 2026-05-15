@@ -4,6 +4,9 @@ type CalendarView = 'day' | 'week' | 'month';
 
 const SELECTED_OPERATORS_KEY = 'lume-calendar-selected-operator-ids';
 const ALL_OPERATORS_SENTINEL = '__ALL__';
+const FOCUSED_OPERATOR_KEY = 'lume-calendar-focused-operator-id';
+const VIEW_KEY = 'lume-calendar-view';
+const VIEW_VALUES = ['day', 'week', 'month'] as const;
 
 export interface HoveredTime {
   date: Date;
@@ -61,15 +64,63 @@ function persistSelection(ids: string[] | null): void {
   }
 }
 
+function readPersistedFocus(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(FOCUSED_OPERATOR_KEY);
+    return raw && raw.length > 0 ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistFocus(id: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (id === null) {
+      window.localStorage.removeItem(FOCUSED_OPERATOR_KEY);
+    } else {
+      window.localStorage.setItem(FOCUSED_OPERATOR_KEY, id);
+    }
+  } catch {
+    // ignore quota / privacy errors
+  }
+}
+
+function readPersistedView(): CalendarView {
+  if (typeof window === 'undefined') return 'day';
+  try {
+    const raw = window.localStorage.getItem(VIEW_KEY);
+    if (raw && (VIEW_VALUES as readonly string[]).includes(raw)) {
+      return raw as CalendarView;
+    }
+    return 'day';
+  } catch {
+    return 'day';
+  }
+}
+
+function persistView(view: CalendarView): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(VIEW_KEY, view);
+  } catch {
+    // ignore quota / privacy errors
+  }
+}
+
 export const useCalendarStore = create<CalendarState>((set) => ({
-  currentView: 'day',
+  currentView: readPersistedView(),
   selectedDate: new Date(),
   currentMonth: new Date(),
   selectedOperatorIds: readPersistedSelection(),
-  focusedOperatorId: null,
+  focusedOperatorId: readPersistedFocus(),
   hoveredTime: null,
 
-  setView: (view) => set({ currentView: view }),
+  setView: (view) => {
+    persistView(view);
+    set({ currentView: view });
+  },
 
   setSelectedDate: (date) => set({ selectedDate: date }),
 
@@ -80,7 +131,10 @@ export const useCalendarStore = create<CalendarState>((set) => ({
     set({ selectedOperatorIds: ids });
   },
 
-  setFocusedOperatorId: (id) => set({ focusedOperatorId: id }),
+  setFocusedOperatorId: (id) => {
+    persistFocus(id);
+    set({ focusedOperatorId: id });
+  },
 
   setHoveredTime: (hovered) => set({ hoveredTime: hovered }),
 }));

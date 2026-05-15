@@ -32,8 +32,8 @@ import { effectiveScheduleFor, getGridBounds } from '@/lib/utils/operating-hours
 const PIXELS_PER_SLOT = 32; // h-8 in CSS
 
 export function Calendar() {
-  const { currentView, selectedDate, currentMonth, focusedOperatorId } = useCalendarStore();
-  const { setSelectedDate, setView, setHoveredTime } = useCalendarStore();
+  const { currentView, selectedDate, currentMonth, focusedOperatorId, selectedOperatorIds } = useCalendarStore();
+  const { setSelectedDate, setView, setHoveredTime, setFocusedOperatorId } = useCalendarStore();
   const applyPlannedSegments = useFicheServicesStore((s) => s.applyPlannedSegments);
   const operators = useOperatorsStore((s) => s.operators);
   const salonSettings = useSalonSettingsStore((s) => s.settings);
@@ -43,6 +43,23 @@ export function Calendar() {
   useEffect(() => {
     setHoveredTime(null);
   }, [currentView, setHoveredTime]);
+
+  // Week view shows exactly one operator. Ensure focusedOperatorId is non-null and
+  // points to an active operator whenever we are in week view; prefer the first
+  // operator from the current day-view subset, fall back to the first active.
+  useEffect(() => {
+    if (currentView !== 'week') return;
+    const active = operators.filter((op) => !op.isArchived);
+    if (active.length === 0) return;
+    if (focusedOperatorId && active.some((op) => op.id === focusedOperatorId)) return;
+
+    const fromSubset =
+      selectedOperatorIds && selectedOperatorIds.length > 0
+        ? active.find((op) => selectedOperatorIds.includes(op.id))
+        : undefined;
+    const next = fromSubset ?? active[0];
+    setFocusedOperatorId(next.id);
+  }, [currentView, focusedOperatorId, selectedOperatorIds, operators, setFocusedOperatorId]);
 
   // For the week view: fall back to the first active operator when none is explicitly focused.
   const weekOperatorId = useMemo(() => {
