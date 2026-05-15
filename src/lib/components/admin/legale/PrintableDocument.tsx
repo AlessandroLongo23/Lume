@@ -299,23 +299,43 @@ export function PrintableDocument({ documentTitle, documentSubtitle, children }:
             size: A4;
             margin: 16mm;
           }
+          html,
           body {
             background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+          /* AppShell wraps the page in h-screen + overflow:hidden (motion.div, main)
+             and overflow-y-auto on the page card, plus pl-[sidebar-w] on <main>.
+             Without resetting ancestors, visibility:hidden keeps the layout in
+             place — so the document stays trapped in a viewport-height scroll
+             container and Chrome clips multi-page content to one page.
+             Strip every ancestor of the document; hide every non-ancestor. */
+          body :has(.document-sheet) {
+            height: auto !important;
+            max-height: none !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            position: static !important;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+          }
+          body :not(:has(.document-sheet)):not(.document-sheet):not(.document-sheet *) {
+            display: none !important;
           }
           .document-sheet {
             border: none !important;
             border-radius: 0 !important;
             padding: 0 !important;
+            margin: 0 !important;
             max-width: none !important;
             box-shadow: none !important;
-          }
-          /* Hide everything outside the document. Apps use various wrappers,
-             so we whitelist the article instead of blacklisting siblings. */
-          body > *:not(article):not(script) {
-            display: none !important;
-          }
-          .print\\:hidden {
-            display: none !important;
           }
         }
       `}</style>
