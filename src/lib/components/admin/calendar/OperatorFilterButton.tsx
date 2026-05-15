@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Ban, Check, Crosshair, GripVertical, Users } from 'lucide-react';
-import { Reorder, useDragControls } from 'motion/react';
+import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from 'motion/react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Portal } from '@/lib/components/shared/ui/Portal';
@@ -125,6 +125,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const effectiveDayIds = useMemo(() => {
     if (selectedOperatorIds === null) return new Set(orderedOperators.map((o) => o.id));
@@ -138,7 +139,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
     if (!open || !triggerRef.current) return;
     const update = () => {
       const r = triggerRef.current!.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
     };
     update();
     window.addEventListener('resize', update);
@@ -240,15 +241,23 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
         )}
       </div>
 
-      {open && pos && (
-        <Portal>
-          <div
-            ref={panelRef}
-            className="fixed w-60 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden"
-            style={{ top: pos.top, right: pos.right }}
-            role={isWeek ? 'radiogroup' : undefined}
-            aria-label={isWeek ? 'Operatore visibile' : undefined}
-          >
+      <AnimatePresence>
+        {open && pos && (
+          <Portal>
+            <motion.div
+              ref={panelRef}
+              className="fixed w-60 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden"
+              style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
+              role={isWeek ? 'radiogroup' : undefined}
+              aria-label={isWeek ? 'Operatore visibile' : undefined}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              transition={{
+                duration: reduceMotion ? 0.12 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
             {/* Select-all row — only in multi-select (day/month) view */}
             {!isWeek && (
               <>
@@ -297,9 +306,10 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
                 );
               })}
             </Reorder.Group>
-          </div>
-        </Portal>
-      )}
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
 
       {/* Right-click context menu */}
       {contextMenu && (
