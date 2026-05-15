@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, Users, X } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { ClientCard } from './ClientCard';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Client } from '@/lib/types/Client';
@@ -128,28 +129,12 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
       <div className="flex items-center gap-2">
-        <div className="relative flex items-center flex-1 max-w-sm">
-          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Cerca cliente..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-              border-border focus:border-foreground/30
-              text-foreground placeholder:text-muted-foreground
-              outline-none transition-colors"
-          />
-          {globalFilter && (
-            <button
-              onClick={() => setGlobalFilter('')}
-              aria-label="Cancella ricerca"
-              className="absolute right-2 p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
+        <Searchbar
+          className="flex-1 max-w-sm"
+          placeholder="Cerca cliente..."
+          value={globalFilter}
+          onChange={setGlobalFilter}
+        />
         <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
       </div>
 

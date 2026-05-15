@@ -10,7 +10,8 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Factory, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, Search, X } from 'lucide-react';
+import { Trash2, Factory, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
@@ -178,32 +179,12 @@ export function MarchiTab({ addTrigger }: MarchiTabProps) {
       ) : (
         <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex items-center flex-1 max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca marchio..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  aria-label="Cancella ricerca"
-                  onClick={() => setGlobalFilter('')}
-                  className="absolute right-1"
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+            <Searchbar
+              className="flex-1 max-w-sm"
+              placeholder="Cerca marchio..."
+              value={globalFilter}
+              onChange={setGlobalFilter}
+            />
             <div className="ml-auto flex items-center gap-2">
               <ExportMenu
                 rows={filteredManufacturers}

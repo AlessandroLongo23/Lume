@@ -10,10 +10,11 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Pencil, Trash2, ArchiveRestore, Search, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { AddServiceCategoryModal } from './AddServiceCategoryModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -170,32 +171,12 @@ export function CategorieServiziTab({ categories: categoriesProp, showArchived =
 
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex items-center flex-1 max-w-sm">
-            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Cerca categoria..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                border-zinc-200 dark:border-zinc-800
-                focus:border-zinc-300 dark:focus:border-zinc-700
-                text-zinc-900 dark:text-zinc-100
-                placeholder:text-zinc-400 outline-none transition-colors"
-            />
-            {globalFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                aria-label="Azzera ricerca"
-                onClick={() => setGlobalFilter('')}
-                className="absolute right-2"
-              >
-                <X />
-              </Button>
-            )}
-          </div>
+          <Searchbar
+            className="flex-1 max-w-sm"
+            placeholder="Cerca categoria..."
+            value={globalFilter}
+            onChange={setGlobalFilter}
+          />
           <div className="ml-auto flex items-center gap-2">
             <ExportMenu
               rows={filteredCategories}
