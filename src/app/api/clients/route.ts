@@ -137,6 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert client row linking this salon to the (existing or new) identity
+    const color = typeof client.color === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(client.color)
+      ? client.color
+      : null;
+
     const { data, error: dbError } = await supabaseAdmin
       .from('clients')
       .insert({
@@ -151,6 +155,7 @@ export async function POST(request: NextRequest) {
         isTourist: client.isTourist ?? false,
         birthDate: client.birthDate ?? null,
         note: client.note ?? null,
+        color,
       })
       .select()
       .single();

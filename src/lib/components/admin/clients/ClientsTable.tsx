@@ -21,6 +21,7 @@ import { usePreferencesStore } from '@/lib/stores/preferences';
 import { Client } from '@/lib/types/Client';
 import { formatCurrency } from '@/lib/utils/format';
 import { daysUntilBirthday } from '@/lib/utils/date';
+import { colorForClient } from '@/lib/utils/clientColor';
 import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { ColumnPicker } from '@/lib/components/admin/table/ColumnPicker';
@@ -143,6 +144,20 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
               aria-label="Seleziona riga"
             />
           </div>
+        ),
+      },
+      {
+        id: 'color',
+        header: '',
+        size: 24,
+        enableSorting: false,
+        meta: { pickerLabel: 'Colore' },
+        cell: ({ row }) => (
+          <span
+            className="inline-block size-2.5 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+            style={{ backgroundColor: colorForClient(row.original) }}
+            aria-hidden
+          />
         ),
       },
       {

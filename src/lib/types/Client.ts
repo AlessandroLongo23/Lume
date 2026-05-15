@@ -19,6 +19,9 @@ export class Client {
   note: string;
   archived_at: string | null;
   photoUrl: string | null;
+  /** Explicit per-client color override. NULL means "use the deterministic
+   *  hash of `id`" — see {@link colorForClient}. */
+  color: string | null;
 
   constructor(client: Client) {
     this.id = client.id;
@@ -35,6 +38,7 @@ export class Client {
     this.note = client.note;
     this.archived_at = client.archived_at ?? null;
     this.photoUrl = client.photoUrl ?? null;
+    this.color = client.color ?? null;
   }
 
   get isArchived(): boolean {

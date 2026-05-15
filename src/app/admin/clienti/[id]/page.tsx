@@ -58,6 +58,7 @@ function clientToDraft(client: Client): ClientFormValue {
     birthDate,
     isTourist: client.isTourist,
     photoUrl: client.photoUrl ?? null,
+    color: client.color ?? null,
   };
 }
 
@@ -91,7 +92,7 @@ export default function ClientDetailPage() {
   const isDirty = useMemo(() => {
     if (!isEditing || !client) return false;
     const baseline = clientToDraft(client);
-    const keys: (keyof ClientFormValue)[] = ['firstName', 'lastName', 'gender', 'email', 'phonePrefix', 'phoneNumber', 'password', 'birthDate', 'isTourist', 'photoUrl'];
+    const keys: (keyof ClientFormValue)[] = ['firstName', 'lastName', 'gender', 'email', 'phonePrefix', 'phoneNumber', 'password', 'birthDate', 'isTourist', 'photoUrl', 'color'];
     return keys.some((k) => (draft[k] ?? '') !== (baseline[k] ?? ''));
   }, [isEditing, draft, client]);
 

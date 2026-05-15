@@ -8,8 +8,14 @@ import {
 import type { Client } from '@/lib/types/Client';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { colorForClient } from '@/lib/utils/clientColor';
 import { IncompleteContactBadge } from './IncompleteContactBadge';
 import styles from './ClientCard.module.css';
+
+function withAlpha(hex: string, alpha: number): string {
+  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255);
+  return `${hex}${a.toString(16).padStart(2, '0')}`;
+}
 
 interface ClientCardProps {
   client: Client;
@@ -77,12 +83,22 @@ export function ClientCard({ client, onArchive, onRestore, showArchived = false 
       onKeyDown={(e) => e.key === 'Enter' && goToDetail()}
     >
       <header className={styles.header}>
-        <div className={styles.avatar} aria-hidden="true">
+        <div
+          className={styles.avatar}
+          aria-hidden="true"
+          style={
+            client.photoUrl
+              ? { borderColor: colorForClient(client), borderWidth: 2 }
+              : { backgroundColor: withAlpha(colorForClient(client), 0.18) }
+          }
+        >
           {client.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={client.photoUrl} alt="" className={styles.avatarImg} />
           ) : (
-            <span className={styles.initials}>{initials || '·'}</span>
+            <span className={styles.initials} style={{ color: colorForClient(client) }}>
+              {initials || '·'}
+            </span>
           )}
         </div>
         <div className={styles.identity}>

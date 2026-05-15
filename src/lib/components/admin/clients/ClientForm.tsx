@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2 } from 'lucide-react';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2, Palette } from 'lucide-react';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
@@ -10,6 +10,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { Gender } from '@/lib/types/Gender';
 import type { Client } from '@/lib/types/Client';
 import { supabase } from '@/lib/supabase/client';
+import { ClientColorPicker } from './ClientColorPicker';
 
 export type ClientFormValue = Partial<Client> & { password?: string };
 
@@ -274,6 +275,19 @@ export function ClientForm({
           <textarea className={inputClass} rows={3} value={value.note ?? ''} onChange={(e) => set('note', e.target.value)} />
         </div>
       )}
+
+      <div className="flex flex-col gap-2">
+        <label className={labelClass}>
+          <Palette className="size-4 text-zinc-900 dark:text-zinc-100" />
+          <span className="text-sm">Colore cliente</span>
+        </label>
+        <ClientColorPicker
+          value={value.color ?? null}
+          onChange={(color) => set('color', color)}
+          clientId={clientId}
+          showResetToAuto={!!clientId}
+        />
+      </div>
     </div>
   );
 }
