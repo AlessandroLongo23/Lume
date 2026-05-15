@@ -2,11 +2,12 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Ban, Check, Crosshair, Users } from 'lucide-react';
+import { Ban, Check, Crosshair, GripVertical, Users } from 'lucide-react';
+import { Reorder, useDragControls } from 'motion/react';
 import { useCalendarStore } from '@/lib/stores/calendar';
-import { useOperatorsStore } from '@/lib/stores/operators';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Portal } from '@/lib/components/shared/ui/Portal';
+import { useOperatorOrder } from '@/lib/hooks/useOperatorOrder';
 import type { Operator } from '@/lib/types/Operator';
 
 function OperatorAvatar({ operator }: { operator: Operator }) {
@@ -57,12 +58,61 @@ function RowRadio({ checked }: { checked: boolean }) {
   );
 }
 
+interface OperatorRowProps {
+  operator: Operator;
+  isWeek: boolean;
+  checked: boolean;
+  onActivate: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+}
+
+function OperatorRow({ operator, isWeek, checked, onActivate, onContextMenu }: OperatorRowProps) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item
+      as="div"
+      value={operator.id}
+      dragListener={false}
+      dragControls={controls}
+      role={isWeek ? 'radio' : 'button'}
+      aria-checked={isWeek ? checked : undefined}
+      aria-pressed={!isWeek ? checked : undefined}
+      tabIndex={0}
+      onClick={onActivate}
+      onContextMenu={onContextMenu}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onActivate();
+        }
+      }}
+      whileDrag={{ scale: 1.01, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+      className="flex w-full items-center gap-2 pl-2 pr-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer bg-white dark:bg-zinc-800 select-none focus:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-zinc-700/50"
+    >
+      <span
+        aria-hidden
+        className="text-zinc-300 dark:text-zinc-500 cursor-grab active:cursor-grabbing shrink-0 touch-none"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          controls.start(e);
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="size-4" />
+      </span>
+      <OperatorAvatar operator={operator} />
+      <span className="grow text-left truncate">{operator.getFullName()}</span>
+      {isWeek ? <RowRadio checked={checked} /> : <RowCheckbox checked={checked} />}
+    </Reorder.Item>
+  );
+}
+
 interface OperatorFilterButtonProps {
   onAddFerie?: (operator: Operator) => void;
 }
 
 export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps = {}) {
-  const operators = useOperatorsStore((s) => s.operators);
+  const { orderedOperators, orderedIds, setOrder } = useOperatorOrder();
   const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
   const focusedOperatorId = useCalendarStore((s) => s.focusedOperatorId);
   const currentView = useCalendarStore((s) => s.currentView);
@@ -76,15 +126,10 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
 
-  const activeOperators = useMemo(
-    () => operators.filter((op) => !op.isArchived),
-    [operators],
-  );
-
   const effectiveDayIds = useMemo(() => {
-    if (selectedOperatorIds === null) return new Set(activeOperators.map((o) => o.id));
+    if (selectedOperatorIds === null) return new Set(orderedOperators.map((o) => o.id));
     return new Set(selectedOperatorIds);
-  }, [selectedOperatorIds, activeOperators]);
+  }, [selectedOperatorIds, orderedOperators]);
 
   const allSelected = selectedOperatorIds === null;
 
@@ -142,9 +187,9 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
 
   function selectAll() {
     setSelectedOperatorIds(null);
-    if (activeOperators.length > 0) {
-      const stillActive = focusedOperatorId && activeOperators.some((op) => op.id === focusedOperatorId);
-      if (!stillActive) setFocusedOperatorId(activeOperators[0].id);
+    if (orderedOperators.length > 0) {
+      const stillActive = focusedOperatorId && orderedOperators.some((op) => op.id === focusedOperatorId);
+      if (!stillActive) setFocusedOperatorId(orderedOperators[0].id);
     }
   }
 
@@ -154,7 +199,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
   }
 
   function toggleMembership(operatorId: string) {
-    const allActiveIds = activeOperators.map((o) => o.id);
+    const allActiveIds = orderedOperators.map((o) => o.id);
     let nextIds: string[];
     if (selectedOperatorIds === null) {
       nextIds = allActiveIds.filter((id) => id !== operatorId);
@@ -171,7 +216,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
     }
   }
 
-  if (activeOperators.length === 0) return null;
+  if (orderedOperators.length === 0) return null;
 
   return (
     <>
@@ -199,7 +244,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
         <Portal>
           <div
             ref={panelRef}
-            className="fixed w-56 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden py-1"
+            className="fixed w-60 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden"
             style={{ top: pos.top, right: pos.right }}
             role={isWeek ? 'radiogroup' : undefined}
             aria-label={isWeek ? 'Operatore visibile' : undefined}
@@ -220,35 +265,38 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
               </>
             )}
 
-            {/* Per-operator rows */}
-            {activeOperators.map((op) => {
-              const checked = isWeek ? focusedOperatorId === op.id : effectiveDayIds.has(op.id);
-              return (
-                <button
-                  key={op.id}
-                  type="button"
-                  role={isWeek ? 'radio' : undefined}
-                  aria-checked={isWeek ? checked : undefined}
-                  onClick={() => {
-                    if (isWeek) {
-                      setFocusedOperatorId(op.id);
-                      setOpen(false);
-                    } else {
-                      toggleMembership(op.id);
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
-                  }}
-                  className="flex w-full items-center gap-3 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
-                >
-                  <OperatorAvatar operator={op} />
-                  <span className="grow text-left truncate">{op.getFullName()}</span>
-                  {isWeek ? <RowRadio checked={checked} /> : <RowCheckbox checked={checked} />}
-                </button>
-              );
-            })}
+            {/* Per-operator rows — drag to reorder via grip handle */}
+            <Reorder.Group
+              as="div"
+              axis="y"
+              values={orderedIds}
+              onReorder={setOrder}
+              className="max-h-80 overflow-y-auto overflow-x-hidden"
+            >
+              {orderedOperators.map((op) => {
+                const checked = isWeek ? focusedOperatorId === op.id : effectiveDayIds.has(op.id);
+                return (
+                  <OperatorRow
+                    key={op.id}
+                    operator={op}
+                    isWeek={isWeek}
+                    checked={checked}
+                    onActivate={() => {
+                      if (isWeek) {
+                        setFocusedOperatorId(op.id);
+                        setOpen(false);
+                      } else {
+                        toggleMembership(op.id);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
+                    }}
+                  />
+                );
+              })}
+            </Reorder.Group>
           </div>
         </Portal>
       )}

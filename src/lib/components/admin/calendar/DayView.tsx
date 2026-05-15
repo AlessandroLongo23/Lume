@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo } from 'react';
 import { isSameDay } from 'date-fns';
-import { useOperatorsStore } from '@/lib/stores/operators';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useCalendarStore } from '@/lib/stores/calendar';
+import { useOperatorOrder } from '@/lib/hooks/useOperatorOrder';
 import { TimeGrid } from './TimeGrid';
 import { DayViewSlot } from './DayViewSlot';
 import type { TimeGridColumn } from './TimeGrid';
@@ -26,17 +26,16 @@ interface DayViewProps {
 }
 
 export function DayView({ selectedDate, onSlotSelected, onFicheSelected, onCreateUnavailability, onSelectUnavailability, getScheduleFor, gridBounds }: DayViewProps) {
-  const operators = useOperatorsStore((s) => s.operators);
+  const { orderedOperators } = useOperatorOrder();
   const fiches = useFichesStore((s) => s.fiches);
   const selectedOperatorIds = useCalendarStore((s) => s.selectedOperatorIds);
   const setHoveredTime = useCalendarStore((s) => s.setHoveredTime);
 
   const activeOperators = useMemo(() => {
-    const base = operators.filter((op) => !op.isArchived);
-    if (selectedOperatorIds === null) return base;
+    if (selectedOperatorIds === null) return orderedOperators;
     const set = new Set(selectedOperatorIds);
-    return base.filter((op) => set.has(op.id));
-  }, [operators, selectedOperatorIds]);
+    return orderedOperators.filter((op) => set.has(op.id));
+  }, [orderedOperators, selectedOperatorIds]);
 
   const columns: TimeGridColumn[] = useMemo(
     () => activeOperators.map((op) => ({ key: op.id, label: op.getFullName() })),

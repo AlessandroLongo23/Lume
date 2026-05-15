@@ -41,6 +41,7 @@ export interface ProfilePreferences {
   calendar?: {
     defaultOperatorId?: string;
     weekStartsOn?: 0 | 1;
+    operatorOrder?: string[];
   };
   notifications?: {
     lowStock?: boolean;

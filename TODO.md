@@ -34,10 +34,10 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [infra] (S) Uptime monitoring + public status page _(proposed)_
 
 ### Legal & compliance
-- [ ] [legal] (XL) GDPR audit + pre-filled deliberatorie / consent forms (ask Ulisse)
+- [x] [legal] (XL) GDPR audit + pre-filled deliberatorie / consent forms (ask Ulisse)
 - [x] [legal] (M) Cookie consent banner — EU requirement before charging EU customers _(proposed)_
-- [ ] [legal] (M) Account deletion + data export endpoints — GDPR Art. 15 (portability) + Art. 17 (erasure) _(proposed)_
-- [ ] [legal] (S) Public Privacy Policy + Terms of Service pages — linked from footer _(proposed)_
+- [x] [legal] (M) Account deletion + data export endpoints — GDPR Art. 15 (portability) + Art. 17 (erasure) _(proposed)_
+- [x] [legal] (S) Public Privacy Policy + Terms of Service pages — linked from footer _(proposed)_
 
 ---
 
