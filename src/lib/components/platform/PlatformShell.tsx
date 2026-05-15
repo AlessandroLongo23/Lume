@@ -24,6 +24,7 @@ import {
 } from '@/lib/components/shell/BasicCommandMenu';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
+import { FullscreenToggle } from '@/lib/components/shared/ui/FullscreenToggle';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
@@ -162,6 +163,7 @@ export function PlatformShell({ firstName, lastName, email, children }: Platform
         <>
           <CommandMenuTrigger onOpen={controller.onOpen} />
           <ThemeToggle />
+          <FullscreenToggle />
         </>
       }
     />

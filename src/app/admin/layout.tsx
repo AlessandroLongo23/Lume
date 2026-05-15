@@ -16,6 +16,7 @@ import { OnboardingProgressBanner } from '@/lib/components/admin/OnboardingProgr
 import { ImpersonationBanner, useIsImpersonating } from '@/lib/components/admin/ImpersonationBanner';
 import { SubscriptionCTA } from '@/lib/components/admin/SubscriptionCTA';
 import { ThemeToggle } from '@/lib/components/shared/ui/theme/ThemeToggle';
+import { FullscreenToggle } from '@/lib/components/shared/ui/FullscreenToggle';
 import { AppShell } from '@/lib/components/shell/AppShell';
 import { Sidebar, type SidebarNavGroup } from '@/lib/components/shell/Sidebar';
 import { TopBar } from '@/lib/components/shell/TopBar';
@@ -273,6 +274,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {isOwner(role) && <SubscriptionCTA />}
           <CommandMenuTrigger onOpen={controller.onOpen} />
           <ThemeToggle />
+          <FullscreenToggle />
         </>
       }
     />
