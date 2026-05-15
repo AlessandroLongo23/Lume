@@ -276,6 +276,20 @@ export default function ServiziPage() {
               secondaryAction={{ label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) }}
               action={{ label: 'Nuovo Servizio', icon: Scissors, onClick: () => setShowAdd(true) }}
             />
+          ) : visibleServices.length === 0 ? (
+            servicesShowArchived ? (
+              <EmptyState
+                icon={Archive}
+                title="Nessun servizio archiviato"
+                description="Quando archivi un servizio lo trovi qui."
+              />
+            ) : (
+              <EmptyState
+                icon={Scissors}
+                title="Nessun servizio attivo"
+                description="Tutti i tuoi servizi sono archiviati."
+              />
+            )
           ) : (
             <ServicesTable services={visibleServices} showArchived={servicesShowArchived} usageCounts={usageCounts} />
           )
