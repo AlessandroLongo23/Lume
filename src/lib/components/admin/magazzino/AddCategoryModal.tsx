@@ -6,6 +6,7 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
+import { CATEGORY_PICKER_COLORS, DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import type { ProductCategory } from '@/lib/types/ProductCategory';
 
 interface AddCategoryModalProps {
@@ -14,7 +15,7 @@ interface AddCategoryModalProps {
   selectedCategory: ProductCategory | null;
 }
 
-const emptyForm = () => ({ name: '', description: '' });
+const emptyForm = () => ({ name: '', description: '', color: DEFAULT_CATEGORY_COLOR });
 
 export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCategoryModalProps) {
   const addProductCategory = useProductCategoriesStore((s) => s.addProductCategory);
@@ -28,7 +29,11 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
   useEffect(() => {
     if (selectedCategory) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm({ name: selectedCategory.name, description: selectedCategory.description ?? '' });
+      setForm({
+        name: selectedCategory.name,
+        description: selectedCategory.description ?? '',
+        color: selectedCategory.color ?? DEFAULT_CATEGORY_COLOR,
+      });
     } else {
       setForm(emptyForm());
     }
@@ -40,12 +45,13 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
     setNameError('');
     try {
       if (selectedCategory) {
-        await updateProductCategory(selectedCategory.id, { name: form.name.trim(), description: form.description.trim() });
+        await updateProductCategory(selectedCategory.id, { name: form.name.trim(), description: form.description.trim(), color: form.color });
         messagePopup.getState().success('Categoria aggiornata.');
       } else {
-        await addProductCategory({ name: form.name.trim(), description: form.description.trim() });
+        await addProductCategory({ name: form.name.trim(), description: form.description.trim(), color: form.color });
         messagePopup.getState().success('Categoria aggiunta.');
       }
+      await fetchProductCategories();
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
@@ -97,13 +103,16 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className={inputClass}
-            placeholder="es. Coloranti, Shampoo..."
-          />
+          <div className="flex items-center gap-2">
+            <span className="size-5 rounded-full shrink-0 border border-zinc-300 dark:border-zinc-600" style={{ backgroundColor: form.color }} />
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              className={inputClass}
+              placeholder="es. Coloranti, Shampoo..."
+            />
+          </div>
           {nameError && <p className="text-xs text-red-500">{nameError}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
@@ -115,6 +124,25 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
             className={inputClass}
             placeholder="Descrizione opzionale"
           />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Colore</label>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORY_PICKER_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, color: c }))}
+                className="size-6 rounded-md border-2 transition-transform hover:scale-110"
+                style={{
+                  backgroundColor: c,
+                  borderColor: form.color === c ? 'white' : 'transparent',
+                  outline: form.color === c ? `2px solid ${c}` : 'none',
+                }}
+                aria-label={c}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </AddModal>

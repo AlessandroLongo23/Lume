@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
-import { ProductCategory } from '@/lib/types/ProductCategory';
+import { ProductCategory, type RawProductCategory } from '@/lib/types/ProductCategory';
 
 interface ProductCategoriesState {
   product_categories: ProductCategory[];
@@ -26,7 +26,7 @@ export const useProductCategoriesStore = create<ProductCategoriesState>((set) =>
     set((s) => ({ ...s, isLoading: true }));
     const { data, error } = await supabase.from('product_categories').select('*');
     if (error) { set({ isLoading: false, error: error.message }); return; }
-    set({ product_categories: data.map((c) => new ProductCategory(c)), isLoading: false, error: null });
+    set({ product_categories: data.map((c) => new ProductCategory(c as RawProductCategory)), isLoading: false, error: null });
   },
 
   addProductCategory: async (category) => {

@@ -25,6 +25,15 @@ import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { cardStyle } from '@/lib/const/appearance';
 
+function ColorNameCell({ color, name }: { color: string; name: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="size-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <span className="font-medium text-zinc-900 dark:text-zinc-100">{name}</span>
+    </div>
+  );
+}
+
 interface CategorieTabProps {
   addTrigger?: number;
   categories?: ProductCategory[];
@@ -75,9 +84,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
       {
         accessorKey: 'name',
         header: 'Nome',
-        cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
-        ),
+        cell: ({ row }) => <ColorNameCell color={row.original.color} name={row.original.name} />,
         meta: { requiredVisible: true },
       },
       {
@@ -248,11 +255,11 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                       className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+                        <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <div className="flex flex-row items-center justify-end gap-1">
                           {showArchived ? (
                             <Button

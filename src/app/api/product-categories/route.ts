@@ -5,7 +5,7 @@ import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
-const PRODUCT_CATEGORY_WRITE_FIELDS = ['name', 'description', 'imageUrl'] as const;
+const PRODUCT_CATEGORY_WRITE_FIELDS = ['name', 'description', 'imageUrl', 'color'] as const;
 
 function getAdminClient() {
   return createClient(
