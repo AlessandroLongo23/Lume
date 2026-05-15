@@ -2,34 +2,45 @@
 
 import { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { EllipsisVertical } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Button } from './Button';
 import { Portal } from './Portal';
+import { NumberBadge } from './NumberBadge';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export interface DropdownMenuItem {
+export interface DropdownMenuAction {
   label: string;
   icon: React.ComponentType<any>;
   onClick: () => void;
   destructive?: boolean;
+  badge?: number;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+export type DropdownMenuItem = DropdownMenuAction | { divider: true };
+
+function isDivider(item: DropdownMenuItem): item is { divider: true } {
+  return 'divider' in item;
+}
 
 interface DropdownMenuProps {
   items: DropdownMenuItem[];
   width?: string;
+  ariaLabel?: string;
 }
 
-export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
+export function DropdownMenu({ items, width = 'w-64', ariaLabel = 'Altre azioni' }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
     const update = () => {
       const r = triggerRef.current!.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
     };
     update();
     window.addEventListener('resize', update);
@@ -52,6 +63,13 @@ export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open]);
+
   return (
     <>
       <Button
@@ -59,35 +77,63 @@ export function DropdownMenu({ items, width = 'w-48' }: DropdownMenuProps) {
         variant="secondary"
         size="md"
         iconOnly
-        aria-label="Altre opzioni"
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
         <EllipsisVertical />
       </Button>
-      {open && pos && (
-        <Portal>
-          <div
-            ref={panelRef}
-            className={`fixed ${width} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1`}
-            style={{ top: pos.top, right: pos.right }}
-          >
-            {items.map((item) => (
-              <button
-                key={item.label}
-                className={
-                  item.destructive
-                    ? "flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                    : "flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
+      <AnimatePresence>
+        {open && pos && (
+          <Portal>
+            <motion.div
+              ref={panelRef}
+              role="menu"
+              className={`fixed ${width} bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-dropdown p-1`}
+              style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              transition={{
+                duration: reduceMotion ? 0.12 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {items.flatMap<DropdownMenuItem>((item, i) => {
+                if (isDivider(item)) return [item];
+                const prev = items[i - 1];
+                const needsDivider = !!item.destructive && !!prev && !isDivider(prev) && !prev.destructive;
+                return needsDivider ? [{ divider: true }, item] : [item];
+              }).map((item, i) => {
+                if (isDivider(item)) {
+                  return <div key={`div-${i}`} className="my-1 border-t border-border" aria-hidden />;
                 }
-                onClick={() => { item.onClick(); setOpen(false); }}
-              >
-                <item.icon className={item.destructive ? "size-4 text-red-500" : "size-4 text-zinc-400"} />
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </Portal>
-      )}
+                return (
+                  <button
+                    key={item.label}
+                    role="menuitem"
+                    className={
+                      item.destructive
+                        ? 'flex flex-row items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-left text-[var(--lume-danger-fg)] hover:bg-[var(--lume-danger-bg)] transition-colors'
+                        : 'flex flex-row items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-left text-foreground hover:bg-muted/60 transition-colors'
+                    }
+                    onClick={() => { item.onClick(); setOpen(false); }}
+                  >
+                    <item.icon
+                      className={item.destructive ? 'size-4' : 'size-4 text-muted-foreground'}
+                    />
+                    <span className="grow">{item.label}</span>
+                    {item.badge !== undefined && (
+                      <NumberBadge value={item.badge} variant="neutral" size="md" className="ml-auto" />
+                    )}
+                  </button>
+                );
+              })}
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
     </>
   );
 }

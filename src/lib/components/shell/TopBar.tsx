@@ -34,7 +34,7 @@ export function TopBar({ rightCluster, leftCluster }: TopBarProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">{rightCluster}</div>
+      <div className="flex items-center gap-2 shrink-0">{rightCluster}</div>
     </div>
   );
 }

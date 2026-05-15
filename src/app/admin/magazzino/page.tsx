@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { Warehouse, Package, Tags, Truck, Factory, Plus, EllipsisVertical, Archive, ArrowDownToLine, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Warehouse, Package, Tags, Truck, Factory, Plus, Archive, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -17,6 +17,7 @@ import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
+import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/DropdownMenu';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
@@ -56,8 +57,6 @@ export default function MagazzinoPage() {
 
   const [productsShowArchived, setProductsShowArchived] = useState(false);
   const [categoriesShowArchived, setCategoriesShowArchived] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const fetchProducts = useProductsStore((s) => s.fetchProducts);
   const deleteAllProducts = useProductsStore((s) => s.deleteAllProducts);
@@ -93,15 +92,6 @@ export default function MagazzinoPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
-
   const productsArchivedCount = products.filter((p) => p.isArchived).length;
   const categoriesArchivedCount = categories.filter((c) => c.isArchived).length;
 
@@ -125,6 +115,21 @@ export default function MagazzinoPage() {
   };
   const tabArchivedCount = activeTab === 'prodotti' ? productsArchivedCount : categoriesArchivedCount;
   const entityLabel = activeTab === 'prodotti' ? 'prodotti' : 'categorie';
+
+  const menuItems: DropdownMenuItem[] = [
+    ...(archivableTab
+      ? ([{
+          label: tabShowArchived ? `Mostra ${entityLabel} attivi` : `Mostra ${entityLabel} archiviati`,
+          icon: Archive,
+          onClick: toggleTabShowArchived,
+          badge: tabArchivedCount > 0 ? tabArchivedCount : undefined,
+        }] as DropdownMenuItem[])
+      : []),
+    { label: IMPORT_ENTITY_FOR_TAB[activeTab].label, icon: ArrowDownToLine, onClick: () => setShowImport(true) },
+    ...(activeTab === 'prodotti' && products.length > 0
+      ? ([{ label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true }] as DropdownMenuItem[])
+      : []),
+  ];
 
   return (
     <>
@@ -176,54 +181,7 @@ export default function MagazzinoPage() {
                   Nuovo Marchio
                 </Button>
               )}
-              <div className="relative" ref={menuRef}>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  iconOnly
-                  aria-label="Altre azioni"
-                  onClick={() => setMenuOpen((v) => !v)}
-                >
-                  <EllipsisVertical />
-                </Button>
-                {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1">
-                    {archivableTab && (
-                      <button
-                        className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
-                        onClick={() => { toggleTabShowArchived(); setMenuOpen(false); }}
-                      >
-                        <Archive className="size-4 text-zinc-400" />
-                        {tabShowArchived ? `Mostra ${entityLabel} attivi` : `Mostra ${entityLabel} archiviati`}
-                        {tabArchivedCount > 0 && (
-                          <span className="ml-auto text-xs font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">
-                            {tabArchivedCount}
-                          </span>
-                        )}
-                      </button>
-                    )}
-                    <button
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-zinc-700 dark:text-zinc-300"
-                      onClick={() => { setShowImport(true); setMenuOpen(false); }}
-                    >
-                      <ArrowDownToLine className="size-4 text-zinc-400" />
-                      {IMPORT_ENTITY_FOR_TAB[activeTab].label}
-                    </button>
-                    {activeTab === 'prodotti' && products.length > 0 && (
-                      <>
-                        <div className="my-1 border-t border-zinc-500/25" />
-                        <button
-                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
-                        >
-                          <Trash2 className="size-4 text-red-500" />
-                          Elimina tutti
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+              <DropdownMenu items={menuItems} />
             </>
           }
         />

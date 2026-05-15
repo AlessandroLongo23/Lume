@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine, EllipsisVertical, Archive, Trash2 } from 'lucide-react';
+import { UserPlus, FileDown, FileSpreadsheet, TableProperties, LayoutGrid, Users, ArrowDownToLine, Archive, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
@@ -16,6 +16,7 @@ import { ClientsGrid } from '@/lib/components/admin/clients/ClientsGrid';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/DropdownMenu';
 import type { Client } from '@/lib/types/Client';
 
 export default function ClientiPage() {
@@ -32,9 +33,7 @@ export default function ClientiPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [commandDelete, setCommandDelete] = useState<Client | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Read command-palette query params: ?new=1 / ?delete=<id>.
   useEffect(() => {
@@ -52,16 +51,22 @@ export default function ClientiPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
-
   const archivedCount = clients.filter((c) => c.isArchived).length;
+
+  const menuItems: DropdownMenuItem[] = [
+    {
+      label: showArchived ? 'Mostra clienti attivi' : 'Mostra clienti archiviati',
+      icon: Archive,
+      onClick: () => setShowArchived(!showArchived),
+      badge: archivedCount > 0 ? archivedCount : undefined,
+    },
+    { label: 'Importa dati', icon: ArrowDownToLine, onClick: () => setShowImport(true) },
+    { label: 'Esporta PDF', icon: FileDown, onClick: () => { /* TODO: export PDF */ } },
+    { label: 'Esporta CSV', icon: FileSpreadsheet, onClick: () => { /* TODO: export CSV */ } },
+    ...(clients.length > 0
+      ? ([{ label: 'Elimina tutti', icon: Trash2, onClick: () => setShowDeleteAll(true), destructive: true }] as DropdownMenuItem[])
+      : []),
+  ];
 
   const visibleClients = useMemo(
     () => clients.filter((c) => (showArchived ? c.isArchived : !c.isArchived)),
@@ -113,73 +118,7 @@ export default function ClientiPage() {
               >
                 Nuovo cliente
               </Button>
-              <div className="relative" ref={menuRef}>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  iconOnly
-                  aria-label="Altre azioni"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen((v) => !v)}
-                >
-                  <EllipsisVertical />
-                </Button>
-                {menuOpen && (
-                  <div role="menu" className="absolute right-0 top-full mt-1 w-64 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-dropdown py-1">
-                    <button
-                      role="menuitem"
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
-                      onClick={() => { setShowArchived(!showArchived); setMenuOpen(false); }}
-                    >
-                      <Archive className="size-4 text-muted-foreground" />
-                      {showArchived ? 'Mostra clienti attivi' : 'Mostra clienti archiviati'}
-                      {archivedCount > 0 && (
-                        <span className="ml-auto text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {archivedCount}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      role="menuitem"
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
-                      onClick={() => { setShowImport(true); setMenuOpen(false); }}
-                    >
-                      <ArrowDownToLine className="size-4 text-muted-foreground" />
-                      Importa dati
-                    </button>
-                    <button
-                      role="menuitem"
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
-                      onClick={() => { setMenuOpen(false); /* TODO: export PDF */ }}
-                    >
-                      <FileDown className="size-4 text-muted-foreground" />
-                      Esporta PDF
-                    </button>
-                    <button
-                      role="menuitem"
-                      className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-foreground hover:bg-muted/60 transition-colors"
-                      onClick={() => { setMenuOpen(false); /* TODO: export CSV */ }}
-                    >
-                      <FileSpreadsheet className="size-4 text-muted-foreground" />
-                      Esporta CSV
-                    </button>
-                    {clients.length > 0 && (
-                      <>
-                        <div className="my-1 border-t border-border" />
-                        <button
-                          role="menuitem"
-                          className="flex flex-row items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-[var(--lume-danger-fg)] hover:bg-[var(--lume-danger-bg)] transition-colors"
-                          onClick={() => { setShowDeleteAll(true); setMenuOpen(false); }}
-                        >
-                          <Trash2 className="size-4" />
-                          Elimina tutti
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+              <DropdownMenu items={menuItems} />
             </>
           }
         />
