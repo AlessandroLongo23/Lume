@@ -30,6 +30,12 @@ export function FooterSection() {
           <Link href="/terms" className={linkClass}>
             Termini
           </Link>
+          <Link href="/dpa" className={linkClass}>
+            DPA
+          </Link>
+          <Link href="/sub-processors" className={linkClass}>
+            Sub-processors
+          </Link>
           <Link href="/cookie-policy" className={linkClass}>
             Cookie
           </Link>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { BusinessType, OriginType } from '@/lib/types/Salon';
+import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
 
 function getAnonClient() {
   return createClient(
@@ -26,11 +27,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, password, firstName, lastName, salonName, businessType, origin, inviteCode } = body;
+    const {
+      email, password, firstName, lastName, salonName, businessType, origin, inviteCode,
+      acceptedTerms, acceptedVessatorie, acceptedDpa,
+    } = body;
 
     // Validate required fields
     if (!email || !password || !firstName || !lastName || !salonName || !businessType || !origin) {
       return NextResponse.json({ success: false, error: 'Tutti i campi obbligatori devono essere compilati.' }, { status: 400 });
+    }
+    if (!acceptedTerms || !acceptedVessatorie || !acceptedDpa) {
+      return NextResponse.json({
+        success: false,
+        error: 'Per completare la registrazione devi accettare i Termini, le clausole vessatorie e il Data Processing Agreement.',
+      }, { status: 400 });
     }
     if (password.length < 8) {
       return NextResponse.json({ success: false, error: 'La password deve contenere almeno 8 caratteri.' }, { status: 400 });
@@ -136,23 +146,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Insert profile
-    const { error: profileError } = await supabaseAdmin
+    // 3. Ensure profile exists. The auth user might already have one (platform
+    //    admin registering their own salon, owner adding a second salon, or a
+    //    client of another salon upgrading). In those cases we keep the existing
+    //    profile untouched — salon ownership is recorded in user_salon_memberships
+    //    below, and getCallerProfile resolves role/active salon from there.
+    let createdProfile = false;
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        id:         userId,
-        salon_id:   salonId,
-        first_name: firstName,
-        last_name:  lastName,
-        email,
-        role:       'owner',
-      });
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
 
-    if (profileError) {
-      console.error('Profile insert failed:', profileError);
-      await rollbackSalon(supabaseAdmin, salonId!);
-      if (createdAuthUser) await rollbackUser(supabaseAdmin, userId);
-      return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
+    if (!existingProfile) {
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id:         userId,
+          salon_id:   salonId,
+          first_name: firstName,
+          last_name:  lastName,
+          email,
+          role:       'owner',
+        });
+
+      if (profileError) {
+        console.error('Profile insert failed:', profileError);
+        await rollbackSalon(supabaseAdmin, salonId!);
+        if (createdAuthUser) await rollbackUser(supabaseAdmin, userId);
+        return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
+      }
+      createdProfile = true;
     }
 
     // 3b. Insert membership (canonical "this user is owner of this salon").
@@ -186,7 +210,7 @@ export async function POST(request: NextRequest) {
 
     if (membershipError) {
       console.error('Membership insert failed:', membershipError);
-      await rollbackProfile(supabaseAdmin, userId);
+      if (createdProfile) await rollbackProfile(supabaseAdmin, userId);
       await rollbackSalon(supabaseAdmin, salonId!);
       if (createdAuthUser) await rollbackUser(supabaseAdmin, userId);
       return NextResponse.json({ success: false, error: 'Errore durante la creazione del profilo. Riprova.' }, { status: 500 });
@@ -198,19 +222,57 @@ export async function POST(request: NextRequest) {
       .from('user_active_salon')
       .upsert({ user_id: userId, salon_id: salonId }, { onConflict: 'user_id' });
 
-    // 4. Auto-insert Owner as an Operator (bookable resource on the calendar)
-    const { error: operatorError } = await supabaseAdmin
+    // 4. Auto-insert Owner as an Operator (bookable resource on the calendar).
+    //    operators.user_id is globally UNIQUE, so a user can only be a bookable
+    //    operator at one salon. Skip silently when they're already one elsewhere
+    //    — that's the case for owners registering an additional salon.
+    const { data: existingOperator } = await supabaseAdmin
       .from('operators')
-      .insert({
-        salon_id:  salonId,
-        user_id:   userId,
-        firstName,
-        lastName,
-        email,
-      });
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (operatorError) {
-      console.error('Operator auto-insert failed (non-fatal):', operatorError);
+    if (!existingOperator) {
+      const { error: operatorError } = await supabaseAdmin
+        .from('operators')
+        .insert({
+          salon_id:  salonId,
+          user_id:   userId,
+          firstName,
+          lastName,
+          email,
+        });
+
+      if (operatorError) {
+        console.error('Operator auto-insert failed (non-fatal):', operatorError);
+      }
+    }
+
+    // 5. Persist legal acceptances. Non-fatal: if this fails the user is still
+    //    created (the acceptance happened on the client and the request body
+    //    proves it), but we surface the issue in logs so we can backfill.
+    const ipAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      null;
+    const userAgent = request.headers.get('user-agent');
+    const acceptanceRows = [
+      { document_type: 'terms',                document_version: LEGAL_VERSIONS.terms },
+      { document_type: 'privacy',              document_version: LEGAL_VERSIONS.privacy },
+      { document_type: 'dpa',                  document_version: LEGAL_VERSIONS.dpa },
+      { document_type: 'vessatorie_1341_1342', document_version: LEGAL_VERSIONS.terms },
+    ].map((row) => ({
+      ...row,
+      user_id:    userId,
+      salon_id:   salonId,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+    }));
+    const { error: acceptanceError } = await supabaseAdmin
+      .from('legal_acceptances')
+      .insert(acceptanceRows);
+    if (acceptanceError) {
+      console.error('Legal-acceptance insert failed (non-fatal):', acceptanceError);
     }
 
     return NextResponse.json({ success: true, salonId });

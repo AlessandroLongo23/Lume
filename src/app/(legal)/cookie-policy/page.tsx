@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CookieManageLink } from '@/lib/components/shared/cookieConsent/CookieManageLink';
+import { LUME_LEGAL } from '@/lib/const/legal';
+import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
 
 export const metadata: Metadata = {
   title: 'Cookie policy — Lume',
-  description:
-    'Informativa sui cookie utilizzati da Lume e su come gestire le preferenze.',
+  description: 'Informativa sui cookie utilizzati da Lume e su come gestire le preferenze.',
 };
 
 export default function CookiePolicyPage() {
@@ -13,18 +14,22 @@ export default function CookiePolicyPage() {
     <>
       <h1>Cookie policy</h1>
       <p>
-        <em>Ultimo aggiornamento: 3 maggio 2026.</em>
+        <em>Versione {LEGAL_VERSIONS.cookiePolicy}.</em>
       </p>
 
       <h2>Cosa sono i cookie</h2>
       <p>
         I cookie sono piccoli file di testo che il sito salva sul tuo dispositivo per ricordare
-        informazioni tra una visita e l&apos;altra (ad esempio: la sessione di accesso). Lume usa
-        cookie tecnici essenziali al funzionamento del Servizio e, solo previo consenso, cookie di
-        analisi.
+        informazioni tra una visita e l&apos;altra (ad esempio: la sessione di accesso). Lume
+        utilizza esclusivamente cookie tecnici essenziali al funzionamento del Servizio e, solo
+        previo consenso esplicito, cookie di analisi.
       </p>
-
-      {/* TODO: lawyer review — verify cookie list before launch */}
+      <p>
+        Questa informativa &egrave; redatta in conformit&agrave; alle{' '}
+        <em>Linee guida cookie e altri strumenti di tracciamento</em> del Garante per la
+        protezione dei dati personali (Provv. 10 giugno 2021, doc. web 9677876, e successivi
+        aggiornamenti).
+      </p>
 
       <h2>Cookie utilizzati</h2>
       <table>
@@ -32,7 +37,7 @@ export default function CookiePolicyPage() {
           <tr>
             <th>Nome</th>
             <th>Categoria</th>
-            <th>Finalità</th>
+            <th>Finalit&agrave;</th>
             <th>Durata</th>
           </tr>
         </thead>
@@ -74,14 +79,14 @@ export default function CookiePolicyPage() {
           </tr>
           <tr>
             <td>
-              <em>(strumenti di analisi)</em>
+              <code>ph_*</code>
             </td>
             <td>Analisi</td>
             <td>
-              Non attualmente attivi. Saranno attivati solo dopo il tuo consenso esplicito per
-              capire l&apos;uso aggregato del Servizio.
+              PostHog &mdash; statistiche aggregate sull&apos;uso del Servizio. Attivato solo
+              dopo il tuo consenso esplicito.
             </td>
-            <td>—</td>
+            <td>12 mesi</td>
           </tr>
         </tbody>
       </table>
@@ -111,20 +116,20 @@ export default function CookiePolicyPage() {
         <CookieManageLink variant="secondary">Gestisci cookie</CookieManageLink>
       </p>
       <p>
-        È inoltre possibile bloccare o cancellare i cookie direttamente dalle impostazioni del
-        browser. Disabilitando i cookie tecnici alcune funzionalità del Servizio (in particolare
-        l&apos;accesso) potrebbero non funzionare correttamente.
+        &Egrave; inoltre possibile bloccare o cancellare i cookie direttamente dalle impostazioni
+        del browser. Disabilitando i cookie tecnici alcune funzionalit&agrave; del Servizio (in
+        particolare l&apos;accesso) potrebbero non funzionare correttamente.
       </p>
 
       <h2>Riferimenti</h2>
       <p>
         Per maggiori dettagli sul trattamento dei dati personali consulta la nostra{' '}
-        <Link href="/privacy">informativa sulla privacy</Link>.
+        <Link href="/privacy">Informativa sulla privacy</Link>.
       </p>
 
       <h2>Contatti</h2>
       <p>
-        Per qualsiasi domanda: <a href="mailto:info@lumeapp.it">info@lumeapp.it</a>.
+        <a href={`mailto:${LUME_LEGAL.privacyEmail}`}>{LUME_LEGAL.privacyEmail}</a>
       </p>
     </>
   );

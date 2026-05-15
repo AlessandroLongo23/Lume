@@ -2,16 +2,19 @@ import { create } from 'zustand';
 import type { BusinessType, OriginType } from '@/lib/types/Salon';
 
 interface OnboardingData {
-  email:        string;
-  password:     string;
-  firstName:    string;
-  lastName:     string;
-  salonName:    string;
-  businessType: BusinessType | null;
-  origin:       OriginType | null;
-  inviteCode:   string;
-  logoFile:     File | null;
-  logoPreview:  string | null;
+  email:                string;
+  password:             string;
+  firstName:            string;
+  lastName:             string;
+  salonName:            string;
+  businessType:         BusinessType | null;
+  origin:               OriginType | null;
+  inviteCode:           string;
+  logoFile:             File | null;
+  logoPreview:          string | null;
+  acceptedTerms:        boolean;
+  acceptedVessatorie:   boolean;
+  acceptedDpa:          boolean;
 }
 
 interface OnboardingState extends OnboardingData {
@@ -29,16 +32,19 @@ interface OnboardingState extends OnboardingData {
 }
 
 const initialData: OnboardingData = {
-  email:        '',
-  password:     '',
-  firstName:    '',
-  lastName:     '',
-  salonName:    '',
-  businessType: null,
-  origin:       null,
-  inviteCode:   '',
-  logoFile:     null,
-  logoPreview:  null,
+  email:              '',
+  password:           '',
+  firstName:          '',
+  lastName:           '',
+  salonName:          '',
+  businessType:       null,
+  origin:             null,
+  inviteCode:         '',
+  logoFile:           null,
+  logoPreview:        null,
+  acceptedTerms:      false,
+  acceptedVessatorie: false,
+  acceptedDpa:        false,
 };
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -55,14 +61,20 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   reset:    () => set({ ...initialData, step: 1, direction: 1, isLoading: false, error: null, errorCode: null }),
 
   submitRegistration: async () => {
-    const { email, password, firstName, lastName, salonName, businessType, origin, inviteCode } = get();
+    const {
+      email, password, firstName, lastName, salonName, businessType, origin, inviteCode,
+      acceptedTerms, acceptedVessatorie, acceptedDpa,
+    } = get();
     set({ isLoading: true, error: null });
 
     try {
       const res = await fetch('/api/register', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password, firstName, lastName, salonName, businessType, origin, inviteCode }),
+        body:    JSON.stringify({
+          email, password, firstName, lastName, salonName, businessType, origin, inviteCode,
+          acceptedTerms, acceptedVessatorie, acceptedDpa,
+        }),
       });
       const result = await res.json();
 

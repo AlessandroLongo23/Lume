@@ -28,7 +28,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-2 px-4 text-xs text-muted-foreground">
           <p>© 2026 Lume</p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <Link href="/privacy" className="hover:text-foreground">
               Privacy
             </Link>
@@ -37,6 +37,12 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             </Link>
             <Link href="/cookie-policy" className="hover:text-foreground">
               Cookie policy
+            </Link>
+            <Link href="/dpa" className="hover:text-foreground">
+              DPA
+            </Link>
+            <Link href="/sub-processors" className="hover:text-foreground">
+              Sub-processors
             </Link>
           </div>
         </div>

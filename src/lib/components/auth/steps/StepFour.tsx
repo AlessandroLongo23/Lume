@@ -7,6 +7,7 @@ import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { LegalAcceptance, useLegalAccepted } from '@/lib/components/auth/LegalAcceptance';
 
 const ORIGIN_OPTIONS: { value: OriginType; label: string }[] = [
   { value: 'word_of_mouth', label: 'Passaparola' },
@@ -32,9 +33,11 @@ interface StepFourProps {
 
 export function StepFour({ onSubmit }: StepFourProps) {
   const { origin, inviteCode, isLoading, error, errorCode, setField, prevStep } = useOnboardingStore();
+  const legalAccepted = useLegalAccepted();
+  const canSubmit = Boolean(origin) && legalAccepted;
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (origin && onSubmit) onSubmit(); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); if (canSubmit && onSubmit) onSubmit(); }} className="space-y-4">
       {/* How did you hear about us */}
       <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="space-y-2">
@@ -66,6 +69,10 @@ export function StepFour({ onSubmit }: StepFourProps) {
         />
       </motion.div>
 
+      <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+        <LegalAcceptance />
+      </motion.div>
+
       <AnimatePresence>
         {error && errorCode === 'EMAIL_EXISTS_WRONG_PASSWORD' && (
           <motion.div
@@ -94,7 +101,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
         )}
       </AnimatePresence>
 
-      <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+      <motion.div custom={3} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
           <Button type="button" variant="ghost" onClick={prevStep} disabled={isLoading} className="flex-1">
             <ArrowLeft className="size-4" aria-hidden />
@@ -104,7 +111,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
             type="submit"
             variant="primary"
             loading={isLoading}
-            disabled={!origin}
+            disabled={!canSubmit}
             className="flex-2"
           >
             Crea Account

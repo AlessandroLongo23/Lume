@@ -17,6 +17,8 @@ import {
   Mail,
   Shield,
   TriangleAlert,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
@@ -38,6 +40,11 @@ const SALONE_ITEMS: Item[] = [
   { href: '/admin/impostazioni/salone/default-form', label: 'Default form', icon: Sliders },
   { href: '/admin/impostazioni/salone/notifiche-email', label: 'Notifiche email', icon: Mail },
   { href: '/admin/impostazioni/salone/fatturazione', label: 'Fatturazione', icon: Receipt },
+];
+
+const LEGALE_ITEMS: Item[] = [
+  { href: '/admin/impostazioni/legale/deliberatorie', label: 'Deliberatorie', icon: FileText },
+  { href: '/admin/impostazioni/legale/registro-trattamenti', label: 'Registro trattamenti', icon: ClipboardList },
 ];
 
 const ACCOUNT_ITEMS_BASE: Item[] = [
@@ -68,6 +75,7 @@ export function SettingsSidebar() {
   const groups: Group[] = [
     { title: 'Preferenze', items: PREFERENZE_ITEMS },
     { title: 'Salone', items: SALONE_ITEMS, hint: 'Solo titolari', gated: !canManage },
+    { title: 'Legale', items: LEGALE_ITEMS, hint: 'Modulistica clienti', gated: !canManage },
     { title: 'Account', items: accountItems, hint: 'Tuo accesso' },
   ];
 
