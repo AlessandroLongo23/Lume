@@ -12,7 +12,7 @@ function getAdminClient() {
   );
 }
 
-type SalonJoin = { id: string; name: string; onboarded_at: string | null };
+type SalonJoin = { id: string; name: string; onboarded_at: string | null; logo_url: string | null };
 
 /**
  * Resolves all workspace contexts for a given auth user ID.
@@ -34,7 +34,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   const [membershipsResult, clientResult] = await Promise.all([
     supabaseAdmin
       .from('user_salon_memberships')
-      .select('salon_id, role, is_primary, salons:salons(id, name, onboarded_at)')
+      .select('salon_id, role, is_primary, salons:salons(id, name, onboarded_at, logo_url)')
       .eq('user_id', userId)
       .order('joined_at', { ascending: true }),
 
@@ -58,6 +58,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
       type:      'business',
       salonId:   salon.id,
       salonName: salon.name,
+      logoUrl:   salon.logo_url,
       role,
     });
     if (role === 'owner' && !salon.onboarded_at) {
@@ -71,7 +72,7 @@ export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
   for (const row of clientResult.data ?? []) {
     const salon = row.salons as unknown as { id: string; name: string } | null;
     if (!salon) continue;
-    clientContexts.push({ type: 'client', salonId: salon.id, salonName: salon.name, role: 'client' });
+    clientContexts.push({ type: 'client', salonId: salon.id, salonName: salon.name, logoUrl: null, role: 'client' });
   }
 
   const hasBusiness = businessContexts.length > 0;

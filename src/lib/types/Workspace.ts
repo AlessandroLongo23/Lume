@@ -2,6 +2,7 @@ export type WorkspaceContext = {
   type:     'business' | 'client';
   salonId:  string;
   salonName: string;
+  logoUrl:  string | null;
   role:     'owner' | 'operator' | 'client';
 };
 
