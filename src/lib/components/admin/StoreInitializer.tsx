@@ -30,6 +30,7 @@ import { useFeedbackStore } from '@/lib/stores/feedback';
 import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { useNotificationsStore } from '@/lib/stores/notifications';
+import { useSalonClosuresStore } from '@/lib/stores/salonClosures';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 
 export function StoreInitializer() {
@@ -61,6 +62,7 @@ export function StoreInitializer() {
   const fetchFeedback = useFeedbackStore((s) => s.fetchEntries);
   const fetchOperatorUnavailabilities = useOperatorUnavailabilitiesStore((s) => s.fetchItems);
   const fetchNotifications = useNotificationsStore((s) => s.fetchNotifications);
+  const fetchClosures = useSalonClosuresStore((s) => s.fetchClosures);
   const activeSalonId = useWorkspaceStore((s) => s.activeSalonId);
   const resolve = useWorkspaceStore((s) => s.resolve);
 
@@ -95,6 +97,7 @@ export function StoreInitializer() {
       fetchFeedback(),
       fetchOperatorUnavailabilities(),
       fetchNotifications(),
+      fetchClosures(),
     ]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -139,6 +142,7 @@ export function StoreInitializer() {
   useRealtimeStore('fiche_edits', fetchFicheEdits, activeSalonId);
   useRealtimeStore('operator_unavailabilities', fetchOperatorUnavailabilities, activeSalonId);
   useRealtimeStore('notifications', fetchNotifications, activeSalonId);
+  useRealtimeStore('salon_closures', fetchClosures, activeSalonId);
   // Feedback is global — no salon_id filter.
   useRealtimeStore('feedback_entries', fetchFeedback);
   useRealtimeStore('feedback_upvotes', fetchFeedback);

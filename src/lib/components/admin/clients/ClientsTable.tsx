@@ -11,9 +11,10 @@ import {
   type SortingState,
   type RowSelectionState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore, NotebookText } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore, NotebookText, Globe, GlobeLock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useClientStatsStore } from '@/lib/stores/client_stats';
@@ -67,6 +68,10 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
   const bulkArchiveClients = useClientsStore((s) => s.bulkArchiveClients);
   const bulkRestoreClients = useClientsStore((s) => s.bulkRestoreClients);
   const bulkDeleteClients = useClientsStore((s) => s.bulkDeleteClients);
+  // Whitelist bulk-edit is only meaningful in `selected` access mode — the
+  // flag is ignored by the server in the other modes (see is_client_allowed_to_book).
+  const isSelectedMode =
+    useSalonSettingsStore((s) => s.settings?.booking_config?.access_mode) === 'selected';
   const ratings = useClientRatingsStore((s) => s.ratings);
   const stats = useClientStatsStore((s) => s.stats);
   const birthdayReminder =
@@ -452,6 +457,49 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
               size="md"
               width="w-32"
             />
+
+            {isSelectedMode && !showArchived && (
+              <>
+                <button
+                  onClick={() => {
+                    setBulkLoading(true);
+                    bulkUpdateClients(selectedIds, { can_book_online: true })
+                      .then(() => {
+                        messagePopup
+                          .getState()
+                          .success(`${selectedIds.length} clienti abilitati alle prenotazioni online`);
+                        setRowSelection({});
+                      })
+                      .catch(() => messagePopup.getState().error("Errore durante l'aggiornamento"))
+                      .finally(() => setBulkLoading(false));
+                  }}
+                  disabled={bulkLoading}
+                  className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                >
+                  <Globe className="size-4" />
+                  Abilita online
+                </button>
+                <button
+                  onClick={() => {
+                    setBulkLoading(true);
+                    bulkUpdateClients(selectedIds, { can_book_online: false })
+                      .then(() => {
+                        messagePopup
+                          .getState()
+                          .success(`${selectedIds.length} clienti disabilitati dalle prenotazioni online`);
+                        setRowSelection({});
+                      })
+                      .catch(() => messagePopup.getState().error("Errore durante l'aggiornamento"))
+                      .finally(() => setBulkLoading(false));
+                  }}
+                  disabled={bulkLoading}
+                  className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                >
+                  <GlobeLock className="size-4" />
+                  Disabilita online
+                </button>
+              </>
+            )}
 
             {showArchived ? (
               <button

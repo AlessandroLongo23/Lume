@@ -27,7 +27,10 @@ interface ClientsState {
   deleteAllClients: () => Promise<void>;
   setSelectedClient: (client: Client | null) => void;
   setShowArchived: (show: boolean) => void;
-  bulkUpdateClients: (ids: string[], patch: Partial<Pick<Client, 'gender'>>) => Promise<void>;
+  bulkUpdateClients: (
+    ids: string[],
+    patch: Partial<Pick<Client, 'gender' | 'isTourist' | 'can_book_online'>>,
+  ) => Promise<void>;
   bulkArchiveClients: (ids: string[]) => Promise<void>;
   bulkRestoreClients: (ids: string[]) => Promise<void>;
   bulkDeleteClients: (ids: string[]) => Promise<void>;
