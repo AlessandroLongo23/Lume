@@ -8,6 +8,7 @@ import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { PUBLIC_SITE_HOST } from '@/lib/const/site';
 import type { BookingAccessMode, BookingApprovalScope, BookingConfig } from '@/lib/types/Salon';
 
 const ACCESS_OPTIONS: { value: BookingAccessMode; label: string; hint: string }[] = [
@@ -155,8 +156,6 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
     [save, discard, hasInvalidSlug],
   );
 
-  const previewOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://lume.app';
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -188,7 +187,7 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
           <div className="flex items-center gap-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 overflow-hidden focus-within:ring-2 focus-within:ring-primary/40 transition-shadow">
             <span className="flex items-center gap-1.5 pl-3 pr-2 py-2 text-xs text-zinc-500 border-r border-zinc-200 dark:border-zinc-700 select-none">
               <LinkIcon className="size-3.5" />
-              {previewOrigin.replace(/^https?:\/\//, '')}/
+              {PUBLIC_SITE_HOST}/
             </span>
             <input
               id="booking-slug"
@@ -206,7 +205,7 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
           {slugError ? (
             <p className="text-xs text-red-500">{slugError}</p>
           ) : (
-            <p className="text-xs text-zinc-500">Comparirà ai tuoi clienti come {previewOrigin.replace(/^https?:\/\//, '')}/{form.slug || 'il-mio-salone'}.</p>
+            <p className="text-xs text-zinc-500">Comparirà ai tuoi clienti come {PUBLIC_SITE_HOST}/{form.slug || 'il-mio-salone'}.</p>
           )}
         </div>
       </SettingsCard>
