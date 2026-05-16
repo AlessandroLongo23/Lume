@@ -4,9 +4,10 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { SplitText } from '@/lib/components/shared/ui/SplitText';
 
-const FADE_DURATION = 0.5;     // seconds
-const DISPLAY_DURATION = 3000; // ms the message stays fully visible after fading in
+const FADE_DURATION = 0.5;
+const DISPLAY_DURATION = 3000;
 
 function hi(name: string) {
   return (
@@ -73,16 +74,30 @@ function WelcomeSequence() {
   return (
     <AnimatePresence onExitComplete={handleExitComplete}>
       {visible && (
-        <motion.p
+        <motion.div
           key={index}
-          className="text-2xl font-light tracking-wide text-zinc-800 dark:text-zinc-200 text-center px-8 select-none"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="px-8 select-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: FADE_DURATION, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          {messages[index]}
-        </motion.p>
+          <SplitText
+            tag="p"
+            className="text-2xl font-light tracking-wide text-zinc-800 dark:text-zinc-200"
+            splitType="chars"
+            delay={22}
+            duration={0.55}
+            ease="power3.out"
+            from={{ opacity: 0, y: 14 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0}
+            rootMargin="0px"
+            textAlign="center"
+          >
+            {messages[index]}
+          </SplitText>
+        </motion.div>
       )}
     </AnimatePresence>
   );

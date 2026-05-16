@@ -1,20 +1,10 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, Tag } from 'lucide-react';
-import type { OriginType } from '@/lib/types/Salon';
+import { ArrowLeft } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
-import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { LegalAcceptance, useLegalAccepted } from '@/lib/components/auth/LegalAcceptance';
-
-const ORIGIN_OPTIONS: { value: OriginType; label: string }[] = [
-  { value: 'word_of_mouth', label: 'Passaparola' },
-  { value: 'social_media',  label: 'Social Media' },
-  { value: 'google',        label: 'Google' },
-  { value: 'event',         label: 'Evento' },
-];
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -32,44 +22,12 @@ interface StepFourProps {
 }
 
 export function StepFour({ onSubmit }: StepFourProps) {
-  const { origin, inviteCode, isLoading, error, errorCode, setField, prevStep } = useOnboardingStore();
-  const legalAccepted = useLegalAccepted();
-  const canSubmit = Boolean(origin) && legalAccepted;
+  const { isLoading, error, errorCode, prevStep } = useOnboardingStore();
+  const canSubmit = useLegalAccepted();
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (canSubmit && onSubmit) onSubmit(); }} className="space-y-4">
-      {/* How did you hear about us */}
       <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
-        <div className="space-y-2">
-          <label className="block text-sm font-thin text-zinc-700 mb-2">
-            Come hai conosciuto Lume? <span className="text-red-500 ml-1">*</span>
-          </label>
-          <Select
-            value={origin}
-            onChange={(v) => setField('origin', (v as OriginType) || null)}
-            options={ORIGIN_OPTIONS}
-            labelKey="label"
-            valueKey="value"
-            placeholder="Seleziona un'opzione..."
-            searchable={false}
-            size="lg"
-          />
-        </div>
-      </motion.div>
-
-      <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
-        <FormInput
-          label="Codice Invito (opzionale)"
-          type="text"
-          placeholder="es. AMICO2024"
-          value={inviteCode}
-          onChange={(e) => setField('inviteCode', e.target.value)}
-          icon={<Tag className="w-4 h-4 text-zinc-400" />}
-          autoComplete="off"
-        />
-      </motion.div>
-
-      <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
         <LegalAcceptance />
       </motion.div>
 
@@ -101,7 +59,7 @@ export function StepFour({ onSubmit }: StepFourProps) {
         )}
       </AnimatePresence>
 
-      <motion.div custom={3} variants={fieldVariants} initial="hidden" animate="visible">
+      <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
           <Button type="button" variant="ghost" onClick={prevStep} disabled={isLoading} className="flex-1">
             <ArrowLeft className="size-4" aria-hidden />
