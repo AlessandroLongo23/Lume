@@ -22,6 +22,17 @@ import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
 //   * Updates fiche status via update_fiche_with_audit (audit row inserted).
 //   * Best-effort confirmation/decline email via Resend.
 
+// Honor the forwarded host so staging-domain previews don't mail-bomb
+// production cancel links.
+function publicOriginFromRequest(request: NextRequest): string {
+  const fwdHost = request.headers.get('x-forwarded-host');
+  if (fwdHost) {
+    const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+    return `${proto}://${fwdHost}`;
+  }
+  return new URL(request.url).origin;
+}
+
 function getAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,6 +50,7 @@ type FicheRow = {
   status: string;
   datetime: string;
   client_id: string;
+  cancel_token: string | null;
 };
 
 type ServiceRow = {
@@ -55,6 +67,7 @@ type ClientRow = {
 
 type SalonRow = {
   name: string;
+  slug: string | null;
   brand_color: string | null;
   logo_url: string | null;
   address: string | null;
@@ -102,7 +115,7 @@ export async function POST(
   // assertion below.
   const { data: fiche, error: ficheErr } = await admin
     .from('fiches')
-    .select('id, salon_id, status, datetime, client_id')
+    .select('id, salon_id, status, datetime, client_id, cancel_token')
     .eq('id', ficheId)
     .maybeSingle<FicheRow>();
   if (ficheErr || !fiche) {
@@ -130,7 +143,7 @@ export async function POST(
 
   const { data: salon, error: salonErr } = await admin
     .from('salons')
-    .select('name, brand_color, logo_url, address, city, cap, province, phone, booking_config')
+    .select('name, slug, brand_color, logo_url, address, city, cap, province, phone, booking_config')
     .eq('id', fiche.salon_id)
     .maybeSingle<SalonRow>();
   if (salonErr || !salon) {
@@ -183,6 +196,15 @@ export async function POST(
     .maybeSingle<ClientRow>();
   if (client?.email) {
     try {
+      // Approved emails get the cancel link so the client can pull out
+      // before the cancel window closes. Declined emails skip it — the
+      // booking no longer exists in a cancellable state. Falls back to
+      // null when slug or token is missing (older legacy bookings).
+      const cancelUrl =
+        action === 'approve' && salon.slug && fiche.cancel_token
+          ? `${publicOriginFromRequest(request)}/${salon.slug}/prenotazione/${fiche.cancel_token}`
+          : null;
+
       await sendBookingEmail({
         toEmail: client.email,
         toFirstName: client.firstName,
@@ -202,6 +224,7 @@ export async function POST(
           startAt: new Date(fiche.datetime),
           durationMinutes: firstService.duration,
         },
+        cancelUrl,
       });
       emailSent = true;
     } catch (err) {

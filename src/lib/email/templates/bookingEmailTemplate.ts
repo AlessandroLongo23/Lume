@@ -43,6 +43,13 @@ export interface BookingEmailParams {
     startAt: Date;
     durationMinutes: number;
   };
+  /**
+   * Public cancel link (lume.app/<slug>/prenotazione/<token>). Only the
+   * pre-appointment client-facing variants surface it — the 'declined',
+   * 'cancelled' and 'reminder' variants don't (declined/cancelled have
+   * nothing to cancel, and the reminder is sent too late to matter).
+   */
+  cancelUrl?: string | null;
 }
 
 export interface RenderedEmail {
@@ -109,6 +116,8 @@ type Copy = {
   pillFg: string;
   pillLabel: string;
   showCalendarCta: boolean;
+  /** Whether to show "Cancella prenotazione" if a cancelUrl is provided. */
+  showCancelLink: boolean;
 };
 
 function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
@@ -118,11 +127,12 @@ function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
         subject: `Prenotazione confermata · ${salonName}`,
         heading: 'Prenotazione confermata',
         intro: `<strong>${esc(salonName)}</strong> ti aspetta. Trovi i dettagli qui sotto — puoi aggiungerli direttamente al tuo calendario.`,
-        footer: 'Per cambiare o cancellare la prenotazione, contatta direttamente il salone.',
+        footer: 'Hai un imprevisto? Puoi gestire la tua prenotazione dal link qui sotto.',
         pillBg: '#dcfce7',
         pillFg: '#166534',
         pillLabel: 'Confermata',
         showCalendarCta: true,
+        showCancelLink: true,
       };
     case 'pending_approval':
       return {
@@ -134,17 +144,19 @@ function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
         pillFg: '#92400e',
         pillLabel: 'In attesa',
         showCalendarCta: false,
+        showCancelLink: true,
       };
     case 'approved':
       return {
         subject: `Prenotazione confermata · ${salonName}`,
         heading: 'Buone notizie, sei confermato!',
         intro: `<strong>${esc(salonName)}</strong> ha appena confermato la tua richiesta. Aggiungi l'appuntamento al calendario per non dimenticarlo.`,
-        footer: 'Per cambiare o cancellare la prenotazione, contatta direttamente il salone.',
+        footer: 'Hai un imprevisto? Puoi gestire la tua prenotazione dal link qui sotto.',
         pillBg: '#dcfce7',
         pillFg: '#166534',
         pillLabel: 'Confermata',
         showCalendarCta: true,
+        showCancelLink: true,
       };
     case 'declined':
       return {
@@ -156,6 +168,7 @@ function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
         pillFg: '#991b1b',
         pillLabel: 'Non confermata',
         showCalendarCta: false,
+        showCancelLink: false,
       };
     case 'cancelled':
       return {
@@ -167,6 +180,7 @@ function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
         pillFg: '#3f3f46',
         pillLabel: 'Annullata',
         showCalendarCta: false,
+        showCancelLink: false,
       };
     case 'reminder':
       return {
@@ -178,6 +192,7 @@ function variantCopy(variant: BookingEmailVariant, salonName: string): Copy {
         pillFg: '#1e3a8a',
         pillLabel: 'Promemoria',
         showCalendarCta: true,
+        showCancelLink: false,
       };
   }
 }
@@ -194,15 +209,37 @@ export function renderBookingEmail(params: BookingEmailParams): RenderedEmail {
             style="display:block;width:56px;height:56px;border-radius:9999px;border:2px solid rgba(255,255,255,0.75);background:#ffffff;object-fit:contain;margin:0 auto 12px;" />`
     : '';
 
+  const showCancelLink = copy.showCancelLink && !!params.cancelUrl;
+  const cancelHref = showCancelLink ? params.cancelUrl! : null;
+
   const calendarCta = gcalUrl
     ? `
-      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:0 0 24px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:0 0 16px;">
         <tr>
           <td align="center">
             <a href="${esc(gcalUrl)}"
                style="display:inline-block;background:${esc(brand)};color:#ffffff;font-size:14px;font-weight:600;
                       text-decoration:none;padding:12px 24px;border-radius:8px;letter-spacing:-0.01em;">
               Aggiungi al calendario
+            </a>
+          </td>
+        </tr>
+      </table>`
+    : '';
+
+  // Secondary "Gestisci la prenotazione" link — quieter than the primary
+  // calendar CTA so the email doesn't accidentally push everyone toward
+  // cancelling. Lives directly under the calendar button so the user can
+  // make either choice without scrolling.
+  const cancelCta = cancelHref
+    ? `
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:0 0 24px;">
+        <tr>
+          <td align="center">
+            <a href="${esc(cancelHref)}"
+               style="display:inline-block;color:${esc(brand)};font-size:13px;font-weight:600;
+                      text-decoration:none;padding:8px 16px;letter-spacing:-0.01em;border-bottom:1px solid ${esc(brand)};">
+              Gestisci la prenotazione
             </a>
           </td>
         </tr>
@@ -258,6 +295,7 @@ export function renderBookingEmail(params: BookingEmailParams): RenderedEmail {
               </table>
 
               ${calendarCta}
+              ${cancelCta}
 
               <p style="margin:0;font-size:13px;color:#64748b;line-height:1.55;">${esc(copy.footer)}</p>
             </td>

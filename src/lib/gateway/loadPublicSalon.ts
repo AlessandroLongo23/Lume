@@ -54,3 +54,40 @@ export const loadPublicClosures = cache(async (salonId: string): Promise<PublicC
   if (error || !data) return [];
   return data as PublicClosure[];
 });
+
+// Shape returned by `public.get_booking_by_token(text)` — see
+// supabase/migrations/2026_05_16_08_booking_cancel.sql. NOT memoised: the
+// underlying status changes when the visitor hits cancel, so we must re-read
+// it on the post-action redirect.
+export type PublicBookingByToken = {
+  fiche_id: string;
+  status: 'created' | 'pending_approval' | 'cancelled' | 'completed' | 'pending';
+  start_at: string;
+  end_at: string;
+  service_name: string;
+  operator_first: string | null;
+  operator_last: string | null;
+  salon_id: string;
+  salon_name: string;
+  salon_slug: string;
+  salon_brand_color: string | null;
+  salon_logo_url: string | null;
+  salon_address: string | null;
+  salon_city: string | null;
+  salon_cap: string | null;
+  salon_province: string | null;
+  salon_phone: string | null;
+  client_first: string | null;
+  client_email: string | null;
+  cancel_window_hours: number;
+  can_cancel_now: boolean;
+};
+
+export async function loadBookingByToken(token: string): Promise<PublicBookingByToken | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc('get_booking_by_token', { p_token: token })
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as PublicBookingByToken;
+}

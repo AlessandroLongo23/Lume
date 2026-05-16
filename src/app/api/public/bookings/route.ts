@@ -148,13 +148,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error }, { status });
   }
 
-  const row = rpcData as { fiche_id: string; status: 'created' | 'pending_approval' } | null;
+  const row = rpcData as {
+    fiche_id: string;
+    status: 'created' | 'pending_approval';
+    cancel_token: string;
+  } | null;
   if (!row) {
     return NextResponse.json(
       { success: false, error: 'Errore durante la creazione della prenotazione. Riprova.' },
       { status: 500 },
     );
   }
+
+  const cancelUrl = buildCancelUrl(request, slug, row.cancel_token);
 
   // Fire the confirmation email when we have an address. Failure here must
   // not bubble up — the booking already exists in the DB; an email outage
@@ -182,6 +188,7 @@ export async function POST(request: NextRequest) {
           startAt: new Date(startAt),
           durationMinutes: service?.duration ?? 60,
         },
+        cancelUrl,
       });
       emailSent = true;
     } catch (err) {
@@ -221,6 +228,17 @@ export async function POST(request: NextRequest) {
     fiche_id: row.fiche_id,
     email_sent: emailSent,
   });
+}
+
+// Build the absolute public cancel URL from the incoming request. We honor
+// the same origin the visitor used so previews on a staging domain don't
+// mail-bomb production cancel links.
+function buildCancelUrl(request: NextRequest, slug: string, token: string): string {
+  const origin =
+    request.headers.get('x-forwarded-host')
+      ? `${request.headers.get('x-forwarded-proto') ?? 'https'}://${request.headers.get('x-forwarded-host')}`
+      : new URL(request.url).origin;
+  return `${origin}/${slug}/prenotazione/${token}`;
 }
 
 // Anon callers can't read operators directly under RLS, but we need the
