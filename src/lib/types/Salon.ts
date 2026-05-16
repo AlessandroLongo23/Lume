@@ -20,6 +20,36 @@ export interface SalonEmailNotifications {
   fiche_by_email?: { enabled: boolean };
 }
 
+/** Online booking access policy.
+ *  - 'public'        — anyone with the link can book.
+ *  - 'clients_only'  — only existing clients (matched by phone / email).
+ *  - 'selected'      — only clients whose `can_book_online = true`. */
+export type BookingAccessMode = 'public' | 'clients_only' | 'selected';
+
+/** When approval is required, who gets the approval ping. */
+export type BookingApprovalScope = 'chosen_operator' | 'any_staff';
+
+/** Stored as `salons.booking_config` JSONB. All keys optional — the app
+ *  fills missing keys with the defaults documented in the migration. */
+export interface BookingConfig {
+  access_mode?:             BookingAccessMode;
+  allow_operator_choice?:   boolean;
+  require_approval?:        boolean;
+  approval_scope?:          BookingApprovalScope;
+  /** Minimum minutes between "now" and the chosen slot. Default 120. */
+  min_lead_minutes?:        number;
+  /** Furthest into the future a client may book. Default 60. */
+  max_lead_days?:           number;
+  /** How close to the appointment a client can still self-cancel. Default 24. */
+  cancel_window_hours?:     number;
+  /** Symmetric padding around every booking. Default 0. */
+  buffer_between_minutes?:  number;
+  /** When true, the public form forces an email in addition to phone. */
+  guest_email_required?:    boolean;
+  /** Free-form Italian text shown on the public booking page. */
+  public_message?:          string | null;
+}
+
 export interface SalonFormDefaults {
   service_duration_min?: number;
   gift_card_validity_months?: number;
@@ -72,4 +102,13 @@ export interface Salon {
   onboarding_dismissed_at: string | null;
   // Platform
   is_test:                 boolean;
+  // Online booking (sub-project A)
+  /** Public-URL handle. NULL until the owner picks one. */
+  slug:                    string | null;
+  /** Master toggle for the `lume.app/<slug>` public app. */
+  booking_enabled:         boolean;
+  /** Set when the owner skips the booking step during onboarding. */
+  booking_setup_dismissed_at: string | null;
+  /** Policy blob. See {@link BookingConfig}. */
+  booking_config:          BookingConfig;
 }

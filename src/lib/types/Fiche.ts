@@ -30,6 +30,10 @@ export function getFicheBucket(fiche: { datetime: Date | string; status: FicheSt
   return ficheDay < today ? FicheBucket.ARRETRATA : FicheBucket.PRENOTATA;
 }
 
+/** How a fiche got into the database. 'online' is created by the public
+ *  booking flow at lume.app/<slug>; 'manual' is everything else. */
+export type FicheBookingSource = 'manual' | 'online';
+
 export class Fiche {
   id: string;
   salon_id: string;
@@ -40,12 +44,14 @@ export class Fiche {
   total_override: number | null;
   miscela: string | null;
   tecnica: string | null;
+  booking_source: FicheBookingSource;
 
   constructor(
     fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'> & {
       total_override?: number | null;
       miscela?: string | null;
       tecnica?: string | null;
+      booking_source?: FicheBookingSource;
     },
   ) {
     this.id = fiche.id;
@@ -57,6 +63,7 @@ export class Fiche {
     this.total_override = fiche.total_override ?? null;
     this.miscela = fiche.miscela ?? null;
     this.tecnica = fiche.tecnica ?? null;
+    this.booking_source = fiche.booking_source ?? 'manual';
   }
 
   hasTreatmentData(): boolean {
