@@ -84,10 +84,25 @@ const CAP_RE = /^\d{5}$/;
 // Mirrors the partial unique index in 2026_05_16_01_salons_booking_columns.sql.
 // 1–63 chars, lowercase + digits + hyphen, cannot start/end with hyphen.
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
+// Every path here is either (a) an existing top-level route in src/app/ or
+// (b) a name we want to keep available for future product/marketing pages.
+// Add to this list whenever a new static top-level route is introduced —
+// otherwise an owner can claim a slug that the router will route elsewhere
+// (route-group static paths win over the public [slug] catch-all).
 const RESERVED_SLUGS = new Set([
-  'admin', 'api', 'auth', 'platform', 'app', 'www', 'login',
-  'logout', 'signup', 'register', 'onboarding', 'public', '_next',
-  'support', 'about', 'pricing', 'lume',
+  // Infra & framework
+  'api', '_next', 'public',
+  // Marketing / brand
+  'app', 'www', 'lume', 'support', 'about', 'pricing',
+  // Existing top-level static routes
+  'admin', 'auth', 'platform', 'account', 'dashboard', 'client-dashboard',
+  'unauthorized', 'welcome',
+  // Auth flow (under (auth) route group)
+  'login', 'logout', 'signup', 'register', 'select-salon', 'select-workspace',
+  // Onboarding flow
+  'onboarding',
+  // Legal (under (legal) route group)
+  'privacy', 'terms', 'cookie-policy', 'dpa', 'sub-processors',
 ]);
 const ACCESS_MODES: readonly BookingAccessMode[] = ['public', 'clients_only', 'selected'];
 const APPROVAL_SCOPES: readonly BookingApprovalScope[] = ['chosen_operator', 'any_staff'];
