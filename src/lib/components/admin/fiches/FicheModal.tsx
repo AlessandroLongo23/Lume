@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
-  Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, X, Gift,
+  Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, ArrowRight, Gift,
   FlaskConical, Sparkles, RotateCcw, History,
 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
@@ -29,6 +29,7 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
@@ -939,19 +940,46 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     };
   const paymentValid = isPaymentValid(paymentView, effectiveTotal, cashGiven, splits);
 
+  // Per-tab footer derivations. The Modifica tab demotes "Salva" into the
+  // dangerAction slot so "Incassa" (Procedi al pagamento) can take the
+  // primary-button position — that's the real forward-flow action on an
+  // open fiche. The Pagamento tab uses the standard primary slot for
+  // "Conferma pagamento". The Cronologia tab has no actionable controls.
+  const isEditTab = activeTopTab === 'edit';
+  const isPaymentTab = activeTopTab === 'payment';
+  const isHistoryTab = activeTopTab === 'history';
+
   // The Payment tab on a CONCLUSA fiche is read-only at the top level
   // (existing splits + a delta-reconcile row that has its own button), so
   // we hide the modal's primary confirm to avoid a misleading second action.
-  const hideConfirm =
-    activeTopTab === 'history' ||
-    (activeTopTab === 'payment' && isCompleted);
+  const hideConfirm = isEdit
+    ? isHistoryTab || isEditTab || (isPaymentTab && isCompleted)
+    : false;
 
-  const confirmText = activeTopTab === 'payment'
-    ? (isSubmitting ? 'Chiusura…' : 'Conferma pagamento')
-    : (isEdit ? (isSubmitting ? 'Salvataggio…' : 'Salva') : (isSubmitting ? 'Creazione…' : 'Aggiungi'));
+  const confirmText = !isEdit
+    ? (isSubmitting ? 'Creazione…' : 'Aggiungi')
+    : isPaymentTab
+      ? (isSubmitting ? 'Chiusura…' : 'Conferma pagamento')
+      : 'Salva';
 
-  const onConfirm = activeTopTab === 'payment' ? handlePay : handleSubmit;
-  const confirmDisabled = isSubmitting || (activeTopTab === 'payment' && !paymentValid);
+  const onConfirm = isPaymentTab ? handlePay : handleSubmit;
+  const confirmDisabled = isSubmitting || (isPaymentTab && !paymentValid);
+
+  // On an editable Pagamento, "Torna alla modifica" is the explicit retreat
+  // — a second "Annulla" next to it reads as a duplicate and risks an
+  // accidental modal-nuke when the user just wanted to step back. On a
+  // completed Pagamento (read-only) we keep the button as the close path,
+  // since "Torna alla modifica" isn't rendered.
+  const hideCancel = isEdit && isPaymentTab && !isCompleted;
+  // Read-only tabs (history, completed-payment) have nothing to annul.
+  const cancelText = isHistoryTab || (isPaymentTab && isCompleted) ? 'Chiudi' : 'Annulla';
+
+  // Totals only make sense where the operator is shaping the bill: in add
+  // mode (creating a fiche) and on the Modifica tab. The Pagamento tab has
+  // the full receipt on the left (same data, more detail) and the
+  // Cronologia tab exposes no save action, so a totals block there would
+  // be dead UI.
+  const showFooterTotals = !isEdit || isEditTab;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -996,84 +1024,99 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         confirmText={confirmText}
         confirmDisabled={confirmDisabled}
         hideConfirm={hideConfirm}
+        cancelText={cancelText}
+        hideCancel={hideCancel}
         footerContent={
-          <div className="flex items-center gap-5">
-            <div className="flex flex-col gap-0.5">
-              <span className={`text-xs ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-500'}`}>
-                Subtotale: € {subtotal.toFixed(2)}
-              </span>
-              <span className="text-xs text-zinc-500">Durata: {totalDuration} min</span>
-            </div>
-            {isEdit && (
-              <div className="flex flex-col gap-1">
-                <label className="text-2xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                  Totale finale (€)
-                </label>
-                <div className="flex items-center gap-1.5">
-                  <NumberInput
-                    value={totalOverride}
-                    onChange={(v) => setTotalOverride(v)}
-                    min={0}
-                    step={0.5}
-                    decimals={2}
-                    placeholder={subtotal.toFixed(2)}
-                    suffix="€"
-                    size="md"
-                    width="w-32"
-                  />
-                  {totalOverride !== null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      aria-label="Rimuovi sconto"
-                      title="Rimuovi sconto"
-                      onClick={() => setTotalOverride(null)}
-                    >
-                      <X />
-                    </Button>
-                  )}
-                </div>
+          showFooterTotals ? (
+            <div className="flex flex-col gap-1 min-w-[200px]">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Subtotale</span>
+                <span className={`text-xs font-mono ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                  € {subtotal.toFixed(2)}
+                </span>
               </div>
-            )}
-          </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Durata</span>
+                <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300">{totalDuration} min</span>
+              </div>
+              {isEdit && (
+                <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 mt-1 pt-1.5 flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Totale</span>
+                  <div className="flex items-center gap-1">
+                    <NumberInput
+                      value={totalOverride}
+                      onChange={(v) => setTotalOverride(v)}
+                      min={0}
+                      step={0.5}
+                      decimals={2}
+                      placeholder={subtotal.toFixed(2)}
+                      suffix="€"
+                      size="sm"
+                      width="w-24"
+                      hideSteppers
+                    />
+                    {totalOverride !== null && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        aria-label="Rimuovi sconto"
+                        title="Rimuovi sconto"
+                        onClick={() => setTotalOverride(null)}
+                      >
+                        <RotateCcw />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : undefined
         }
         dangerAction={
-          isEdit ? (
+          isEdit && isEditTab ? (
             <>
-              {activeTopTab === 'edit' && !isCompleted && (
+              <Button
+                variant="secondary"
+                leadingIcon={Check}
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Salvataggio…' : 'Salva'}
+              </Button>
+              {!isCompleted && (
                 <Button
-                  variant="ghost"
-                  leadingIcon={ReceiptText}
+                  variant="primary"
+                  trailingIcon={ArrowRight}
                   onClick={() => {
                     if (!validateForm()) return;
                     setActiveTopTab('payment');
                   }}
-                  className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
                 >
-                  Procedi al pagamento
+                  Incassa
                 </Button>
               )}
-              {activeTopTab === 'payment' && !isCompleted && (
-                <Button
-                  variant="ghost"
-                  leadingIcon={ArrowLeft}
-                  onClick={() => setActiveTopTab('edit')}
-                >
-                  Torna alla modifica
-                </Button>
-              )}
-              {activeTopTab === 'edit' && (
-                <Button
-                  variant="ghost"
-                  leadingIcon={Trash2}
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
-                >
-                  Elimina
-                </Button>
-              )}
+              <DropdownMenu
+                items={[
+                  {
+                    label: 'Elimina fiche',
+                    icon: Trash2,
+                    destructive: true,
+                    onClick: () => setShowDeleteConfirm(true),
+                  },
+                ]}
+                width="w-56"
+                ariaLabel="Altre azioni"
+              />
             </>
+          ) : isEdit && isPaymentTab && !isCompleted ? (
+            <Button
+              variant="ghost"
+              leadingIcon={ArrowLeft}
+              onClick={() => setActiveTopTab('edit')}
+            >
+              Torna alla modifica
+            </Button>
           ) : undefined
         }
       >
