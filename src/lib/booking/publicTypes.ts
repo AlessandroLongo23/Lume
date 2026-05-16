@@ -30,3 +30,19 @@ export type PublicClosure = {
   starts_on: string;
   ends_on: string;
 };
+
+// Visitor-provided identity collected in the booking flow's identity step.
+// Sent verbatim to /api/public/bookings, which passes it to
+// create_online_booking — that function dedupes phone first, then email.
+export type BookingIdentity = {
+  first_name: string;
+  last_name: string;
+  phone_prefix: string;
+  phone: string;
+  email: string | null;
+  note: string | null;
+};
+
+export type BookingResult =
+  | { success: true; status: 'created' | 'pending_approval'; fiche_id: string }
+  | { success: false; error: string };

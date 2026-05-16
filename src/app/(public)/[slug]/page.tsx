@@ -24,7 +24,7 @@ export default async function PublicSalonPage({
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
       <SalonHeader salon={salon} />
-      <BookingFlow salon={salon} services={services} closures={closures} />
+      <BookingFlow slug={slug} salon={salon} services={services} closures={closures} />
     </main>
   );
 }
