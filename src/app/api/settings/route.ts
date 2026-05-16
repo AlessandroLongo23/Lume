@@ -476,6 +476,22 @@ export async function PATCH(req: NextRequest) {
     updates.booking_enabled = Boolean(body.booking_enabled);
   }
 
+  // Onboarding "skip booking setup" sends this as the current timestamp.
+  // Accept null to unset, ISO string to set, anything else rejected.
+  if (body.booking_setup_dismissed_at !== undefined) {
+    if (body.booking_setup_dismissed_at === null) {
+      updates.booking_setup_dismissed_at = null;
+    } else if (typeof body.booking_setup_dismissed_at === 'string') {
+      const parsed = new Date(body.booking_setup_dismissed_at);
+      if (Number.isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: 'Data dismissal non valida' }, { status: 400 });
+      }
+      updates.booking_setup_dismissed_at = parsed.toISOString();
+    } else {
+      return NextResponse.json({ error: 'Data dismissal non valida' }, { status: 400 });
+    }
+  }
+
   if (body.booking_config !== undefined) {
     const bc = parseBookingConfig(body.booking_config);
     if (bc === null) return NextResponse.json({ error: 'Configurazione prenotazioni non valida' }, { status: 400 });
