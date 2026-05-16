@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BusinessType, SalonFiscal, SalonFormDefaults, SalonEmailNotifications } from '@/lib/types/Salon';
+import type { BookingConfig, BusinessType, SalonFiscal, SalonFormDefaults, SalonEmailNotifications } from '@/lib/types/Salon';
 
 export interface OperatingHourShift {
   start: string;
@@ -40,6 +40,11 @@ export interface SalonSettings {
    *  same color, useful for split appointments). When false, blocks fall
    *  back to the service-category color. */
   color_by_client: boolean;
+  // Online booking (sub-project A)
+  slug: string | null;
+  booking_enabled: boolean;
+  booking_setup_dismissed_at: string | null;
+  booking_config: BookingConfig;
 }
 
 interface SalonSettingsState {
@@ -75,6 +80,10 @@ const EMPTY: SalonSettings = {
   email_notifications: {},
   allow_operator_self_unavailability: false,
   color_by_client: true,
+  slug: null,
+  booking_enabled: false,
+  booking_setup_dismissed_at: null,
+  booking_config: {},
 };
 
 export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({
@@ -99,6 +108,7 @@ export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({
           fiscal: data.fiscal ?? {},
           form_defaults: data.form_defaults ?? {},
           email_notifications: data.email_notifications ?? {},
+          booking_config: data.booking_config ?? {},
         },
       });
     } catch {
@@ -116,6 +126,7 @@ export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({
           fiscal: { ...previous.fiscal, ...(patch.fiscal ?? {}) },
           form_defaults: { ...previous.form_defaults, ...(patch.form_defaults ?? {}) },
           email_notifications: { ...previous.email_notifications, ...(patch.email_notifications ?? {}) },
+          booking_config: { ...previous.booking_config, ...(patch.booking_config ?? {}) },
         },
       });
     }
@@ -142,6 +153,7 @@ export const useSalonSettingsStore = create<SalonSettingsState>((set, get) => ({
         fiscal: { ...previous.fiscal, ...(patch.fiscal ?? {}) },
         form_defaults: { ...previous.form_defaults, ...(patch.form_defaults ?? {}) },
         email_notifications: { ...previous.email_notifications, ...(patch.email_notifications ?? {}) },
+        booking_config: { ...previous.booking_config, ...(patch.booking_config ?? {}) },
       },
     });
   },

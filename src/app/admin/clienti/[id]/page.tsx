@@ -5,10 +5,12 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle, KeyRound } from 'lucide-react';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle, KeyRound, Globe } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
+import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { Switch } from '@/lib/components/shared/ui/Switch';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
@@ -456,7 +458,11 @@ export default function ClientDetailPage() {
                   <ClientCouponsList clientId={clientId} allCoupons={allCoupons} />
                 </DetailSection>
 
-                <DetailSection index={3} label="Note">
+                <DetailSection index={3} label="Prenotazioni online">
+                  <OnlineBookingToggle client={client} setClient={setClient} />
+                </DetailSection>
+
+                <DetailSection index={4} label="Note">
                   {client.note ? (
                     <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
                       {client.note}
@@ -547,5 +553,69 @@ function ClientCouponsList({
         );
       })}
     </ul>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Online booking toggle (per-client whitelist for "selected" access mode)
+// ---------------------------------------------------------------------------
+
+function OnlineBookingToggle({
+  client,
+  setClient,
+}: {
+  client: Client;
+  setClient: (c: Client) => void;
+}) {
+  const settings = useSalonSettingsStore((s) => s.settings);
+  const updateClient = useClientsStore((s) => s.updateClient);
+  const [saving, setSaving] = useState(false);
+
+  const bookingEnabled = settings?.booking_enabled ?? false;
+  const accessMode = settings?.booking_config?.access_mode ?? 'public';
+  const isSelectedMode = accessMode === 'selected';
+
+  // Outside `selected` mode the per-client flag is ignored by the server
+  // (see is_client_allowed_to_book). We still let owners flip it ahead of
+  // time so a future switch to `selected` doesn't require touching every
+  // row — but we say so plainly here.
+  const helperText = !bookingEnabled
+    ? 'Le prenotazioni online sono disattivate per il salone. Il flag verrà usato quando le attivi.'
+    : isSelectedMode
+      ? client.can_book_online
+        ? 'Questo cliente può prenotare online dalla vetrina pubblica.'
+        : "Questo cliente NON può prenotare online — verrà bloccato all'invio."
+      : `Modalità "${accessMode === 'public' ? 'aperta a tutti' : 'solo clienti esistenti'}" attiva: il flag non viene attualmente consultato.`;
+
+  async function handleToggle() {
+    setSaving(true);
+    try {
+      const updated = await updateClient(client.id, { can_book_online: !client.can_book_online });
+      setClient(updated);
+      useClientsStore.setState((s) => ({
+        clients: s.clients.map((c) => (c.id === client.id ? updated : c)),
+      }));
+    } catch {
+      messagePopup.getState().error("Errore durante l'aggiornamento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 px-4 py-3">
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <Globe className="size-3.5 text-primary" />
+          Può prenotare online
+        </p>
+        <p className="mt-1 text-xs text-zinc-500 leading-relaxed">{helperText}</p>
+      </div>
+      <Switch
+        checked={client.can_book_online}
+        onChange={handleToggle}
+        disabled={saving || client.isArchived}
+      />
+    </div>
   );
 }

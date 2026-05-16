@@ -28,7 +28,7 @@ export default async function OnboardingImportPage() {
   const [{ data: salon }, { data: openOnboarding }] = await Promise.all([
     admin
       .from('salons')
-      .select('id, name, onboarded_at')
+      .select('id, name, onboarded_at, booking_enabled, booking_setup_dismissed_at')
       .eq('id', profile.salon_id)
       .maybeSingle(),
     admin
@@ -42,10 +42,16 @@ export default async function OnboardingImportPage() {
   if (!salon) redirect('/');
   if (salon.onboarded_at && !openOnboarding) redirect('/admin/calendario');
 
+  // Skip the booking invite step entirely if the owner has already either
+  // enabled the public booking app OR explicitly dismissed the prompt. The
+  // wizard then exits straight to /admin/calendario like before sub-project J.
+  const bookingDecided = !!salon.booking_enabled || !!salon.booking_setup_dismissed_at;
+
   return (
     <OnboardingImportClient
       salonName={salon.name}
       existingOnboardingId={openOnboarding?.id ?? null}
+      bookingDecided={bookingDecided}
     />
   );
 }

@@ -41,7 +41,7 @@ export function DeleteModal({
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full">
         <div
-          className={`flex flex-row items-center justify-between p-6 ${
+          className={`flex flex-row items-center justify-between px-6 py-4 ${
             hasBody ? 'border-b border-zinc-500/25' : ''
           }`}
         >

@@ -34,7 +34,7 @@ export function EditModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full">
-        <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
+        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-blue-500/10">
               <SquarePen className="size-5 text-blue-500" />

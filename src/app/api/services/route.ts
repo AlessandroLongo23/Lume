@@ -7,6 +7,7 @@ import { pickAllowed } from '@/lib/utils/pickAllowed';
 
 const SERVICE_WRITE_FIELDS = [
   'name', 'duration', 'price', 'product_cost', 'category_id', 'description',
+  'bookable_online',
 ] as const;
 
 function getAdminClient() {

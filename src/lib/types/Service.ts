@@ -13,6 +13,8 @@ export class Service {
   category_id: string;
   description: string;
   archived_at: string | null;
+  /** When true, the service appears in the public booking catalog. */
+  bookable_online: boolean;
 
   constructor(service: Service) {
     this.id = service.id;
@@ -24,6 +26,7 @@ export class Service {
     this.category_id = service.category_id;
     this.description = service.description;
     this.archived_at = service.archived_at ?? null;
+    this.bookable_online = service.bookable_online ?? false;
   }
 
   get isArchived(): boolean {

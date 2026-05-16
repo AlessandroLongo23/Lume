@@ -6,7 +6,7 @@ import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
-const CLIENT_BULK_WRITE_FIELDS = ['gender', 'isTourist'] as const;
+const CLIENT_BULK_WRITE_FIELDS = ['gender', 'isTourist', 'can_book_online'] as const;
 
 function getAdminClient() {
   return createClient(

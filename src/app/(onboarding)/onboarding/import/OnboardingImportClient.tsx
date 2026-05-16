@@ -7,6 +7,7 @@ import { InvitationView } from '@/lib/components/onboarding/InvitationView';
 import { DropView } from '@/lib/components/onboarding/DropView';
 import { MagicView } from '@/lib/components/onboarding/MagicView';
 import { DoneView } from '@/lib/components/onboarding/DoneView';
+import { BookingInviteView } from '@/lib/components/onboarding/BookingInviteView';
 import { useOnboardingUpload } from '@/lib/components/onboarding/useOnboardingUpload';
 import {
   TERMINAL_STATUSES,
@@ -19,6 +20,9 @@ type ManualStep = 'invitation' | 'drop';
 interface Props {
   salonName: string;
   existingOnboardingId: string | null;
+  /** True when the owner has already enabled the public booking app or
+   *  explicitly dismissed the onboarding prompt — we skip the new step then. */
+  bookingDecided: boolean;
 }
 
 const POLL_INTERVAL_MS = 1500;
@@ -31,7 +35,11 @@ const POLL_INTERVAL_MS = 1500;
  * row exists we render MagicView (mid-flight) or DoneView (terminal). This
  * avoids the setState-in-effect pattern eslint flags as a perf footgun.
  */
-export default function OnboardingImportClient({ salonName, existingOnboardingId }: Props) {
+export default function OnboardingImportClient({
+  salonName,
+  existingOnboardingId,
+  bookingDecided,
+}: Props) {
   const router = useRouter();
   const [manualStep, setManualStep] = useState<ManualStep>('invitation');
   const [files, setFiles] = useState<File[]>([]);
@@ -42,6 +50,13 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
   const [skipBusy, setSkipBusy] = useState(false);
   const [openBusy, setOpenBusy] = useState(false);
   const [continueBusy, setContinueBusy] = useState(false);
+
+  // 'booking-invite' is the post-import step (sub-project J). It overrides
+  // the derived step so the calendar redirect waits until the visitor has
+  // answered the prompt. Setting it from a button handler — not from an
+  // effect — keeps the render path predictable.
+  const [showBookingInvite, setShowBookingInvite] = useState(false);
+  const [bookingBusy, setBookingBusy] = useState(false);
 
   const upload = useOnboardingUpload();
 
@@ -91,6 +106,17 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
     setManualStep('drop');
   }
 
+  // Either go to the booking invite step or jump straight to the calendar
+  // when the owner has already settled the booking decision before this
+  // session (we don't want to nag).
+  function exitToHomeOrInvite() {
+    if (bookingDecided) {
+      router.push('/admin/calendario');
+    } else {
+      setShowBookingInvite(true);
+    }
+  }
+
   async function handleSkip() {
     setSkipBusy(true);
     setError(null);
@@ -109,7 +135,7 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
       if (id) {
         await fetch(`/api/onboarding/imports/${id}/skip`, { method: 'POST' });
       }
-      router.push('/admin/calendario');
+      exitToHomeOrInvite();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSkipBusy(false);
@@ -130,7 +156,7 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
       if (onboardingId) {
         await fetch(`/api/onboarding/imports/${onboardingId}/finalize`, { method: 'POST' });
       }
-      router.push('/admin/calendario');
+      exitToHomeOrInvite();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setOpenBusy(false);
@@ -142,7 +168,7 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
     setContinueBusy(true);
     try {
       await fetch(`/api/onboarding/imports/${onboardingId}/finalize`, { method: 'POST' });
-      router.push('/admin/calendario');
+      exitToHomeOrInvite();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setContinueBusy(false);
@@ -155,20 +181,48 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
     setError(null);
     try {
       await fetch(`/api/onboarding/imports/${onboardingId}/skip`, { method: 'POST' });
-      router.push('/admin/calendario');
+      exitToHomeOrInvite();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSkipBusy(false);
     }
   }
 
+  // "Sì, configura ora" — finalize the import (no-op if already done) and
+  // jump straight to the booking-config settings page.
+  function handleAcceptBooking() {
+    setBookingBusy(true);
+    router.push('/admin/impostazioni/salone/prenotazioni');
+  }
+
+  // "Per ora no" — stamp booking_setup_dismissed_at so this prompt doesn't
+  // re-appear and route to the calendar. PATCH failure is non-fatal here:
+  // the user has clearly opted out, so worst case we re-prompt next login.
+  async function handleDismissBooking() {
+    setBookingBusy(true);
+    try {
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_setup_dismissed_at: new Date().toISOString() }),
+      });
+    } catch (err) {
+      console.warn('[onboarding] dismiss booking failed', err);
+    }
+    router.push('/admin/calendario');
+  }
+
   function handleReviewPending(jobId: string) {
     router.push(`/admin/imports/${jobId}`);
   }
 
-  // Derive the rendered step from current state.
+  // Derive the rendered step from current state. The booking-invite step,
+  // when active, supersedes everything else — once the visitor has reached
+  // it, going "back" doesn't make sense (the import is already finalized).
   const isTerminal = state ? TERMINAL_STATUSES.has(state.status) : false;
-  const renderedStep: 'invitation' | 'drop' | 'magic' | 'done' = onboardingId
+  const renderedStep: 'invitation' | 'drop' | 'magic' | 'done' | 'booking-invite' = showBookingInvite
+    ? 'booking-invite'
+    : onboardingId
     ? isTerminal
       ? 'done'
       : 'magic'
@@ -221,6 +275,14 @@ export default function OnboardingImportClient({ salonName, existingOnboardingId
           onOpenCalendar={handleOpenCalendar}
           onReviewPending={handleReviewPending}
           busy={openBusy}
+        />
+      )}
+      {renderedStep === 'booking-invite' && (
+        <BookingInviteView
+          key="booking-invite"
+          onAccept={handleAcceptBooking}
+          onDismiss={handleDismissBooking}
+          busy={bookingBusy}
         />
       )}
     </AnimatePresence>

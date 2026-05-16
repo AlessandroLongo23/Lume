@@ -22,6 +22,10 @@ export class Client {
   /** Explicit per-client color override. NULL means "use the deterministic
    *  hash of `id`" — see {@link colorForClient}. */
   color: string | null;
+  /** Whitelist flag. Only consulted when the salon's
+   *  `booking_config.access_mode = 'selected'`. Default true so existing
+   *  clients keep working when an owner switches to selected mode. */
+  can_book_online: boolean;
 
   constructor(client: Client) {
     this.id = client.id;
@@ -39,6 +43,7 @@ export class Client {
     this.archived_at = client.archived_at ?? null;
     this.photoUrl = client.photoUrl ?? null;
     this.color = client.color ?? null;
+    this.can_book_online = client.can_book_online ?? true;
   }
 
   get isArchived(): boolean {

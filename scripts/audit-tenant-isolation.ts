@@ -42,6 +42,7 @@ const TENANT_TABLES = [
   'legal_acceptances',
   'manufacturers',
   'obiettivi',
+  'operator_services',
   'operator_unavailabilities',
   'operators',
   'order_products',
@@ -50,15 +51,18 @@ const TENANT_TABLES = [
   'product_price_history',
   'products',
   'profiles',
+  'salon_closures',
   'service_categories',
   'service_price_history',
   'service_products',
   'services',
   'spese',
   'suppliers',
-  // Identity refactor #04 — both have salon_id and RLS that combines a
-  // user-scoped policy with a salon-staff policy. The audit's leak detector
-  // (rows with salon_id != expectedSalonId) is the correct invariant.
+  // Identity refactor #04 + online-booking notifications — all have salon_id
+  // and RLS that combines a user-scoped policy with a salon-staff policy.
+  // The audit's leak detector (rows with salon_id != expectedSalonId) is
+  // the correct invariant.
+  'notifications',
   'user_active_salon',
   'user_salon_memberships',
   'pending_membership_invites',

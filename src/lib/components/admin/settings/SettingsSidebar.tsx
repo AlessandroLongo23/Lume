@@ -19,6 +19,8 @@ import {
   TriangleAlert,
   FileText,
   ClipboardList,
+  Globe,
+  CalendarOff,
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
@@ -36,6 +38,8 @@ const SALONE_ITEMS: Item[] = [
   { href: '/admin/impostazioni/salone/branding', label: 'Branding', icon: ImagePlus },
   { href: '/admin/impostazioni/salone/orari', label: 'Orari', icon: Clock },
   { href: '/admin/impostazioni/salone/calendario', label: 'Calendario', icon: Calendar },
+  { href: '/admin/impostazioni/salone/prenotazioni', label: 'Prenotazioni online', icon: Globe },
+  { href: '/admin/impostazioni/salone/chiusure', label: 'Chiusure', icon: CalendarOff },
   { href: '/admin/impostazioni/salone/magazzino', label: 'Magazzino', icon: Warehouse },
   { href: '/admin/impostazioni/salone/default-form', label: 'Default form', icon: Sliders },
   { href: '/admin/impostazioni/salone/notifiche-email', label: 'Notifiche email', icon: Mail },

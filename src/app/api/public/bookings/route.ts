@@ -1,0 +1,274 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { createClient } from '@/lib/supabase/server';
+import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
+import { emitBookingCreated, emitBookingRequested } from '@/lib/notifications/emit';
+
+// Public, anon-callable endpoint hit by the booking wizard's submit button.
+// All access control happens inside create_online_booking (SECURITY DEFINER):
+// it rejects disabled salons, non-bookable services, non-whitelisted clients
+// in `selected` access mode, and races on the same slot. We translate its
+// thrown messages into HTTP responses with Italian copy the wizard can show.
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PREFIX_RE = /^\+\d{1,4}$/;
+
+const MAX = {
+  name: 100,
+  phone: 30,
+  prefix: 8,
+  email: 254,
+  note: 500,
+};
+
+function badRequest(error: string) {
+  return NextResponse.json({ success: false, error }, { status: 400 });
+}
+
+function trimOrNull(v: unknown, max: number): string | null {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  if (!t) return null;
+  return t.length > max ? null : t;
+}
+
+function trim(v: unknown, max: number): string {
+  if (typeof v !== 'string') return '';
+  const t = v.trim();
+  return t.length > max ? '' : t;
+}
+
+// Maps the keyword raised inside create_online_booking to (HTTP status,
+// Italian user-facing message). Anything else (network, DB outage,
+// unexpected exception) collapses to a generic 500.
+function mapRpcError(message: string): { status: number; error: string } {
+  switch (message) {
+    case 'booking_not_enabled':
+      return { status: 404, error: 'Le prenotazioni online non sono più attive per questo salone.' };
+    case 'service_not_bookable':
+      return { status: 409, error: 'Questo servizio non è più disponibile online.' };
+    case 'client_not_whitelisted':
+      return {
+        status: 403,
+        error: 'Il tuo contatto non è abilitato alle prenotazioni online. Contatta il salone per assistenza.',
+      };
+    case 'slot_unavailable':
+      return {
+        status: 409,
+        error: 'Questo orario è appena stato prenotato. Scegli un altro orario.',
+      };
+    default:
+      return { status: 500, error: 'Errore durante la creazione della prenotazione. Riprova.' };
+  }
+}
+
+export async function POST(request: NextRequest) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest('Richiesta non valida.');
+  }
+  if (!body || typeof body !== 'object') return badRequest('Richiesta non valida.');
+
+  const b = body as Record<string, unknown>;
+  const slug = trim(b.slug, 63).toLowerCase();
+  const serviceId = trim(b.service_id, 36);
+  const operatorId = trim(b.operator_id, 36);
+  const startAt = trim(b.start_at, 64);
+  const firstName = trim(b.first_name, MAX.name);
+  const lastName = trim(b.last_name, MAX.name);
+  const phonePrefix = trim(b.phone_prefix, MAX.prefix);
+  const phone = trim(b.phone, MAX.phone).replace(/\s/g, '');
+  const email = trimOrNull(b.email, MAX.email);
+  const note = trimOrNull(b.note, MAX.note);
+
+  if (!SLUG_RE.test(slug)) return badRequest('Salone non valido.');
+  if (!UUID_RE.test(serviceId)) return badRequest('Servizio non valido.');
+  if (!UUID_RE.test(operatorId)) return badRequest('Operatore non valido.');
+  if (!startAt || Number.isNaN(Date.parse(startAt))) return badRequest('Orario non valido.');
+  if (!firstName) return badRequest('Inserisci il tuo nome.');
+  if (!lastName) return badRequest('Inserisci il tuo cognome.');
+  if (!PREFIX_RE.test(phonePrefix)) return badRequest('Prefisso telefonico non valido.');
+  if (!/^\d{4,15}$/.test(phone)) return badRequest('Numero di telefono non valido.');
+  if (email && !EMAIL_RE.test(email)) return badRequest("Indirizzo email non valido.");
+
+  const supabase = await createClient();
+
+  // Resolve salon_id from slug — also gates on booking_enabled because the
+  // SECURITY DEFINER function only returns a row when the toggle is on.
+  // Doing the lookup here (instead of trusting a salon_id from the client)
+  // means a flipped-off toggle 404s immediately on the write path too.
+  const { data: salon, error: salonError } = await supabase
+    .rpc('get_salon_by_slug', { p_slug: slug })
+    .maybeSingle();
+  if (salonError || !salon) {
+    return NextResponse.json(
+      { success: false, error: 'Salone non trovato.' },
+      { status: 404 },
+    );
+  }
+  const salonRow = salon as {
+    id: string;
+    name: string;
+    brand_color: string | null;
+    logo_url: string | null;
+    address: string | null;
+    city: string | null;
+    cap: string | null;
+    province: string | null;
+    phone: string | null;
+    booking_config: { approval_scope?: 'chosen_operator' | 'any_staff' } | null;
+  };
+
+  const { data: rpcData, error: rpcError } = await supabase
+    .rpc('create_online_booking', {
+      p_salon_id: salonRow.id,
+      p_service_id: serviceId,
+      p_operator_id: operatorId,
+      p_start_at: startAt,
+      p_client_first: firstName,
+      p_client_last: lastName,
+      p_client_phone_prefix: phonePrefix,
+      p_client_phone: phone,
+      p_client_email: email,
+      p_note: note,
+    })
+    .maybeSingle();
+
+  if (rpcError) {
+    const { status, error } = mapRpcError(rpcError.message ?? '');
+    if (status === 500) {
+      console.error('create_online_booking failed:', rpcError);
+    }
+    return NextResponse.json({ success: false, error }, { status });
+  }
+
+  const row = rpcData as {
+    fiche_id: string;
+    status: 'created' | 'pending_approval';
+    cancel_token: string;
+  } | null;
+  if (!row) {
+    return NextResponse.json(
+      { success: false, error: 'Errore durante la creazione della prenotazione. Riprova.' },
+      { status: 500 },
+    );
+  }
+
+  const cancelUrl = buildCancelUrl(request, slug, row.cancel_token);
+
+  // Fire the confirmation email when we have an address. Failure here must
+  // not bubble up — the booking already exists in the DB; an email outage
+  // shouldn't surface as a booking failure.
+  let emailSent = false;
+  if (email) {
+    try {
+      const service = await loadBookableService(supabase, salonRow.id, serviceId);
+      await sendBookingEmail({
+        toEmail: email,
+        toFirstName: firstName,
+        variant: row.status,
+        salon: {
+          name: salonRow.name,
+          brandColor: salonRow.brand_color,
+          logoUrl: salonRow.logo_url,
+          address: salonRow.address,
+          city: salonRow.city,
+          cap: salonRow.cap,
+          province: salonRow.province,
+          phone: salonRow.phone,
+        },
+        booking: {
+          serviceName: service?.name ?? 'Servizio prenotato',
+          startAt: new Date(startAt),
+          durationMinutes: service?.duration ?? 60,
+        },
+        cancelUrl,
+      });
+      emailSent = true;
+    } catch (err) {
+      console.error('Booking confirmation email failed:', err);
+    }
+  }
+
+  // Fan-out to the notification bell. Best-effort: a notification miss
+  // shouldn't bubble up as a booking failure either.
+  try {
+    const start = new Date(startAt);
+    const whenLabel = `${format(start, "EEEE d MMMM", { locale: it })} · ${format(start, 'HH:mm')}`;
+    const body = `${firstName} ${lastName} · ${whenLabel}`;
+    const operatorUserId = await loadOperatorUserId(operatorId);
+    const ctx = {
+      salonId: salonRow.id,
+      ficheId: row.fiche_id,
+      operatorId,
+      operatorUserId,
+      body,
+    };
+    if (row.status === 'pending_approval') {
+      await emitBookingRequested({
+        ...ctx,
+        approvalScope: salonRow.booking_config?.approval_scope ?? 'chosen_operator',
+      });
+    } else {
+      await emitBookingCreated(ctx);
+    }
+  } catch (err) {
+    console.error('Notification fan-out failed:', err);
+  }
+
+  return NextResponse.json({
+    success: true,
+    status: row.status,
+    fiche_id: row.fiche_id,
+    email_sent: emailSent,
+  });
+}
+
+// Build the absolute public cancel URL from the incoming request. We honor
+// the same origin the visitor used so previews on a staging domain don't
+// mail-bomb production cancel links.
+function buildCancelUrl(request: NextRequest, slug: string, token: string): string {
+  const origin =
+    request.headers.get('x-forwarded-host')
+      ? `${request.headers.get('x-forwarded-proto') ?? 'https'}://${request.headers.get('x-forwarded-host')}`
+      : new URL(request.url).origin;
+  return `${origin}/${slug}/prenotazione/${token}`;
+}
+
+// Anon callers can't read operators directly under RLS, but we need the
+// chosen operator's auth user_id to route the staff notification. Service
+// role for one field is fine — no info leaks back to the anon caller.
+async function loadOperatorUserId(operatorId: string): Promise<string | null> {
+  const admin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const { data, error } = await admin
+    .from('operators')
+    .select('user_id')
+    .eq('id', operatorId)
+    .maybeSingle<{ user_id: string | null }>();
+  if (error || !data) return null;
+  return data.user_id;
+}
+
+// Anon callers don't have direct read access to public.services rows, but
+// get_bookable_services exposes the subset they may see. We use it here so
+// the email can show the actual service name + duration (for the calendar
+// link) without granting any extra table access.
+async function loadBookableService(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  salonId: string,
+  serviceId: string,
+): Promise<{ name: string; duration: number } | null> {
+  const { data, error } = await supabase.rpc('get_bookable_services', { p_salon_id: salonId });
+  if (error || !data) return null;
+  const match = (data as Array<{ id: string; name: string; duration: number }>).find((s) => s.id === serviceId);
+  return match ? { name: match.name, duration: match.duration } : null;
+}

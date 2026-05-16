@@ -24,6 +24,7 @@ import { SidebarUserCard, type UserCardMenuItem } from '@/lib/components/shell/S
 import { CommandMenu, useCommandMenuController } from '@/lib/components/shell/CommandMenu';
 import type { CommandAction } from '@/lib/components/shell/commandMenu/types';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
+import { NotificationBell } from '@/lib/components/shell/NotificationBell';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { usePreferencesStore } from '@/lib/stores/preferences';
@@ -222,6 +223,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <>
           {isOwner(role) && <SubscriptionCTA />}
           <CommandMenuTrigger onOpen={controller.onOpen} />
+          <NotificationBell />
           <ThemeToggle />
           <FullscreenToggle />
         </>

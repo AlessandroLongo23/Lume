@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mail, Save, Loader2, Bell, Cake, Receipt } from 'lucide-react';
+import { Mail, Save, Loader2, Bell, Cake, Receipt, Eye, Globe } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { SettingsCard } from './SettingsCard';
+import { BookingEmailPreviewModal } from './BookingEmailPreviewModal';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { SalonEmailNotifications } from '@/lib/types/Salon';
@@ -40,6 +41,7 @@ export function NotificheEmailPanel() {
   const [form, setForm] = useState<FormState>(() => fromSettings(settings?.email_notifications));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (isLoaded) setForm(fromSettings(settings?.email_notifications));
@@ -96,6 +98,26 @@ export function NotificheEmailPanel() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SettingsCard
+        icon={Globe}
+        title="Email prenotazioni online"
+        description="Le email automatiche inviate ai clienti quando prenotano, vengono approvati o rifiutati. Usano i colori e il logo del tuo salone."
+      >
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-zinc-500">
+            Anteprima delle 6 varianti (conferma, in attesa, approvata, rifiutata, annullata, promemoria).
+          </p>
+          <Button
+            variant="secondary"
+            leadingIcon={Eye}
+            onClick={() => setShowPreview(true)}
+            disabled={!settings}
+          >
+            Visualizza anteprima
+          </Button>
+        </div>
+      </SettingsCard>
+
       <SettingsCard
         icon={Mail}
         title="Mittente"
@@ -218,6 +240,8 @@ export function NotificheEmailPanel() {
           {saving ? 'Salvataggio…' : 'Salva'}
         </Button>
       </div>
+
+      <BookingEmailPreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} />
     </div>
   );
 }

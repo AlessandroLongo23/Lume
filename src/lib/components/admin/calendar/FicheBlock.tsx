@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
-import { GripVertical, ChevronUp, ChevronDown, Info } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, Info, Globe } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -265,6 +265,13 @@ export function FicheBlock({
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight min-w-0">
                     {headerLabel}
                   </p>
+                  {fiche.booking_source === 'online' && (
+                    <Tooltip label="Prenotazione online" side="top">
+                      <span className="inline-flex shrink-0 items-center justify-center size-4 rounded-full bg-primary/15 text-primary">
+                        <Globe className="size-2.5" />
+                      </span>
+                    </Tooltip>
+                  )}
                   {client && (
                     <ClientSchedaIcon
                       client={client}
