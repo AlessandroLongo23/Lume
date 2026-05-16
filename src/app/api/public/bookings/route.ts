@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/server';
-import { sendBookingConfirmationEmail } from '@/lib/email/bookingConfirmation';
+import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
 
 // Public, anon-callable endpoint hit by the booking wizard's submit button.
 // All access control happens inside create_online_booking (SECURITY DEFINER):
@@ -110,7 +108,17 @@ export async function POST(request: NextRequest) {
       { status: 404 },
     );
   }
-  const salonRow = salon as { id: string; name: string; brand_color: string | null };
+  const salonRow = salon as {
+    id: string;
+    name: string;
+    brand_color: string | null;
+    logo_url: string | null;
+    address: string | null;
+    city: string | null;
+    cap: string | null;
+    province: string | null;
+    phone: string | null;
+  };
 
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('create_online_booking', {
@@ -149,16 +157,26 @@ export async function POST(request: NextRequest) {
   let emailSent = false;
   if (email) {
     try {
-      const serviceName = await loadServiceName(supabase, salonRow.id, serviceId);
-      const whenLabel = `${format(new Date(startAt), "EEEE d MMMM yyyy", { locale: it })} · ${format(new Date(startAt), 'HH:mm')}`;
-      await sendBookingConfirmationEmail({
+      const service = await loadBookableService(supabase, salonRow.id, serviceId);
+      await sendBookingEmail({
         toEmail: email,
         toFirstName: firstName,
-        salonName: salonRow.name,
-        brandColor: salonRow.brand_color,
-        serviceName: serviceName ?? 'Servizio prenotato',
-        whenLabel,
-        status: row.status,
+        variant: row.status,
+        salon: {
+          name: salonRow.name,
+          brandColor: salonRow.brand_color,
+          logoUrl: salonRow.logo_url,
+          address: salonRow.address,
+          city: salonRow.city,
+          cap: salonRow.cap,
+          province: salonRow.province,
+          phone: salonRow.phone,
+        },
+        booking: {
+          serviceName: service?.name ?? 'Servizio prenotato',
+          startAt: new Date(startAt),
+          durationMinutes: service?.duration ?? 60,
+        },
       });
       emailSent = true;
     } catch (err) {
@@ -176,15 +194,15 @@ export async function POST(request: NextRequest) {
 
 // Anon callers don't have direct read access to public.services rows, but
 // get_bookable_services exposes the subset they may see. We use it here so
-// the email can show the actual service name without granting any extra
-// table access.
-async function loadServiceName(
+// the email can show the actual service name + duration (for the calendar
+// link) without granting any extra table access.
+async function loadBookableService(
   supabase: Awaited<ReturnType<typeof createClient>>,
   salonId: string,
   serviceId: string,
-): Promise<string | null> {
+): Promise<{ name: string; duration: number } | null> {
   const { data, error } = await supabase.rpc('get_bookable_services', { p_salon_id: salonId });
   if (error || !data) return null;
-  const match = (data as Array<{ id: string; name: string }>).find((s) => s.id === serviceId);
-  return match?.name ?? null;
+  const match = (data as Array<{ id: string; name: string; duration: number }>).find((s) => s.id === serviceId);
+  return match ? { name: match.name, duration: match.duration } : null;
 }

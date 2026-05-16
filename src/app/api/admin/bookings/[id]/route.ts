@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff, canManageSalon } from '@/lib/auth/roles';
-import { sendBookingConfirmationEmail } from '@/lib/email/bookingConfirmation';
+import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
 
 // Sub-project G: staff-side approve / decline for online bookings.
 //
@@ -47,6 +45,7 @@ type ServiceRow = {
   operator_id: string;
   service_id: string;
   name: string | null;
+  duration: number;
 };
 
 type ClientRow = {
@@ -57,6 +56,12 @@ type ClientRow = {
 type SalonRow = {
   name: string;
   brand_color: string | null;
+  logo_url: string | null;
+  address: string | null;
+  city: string | null;
+  cap: string | null;
+  province: string | null;
+  phone: string | null;
   booking_config: BookingConfig | null;
 };
 
@@ -115,7 +120,7 @@ export async function POST(
 
   const { data: services, error: svcErr } = await admin
     .from('fiche_services')
-    .select('operator_id, service_id, name')
+    .select('operator_id, service_id, name, duration')
     .eq('fiche_id', ficheId)
     .order('start_time', { ascending: true });
   if (svcErr || !services?.length) {
@@ -125,7 +130,7 @@ export async function POST(
 
   const { data: salon, error: salonErr } = await admin
     .from('salons')
-    .select('name, brand_color, booking_config')
+    .select('name, brand_color, logo_url, address, city, cap, province, phone, booking_config')
     .eq('id', fiche.salon_id)
     .maybeSingle<SalonRow>();
   if (salonErr || !salon) {
@@ -178,16 +183,25 @@ export async function POST(
     .maybeSingle<ClientRow>();
   if (client?.email) {
     try {
-      const start = new Date(fiche.datetime);
-      const whenLabel = `${format(start, "EEEE d MMMM yyyy", { locale: it })} · ${format(start, 'HH:mm')}`;
-      await sendBookingConfirmationEmail({
+      await sendBookingEmail({
         toEmail: client.email,
         toFirstName: client.firstName,
-        salonName: salon.name,
-        brandColor: salon.brand_color,
-        serviceName: firstService.name ?? 'Servizio prenotato',
-        whenLabel,
-        status: action === 'approve' ? 'approved' : 'declined',
+        variant: action === 'approve' ? 'approved' : 'declined',
+        salon: {
+          name: salon.name,
+          brandColor: salon.brand_color,
+          logoUrl: salon.logo_url,
+          address: salon.address,
+          city: salon.city,
+          cap: salon.cap,
+          province: salon.province,
+          phone: salon.phone,
+        },
+        booking: {
+          serviceName: firstService.name ?? 'Servizio prenotato',
+          startAt: new Date(fiche.datetime),
+          durationMinutes: firstService.duration,
+        },
       });
       emailSent = true;
     } catch (err) {
