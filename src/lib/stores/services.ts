@@ -15,7 +15,10 @@ interface ServicesState {
   deleteService: (id: string) => Promise<void>;
   deleteAllServices: () => Promise<void>;
   setShowArchived: (show: boolean) => void;
-  bulkUpdateServices: (ids: string[], patch: Partial<Pick<Service, 'category_id'>>) => Promise<void>;
+  bulkUpdateServices: (
+    ids: string[],
+    patch: Partial<Pick<Service, 'category_id' | 'bookable_online'>>,
+  ) => Promise<void>;
   bulkArchiveServices: (ids: string[]) => Promise<void>;
   bulkRestoreServices: (ids: string[]) => Promise<void>;
   bulkDeleteServices: (ids: string[]) => Promise<void>;

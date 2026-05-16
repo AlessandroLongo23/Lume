@@ -1,6 +1,4 @@
-import { PrenotazioniPanel } from '@/lib/components/admin/settings/PrenotazioniPanel';
-import { BookableServicesPanel } from '@/lib/components/admin/settings/BookableServicesPanel';
-import { OperatorServicesMatrix } from '@/lib/components/admin/settings/OperatorServicesMatrix';
+import { PrenotazioniSettingsClient } from './PrenotazioniSettingsClient';
 
 export default function PrenotazioniSettingsPage() {
   return (
@@ -11,11 +9,7 @@ export default function PrenotazioniSettingsPage() {
           Decidi se attivare le prenotazioni, scegli i servizi prenotabili e chi può svolgerli.
         </p>
       </div>
-      <div className="flex flex-col gap-6">
-        <PrenotazioniPanel />
-        <BookableServicesPanel />
-        <OperatorServicesMatrix />
-      </div>
+      <PrenotazioniSettingsClient />
     </>
   );
 }

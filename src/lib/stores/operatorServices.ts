@@ -21,6 +21,9 @@ interface OperatorServicesState {
    *  any rule at all" check when rendering the matrix. */
   isEligible: (serviceId: string, operatorId: string) => boolean;
   setEligibility: (serviceId: string, operatorId: string, allowed: boolean) => Promise<void>;
+  /** Replace the eligibility set for a service with `operatorIds`. Empty array
+   *  collapses the service back to "chiunque" (no rows). */
+  replaceForService: (serviceId: string, operatorIds: string[]) => Promise<void>;
 }
 
 export const useOperatorServicesStore = create<OperatorServicesState>((set, get) => ({
@@ -62,5 +65,40 @@ export const useOperatorServicesStore = create<OperatorServicesState>((set, get)
       if (error) throw new Error(error.message || 'Impossibile aggiornare l\'abilitazione.');
       set((s) => ({ items: s.items.filter((it) => it.id !== existing.id) }));
     }
+  },
+
+  replaceForService: async (serviceId, operatorIds) => {
+    const state = get();
+    const existing = state.items.filter((it) => it.service_id === serviceId);
+    const desired = new Set(operatorIds);
+    const existingIds = new Set(existing.map((it) => it.operator_id));
+
+    const toRemove = existing.filter((it) => !desired.has(it.operator_id));
+    const toAdd = operatorIds.filter((id) => !existingIds.has(id));
+
+    if (toRemove.length === 0 && toAdd.length === 0) return;
+
+    if (toRemove.length > 0) {
+      const ids = toRemove.map((it) => it.id);
+      const { error } = await supabase.from('operator_services').delete().in('id', ids);
+      if (error) throw new Error(error.message || 'Impossibile aggiornare l\'abilitazione.');
+    }
+
+    let inserted: OperatorService[] = [];
+    if (toAdd.length > 0) {
+      const activeSalonId = useWorkspaceStore.getState().activeSalonId;
+      if (!activeSalonId) throw new Error('Nessun salone attivo selezionato.');
+      const rows = toAdd.map((operator_id) => ({
+        salon_id: activeSalonId,
+        service_id: serviceId,
+        operator_id,
+      }));
+      const { data, error } = await supabase.from('operator_services').insert(rows).select();
+      if (error) throw new Error(error.message || 'Impossibile aggiornare l\'abilitazione.');
+      inserted = (data ?? []) as OperatorService[];
+    }
+
+    const removedIds = new Set(toRemove.map((it) => it.id));
+    set((s) => ({ items: [...s.items.filter((it) => !removedIds.has(it.id)), ...inserted] }));
   },
 }));

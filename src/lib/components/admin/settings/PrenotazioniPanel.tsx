@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Globe, Link as LinkIcon, Loader2, MessageSquare, Save, ShieldCheck, Sliders, ToggleRight } from 'lucide-react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { Globe, Link as LinkIcon, Loader2, MessageSquare, ShieldCheck, Sliders, ToggleRight } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
-import { Button } from '@/lib/components/shared/ui/Button';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
@@ -60,23 +59,34 @@ function fromSettings(s: ReturnType<typeof useSalonSettingsStore.getState>['sett
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 
-export function PrenotazioniPanel() {
+export interface PrenotazioniPanelHandle {
+  save: () => Promise<void>;
+  discard: () => void;
+  /** Last-known validation state; the page bar reads this to disable Save. */
+  hasInvalidSlug: () => boolean;
+}
+
+interface Props {
+  ref?: React.Ref<PrenotazioniPanelHandle>;
+  onDirtyChange?: (dirty: boolean) => void;
+  onValidityChange?: (valid: boolean) => void;
+}
+
+export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Props) {
   const isLoading = useSalonSettingsStore((s) => s.isLoading);
   const isLoaded = useSalonSettingsStore((s) => s.isLoaded);
   const settings = useSalonSettingsStore((s) => s.settings);
   const updateSettings = useSalonSettingsStore((s) => s.updateSettings);
 
   const [form, setForm] = useState<FormState>(() => fromSettings(settings));
-  const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isLoaded) setForm(fromSettings(settings));
   }, [isLoaded, settings]);
 
   const setSlug = (raw: string) => {
-    // Lower-case and strip whitespace as the user types so the preview URL
-    // matches what the server will store.
     const sanitised = raw.toLowerCase().replace(/\s+/g, '');
     setForm((p) => ({ ...p, slug: sanitised }));
     if (!sanitised) {
@@ -99,16 +109,24 @@ export function PrenotazioniPanel() {
     return JSON.stringify(baseline) !== JSON.stringify(form);
   }, [settings, form]);
 
-  const onSave = async () => {
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const hasInvalidSlug = !!slugError || (form.booking_enabled && !slugIsValid);
+  useEffect(() => {
+    onValidityChange?.(!hasInvalidSlug);
+  }, [hasInvalidSlug, onValidityChange]);
+
+  const save = useCallback(async () => {
     if (form.slug && !SLUG_RE.test(form.slug)) {
       setSlugError('Lettere minuscole, numeri e trattini (non agli estremi).');
-      return;
+      throw new Error('slug-invalid');
     }
     if (form.booking_enabled && !slugIsValid) {
       messagePopup.getState().error('Imposta uno slug valido prima di attivare le prenotazioni.');
-      return;
+      throw new Error('slug-required');
     }
-    setSaving(true);
     try {
       await updateSettings({
         slug: form.slug ? form.slug : null,
@@ -118,13 +136,24 @@ export function PrenotazioniPanel() {
           public_message: form.config.public_message.trim() || null,
         },
       });
-      messagePopup.getState().success('Impostazioni prenotazioni salvate');
     } catch (err) {
-      messagePopup.getState().error(err instanceof Error && err.message ? err.message : 'Errore durante il salvataggio');
-    } finally {
-      setSaving(false);
+      messagePopup
+        .getState()
+        .error(err instanceof Error && err.message ? err.message : 'Errore durante il salvataggio');
+      throw err;
     }
-  };
+  }, [form, slugIsValid, updateSettings]);
+
+  const discard = useCallback(() => {
+    setForm(fromSettings(settings));
+    setSlugError(null);
+  }, [settings]);
+
+  useImperativeHandle(
+    ref,
+    () => ({ save, discard, hasInvalidSlug: () => hasInvalidSlug }),
+    [save, discard, hasInvalidSlug],
+  );
 
   const previewOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://lume.app';
 
@@ -339,18 +368,6 @@ export function PrenotazioniPanel() {
         />
         <p className="mt-1 text-xs text-zinc-500">{c.public_message.length}/500</p>
       </SettingsCard>
-
-      <div className="flex justify-end">
-        <Button
-          variant="primary"
-          leadingIcon={Save}
-          loading={saving}
-          disabled={!isDirty || !!slugError}
-          onClick={onSave}
-        >
-          {saving ? 'Salvataggio…' : 'Salva'}
-        </Button>
-      </div>
     </div>
   );
 }
