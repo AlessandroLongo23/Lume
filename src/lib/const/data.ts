@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Star,
   Settings,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -41,6 +42,7 @@ export const adminRoutes: AdminRouteGroup[] = [
     title: 'Appuntamenti',
     routes: [
       { name: 'Calendario', icon: Calendar, url: 'calendario', searchKeywords: ['agenda', 'prenotazioni', 'appuntamenti'] },
+      { name: 'Prenotazioni online', icon: Globe, url: 'prenotazioni', searchKeywords: ['online', 'pending', 'approvazioni', 'richieste', 'web'] },
       { name: 'Fiches', icon: Ticket, url: 'fiches', searchKeywords: ['fiche', 'scontrini', 'ricevute', 'incassi'] },
       { name: 'Clienti', icon: Users, url: 'clienti', searchKeywords: ['cliente', 'clientela', 'anagrafica'] },
       { name: 'Coupons', icon: Tag, url: 'coupons', searchKeywords: ['coupon', 'sconti', 'promo', 'gift', 'regalo'] },

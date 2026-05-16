@@ -17,6 +17,18 @@ function safeColor(input: string | null | undefined): string {
   return HEX_RE.test(input.trim()) ? input.trim() : DEFAULT_BRAND;
 }
 
+/** Email variants:
+ *  - 'created'           initial auto-confirm at booking time (no approval needed)
+ *  - 'pending_approval'  initial "we received your request" at booking time
+ *  - 'approved'          staff approved a previously pending booking
+ *  - 'declined'          staff declined a previously pending booking
+ *
+ *  'created' and 'approved' both result in a confirmed booking but use slightly
+ *  different copy because in the second case the visitor already received the
+ *  "we received your request" email — the second mail should make it clear
+ *  this is the outcome of that earlier request. */
+export type BookingEmailVariant = 'created' | 'pending_approval' | 'approved' | 'declined';
+
 export interface BookingConfirmationParams {
   toEmail: string;
   toFirstName: string;
@@ -25,7 +37,62 @@ export interface BookingConfirmationParams {
   serviceName: string;
   /** Human-readable date/time, e.g. "lunedì 18 maggio 2026 · 14:30". */
   whenLabel: string;
-  status: 'created' | 'pending_approval';
+  status: BookingEmailVariant;
+}
+
+type VariantCopy = {
+  subject: string;
+  heading: string;
+  intro: string;
+  footer: string;
+  pillBg: string;
+  pillFg: string;
+  pillLabel: string;
+};
+
+function variantCopy(variant: BookingEmailVariant, salonName: string): VariantCopy {
+  switch (variant) {
+    case 'created':
+      return {
+        subject: `Prenotazione confermata · ${salonName}`,
+        heading: 'Prenotazione confermata',
+        intro: `<strong>${esc(salonName)}</strong> ti aspetta. Trovi i dettagli qui sotto.`,
+        footer: 'Per cambiare o cancellare la prenotazione, contatta direttamente il salone.',
+        pillBg: '#dcfce7',
+        pillFg: '#166534',
+        pillLabel: 'Confermata',
+      };
+    case 'pending_approval':
+      return {
+        subject: `Richiesta ricevuta · ${salonName}`,
+        heading: 'Richiesta ricevuta',
+        intro: `Abbiamo ricevuto la tua richiesta a <strong>${esc(salonName)}</strong>. Ti scriviamo non appena viene confermata.`,
+        footer: "Riceverai un'email non appena il salone conferma o, se necessario, ti propone un'alternativa.",
+        pillBg: '#fef3c7',
+        pillFg: '#92400e',
+        pillLabel: 'In attesa',
+      };
+    case 'approved':
+      return {
+        subject: `Prenotazione confermata · ${salonName}`,
+        heading: 'Buone notizie, sei confermato!',
+        intro: `<strong>${esc(salonName)}</strong> ha appena confermato la tua richiesta. Ti aspettiamo.`,
+        footer: 'Per cambiare o cancellare la prenotazione, contatta direttamente il salone.',
+        pillBg: '#dcfce7',
+        pillFg: '#166534',
+        pillLabel: 'Confermata',
+      };
+    case 'declined':
+      return {
+        subject: `Prenotazione non confermata · ${salonName}`,
+        heading: 'Prenotazione non confermata',
+        intro: `Purtroppo <strong>${esc(salonName)}</strong> non può accogliere la tua richiesta per il giorno e orario indicati.`,
+        footer: 'Puoi contattare il salone per trovare un orario alternativo o riprovare a prenotare online in un altro giorno.',
+        pillBg: '#fee2e2',
+        pillFg: '#991b1b',
+        pillLabel: 'Non confermata',
+      };
+  }
 }
 
 export async function sendBookingConfirmationEmail(
@@ -33,19 +100,8 @@ export async function sendBookingConfirmationEmail(
 ): Promise<void> {
   const { toEmail, toFirstName, salonName, brandColor, serviceName, whenLabel, status } = params;
   const brand = safeColor(brandColor);
-  const approved = status === 'created';
-
-  const heading = approved ? 'Prenotazione confermata' : 'Richiesta ricevuta';
-  const intro = approved
-    ? `<strong>${esc(salonName)}</strong> ti aspetta. Trovi i dettagli qui sotto.`
-    : `Abbiamo ricevuto la tua richiesta a <strong>${esc(salonName)}</strong>. Ti scriviamo non appena viene confermata.`;
-  const subject = approved
-    ? `Prenotazione confermata · ${salonName}`
-    : `Richiesta ricevuta · ${salonName}`;
-
-  const statusPillBg = approved ? '#dcfce7' : '#fef3c7';
-  const statusPillFg = approved ? '#166534' : '#92400e';
-  const statusLabel = approved ? 'Confermata' : 'In attesa';
+  const copy = variantCopy(status, salonName);
+  const { subject, heading, intro, footer, pillBg: statusPillBg, pillFg: statusPillFg, pillLabel: statusLabel } = copy;
 
   const html = `
 <!DOCTYPE html>
@@ -81,11 +137,7 @@ export async function sendBookingConfirmationEmail(
           </tr>
         </table>
 
-        ${
-          approved
-            ? `<p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Per cambiare o cancellare la prenotazione, contatta direttamente il salone.</p>`
-            : `<p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Riceverai un'email non appena il salone conferma o, se necessario, ti propone un'alternativa.</p>`
-        }
+        <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">${esc(footer)}</p>
       </td>
     </tr>
     <tr>
