@@ -23,6 +23,10 @@ interface AddModalProps {
    *  Useful for read-only views (e.g. an audit log tab) where the modal acts
    *  as a viewer and there is no save action. */
   hideConfirm?: boolean;
+  /** When true, the "cancel" button is omitted from the footer. Useful when
+   *  the dangerAction slot already exposes a clear retreat path and a second
+   *  cancel-style action would be ambiguous. */
+  hideCancel?: boolean;
   /** Forwarded to Modal. Default true; pass false for stacked modals so the
    *  dimmed area click doesn't cascade to the modal behind. */
   closeOnOutsideClick?: boolean;
@@ -44,6 +48,7 @@ export function AddModal({
   cancelText = 'Annulla',
   confirmDisabled = false,
   hideConfirm = false,
+  hideCancel = false,
   closeOnOutsideClick = true,
 }: AddModalProps) {
   return (
@@ -70,9 +75,11 @@ export function AddModal({
           <div>{footerContent}</div>
           <div className="flex flex-row flex-wrap items-center gap-3">
             {dangerAction}
-            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
-              {cancelText}
-            </Button>
+            {!hideCancel && (
+              <Button variant="secondary" leadingIcon={X} onClick={onClose}>
+                {cancelText}
+              </Button>
+            )}
             {!hideConfirm && (
               <Button
                 variant="primary"

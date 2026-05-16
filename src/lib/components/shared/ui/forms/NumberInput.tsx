@@ -54,6 +54,9 @@ interface NumberInputProps {
   /** Number of decimal places allowed. 0 (default) = integers only. */
   decimals?: number;
   size?: ControlSize;
+  /** Hide the up/down stepper arrows. Useful for money fields where stepping
+   *  isn't a natural interaction (the user types the value). */
+  hideSteppers?: boolean;
 }
 
 export function NumberInput({
@@ -70,6 +73,7 @@ export function NumberInput({
   width = 'w-full',
   decimals = 0,
   size = 'md',
+  hideSteppers = false,
 }: NumberInputProps) {
   const sc = sizeConfig[size];
   const [displayValue, setDisplayValue] = useState(value?.toString() ?? '');
@@ -162,7 +166,7 @@ export function NumberInput({
   return (
     <div className={`relative ${width} ${className}`}>
       <div className={`w-full ${sc.containerHeight} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors flex items-stretch ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-        {arrowPlacement === 'left' && arrows}
+        {!hideSteppers && arrowPlacement === 'left' && arrows}
         <input
           ref={inputRef}
           type="text"
@@ -183,7 +187,7 @@ export function NumberInput({
             {suffix}
           </span>
         )}
-        {arrowPlacement === 'right' && arrows}
+        {!hideSteppers && arrowPlacement === 'right' && arrows}
       </div>
     </div>
   );
