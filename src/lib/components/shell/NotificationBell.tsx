@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Trash2 } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Portal } from '@/lib/components/shared/ui/Portal';
@@ -23,6 +24,7 @@ export function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
@@ -75,7 +77,7 @@ export function NotificationBell() {
         type="button"
         aria-label="Notifiche"
         onClick={() => setOpen((o) => !o)}
-        className="relative inline-flex items-center justify-center size-9 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="relative inline-flex items-center justify-center size-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <Bell className="size-4" />
         {unread.length > 0 && (
@@ -85,15 +87,23 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && pos && (
-        <Portal>
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-label="Notifiche"
-            className="fixed z-popover w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden"
-            style={{ top: pos.top, right: pos.right }}
-          >
+      <AnimatePresence>
+        {open && pos && (
+          <Portal>
+            <motion.div
+              ref={panelRef}
+              role="dialog"
+              aria-label="Notifiche"
+              className="fixed z-popover w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden"
+              style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              transition={{
+                duration: reduceMotion ? 0.12 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
             <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Notifiche</p>
               {unread.length > 0 && (
@@ -126,9 +136,10 @@ export function NotificationBell() {
                 ))}
               </ul>
             )}
-          </div>
-        </Portal>
-      )}
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
     </>
   );
 }
