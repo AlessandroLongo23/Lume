@@ -293,7 +293,7 @@ function BookingRow({ fiche, tab }: { fiche: Fiche; tab: Tab }) {
           </>
         ) : (
           <Link
-            href={`/admin/fiches/${fiche.id}`}
+            href={`/admin/fiches?edit=${fiche.id}`}
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
             Vedi fiche
