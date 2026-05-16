@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/server';
 import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
+import { emitBookingCreated, emitBookingRequested } from '@/lib/notifications/emit';
 
 // Public, anon-callable endpoint hit by the booking wizard's submit button.
 // All access control happens inside create_online_booking (SECURITY DEFINER):
@@ -118,6 +122,7 @@ export async function POST(request: NextRequest) {
     cap: string | null;
     province: string | null;
     phone: string | null;
+    booking_config: { approval_scope?: 'chosen_operator' | 'any_staff' } | null;
   };
 
   const { data: rpcData, error: rpcError } = await supabase
@@ -184,12 +189,55 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Fan-out to the notification bell. Best-effort: a notification miss
+  // shouldn't bubble up as a booking failure either.
+  try {
+    const start = new Date(startAt);
+    const whenLabel = `${format(start, "EEEE d MMMM", { locale: it })} · ${format(start, 'HH:mm')}`;
+    const body = `${firstName} ${lastName} · ${whenLabel}`;
+    const operatorUserId = await loadOperatorUserId(operatorId);
+    const ctx = {
+      salonId: salonRow.id,
+      ficheId: row.fiche_id,
+      operatorId,
+      operatorUserId,
+      body,
+    };
+    if (row.status === 'pending_approval') {
+      await emitBookingRequested({
+        ...ctx,
+        approvalScope: salonRow.booking_config?.approval_scope ?? 'chosen_operator',
+      });
+    } else {
+      await emitBookingCreated(ctx);
+    }
+  } catch (err) {
+    console.error('Notification fan-out failed:', err);
+  }
+
   return NextResponse.json({
     success: true,
     status: row.status,
     fiche_id: row.fiche_id,
     email_sent: emailSent,
   });
+}
+
+// Anon callers can't read operators directly under RLS, but we need the
+// chosen operator's auth user_id to route the staff notification. Service
+// role for one field is fine — no info leaks back to the anon caller.
+async function loadOperatorUserId(operatorId: string): Promise<string | null> {
+  const admin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const { data, error } = await admin
+    .from('operators')
+    .select('user_id')
+    .eq('id', operatorId)
+    .maybeSingle<{ user_id: string | null }>();
+  if (error || !data) return null;
+  return data.user_id;
 }
 
 // Anon callers don't have direct read access to public.services rows, but
