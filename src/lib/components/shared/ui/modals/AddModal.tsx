@@ -49,7 +49,7 @@ export function AddModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes={classes} closeOnOutsideClick={closeOnOutsideClick}>
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
-        <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
+        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
               <Icon className="size-5 text-primary" />

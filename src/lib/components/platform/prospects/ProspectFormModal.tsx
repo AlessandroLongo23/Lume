@@ -207,7 +207,7 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
   return (
     <Modal isOpen={isOpen} onClose={onClose} classes="max-w-2xl">
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
-        <div className="flex flex-row items-center justify-between p-6 border-b border-border shrink-0">
+        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
               <Icon className="size-5 text-primary" />

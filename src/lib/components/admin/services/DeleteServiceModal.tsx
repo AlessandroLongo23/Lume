@@ -63,7 +63,7 @@ export function DeleteServiceModal({ isOpen, onClose, selectedService, onDeleted
       <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
 
         {/* Header */}
-        <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25">
+        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25">
           <div className="flex flex-row items-center gap-3 min-w-0">
             <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-red-500/10">
               <TriangleAlert className="size-5 text-red-500" />

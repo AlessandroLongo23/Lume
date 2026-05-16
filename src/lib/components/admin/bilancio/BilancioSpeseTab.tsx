@@ -168,7 +168,7 @@ export function BilancioSpeseTab() {
     <>
       <Modal isOpen={dialogOpen} onClose={() => setDialogOpen(false)} classes="max-w-md">
         <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
-          <div className="flex flex-row items-center justify-between p-6 border-b border-zinc-500/25 shrink-0">
+          <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25 shrink-0">
             <div className="flex flex-row items-center gap-3">
               <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
                 <Receipt className="size-5 text-primary" />
