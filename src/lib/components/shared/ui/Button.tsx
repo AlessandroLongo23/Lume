@@ -98,7 +98,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     'relative inline-flex items-center justify-center rounded-lg font-medium whitespace-nowrap',
     'transition-[background-color,border-color,color,transform,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
-    'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none',
+    // Disabled: dim, denied cursor, and no hover lift/shadow. The `disabled:hover:`
+    // resets are two pseudo-classes, so they outrank the variant's `hover:` lift
+    // regardless of source order (and cover both the `translate`-property and
+    // `transform` implementations).
+    'disabled:opacity-50 disabled:cursor-not-allowed',
+    'disabled:hover:translate-y-0 disabled:hover:transform-none disabled:hover:shadow-none',
     sizeClasses[size],
     iconOnly ? iconOnlyClasses[size] : sizePaddingClasses[size],
     variantClasses[variant],
