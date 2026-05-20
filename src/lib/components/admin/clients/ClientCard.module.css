@@ -88,6 +88,18 @@
   color: var(--lume-text-muted);
 }
 
+.phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--lume-text-muted);
+}
+
+.phone svg {
+  flex-shrink: 0;
+}
+
 .nuovo {
   display: inline-flex;
   align-items: center;
@@ -100,23 +112,6 @@
   font-weight: 500;
   font-size: 0.6875rem;
   letter-spacing: 0.02em;
-}
-
-.birthday {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: oklch(0.955 0.050 80);
-  color: oklch(0.470 0.105 80);
-  font-weight: 500;
-  font-size: 0.6875rem;
-}
-
-:global(.dark) .birthday {
-  background: oklch(0.380 0.080 80 / 0.30);
-  color: oklch(0.870 0.125 80);
 }
 
 .tourist {
@@ -146,7 +141,7 @@
   color: var(--lume-text-secondary);
 }
 
-.field svg {
+.field > svg {
   color: var(--lume-text-muted);
 }
 
@@ -154,6 +149,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.birthdateValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.link {
+  cursor: pointer;
+  transition: color 150ms var(--ease-out, ease-out);
+}
+
+.link:hover {
+  color: var(--lume-accent);
+  text-decoration: underline;
 }
 
 .addContactCta {
