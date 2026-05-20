@@ -73,7 +73,7 @@ export function ToggleButton({
             onClick={() => onChange(opt)}
             onKeyDown={(e) => handleKeyDown(e, i)}
             className={[
-              'relative h-full inline-flex items-center justify-center rounded-md',
+              'relative h-full inline-flex items-center justify-center rounded-md whitespace-nowrap',
               'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)] font-medium',
               'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
               'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
