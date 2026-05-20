@@ -78,6 +78,7 @@ export function NumberInput({
   const sc = sizeConfig[size];
   const [displayValue, setDisplayValue] = useState(value?.toString() ?? '');
   const inputRef = useRef<HTMLInputElement>(null);
+  const isFocusedRef = useRef(false);
 
   const formatValue = (v: number | null): string => {
     if (v === null || v === undefined) return '';
@@ -86,6 +87,10 @@ export function NumberInput({
   };
 
   useEffect(() => {
+    // Don't fight the user mid-typing: a partial entry (e.g. "4" toward "45")
+    // is legitimately below `min`, and the parent often clamps `value` on every
+    // keystroke. Syncing here would snap the field back to the clamped value.
+    if (isFocusedRef.current) return;
     setDisplayValue(formatValue(value));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -137,7 +142,7 @@ export function NumberInput({
       let final = num;
       if (min !== undefined && final < min) final = min;
       if (max !== undefined && final > max) final = max;
-      setDisplayValue(final.toString());
+      setDisplayValue(normalised); // keep raw so a partial value below min isn't snapped while typing
       onChange(final);
     }
   };
@@ -175,7 +180,8 @@ export function NumberInput({
           placeholder={placeholder}
           disabled={disabled}
           onChange={handleInput}
-          onBlur={() => setDisplayValue(formatValue(value))}
+          onFocus={() => { isFocusedRef.current = true; }}
+          onBlur={() => { isFocusedRef.current = false; setDisplayValue(formatValue(value)); }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowUp') { e.preventDefault(); increment(); }
             if (e.key === 'ArrowDown') { e.preventDefault(); decrement(); }
