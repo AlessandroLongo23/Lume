@@ -277,6 +277,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               service_id: fs.service_id,
               name: fs.name || svc?.name || 'Servizio',
               operator_id: fs.operator_id ?? '',
+              // Keep each service's real position. Without this the modal would
+              // re-derive times by stacking durations from fiche.datetime, hiding
+              // calendar moves/gaps and overwriting them on save.
+              start_time: new Date(fs.start_time),
               duration: fs.duration,
               list_price: fs.list_price,
               final_price: fs.final_price,
@@ -420,15 +424,19 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     return isNaN(d.getTime()) ? new Date() : d;
   }, [datetimeStr]);
 
-  const servicesWithTimes = useMemo(() => {
-    let cursor = baseTime;
-    return ficheServices.map((s) => {
-      const start_time = cursor;
-      const end_time = addMinutes(cursor, s.duration);
-      cursor = end_time;
-      return { ...s, start_time, end_time };
-    });
-  }, [ficheServices, baseTime]);
+  // Each service holds its own absolute start_time (set on load, when added, or
+  // when the appointment is moved via the Data e ora field). end_time is derived
+  // from its duration. We keep ficheServices in chronological order, so the index
+  // here stays aligned with the per-row mutation handlers.
+  const servicesWithTimes = useMemo(
+    () =>
+      ficheServices.map((s) => ({
+        ...s,
+        start_time: s.start_time,
+        end_time: addMinutes(s.start_time, s.duration),
+      })),
+    [ficheServices],
+  );
 
   const totalDuration = useMemo(() => ficheServices.reduce((acc, s) => acc + s.duration, 0), [ficheServices]);
   const subtotal = useMemo(
@@ -490,12 +498,35 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   function addServiceToList(svc: Service) {
     const operatorId = mode === 'add' ? (operator?.id ?? '') : '';
-    setFicheServices((prev) => [
-      ...prev,
-      { service_id: svc.id, name: svc.name, operator_id: operatorId, duration: svc.duration, list_price: svc.price, final_price: svc.price, abbonamento_id: null },
-    ]);
+    setFicheServices((prev) => {
+      // New services start right after the latest existing service (contiguous),
+      // or at the appointment time when this is the first one.
+      const start =
+        prev.length > 0
+          ? new Date(Math.max(...prev.map((s) => addMinutes(s.start_time, s.duration).getTime())))
+          : baseTime;
+      return [
+        ...prev,
+        { service_id: svc.id, name: svc.name, operator_id: operatorId, start_time: start, duration: svc.duration, list_price: svc.price, final_price: svc.price, abbonamento_id: null },
+      ];
+    });
     setSvcQuery('');
     setSvcOpen(false);
+  }
+
+  /** Editing "Data e ora" moves the whole appointment: every service shifts by the
+   *  same delta, so gaps between services are preserved (mirrors dragging an entire
+   *  appointment on the calendar). */
+  function handleDatetimeChange(value: string) {
+    const prevBase = baseTime;
+    setDatetimeStr(value);
+    const next = value ? new Date(value) : null;
+    if (!next || isNaN(next.getTime())) return;
+    const delta = next.getTime() - prevBase.getTime();
+    if (delta === 0) return;
+    setFicheServices((prev) =>
+      prev.map((s) => ({ ...s, start_time: new Date(s.start_time.getTime() + delta) })),
+    );
   }
 
   function setServiceAbbonamento(index: number, abbonamentoId: string | null) {
@@ -513,7 +544,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   }
 
   function removeService(index: number) {
-    setFicheServices((prev) => prev.filter((_, i) => i !== index));
+    setFicheServices((prev) => {
+      const target = prev[index];
+      if (!target) return prev;
+      const oldEnd = addMinutes(target.start_time, target.duration).getTime();
+      const deltaMs = target.duration * 60000;
+      return prev
+        .filter((_, i) => i !== index)
+        // Pull the sequentially-later services up to close the freed slot,
+        // keeping any gaps between the remaining services intact.
+        .map((s) =>
+          s.start_time.getTime() >= oldEnd
+            ? { ...s, start_time: new Date(s.start_time.getTime() - deltaMs) }
+            : s,
+        );
+    });
   }
 
   function updateServiceOperator(index: number, operatorId: string) {
@@ -522,7 +567,27 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   function updateServiceDuration(index: number, raw: number) {
     const duration = Math.max(5, raw || 5);
-    setFicheServices((prev) => prev.map((s, i) => (i === index ? { ...s, duration } : s)));
+    setFicheServices((prev) => {
+      const target = prev[index];
+      if (!target) return prev;
+      // Sweep forward from the edited service: push each later service only as far
+      // as needed to not overlap the one before it. A gap is filled by the
+      // extension first; only the overflow pushes the next service. Contiguous
+      // services are pushed together. (Services are kept in chronological order.)
+      let cursorMs = target.start_time.getTime() + duration * 60000;
+      return prev.map((s, i) => {
+        if (i === index) return { ...s, duration };
+        if (i < index) return s;
+        const startMs = s.start_time.getTime();
+        if (startMs < cursorMs) {
+          const shifted = new Date(cursorMs);
+          cursorMs += s.duration * 60000;
+          return { ...s, start_time: shifted };
+        }
+        cursorMs = startMs + s.duration * 60000;
+        return s;
+      });
+    });
   }
 
   function updateServicePrice(index: number, raw: number) {
@@ -1187,7 +1252,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                       type="datetime-local"
                       className={inputClass}
                       value={datetimeStr}
-                      onChange={(e) => setDatetimeStr(e.target.value)}
+                      onChange={(e) => handleDatetimeChange(e.target.value)}
                     />
                     {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
                   </div>
@@ -1904,11 +1969,19 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             L&apos;appuntamento è previsto dalle{' '}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {format(servicesWithTimes[0].start_time, 'HH:mm', { locale: it })}
+              {format(
+                servicesWithTimes.reduce((m, s) => (s.start_time < m ? s.start_time : m), servicesWithTimes[0].start_time),
+                'HH:mm',
+                { locale: it },
+              )}
             </span>{' '}
             alle{' '}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {format(servicesWithTimes[servicesWithTimes.length - 1].end_time, 'HH:mm', { locale: it })}
+              {format(
+                servicesWithTimes.reduce((m, s) => (s.end_time > m ? s.end_time : m), servicesWithTimes[0].end_time),
+                'HH:mm',
+                { locale: it },
+              )}
             </span>
             , fuori dagli orari di apertura del salone. Confermi di voler creare l&apos;appuntamento comunque?
           </p>
