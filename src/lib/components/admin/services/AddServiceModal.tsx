@@ -6,6 +6,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { ServiceForm, type ServiceFormValue, type ServiceFormErrors } from './ServiceForm';
 import { useFormDefaults } from '@/lib/hooks/useFormDefaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddServiceModalProps {
   isOpen: boolean;
@@ -46,6 +47,8 @@ export function AddServiceModal({ isOpen, onClose }: AddServiceModalProps) {
     try {
       await addService(service);
       messagePopup.getState().success('Servizio aggiunto con successo');
+      // Advances an interactive guide's "save" step on a successful create.
+      emitTourEvent('service:created');
       setService(emptyService(formDefaults.service_duration_min));
       onClose();
     } catch (err) {
@@ -55,8 +58,28 @@ export function AddServiceModal({ isOpen, onClose }: AddServiceModalProps) {
   };
 
   return (
-    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Nuovo servizio" subtitle="Aggiungi un nuovo servizio" classes="max-w-2xl">
-      <ServiceForm value={service} onChange={setService} errors={errors} />
+    <AddModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Nuovo servizio"
+      subtitle="Aggiungi un nuovo servizio"
+      classes="max-w-2xl"
+      confirmDataTour="save-service"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('service:modal-open')}
+    >
+      <ServiceForm
+        value={service}
+        onChange={(v) => {
+          // Advances an interactive guide's "choose a category" step once the
+          // user actually picks one (no-op when no tour is running).
+          if (v.category_id && v.category_id !== service.category_id) emitTourEvent('service:category-selected');
+          setService(v);
+        }}
+        errors={errors}
+      />
     </AddModal>
   );
 }

@@ -11,6 +11,11 @@ interface ModalProps {
   classes?: string;
   closeOnOutsideClick?: boolean;
   backgroundBlur?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  /** Fired once the open animation finishes (not on close). Callers that position
+   *  UI against the modal's final rect — e.g. an interactive-guide coachmark
+   *  anchored on a field inside it — should wait for this, otherwise they measure
+   *  the element mid-entrance and land in the wrong place. */
+  onEnterComplete?: () => void;
 }
 
 const blurClasses: Record<string, string> = {
@@ -29,6 +34,7 @@ export function Modal({
   classes = '',
   closeOnOutsideClick = true,
   backgroundBlur = 'none',
+  onEnterComplete,
 }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -75,6 +81,9 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
+            // Only the open animation settles to y:0/scale:1 while open; the exit
+            // runs with isOpen already false, so this guard fires once, on enter.
+            onAnimationComplete={() => { if (isOpen) onEnterComplete?.(); }}
           >
             {children}
           </motion.div>

@@ -12,6 +12,7 @@ export type SidebarNavItem = {
   url: string;          // absolute or segment — fully rendered href
   icon: LucideIcon;
   matcher?: (pathname: string) => boolean;
+  dataTour?: string;    // stable anchor for interactive tours (NextStep selector)
 };
 
 export type SidebarNavGroup = {
@@ -23,7 +24,6 @@ interface SidebarProps {
   identity?: React.ReactNode;
   navGroups: SidebarNavGroup[];
   pinnedLinks?: SidebarNavItem[];
-  helpLinks?: { label: string; href: string }[];
   userCard?: React.ReactNode;
 }
 
@@ -41,6 +41,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
       <Link
         href={item.url}
         onClick={onNavigate}
+        data-tour={item.dataTour}
         className={`flex items-center text-sm rounded-md overflow-hidden transition-colors ${
           isActive
             ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
@@ -69,7 +70,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
   );
 }
 
-export function Sidebar({ identity, navGroups, pinnedLinks, helpLinks, userCard }: SidebarProps) {
+export function Sidebar({ identity, navGroups, pinnedLinks, userCard }: SidebarProps) {
   const { collapsed } = useSidebarCollapseContext();
   const { setOpen: setMobileOpen } = useMobileMenu();
   const forceExpanded = useSidebarForceExpanded();
@@ -133,21 +134,6 @@ export function Sidebar({ identity, navGroups, pinnedLinks, helpLinks, userCard 
         <div className="flex flex-col gap-0.5 shrink-0">
           {pinnedLinks.map((item) => (
             <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
-          ))}
-        </div>
-      )}
-
-      {helpLinks && helpLinks.length > 0 && !effectiveCollapsed && (
-        <div className="flex flex-col gap-0.5 shrink-0 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-          {helpLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={onNavigate}
-              className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              {link.label}
-            </Link>
           ))}
         </div>
       )}

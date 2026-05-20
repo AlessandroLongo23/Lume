@@ -19,6 +19,9 @@ interface AddModalProps {
   confirmText?: string;
   cancelText?: string;
   confirmDisabled?: boolean;
+  /** Optional `data-tour` value forwarded to the confirm button, so interactive
+   *  guides can anchor a "save" step to it (e.g. `save-client`). */
+  confirmDataTour?: string;
   /** When true, the primary "confirm" button is omitted from the footer.
    *  Useful for read-only views (e.g. an audit log tab) where the modal acts
    *  as a viewer and there is no save action. */
@@ -30,6 +33,10 @@ interface AddModalProps {
   /** Forwarded to Modal. Default true; pass false for stacked modals so the
    *  dimmed area click doesn't cascade to the modal behind. */
   closeOnOutsideClick?: boolean;
+  /** Forwarded to Modal — fires once the open animation finishes. Used by
+   *  interactive guides to advance an "open the modal" step only after the modal
+   *  has settled, so the next step's coachmark anchors on the final element rect. */
+  onEnterComplete?: () => void;
 }
 
 export function AddModal({
@@ -47,12 +54,14 @@ export function AddModal({
   confirmText = 'Aggiungi',
   cancelText = 'Annulla',
   confirmDisabled = false,
+  confirmDataTour,
   hideConfirm = false,
   hideCancel = false,
   closeOnOutsideClick = true,
+  onEnterComplete,
 }: AddModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} classes={classes} closeOnOutsideClick={closeOnOutsideClick}>
+    <Modal isOpen={isOpen} onClose={onClose} classes={classes} closeOnOutsideClick={closeOnOutsideClick} onEnterComplete={onEnterComplete}>
       <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
         <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25 shrink-0">
           <div className="flex flex-row items-center gap-3 truncate">
@@ -86,6 +95,7 @@ export function AddModal({
                 leadingIcon={Check}
                 disabled={confirmDisabled}
                 onClick={onSubmit}
+                data-tour={confirmDataTour}
               >
                 {confirmText}
               </Button>

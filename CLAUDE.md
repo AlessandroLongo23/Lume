@@ -140,6 +140,10 @@ Both skills hard-code Lume's positioning constants (€49/mo · €490/yr, indig
 
 Generated reports/screenshots in `output/marketing/` are gitignored (see `.gitignore`).
 
+Product skills:
+
+- **`/tutorial-builder [topic]`** — generate a complete tutorial for a Lume feature: registry entry, interactive guided tour, Markdown article + Playwright screenshots (`public/tutorials/<slug>/`), and any `data-tour` anchors. Unlike the marketing skills it **writes into `src/` and `public/` and seeds the demo salon** (idempotent, demo-only), so it's `disable-model-invocation` — invoke deliberately. Prerequisites chain to other tutorials (build base entities first). See [.claude/skills/tutorial-builder/SKILL.md](.claude/skills/tutorial-builder/SKILL.md).
+
 Start implementing only if you have 95% confidence in the code you're writing. Ask questions to reach that confidence.
 When you're done, always check for lint errors by running the command.
 Whenever I express architectural choices or styling choices, you should, if it's important, put it in this file for future reference, but ask me before editing it.

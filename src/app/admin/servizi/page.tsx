@@ -158,7 +158,7 @@ export default function ServiziPage() {
         onConfirm={deleteAllServices}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6" data-tour="servizi-page">
         <PageHeader
           title="Servizi"
           subtitle="Tutto quello che il tuo salone sa fare."
@@ -166,7 +166,7 @@ export default function ServiziPage() {
           actions={
             <>
               {isServiziTab ? (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)} data-tour="action-service-create">
                   Nuovo Servizio
                 </Button>
               ) : (

@@ -8,6 +8,7 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from './ClientForm';
 import { Gender } from '@/lib/types/Gender';
 import { useFormDefaults } from '@/lib/hooks/useFormDefaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -80,6 +81,8 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
 
       await addClient(payload);
       messagePopup.getState().success('Cliente aggiunto con successo');
+      // Advances an interactive guide's "save" step on a successful create.
+      emitTourEvent('client:created');
       onClose();
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Errore sconosciuto';
@@ -88,7 +91,18 @@ export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   };
 
   return (
-    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Nuovo cliente" subtitle="Aggiungi un nuovo cliente" classes="max-w-3xl">
+    <AddModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Nuovo cliente"
+      subtitle="Aggiungi un nuovo cliente"
+      classes="max-w-3xl"
+      confirmDataTour="save-client"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('client:modal-open')}
+    >
       <ClientForm
         value={client}
         onChange={setClient}

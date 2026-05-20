@@ -60,9 +60,9 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Onboarding
 - [ ] [feat] (M) End-to-end onboarding flow design — signup → first appointment booked _(proposed)_
-- [ ] [feat] (L) Tutorial — pick format (video, step-and-highlight, modern overlay)
 - [ ] [data] (M) Onboarding step to bulk-load salon data
 - [ ] [data] (M) Goes over the most important settings, like opening time, authorizations and permissions, online booking service and setup, etc. (all clarifying that it could be done at any time and with a "Salta" button), for an initial setup
+- [x] [feat] (L) Tutorial — pick format (video, step-and-highlight, modern overlay)
 - [*] [data] (XL) Automatic import via Anthropic API + Supabase MCP
   - [x] [data] (M) Passare tutti i dati da Stiv
   - [x] [data] (L) On detected pre-existing data, prompt: add (blind), overwrite (clean slate), or merge (smart)
@@ -79,7 +79,7 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [ux] (M) Applicazione abbonamento e dove trovare i dettagli
 - [ ] [ux] (L) Patch-notes overlay on login, auto-generated from commits; pulsating badge for new tutorials and features
 - [ ] [ux] (S) More navigation opportunities, with between-pages links
-- [ ] [ux] (M) Add spotify integration to control the music from the CMS
+- [ ] [ux] (L) Add spotify integration to control the music from the CMS
 - [x] [ux] (M) Organize fiches in "Future/Prenotate", "Arretrate" and "Concluse"
 - [x] [ux] (M) Bug button bottom-right (aligned with theme button) — screenshots current page, opens feedback modal with bug preselected and screenshot uploaded
 - [x] [ux] (S) Drag handle (six dots) on calendar service blocks on hover (animation pushes text)

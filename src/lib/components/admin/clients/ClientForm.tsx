@@ -175,12 +175,12 @@ export function ClientForm({
       <div className="flex flex-row items-start gap-4 w-full flex-wrap">
         <div className="flex flex-1 min-w-40 flex-col gap-2">
           <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-          <input type="text" className={inputClass} value={value.firstName ?? ''} onChange={(e) => set('firstName', e.target.value)} />
+          <input type="text" data-tour="field-client-first_name" className={inputClass} value={value.firstName ?? ''} onChange={(e) => set('firstName', e.target.value)} />
           {errors?.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
         </div>
         <div className="flex flex-1 min-w-40 flex-col gap-2">
           <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Cognome *</span></label>
-          <input type="text" className={inputClass} value={value.lastName ?? ''} onChange={(e) => set('lastName', e.target.value)} />
+          <input type="text" data-tour="field-client-last_name" className={inputClass} value={value.lastName ?? ''} onChange={(e) => set('lastName', e.target.value)} />
           {errors?.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
         </div>
         <div className="flex shrink-0 flex-col gap-2">

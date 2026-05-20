@@ -24,11 +24,11 @@ export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
   const set = <K extends keyof ServiceFormValue>(key: K, v: ServiceFormValue[K]) => onChange({ ...value, [key]: v });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-tour="service-form">
       <div className="flex flex-row gap-4 flex-wrap">
         <div className="flex flex-1 min-w-48 flex-col gap-2">
           <label className={labelClass}><ALargeSmall className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-          <input type="text" className={inputClass} value={value.name ?? ''} onChange={(e) => set('name', e.target.value)} />
+          <input type="text" className={inputClass} value={value.name ?? ''} onChange={(e) => set('name', e.target.value)} data-tour="field-service-name" />
           {errors?.name && <p className="text-xs text-red-500">{errors.name}</p>}
         </div>
         <div className="flex flex-1 min-w-48 flex-col gap-2">
@@ -46,22 +46,22 @@ export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
       </div>
 
       <div className="flex flex-row gap-4 flex-wrap">
-        <div className="flex flex-1 min-w-32 flex-col gap-2">
+        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-duration">
           <label className={labelClass}><Clock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Durata (min)</span></label>
           <NumberInput value={value.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
         </div>
-        <div className="flex flex-1 min-w-32 flex-col gap-2">
+        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-price">
           <label className={labelClass}><Euro className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Prezzo</span></label>
           <NumberInput value={value.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
           {errors?.price && <p className="text-xs text-red-500">{errors.price}</p>}
         </div>
-        <div className="flex flex-1 min-w-32 flex-col gap-2">
+        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-product_cost">
           <label className={labelClass}><ShoppingCart className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Costo prodotti</span></label>
           <NumberInput value={value.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" data-tour="field-service-description">
         <label className={labelClass}><FileText className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Descrizione</span></label>
         <textarea className={inputClass} rows={3} value={value.description ?? ''} onChange={(e) => set('description', e.target.value)} />
       </div>

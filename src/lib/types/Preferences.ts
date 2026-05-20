@@ -52,4 +52,12 @@ export interface ProfilePreferences {
   clientsTable?: {
     birthdayReminder?: BirthdayReminderPreference;
   };
+  tutorials?: {
+    /** ids of tutorials whose interactive guide the user has completed */
+    completedIds?: string[];
+    /** true once the user dismissed (or accepted) the first-run nudge */
+    firstRunDismissed?: boolean;
+    /** last interactive tour the user started — lets us resume/highlight it */
+    lastTourId?: string;
+  };
 }

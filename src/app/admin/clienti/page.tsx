@@ -96,7 +96,7 @@ export default function ClientiPage() {
         onConfirm={deleteAllClients}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6" data-tour="clienti-page">
         <PageHeader
           title={showArchived ? 'Clienti archiviati' : 'Clienti'}
           subtitle="Ricorda ogni persona che entra nel tuo salone."
@@ -115,6 +115,7 @@ export default function ClientiPage() {
                 leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
                 className="whitespace-nowrap"
+                data-tour="action-client-create"
               >
                 Nuovo cliente
               </Button>

@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeftOpen, Repeat } from 'lucide-react';
+import { NextStep, NextStepProvider } from 'nextstepjs';
 import { adminRoutes, adminSettingsRoute, adminActivityRoute } from '@/lib/const/data';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
@@ -26,6 +27,10 @@ import type { CommandAction } from '@/lib/components/shell/commandMenu/types';
 import { CommandMenuTrigger } from '@/lib/components/shell/CommandMenuTrigger';
 import { NotificationBell } from '@/lib/components/shell/NotificationBell';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
+import { TourCard } from '@/lib/components/admin/tutorials/TourCard';
+import { TourBridge } from '@/lib/components/admin/tutorials/TourBridge';
+import { lumeTours } from '@/lib/tutorials/tours';
+import { useTourQueueStore } from '@/lib/stores/tourQueue';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
@@ -122,6 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           name: r.name,
           url: `/admin/${r.url}`,
           icon: r.icon,
+          dataTour: `nav-${r.url}`,
         })),
       })),
     []
@@ -237,29 +243,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <AppShell
-      impersonationBanner={isImpersonating ? <ImpersonationBanner /> : null}
-      sidebar={sidebar}
-      topBar={topBar}
-    >
-      <StoreInitializer />
-      {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-        </div>
-      ) : (
-        <>
-          <OnboardingProgressBanner />
-          <TrialWarningBanner />
-          {children}
-        </>
-      )}
-      <CommandMenu
-        open={controller.open}
-        onClose={controller.onClose}
-        role={commandRole}
-        extraActions={commandExtraActions}
-      />
-    </AppShell>
+    <NextStepProvider>
+      <NextStep
+        steps={lumeTours}
+        cardComponent={TourCard}
+        cardTransition={{ duration: 0.4, ease: 'easeInOut' }}
+        // The actual finish handling (chain advance / abort / endRoute) runs in
+        // TourBridge, under the provider where startNextStep is available.
+        onComplete={(name) => useTourQueueStore.getState().notifyFinished(name, 'complete')}
+        onSkip={(_step, name) => useTourQueueStore.getState().notifyFinished(name, 'skip')}
+      >
+        <TourBridge />
+        <AppShell
+          impersonationBanner={isImpersonating ? <ImpersonationBanner /> : null}
+          sidebar={sidebar}
+          topBar={topBar}
+        >
+          <StoreInitializer />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            </div>
+          ) : (
+            <>
+              <OnboardingProgressBanner />
+              <TrialWarningBanner />
+              {children}
+            </>
+          )}
+          <CommandMenu
+            open={controller.open}
+            onClose={controller.onClose}
+            role={commandRole}
+            extraActions={commandExtraActions}
+          />
+        </AppShell>
+      </NextStep>
+    </NextStepProvider>
   );
 }

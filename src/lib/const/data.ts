@@ -15,6 +15,7 @@ import {
   Settings,
   Globe,
   History,
+  HelpCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -64,6 +65,7 @@ export const adminRoutes: AdminRouteGroup[] = [
     routes: [
       { name: 'Feedback', icon: MessageSquare, url: 'feedback', searchKeywords: ['commenti', 'suggerimenti', 'segnalazioni'] },
       { name: 'Recensioni', icon: Star, url: 'recensioni', searchKeywords: ['recensione', 'review', 'valutazioni'] },
+      { name: 'Aiuto e tutorial', icon: HelpCircle, url: 'aiuto', searchKeywords: ['aiuto', 'tutorial', 'guida', 'guide', 'help', 'supporto', 'tour'] },
     ],
   },
 ];

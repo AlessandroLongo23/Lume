@@ -50,6 +50,7 @@ const ALLOWED_KEYS = new Set([
   'calendar',
   'notifications',
   'clientsTable',
+  'tutorials',
 ]);
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
