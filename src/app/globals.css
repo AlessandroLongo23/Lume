@@ -191,6 +191,20 @@ button, a {
 	}
 }
 
+/* Soften the hard cut where page content scrolls behind the opaque AppShell
+ * header. The solid stop MUST equal the scroll surface (`bg-white
+ * dark:bg-zinc-900` on the AppShell container) so the fade is invisible at
+ * rest and seamless against the header's bottom edge. Light mode's
+ * --lume-surface-raised already resolves to #fff (== bg-white); dark mode
+ * pins to the same zinc-900 the container uses. If that surface ever moves to
+ * a semantic token, update the dark stop here to match. */
+.shell-content-fade {
+	background: linear-gradient(to bottom, var(--lume-surface-raised), transparent);
+}
+.dark .shell-content-fade {
+	background: linear-gradient(to bottom, var(--color-zinc-900), transparent);
+}
+
 /* Hide scrollbar, keep scrolling */
 .no-scrollbar {
 	-ms-overflow-style: none;

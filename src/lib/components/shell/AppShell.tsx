@@ -135,6 +135,12 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
               >
                 <div className="sticky top-0 z-sticky h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
                   {topBar}
+                  {!isViewportFit && (
+                    <div
+                      aria-hidden="true"
+                      className="shell-content-fade pointer-events-none absolute inset-x-0 top-full h-8"
+                    />
+                  )}
                 </div>
                 <div
                   key={pageAnimationKey}
