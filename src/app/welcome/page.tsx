@@ -31,7 +31,7 @@ const FALLBACK_MESSAGES: React.ReactNode[] = [
   'Benvenuto in Lume.',
   'Stiamo creando il tuo spazio di lavoro...',
   'Configurazione del calendario in corso...',
-  'Tutto pronto. Iniziamo.',
+  'Ci siamo quasi...',
 ];
 
 function buildMessages(name: string, salon: string): React.ReactNode[] {
@@ -39,7 +39,7 @@ function buildMessages(name: string, salon: string): React.ReactNode[] {
     name  ? hi(name)          : FALLBACK_MESSAGES[0],
     salon ? workspace(salon)  : FALLBACK_MESSAGES[1],
     'Configurazione del calendario in corso...',
-    'Tutto pronto. Iniziamo.',
+    'Ci siamo quasi...',
   ];
 }
 

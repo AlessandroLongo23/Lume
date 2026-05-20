@@ -8,6 +8,7 @@ import { DropView } from '@/lib/components/onboarding/DropView';
 import { MagicView } from '@/lib/components/onboarding/MagicView';
 import { DoneView } from '@/lib/components/onboarding/DoneView';
 import { BookingInviteView } from '@/lib/components/onboarding/BookingInviteView';
+import { ReadyView } from '@/lib/components/onboarding/ReadyView';
 import { useOnboardingUpload } from '@/lib/components/onboarding/useOnboardingUpload';
 import {
   TERMINAL_STATUSES,
@@ -57,6 +58,12 @@ export default function OnboardingImportClient({
   // effect — keeps the render path predictable.
   const [showBookingInvite, setShowBookingInvite] = useState(false);
   const [bookingBusy, setBookingBusy] = useState(false);
+
+  // 'ready' is the onboarding finale (the "Tutto pronto" splash). It supersedes
+  // every other step and only fires once setup is fully behind the user — the
+  // ReadyView plays the splash, then its onComplete performs the calendar
+  // redirect. Reached from the two paths that finish onboarding into the app.
+  const [showReady, setShowReady] = useState(false);
 
   const upload = useOnboardingUpload();
 
@@ -111,7 +118,7 @@ export default function OnboardingImportClient({
   // session (we don't want to nag).
   function exitToHomeOrInvite() {
     if (bookingDecided) {
-      router.push('/admin/calendario');
+      setShowReady(true);
     } else {
       setShowBookingInvite(true);
     }
@@ -209,7 +216,7 @@ export default function OnboardingImportClient({
     } catch (err) {
       console.warn('[onboarding] dismiss booking failed', err);
     }
-    router.push('/admin/calendario');
+    setShowReady(true);
   }
 
   function handleReviewPending(jobId: string) {
@@ -220,7 +227,15 @@ export default function OnboardingImportClient({
   // when active, supersedes everything else — once the visitor has reached
   // it, going "back" doesn't make sense (the import is already finalized).
   const isTerminal = state ? TERMINAL_STATUSES.has(state.status) : false;
-  const renderedStep: 'invitation' | 'drop' | 'magic' | 'done' | 'booking-invite' = showBookingInvite
+  const renderedStep:
+    | 'invitation'
+    | 'drop'
+    | 'magic'
+    | 'done'
+    | 'booking-invite'
+    | 'ready' = showReady
+    ? 'ready'
+    : showBookingInvite
     ? 'booking-invite'
     : onboardingId
     ? isTerminal
@@ -284,6 +299,9 @@ export default function OnboardingImportClient({
           onDismiss={handleDismissBooking}
           busy={bookingBusy}
         />
+      )}
+      {renderedStep === 'ready' && (
+        <ReadyView key="ready" onComplete={() => router.push('/admin/calendario')} />
       )}
     </AnimatePresence>
   );

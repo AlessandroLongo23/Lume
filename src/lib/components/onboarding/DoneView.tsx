@@ -46,7 +46,7 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
   );
   const isPartial = state.status === 'partial_failure' || state.status === 'reviewing';
 
-  const headline = isPartial ? 'Quasi pronto.' : 'Tutto pronto.';
+  const headline = isPartial ? 'Quasi pronto.' : 'Importazione completata.';
   const tailLine = isPartial ? 'Il resto lo vedi qui sotto.' : 'Sono pronti da usare.';
 
   return (
