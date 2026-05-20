@@ -102,7 +102,7 @@ export async function validateFicheConflicts(
       const conflict = opConflicts[0];
       const fmt = (iso: string) => {
         const d = new Date(iso);
-        return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
       };
       return {
         error: `L'operatore ${service.operator_name} è già occupato in questo orario (appuntamento esistente: ${fmt(conflict.start_time)} – ${fmt(conflict.end_time)}).`,
