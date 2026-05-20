@@ -29,6 +29,7 @@ dotenvConfig();
 
 const TENANT_TABLES = [
   'abbonamenti',
+  'activity_log',
   'clients',
   'coupon_redemptions',
   'coupons',

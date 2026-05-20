@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import type { ProfileRole } from '@/lib/auth/roles';
 import { useServicesStore } from '@/lib/stores/services';
-import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
+import { adminRoutes, adminSettingsRoute, adminActivityRoute } from '@/lib/const/data';
 
 import { buildStandaloneActions, entityActionFactories, ENTITY_ICON } from './actions';
 import { useRecents } from './recents';
@@ -88,6 +88,15 @@ function buildNavResults(): NavResult[] {
       });
     }
   }
+  all.push({
+    kind: 'nav',
+    id: `nav-${adminActivityRoute.url}`,
+    label: adminActivityRoute.name,
+    href: `/admin/${adminActivityRoute.url}`,
+    icon: adminActivityRoute.icon,
+    keywords: adminActivityRoute.searchKeywords,
+    group: 'Vai a',
+  });
   all.push({
     kind: 'nav',
     id: `nav-${adminSettingsRoute.url}`,

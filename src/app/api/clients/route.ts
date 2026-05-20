@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { toE164 } from '@/lib/utils/phone';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
@@ -168,6 +169,15 @@ export async function POST(request: NextRequest) {
       throw dbError;
     }
 
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'clients',
+      entityId: data.id,
+      action: 'create',
+      changes: data,
+    });
+
     return NextResponse.json({ success: true, client: data });
   } catch (error) {
     if (createdAuthUserId) {
@@ -218,6 +228,14 @@ export async function PATCH(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        action: 'bulk',
+        changes: { ids, patch: safePatch },
+        summary: `ha aggiornato ${ids.length} ${ids.length === 1 ? 'cliente' : 'clienti'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -238,6 +256,14 @@ export async function PATCH(request: NextRequest) {
         .eq('salon_id', profile.salon_id);
 
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        action: 'bulk',
+        changes: { ids },
+        summary: `ha ${action === 'bulk-archive' ? 'archiviato' : 'ripristinato'} ${ids.length} ${ids.length === 1 ? 'cliente' : 'clienti'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -256,6 +282,14 @@ export async function PATCH(request: NextRequest) {
         .eq('salon_id', profile.salon_id);
 
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        entityId: id,
+        action: 'update',
+        summary: action === 'archive' ? 'ha archiviato il cliente' : 'ha ripristinato il cliente',
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -377,6 +411,16 @@ export async function PATCH(request: NextRequest) {
         throw dbError;
       }
 
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        entityId: id,
+        action: 'update',
+        changes: clientUpdate,
+        summary: 'ha aggiornato i contatti del cliente',
+      });
+
       return NextResponse.json({ success: true });
     }
 
@@ -408,7 +452,7 @@ export async function DELETE(request: NextRequest) {
     // Look up user_ids for each target client (for orphan cleanup afterwards)
     const { data: clientsData, error: lookupError } = await supabaseAdmin
       .from('clients')
-      .select('user_id')
+      .select('id, user_id, firstName, lastName')
       .in('id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (lookupError) throw lookupError;
@@ -489,6 +533,28 @@ export async function DELETE(request: NextRequest) {
       if (totalAssociations === 0) {
         await supabaseAdmin.auth.admin.deleteUser(userId);
       }
+    }
+
+    if (targetIds.length === 1) {
+      const c = clientsData[0] as { firstName?: string | null; lastName?: string | null };
+      const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        entityId: targetIds[0],
+        action: 'delete',
+        summary: name ? `ha eliminato il cliente ${name}` : 'ha eliminato un cliente',
+      });
+    } else {
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'clients',
+        action: 'bulk',
+        changes: { ids: targetIds },
+        summary: `ha eliminato ${targetIds.length} clienti`,
+      });
     }
 
     return NextResponse.json({ success: true });

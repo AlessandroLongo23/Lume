@@ -47,7 +47,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
             : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
         }`}
       >
-        <span className="flex items-center justify-center w-10 h-10 shrink-0">
+        <span className="flex items-center justify-center w-9 h-9 shrink-0">
           <Icon className="w-5 h-5" strokeWidth={1.5} />
         </span>
         <AnimatePresence initial={false}>

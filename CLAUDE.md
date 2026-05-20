@@ -111,6 +111,8 @@ src/
 
 **API routes** — Server actions live in `src/app/api/`. They use the Supabase **service role key** (server-only env var) for privileged operations. Client-facing Supabase calls use the anon key.
 
+**Activity log** — Every domain mutation is recorded in `public.activity_log` (the "Attività" page). Capture is split by `auth.uid()` so nothing is logged twice: **browser-direct writes** (anon key, JWT present) are caught automatically by the `log_activity()` trigger on each domain table; **service-role writes** (`auth.uid()` is null) are invisible to the trigger and MUST call `logActivity()` ([src/lib/gateway/logActivity.ts](src/lib/gateway/logActivity.ts)) after the write, passing the actor from `getCallerProfile()`. So: when adding a new mutating **service-role** API route, call `logActivity()` after a successful write (use `diffRows()` for update diffs; a `summary` for bulk/archive/delete). When adding a new **tenant table**, add it to the trigger list in the activity-log migration. Never call `logActivity()` from routes that write via the user/SSR client — the trigger already covers those.
+
 **Supabase clients** — Always import from `src/lib/supabase/client.ts` for browser code and `src/lib/supabase/server.ts` for server components / route handlers. Never instantiate `createClient` directly elsewhere.
 
 **Styling** — Tailwind CSS v4. No `tailwind.config.*` file; configuration is done via CSS in `app/globals.css`. Dark/light mode is managed by `ThemeProvider` in `src/lib/components/shared/ui/theme/`.

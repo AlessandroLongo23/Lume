@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { randomBytes } from 'crypto';
 import { sendMembershipInviteEmail } from '@/lib/email/membershipInvite';
@@ -201,6 +202,15 @@ export async function POST(request: NextRequest) {
           console.error('issueInvite failed in POST (invite row may still exist):', err);
         }
 
+        await logActivity({
+          salonId: profile.salon_id,
+          actorId: profile.id,
+          entityType: 'operators',
+          entityId: String(operatorRow.id),
+          action: 'create',
+          changes: operatorRow,
+          summary: `ha invitato l'operatore ${operator.firstName} ${operator.lastName}`.trim(),
+        });
         return NextResponse.json({ success: true, operator: operatorRow, invited: true, message: NEUTRAL_INVITE_RESPONSE });
       }
 
@@ -270,6 +280,15 @@ export async function POST(request: NextRequest) {
       throw dbError;
     }
 
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'operators',
+      entityId: insertedOperator.id,
+      action: 'create',
+      changes: insertedOperator,
+    });
+
     return NextResponse.json({ success: true, operator: insertedOperator });
   } catch (error) {
     if (createdAuthUserId) {
@@ -309,6 +328,14 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'operators',
+        entityId: id,
+        action: 'update',
+        summary: action === 'archive' ? "ha archiviato l'operatore" : "ha ripristinato l'operatore",
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -373,6 +400,14 @@ export async function PATCH(request: NextRequest) {
           console.error('issueInvite failed in addCredentials (invite row may still exist):', err);
         }
 
+        await logActivity({
+          salonId: profile.salon_id,
+          actorId: profile.id,
+          entityType: 'operators',
+          entityId: id,
+          action: 'update',
+          summary: "ha aggiunto le credenziali a un operatore",
+        });
         return NextResponse.json({ success: true, invited: true, message: NEUTRAL_INVITE_RESPONSE });
       }
 
@@ -436,6 +471,15 @@ export async function PATCH(request: NextRequest) {
         throw dbError;
       }
 
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'operators',
+        entityId: id,
+        action: 'update',
+        summary: "ha aggiunto le credenziali a un operatore",
+      });
+
       return NextResponse.json({ success: true });
     }
 
@@ -465,7 +509,7 @@ export async function DELETE(request: NextRequest) {
 
     const { data: operatorData } = await supabaseAdmin
       .from('operators')
-      .select('user_id')
+      .select('user_id, firstName, lastName')
       .eq('id', id)
       .eq('salon_id', profile.salon_id)
       .single();
@@ -521,6 +565,18 @@ export async function DELETE(request: NextRequest) {
           .eq('user_id', operatorData.user_id)
           .eq('salon_id', profile.salon_id);
       }
+    }
+
+    {
+      const name = [operatorData.firstName, operatorData.lastName].filter(Boolean).join(' ').trim();
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'operators',
+        entityId: id,
+        action: 'delete',
+        summary: name ? `ha eliminato l'operatore ${name}` : "ha eliminato un operatore",
+      });
     }
 
     return NextResponse.json({ success: true });

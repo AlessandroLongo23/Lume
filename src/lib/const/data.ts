@@ -14,6 +14,7 @@ import {
   Star,
   Settings,
   Globe,
+  History,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -66,6 +67,13 @@ export const adminRoutes: AdminRouteGroup[] = [
     ],
   },
 ];
+
+export const adminActivityRoute: AdminRoute = {
+  name: 'Attività',
+  icon: History,
+  url: 'attivita',
+  searchKeywords: ['log', 'attività', 'cronologia', 'audit', 'registro', 'chi ha fatto'],
+};
 
 export const adminSettingsRoute: AdminRoute = {
   name: 'Impostazioni',

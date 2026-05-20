@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity, diffRows } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
@@ -37,6 +38,15 @@ export async function POST(request: NextRequest) {
 
     if (dbError) throw dbError;
 
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'services',
+      entityId: data.id,
+      action: 'create',
+      changes: data,
+    });
+
     return NextResponse.json({ success: true, service: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -66,6 +76,14 @@ export async function PATCH(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'services',
+        action: 'bulk',
+        changes: { ids, patch: pickAllowed(patch, SERVICE_WRITE_FIELDS) },
+        summary: `ha aggiornato ${ids.length} ${ids.length === 1 ? 'servizio' : 'servizi'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -79,6 +97,14 @@ export async function PATCH(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'services',
+        action: 'bulk',
+        changes: { ids },
+        summary: `ha ${action === 'bulk-archive' ? 'archiviato' : 'ripristinato'} ${ids.length} ${ids.length === 1 ? 'servizio' : 'servizi'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -93,6 +119,14 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'services',
+        entityId: id,
+        action: 'update',
+        summary: action === 'archive' ? 'ha archiviato il servizio' : 'ha ripristinato il servizio',
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -100,6 +134,12 @@ export async function PATCH(request: NextRequest) {
     if (!id || !service) {
       return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
     }
+    const { data: beforeService } = await supabaseAdmin
+      .from('services')
+      .select('*')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
     const { data, error: dbError } = await supabaseAdmin
       .from('services')
       .update(pickAllowed(service, SERVICE_WRITE_FIELDS))
@@ -108,6 +148,14 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single();
     if (dbError) throw dbError;
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'services',
+      entityId: id,
+      action: 'update',
+      changes: diffRows(beforeService, data),
+    });
     return NextResponse.json({ success: true, service: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -132,6 +180,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabaseAdmin = getAdminClient();
+
+    const { data: servicesToDelete } = await supabaseAdmin
+      .from('services')
+      .select('id, name')
+      .in('id', targetIds)
+      .eq('salon_id', profile.salon_id);
 
     // Cascade: find fiches that reference any of these services, delete fiche_services + fiches
     const { data: ficheServicesData, error: fsQueryError } = await supabaseAdmin
@@ -163,6 +217,27 @@ export async function DELETE(request: NextRequest) {
       .in('id', targetIds)
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
+
+    if (targetIds.length === 1) {
+      const name = (servicesToDelete?.[0] as { name?: string } | undefined)?.name;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'services',
+        entityId: targetIds[0],
+        action: 'delete',
+        summary: name ? `ha eliminato il servizio ${name}` : 'ha eliminato un servizio',
+      });
+    } else {
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'services',
+        action: 'bulk',
+        changes: { ids: targetIds },
+        summary: `ha eliminato ${targetIds.length} servizi`,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

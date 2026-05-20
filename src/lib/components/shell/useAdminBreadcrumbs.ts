@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { adminRoutes, adminSettingsRoute, type AdminRoute } from '@/lib/const/data';
+import { adminRoutes, adminSettingsRoute, adminActivityRoute, type AdminRoute } from '@/lib/const/data';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useProductsStore } from '@/lib/stores/products';
@@ -38,6 +38,10 @@ export function useAdminBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
     if (slug === adminSettingsRoute.url) {
       return [{ label: adminSettingsRoute.name }];
+    }
+
+    if (slug === adminActivityRoute.url) {
+      return [{ label: adminActivityRoute.name }];
     }
 
     const found = findRoute(slug);

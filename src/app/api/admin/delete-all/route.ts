@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 
 const ENTITIES = [
@@ -16,6 +17,17 @@ const ENTITIES = [
 ] as const;
 
 type Entity = typeof ENTITIES[number];
+
+const ENTITY_PLURAL_IT: Record<Entity, string> = {
+  clients: 'i clienti',
+  operators: 'gli operatori',
+  services: 'i servizi',
+  products: 'i prodotti',
+  orders: 'gli ordini',
+  fiches: 'le fiches',
+  coupons: 'i coupon',
+  abbonamenti: 'gli abbonamenti',
+};
 
 function getAdminClient() {
   return createClient(
@@ -226,6 +238,14 @@ export async function POST(request: NextRequest) {
 
     const admin = getAdminClient();
     await deleteAllForEntity(admin, entity, profile.salon_id);
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: entity,
+      action: 'bulk',
+      summary: `ha eliminato tutti ${ENTITY_PLURAL_IT[entity as Entity]}`,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

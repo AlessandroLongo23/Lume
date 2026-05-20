@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
@@ -33,6 +34,16 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (dbError) throw dbError;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'service_categories',
+      entityId: data.id,
+      action: 'create',
+      changes: data,
+      summary: `ha creato la categoria di servizi ${data.name ?? ''}`.trim(),
+    });
 
     return NextResponse.json({ success: true, category: data });
   } catch (error) {
@@ -86,6 +97,15 @@ export async function PATCH(request: NextRequest) {
         if (cascadeError) throw cascadeError;
       }
 
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'service_categories',
+        entityId: id,
+        action: 'update',
+        summary: `ha ${action === 'archive' ? 'archiviato' : 'ripristinato'} una categoria di servizi`,
+      });
+
       return NextResponse.json({ success: true });
     }
 
@@ -101,6 +121,15 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single();
     if (dbError) throw dbError;
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'service_categories',
+      entityId: id,
+      action: 'update',
+      changes: pickAllowed(category, SERVICE_CATEGORY_WRITE_FIELDS),
+      summary: `ha modificato la categoria di servizi ${data.name ?? ''}`.trim(),
+    });
     return NextResponse.json({ success: true, category: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -124,6 +153,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabaseAdmin = getAdminClient();
+
+    const { data: categoryToDelete } = await supabaseAdmin
+      .from('service_categories')
+      .select('name')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
 
     // Cascade: find services in this category, their fiche_services, fiches, then services, then category
     const { data: services, error: sErr } = await supabaseAdmin
@@ -173,6 +209,17 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'service_categories',
+      entityId: id,
+      action: 'delete',
+      summary: (categoryToDelete as { name?: string } | null)?.name
+        ? `ha eliminato la categoria di servizi ${(categoryToDelete as { name?: string }).name}`
+        : 'ha eliminato una categoria di servizi',
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

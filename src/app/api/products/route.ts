@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity, diffRows } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
 
@@ -38,6 +39,15 @@ export async function POST(request: NextRequest) {
 
     if (dbError) throw dbError;
 
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'products',
+      entityId: data.id,
+      action: 'create',
+      changes: data,
+    });
+
     return NextResponse.json({ success: true, product: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -67,6 +77,14 @@ export async function PATCH(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'products',
+        action: 'bulk',
+        changes: { ids, patch: pickAllowed(patch, PRODUCT_WRITE_FIELDS) },
+        summary: `ha aggiornato ${ids.length} ${ids.length === 1 ? 'prodotto' : 'prodotti'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -80,6 +98,14 @@ export async function PATCH(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'products',
+        action: 'bulk',
+        changes: { ids },
+        summary: `ha ${action === 'bulk-archive' ? 'archiviato' : 'ripristinato'} ${ids.length} ${ids.length === 1 ? 'prodotto' : 'prodotti'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -93,6 +119,15 @@ export async function PATCH(request: NextRequest) {
         p_delta: delta,
       });
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'products',
+        entityId: id,
+        action: 'update',
+        changes: { stock_quantity: { delta } },
+        summary: `ha ${delta > 0 ? 'aggiunto' : 'rimosso'} ${Math.abs(delta)} ${Math.abs(delta) === 1 ? 'unità' : 'unità'} di magazzino`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -107,12 +142,26 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'products',
+        entityId: id,
+        action: 'update',
+        summary: action === 'archive' ? 'ha archiviato il prodotto' : 'ha ripristinato il prodotto',
+      });
       return NextResponse.json({ success: true });
     }
 
     if (!id || !product) {
       return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
     }
+    const { data: beforeProduct } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
     const { data, error: dbError } = await supabaseAdmin
       .from('products')
       .update(pickAllowed(product, PRODUCT_WRITE_FIELDS))
@@ -121,6 +170,14 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single();
     if (dbError) throw dbError;
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'products',
+      entityId: id,
+      action: 'update',
+      changes: diffRows(beforeProduct, data),
+    });
     return NextResponse.json({ success: true, product: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -148,6 +205,14 @@ export async function DELETE(request: NextRequest) {
         .in('id', ids)
         .eq('salon_id', profile.salon_id);
       if (dbError) throw dbError;
+      await logActivity({
+        salonId: profile.salon_id,
+        actorId: profile.id,
+        entityType: 'products',
+        action: 'bulk',
+        changes: { ids },
+        summary: `ha eliminato ${ids.length} ${ids.length === 1 ? 'prodotto' : 'prodotti'}`,
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -155,12 +220,30 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
 
+    const { data: productToDelete } = await supabaseAdmin
+      .from('products')
+      .select('name')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
+
     const { error: dbError } = await supabaseAdmin
       .from('products')
       .delete()
       .eq('id', id)
       .eq('salon_id', profile.salon_id);
     if (dbError) throw dbError;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'products',
+      entityId: id,
+      action: 'delete',
+      summary: (productToDelete as { name?: string } | null)?.name
+        ? `ha eliminato il prodotto ${(productToDelete as { name?: string }).name}`
+        : 'ha eliminato un prodotto',
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

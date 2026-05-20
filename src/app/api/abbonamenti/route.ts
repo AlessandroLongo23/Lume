@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { logActivity, diffRows } from '@/lib/gateway/logActivity';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 
 function getAdminClient() {
@@ -80,6 +81,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'abbonamenti',
+      entityId: data.id,
+      action: 'create',
+      changes: data,
+      summary: 'ha creato un abbonamento',
+    });
+
     return NextResponse.json({ success: true, abbonamento: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -144,6 +156,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Nessun campo da aggiornare' }, { status: 400 });
     }
 
+    const { data: beforeAbbonamento } = await admin
+      .from('abbonamenti')
+      .select('*')
+      .eq('id', id)
+      .eq('salon_id', profile.salon_id)
+      .single();
+
     const { data, error } = await admin
       .from('abbonamenti')
       .update(updates)
@@ -153,6 +172,17 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'abbonamenti',
+      entityId: id,
+      action: 'update',
+      changes: diffRows(beforeAbbonamento, data),
+      summary: 'ha modificato un abbonamento',
+    });
+
     return NextResponse.json({ success: true, abbonamento: data });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -180,6 +210,16 @@ export async function DELETE(request: NextRequest) {
       .eq('salon_id', profile.salon_id);
 
     if (error) throw error;
+
+    await logActivity({
+      salonId: profile.salon_id,
+      actorId: profile.id,
+      entityType: 'abbonamenti',
+      entityId: id,
+      action: 'delete',
+      summary: 'ha eliminato un abbonamento',
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';

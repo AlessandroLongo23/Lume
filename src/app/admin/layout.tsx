@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, CreditCard, LogOut, User, Lightbulb, PanelLeftClose, PanelLeftOpen, Repeat } from 'lucide-react';
-import { adminRoutes, adminSettingsRoute } from '@/lib/const/data';
+import { adminRoutes, adminSettingsRoute, adminActivityRoute } from '@/lib/const/data';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/components/shell/sidebarContext';
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
 import { Breadcrumbs } from '@/lib/components/shell/Breadcrumbs';
@@ -196,6 +196,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
       navGroups={navGroups}
       pinnedLinks={[
+        {
+          name: adminActivityRoute.name,
+          url: `/admin/${adminActivityRoute.url}`,
+          icon: adminActivityRoute.icon,
+        },
         {
           name: adminSettingsRoute.name,
           url: `/admin/${adminSettingsRoute.url}`,

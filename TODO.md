@@ -19,10 +19,10 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Multi-tenancy
 - [x] [infra] (XL) `salons` table + Supabase RLS for `salon_id` scoping on every tenant table — done. `salons` table + 25 tenant tables with RLS + `get_user_salon_id()` helper + admin impersonation via `super_admin_impersonation` were already shipped; this audit closed the four advisor-flagged gaps (super_admin_impersonation policies, feedback views SECURITY INVOKER, internal `SECURITY DEFINER` EXECUTE, public bucket listing) and added `npm run audit:tenancy` smoke test.
-- [ ] [feat] (M) Multi-salon owner: salon picker on login + dropdown replacing static salon name in nav
+- [x] [feat] (M) Multi-salon owner: salon picker on login + dropdown replacing static salon name in nav
 
 ### Billing & subscriptions _(proposed)_
-- [ ] [billing] (?) Stripe lifecycle end-to-end — trial expiry, failed-payment dunning, plan switch (€49/mo ↔ €490/yr), cancellation, reactivation
+- [x] [billing] Stripe lifecycle end-to-end — trial expiry, failed-payment dunning, plan switch (€49/mo ↔ €490/yr), cancellation, reactivation
 - [*] [ux] (M) Subscription page — current plan, next charge, invoice history, change/cancel
 
 ### Trust & safety
@@ -60,7 +60,7 @@ Currently in flight. Keep this section short; promote items here only when start
 
 ### Onboarding
 - [ ] [feat] (M) End-to-end onboarding flow design — signup → first appointment booked _(proposed)_
-- [ ] [feat] (L) First-run tutorial — pick format (video, step-and-highlight, modern overlay)
+- [ ] [feat] (L) Tutorial — pick format (video, step-and-highlight, modern overlay)
 - [ ] [data] (M) Onboarding step to bulk-load salon data
 - [ ] [data] (M) Goes over the most important settings, like opening time, authorizations and permissions, online booking service and setup, etc. (all clarifying that it could be done at any time and with a "Salta" button), for an initial setup
 - [*] [data] (XL) Automatic import via Anthropic API + Supabase MCP
@@ -96,7 +96,6 @@ Currently in flight. Keep this section short; promote items here only when start
 - [x] [ux] Combobox a due livelli per servizi e prodotti nella fiche
 
 ### Features
-- [ ] [feat] (M) Logs page, with a list of every CRUD action taken, by who, when, in natural italian language 
 - [ ] [feat] (M) Notification page, for birthdays and more
 - [ ] [feat] (M) Export data with format selection (.csv, .xlsl, .pdf, sql dump)
 - [ ] [feat] (L) recurrent expenses (Spotify, servizi, …)
@@ -106,6 +105,7 @@ Currently in flight. Keep this section short; promote items here only when start
 - [ ] [feat] (M) Recurring appointments — clients on "every 4 weeks" rhythm without manual rebooking _(proposed)_
 - [ ] [feat] (M) Wait list / lista d'attesa — capture demand when slots are full, auto-offer cancellations _(proposed)_
 - [ ] [feat] (S) Codice fiscale field on client — needed for invoicing _(proposed)_
+- [x] [feat] (M) Logs page, with a list of every CRUD action taken, by who, when, in natural italian language 
 - [x] [feat] (M) In-product free-trial gating — countdown banner, paywall after expiry, upgrade flow _(proposed)_
 - [x] [feat] (L) Referral program — "give a month, get a month", tracked in-product _(proposed)_
 - [x] [feat] Vacation in calendar
