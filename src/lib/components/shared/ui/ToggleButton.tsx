@@ -12,6 +12,8 @@ interface ToggleButtonProps {
   icons?: React.ComponentType<any>[];
   style?: 'flat' | 'elevated';
   className?: string;
+  /** Optional stable anchor for guided tours (rendered on the radiogroup root). */
+  dataTour?: string;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -23,6 +25,7 @@ export function ToggleButton({
   icons,
   style = 'flat',
   className = '',
+  dataTour,
 }: ToggleButtonProps) {
   const currentValue = value ?? options[0];
   const isIconOnly = !!icons && !labels;
@@ -49,6 +52,7 @@ export function ToggleButton({
   return (
     <div
       role="radiogroup"
+      data-tour={dataTour}
       className={[
         'inline-flex flex-row items-center rounded-lg p-[3px] gap-[2px]',
         'h-[var(--lume-control-h-md)] border border-[var(--lume-border)]',

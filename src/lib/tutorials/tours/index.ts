@@ -879,6 +879,97 @@ const creaOperatoreTour: LumeTour = {
   ],
 };
 
+/**
+ * Move-around-the-calendar tour. A pure "tour of a page" (no creation), so —
+ * per the authoring principles — it is mostly NARRATE steps anchored to real
+ * toolbar controls, after the single ACTION step that navigates to the calendar.
+ * It teaches the three things the user needs to find their way around the agenda:
+ * spostarsi tra le date, cambiare vista (giorno/settimana/mese), filtrare per
+ * operatore. No fields, no modal, no created rows. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole calendar (spotlight the page; OMIT `side`).
+ *  2. NARRATE — date navigation (frecce, calendarietto, "Torna a oggi").
+ *  3. NARRATE — the Giorno/Settimana/Mese view toggle.
+ *  4. NARRATE — the operator filter.
+ *  5. NARRATE — wrap up over the whole page (spotlight the page; OMIT `side`).
+ * Whole-page steps omit `side` so the card renders fixed-centered; the toolbar
+ * steps are small targets, so an anchored `side` fits.
+ */
+const usareCalendarioTour: LumeTour = {
+  tour: 'usare-calendario',
+  endRoute: '/admin/aiuto/usare-calendario',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Calendario',
+      content: 'Clicca su Calendario nella barra laterale per aprire la tua agenda.',
+      selector: '[data-tour="nav-calendario"]',
+      side: 'right',
+      advanceOnRoute: '/admin/calendario',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Il Calendario',
+      content:
+        'Questo è il calendario, il cuore di Lume: ogni appuntamento del salone vive qui. Vediamo come muoverti tra le date e le viste.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Spostarti tra le date',
+      content:
+        'Le frecce ti portano al giorno (o alla settimana, o al mese) precedente e successivo. Clicca sulla data al centro per aprire il calendarietto e saltare a una data precisa, o premi "Torna a oggi" per rientrare alla giornata di oggi.',
+      selector: '[data-tour="calendar-date-nav"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Giorno, settimana o mese',
+      content:
+        'Scegli come guardare l\'agenda: "Giorno" affianca tutti gli operatori nella stessa giornata, "Settimana" segue un operatore per sette giorni, "Mese" ti dà il colpo d\'occhio sull\'intero mese.',
+      selector: '[data-tour="calendar-view-toggle"]',
+      side: 'bottom',
+      pointerPadding: 6,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Filtrare per operatore',
+      content:
+        'Da qui scegli quali operatori vedere in agenda: nascondi chi non ti serve per concentrarti su una persona. In vista Settimana, invece, decidi di chi vedere la settimana.',
+      selector: '[data-tour="calendar-operator-filter"]',
+      side: 'left',
+      pointerPadding: 6,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Tutto sotto controllo',
+      content:
+        'Ora sai muoverti nel calendario. Da qui prenoti un nuovo appuntamento cliccando su uno spazio libero, e apri una fiche cliccando su un appuntamento già in agenda.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -886,6 +977,7 @@ export const lumeTours: LumeTour[] = [
   creaProdottoTour,
   creaCategoriaServizioTour,
   creaOperatoreTour,
+  usareCalendarioTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

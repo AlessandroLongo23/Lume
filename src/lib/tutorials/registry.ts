@@ -1,4 +1,5 @@
 import type { Tutorial } from './types';
+import { hasOperators } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -75,6 +76,20 @@ export const tutorials: Tutorial[] = [
     scopes: ['operatori'],
     tourId: 'crea-operatore',
     articleSlug: 'crea-operatore',
+  },
+  {
+    id: 'usare-calendario',
+    slug: 'usare-calendario',
+    title: 'Muoversi nel calendario',
+    summary:
+      'Trova la tua strada nell\'agenda: spostati tra le date, cambia tra le viste giorno, settimana e mese, e filtra per operatore.',
+    complexity: 'base',
+    scopes: ['agenda'],
+    tourId: 'usare-calendario',
+    articleSlug: 'usare-calendario',
+    prerequisites: [
+      { label: 'almeno un operatore', met: hasOperators, tutorialId: 'crea-operatore' },
+    ],
   },
 ];
 

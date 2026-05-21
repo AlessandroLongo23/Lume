@@ -221,7 +221,7 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
 
   return (
     <>
-      <div className="relative">
+      <div data-tour="calendar-operator-filter" className="relative">
         <Button
           ref={triggerRef}
           variant="secondary"

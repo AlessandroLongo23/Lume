@@ -70,7 +70,7 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
       </div>
 
       {/* Center: prev / date (click = today) / next */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div data-tour="calendar-date-nav" className="flex items-center gap-1 shrink-0">
         <Button variant="ghost" size="sm" iconOnly aria-label="Precedente" onClick={navigatePrev}>
           <ChevronLeft />
         </Button>
@@ -105,6 +105,7 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
           onChange={(v) => handleViewChange(v as CalendarView)}
           labels={VIEW_LABELS}
           className="shrink-0"
+          dataTour="calendar-view-toggle"
         />
         <OperatorFilterButton onAddFerie={onAddFerie} />
       </div>
