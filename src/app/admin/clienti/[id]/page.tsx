@@ -27,6 +27,7 @@ import {
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from '@/lib/components/admin/clients/ClientForm';
 import { TreatmentHistory } from '@/lib/components/admin/clients/TreatmentHistory';
+import { FicheHistory } from '@/lib/components/admin/clients/FicheHistory';
 import { Button } from '@/lib/components/shared/ui/Button';
 import type { Client } from '@/lib/types/Client';
 
@@ -450,19 +451,23 @@ export default function ClientDetailPage() {
                   )}
                 </DetailSection>
 
-                <DetailSection index={1} label="Scheda tecnica" id="scheda">
+                <DetailSection index={1} label="Storico fiche">
+                  <FicheHistory clientId={client.id} />
+                </DetailSection>
+
+                <DetailSection index={2} label="Scheda tecnica" id="scheda">
                   <TreatmentHistory clientId={client.id} />
                 </DetailSection>
 
-                <DetailSection index={2} label="Coupon e gift card">
+                <DetailSection index={3} label="Coupon e gift card">
                   <ClientCouponsList clientId={clientId} allCoupons={allCoupons} />
                 </DetailSection>
 
-                <DetailSection index={3} label="Prenotazioni online">
+                <DetailSection index={4} label="Prenotazioni online">
                   <OnlineBookingToggle client={client} setClient={setClient} />
                 </DetailSection>
 
-                <DetailSection index={4} label="Note">
+                <DetailSection index={5} label="Note">
                   {client.note ? (
                     <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
                       {client.note}

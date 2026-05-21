@@ -21,6 +21,14 @@ export const FICHE_BUCKET_LABELS: Record<FicheBucket, string> = {
   [FicheBucket.CONCLUSA]: 'Conclusa',
 };
 
+/** Tailwind classes for the per-bucket status badge. Shared by FicheCard and
+ *  the client-detail Storico fiche table so the colors stay in sync. */
+export const BUCKET_STYLES: Record<FicheBucket, string> = {
+  [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
+  [FicheBucket.ARRETRATA]: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  [FicheBucket.CONCLUSA]: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+};
+
 // A fiche becomes *arretrata* only on the day after its scheduled date,
 // so an in-progress visit doesn't flicker into the overdue bucket.
 export function getFicheBucket(fiche: { datetime: Date | string; status: FicheStatus }): FicheBucket {

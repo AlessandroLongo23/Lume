@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { loadFicheById } from '@/lib/stores/loadFicheById';
 import { useClientsStore } from '@/lib/stores/clients';
 import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
@@ -69,7 +70,19 @@ export default function FichesPage() {
     const editId = searchParams.get('edit');
     if (editId) {
       const fiche = useFichesStore.getState().fiches.find((f) => f.id === editId);
-      if (fiche) { setCommandTarget(fiche); setCommandMode('edit'); }
+      if (fiche) {
+        setCommandTarget(fiche);
+        setCommandMode('edit');
+      } else {
+        // Deep-linked fiche older than the 90-day window (e.g. from a client's
+        // Storico fiche). Hydrate it on demand, then open the modal.
+        loadFicheById(editId).then((f) => {
+          if (f) {
+            setCommandTarget(f);
+            setCommandMode('edit');
+          }
+        });
+      }
       router.replace('/admin/fiches');
       return;
     }
