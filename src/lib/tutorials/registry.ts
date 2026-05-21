@@ -65,6 +65,17 @@ export const tutorials: Tutorial[] = [
     tourId: 'crea-prodotto',
     articleSlug: 'crea-prodotto',
   },
+  {
+    id: 'crea-operatore',
+    slug: 'crea-operatore',
+    title: 'Aggiungere un operatore',
+    summary:
+      'Crea un membro del tuo staff — nome e cognome, e se vuoi le credenziali per accedere — pronto da assegnare a fiche e appuntamenti.',
+    complexity: 'base',
+    scopes: ['operatori'],
+    tourId: 'crea-operatore',
+    articleSlug: 'crea-operatore',
+  },
 ];
 
 export function getTutorialBySlug(slug: string): Tutorial | null {

@@ -736,12 +736,156 @@ const creaCategoriaServizioTour: LumeTour = {
   ],
 };
 
+/**
+ * Create-an-operator task tour. Same locked-overlay create-flow shape as
+ * `crea-cliente`, with all-plain-input fields. The operator form's only required
+ * fields are nome and cognome; email and telefono are optional. Email is special:
+ * filling it turns the operator into one who can log into Lume (a "Password App"
+ * field with an auto-generated password appears below), while leaving it blank
+ * creates a no-login operator that exists only to be assigned to fiches and
+ * statistics — so the email step NARRATES that choice (mode:'action' + optional)
+ * rather than gating on it. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Operatori page (spotlight the page).
+ *  2. ACTION  — open the modal (advance on `operator:modal-open`).
+ *  3. ACTION  — write the nome; `advanceWhenFilled` gates "Avanti".
+ *  4. ACTION  — write the cognome (same gating).
+ *  5. ACTION (optional) — email: explains login vs no-login + the auto password.
+ *  6. ACTION (optional) — telefono: highlighted, editable, skippable via "Salta".
+ *  7. ACTION  — save (advance on `operator:created`).
+ *  8. ACTION  — search for the just-created operator (gated on the search field).
+ *  9. NARRATE — wrap up over the whole page (spotlight the page).
+ */
+const creaOperatoreTour: LumeTour = {
+  tour: 'crea-operatore',
+  endRoute: '/admin/aiuto/crea-operatore',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri gli Operatori',
+      content: 'Clicca su Operatori nella barra laterale per aprire il tuo team.',
+      selector: '[data-tour="nav-operatori"]',
+      side: 'right',
+      advanceOnRoute: '/admin/operatori',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Operatori',
+      content:
+        'Questa è la sezione Operatori: qui vive il tuo team. Ogni operatore può essere assegnato a servizi e appuntamenti, anche quando non accede a Lume. Aggiungiamone uno nuovo.',
+      selector: '[data-tour="operatori-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo operatore"',
+      content: 'Clicca "Nuovo operatore" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-operator-create"]',
+      side: 'bottom',
+      completeOn: 'operator:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome',
+      content:
+        'Scrivi il nome dell\'operatore, poi clicca Avanti. Nome e cognome sono gli unici campi obbligatori.',
+      selector: '[data-tour="field-operator-first_name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-operator-first_name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il cognome',
+      content: 'Ora scrivi il cognome e clicca Avanti.',
+      selector: '[data-tour="field-operator-last_name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-operator-last_name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Email e accesso a Lume',
+      content:
+        'L\'email è facoltativa, ma decide una cosa importante: se la inserisci comparirà una password e l\'operatore potrà accedere a Lume; se la lasci vuota l\'operatore esisterà solo per assegnargli prestazioni e statistiche. Compilala oppure premi "Salta".',
+      selector: '[data-tour="field-operator-email"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Telefono',
+      content:
+        'Un recapito telefonico per l\'operatore, se vuoi averlo a portata di mano. È facoltativo: scrivilo oppure premi "Salta".',
+      selector: '[data-tour="field-operator-phone"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva l\'operatore',
+      content: 'Tutto pronto. Clicca "Aggiungi" per salvare l\'operatore nel team.',
+      selector: '[data-tour="save-operator"]',
+      side: 'top',
+      completeOn: 'operator:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Ritrova l\'operatore',
+      content:
+        'Il nuovo operatore è ora nel team. Per ritrovarlo, scrivi il suo nome qui nella ricerca, poi clicca Avanti.',
+      selector: 'input[placeholder="Cerca operatore..."]',
+      side: 'bottom',
+      advanceWhenFilled: 'input[placeholder="Cerca operatore..."]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Ecco il tuo team',
+      content:
+        'Eccolo! Ogni operatore che aggiungi è pronto da assegnare alle fiche e agli appuntamenti. Apri la sua scheda per impostare gli orari di lavoro, i servizi che esegue e, più tardi, le credenziali di accesso.',
+      selector: '[data-tour="operatori-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
   creaServizioTour,
   creaProdottoTour,
   creaCategoriaServizioTour,
+  creaOperatoreTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

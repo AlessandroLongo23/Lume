@@ -6,6 +6,7 @@ import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddOperatorModalProps {
   isOpen: boolean;
@@ -54,6 +55,8 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
         ? "Se l'email è già registrata su Lume, l'operatore riceverà un invito a unirsi al tuo salone. Altrimenti, l'account è stato creato con la password indicata."
         : 'Operatore aggiunto con successo';
       messagePopup.getState().success(msg);
+      // Advances an interactive guide's "save" step on a successful create.
+      emitTourEvent('operator:created');
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
@@ -65,17 +68,28 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
   const labelClass = 'flex flex-row items-center gap-2';
 
   return (
-    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Nuovo operatore" subtitle="Aggiungi un nuovo operatore" classes="max-w-2xl">
+    <AddModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Nuovo operatore"
+      subtitle="Aggiungi un nuovo operatore"
+      classes="max-w-2xl"
+      confirmDataTour="save-operator"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('operator:modal-open')}
+    >
       <div className="flex flex-col gap-6">
         <div className="flex flex-row items-start gap-6 w-full">
           <div className="flex grow flex-col gap-2">
             <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-            <input type="text" className={inputClass} value={op.firstName} onChange={(e) => set('firstName', e.target.value)} />
+            <input type="text" data-tour="field-operator-first_name" className={inputClass} value={op.firstName} onChange={(e) => set('firstName', e.target.value)} />
             {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
           </div>
           <div className="flex grow flex-col gap-2">
             <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Cognome *</span></label>
-            <input type="text" className={inputClass} value={op.lastName} onChange={(e) => set('lastName', e.target.value)} />
+            <input type="text" data-tour="field-operator-last_name" className={inputClass} value={op.lastName} onChange={(e) => set('lastName', e.target.value)} />
             {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
           </div>
         </div>
@@ -83,10 +97,10 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
         <div className="flex flex-row items-center gap-6 w-full">
           <div className="flex flex-1 flex-col gap-2">
             <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email</span></label>
-            <input type="email" className={inputClass} value={op.email} onChange={(e) => set('email', e.target.value)} autoComplete="off" />
+            <input type="email" data-tour="field-operator-email" className={inputClass} value={op.email} onChange={(e) => set('email', e.target.value)} autoComplete="off" />
             {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
           </div>
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 flex-col gap-2" data-tour="field-operator-phone">
             <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono</span></label>
             <PhoneNumber prefixCode={op.phonePrefix} phoneNumber={op.phoneNumber} onPrefixChange={(v) => set('phonePrefix', v)} onPhoneChange={(v) => set('phoneNumber', v)} />
             {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}

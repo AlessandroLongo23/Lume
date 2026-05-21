@@ -104,7 +104,7 @@ export default function OperatoriPage() {
         onConfirm={deleteAllOperators}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-8">
+      <div className="flex-1 min-h-0 flex flex-col gap-8" data-tour="operatori-page">
         <PageHeader
           title={showArchived ? 'Operatori archiviati' : 'Operatori'}
           subtitle="Il tuo team, turni e permessi sotto controllo."
@@ -116,6 +116,7 @@ export default function OperatoriPage() {
                 leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
                 className="whitespace-nowrap"
+                data-tour="action-operator-create"
               >
                 Nuovo operatore
               </Button>
