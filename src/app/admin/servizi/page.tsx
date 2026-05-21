@@ -20,6 +20,7 @@ import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 type Tab = 'servizi' | 'categorie';
 
@@ -170,7 +171,7 @@ export default function ServiziPage() {
                   Nuovo Servizio
                 </Button>
               ) : (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAddCategory(true)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAddCategory(true)} data-tour="action-service-category-create">
                   Nuova Categoria
                 </Button>
               )}
@@ -194,7 +195,12 @@ export default function ServiziPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                data-tour={id === 'categorie' ? 'tab-service-categories' : undefined}
+                onClick={() => {
+                  setActiveTab(id);
+                  // Advances an interactive guide's "open the Categorie tab" step.
+                  if (id === 'categorie') emitTourEvent('service-category:tab-open');
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   isActive
                     ? 'border-primary text-primary-hover dark:text-primary/70'

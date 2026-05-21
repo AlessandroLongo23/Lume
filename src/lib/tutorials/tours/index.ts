@@ -581,7 +581,168 @@ const creaProdottoTour: LumeTour = {
   ],
 };
 
-export const lumeTours: LumeTour[] = [introTour, creaClienteTour, creaServizioTour, creaProdottoTour];
+/**
+ * Create-a-service-category task tour. Same locked-overlay create-flow shape as
+ * `crea-cliente`, with one twist: service categories live in the "Categorie" TAB
+ * of the Servizi page (not a top-level page), so an extra ACTION step switches
+ * tabs before the create button appears (the header "Nuova Categoria" button only
+ * renders while the Categorie tab is active). The tab switch advances on
+ * `service-category:tab-open`, emitted from the tab button's onClick. The form's
+ * three fields are all plain inputs (no custom Select), so nome gates with
+ * `advanceWhenFilled` and descrizione/colore are optional. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the Servizi page and its two tabs (spotlight the page).
+ *  2. ACTION  — open the Categorie tab (advance on `service-category:tab-open`).
+ *  3. NARRATE — introduce the categories list (spotlight the page).
+ *  4. ACTION  — open the modal (advance on `service-category:modal-open`).
+ *  5. ACTION  — write the nome; `advanceWhenFilled` gates "Avanti".
+ *  6. ACTION (optional) — descrizione: highlighted, editable, skippable via "Salta".
+ *  7. ACTION (optional) — colore: pick a tint or skip (it has a default).
+ *  8. ACTION  — save (advance on `service-category:created`).
+ *  9. ACTION  — search for the just-created category (gated on the search field).
+ * 10. NARRATE — wrap up over the whole page (spotlight the page).
+ */
+const creaCategoriaServizioTour: LumeTour = {
+  tour: 'crea-categoria-servizio',
+  endRoute: '/admin/aiuto/crea-categoria-servizio',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri i Servizi',
+      content: 'Clicca su Servizi nella barra laterale per aprire il tuo listino.',
+      selector: '[data-tour="nav-servizi"]',
+      side: 'right',
+      advanceOnRoute: '/admin/servizi',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Servizi',
+      content:
+        'Questa pagina ha due schede: "Servizi", con tutto il listino, e "Categorie", dove raggruppi i servizi per tipo. Andiamo nelle categorie.',
+      selector: '[data-tour="servizi-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda "Categorie"',
+      content: 'Clicca sulla scheda "Categorie" per vedere i gruppi del tuo listino.',
+      selector: '[data-tour="tab-service-categories"]',
+      side: 'bottom',
+      completeOn: 'service-category:tab-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Le categorie del listino',
+      content:
+        'Ogni categoria raggruppa i servizi per tipo — Taglio, Colore, Piega — con il suo colore e il numero di servizi che contiene. Creiamone una nuova.',
+      selector: '[data-tour="servizi-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuova Categoria"',
+      content: 'Clicca "Nuova Categoria" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-service-category-create"]',
+      side: 'bottom',
+      completeOn: 'service-category:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome',
+      content:
+        'Scrivi il nome della categoria, per esempio "Permanente", poi clicca Avanti. Il nome è l\'unico campo obbligatorio.',
+      selector: '[data-tour="field-service-category-name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-service-category-name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Descrizione',
+      content:
+        'Una nota facoltativa che spiega cosa raccoglie la categoria. Scrivila oppure premi "Salta".',
+      selector: '[data-tour="field-service-category-description"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Scegli il colore',
+      content:
+        'Scegli una tinta dalla tavolozza: è il colore con cui la categoria appare nel listino e accanto ai servizi. Usane uno diverso per ogni gruppo, oppure premi "Salta".',
+      selector: '[data-tour="field-service-category-color"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva la categoria',
+      content: 'Tutto pronto. Clicca "Aggiungi" per salvare la categoria.',
+      selector: '[data-tour="save-service-category"]',
+      side: 'top',
+      completeOn: 'service-category:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Ritrova la categoria',
+      content:
+        'La nuova categoria è ora nell\'elenco. Per ritrovarla, scrivi il suo nome qui nella ricerca, poi clicca Avanti.',
+      selector: 'input[placeholder="Cerca categoria..."]',
+      side: 'bottom',
+      advanceWhenFilled: 'input[placeholder="Cerca categoria..."]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Ecco le tue categorie',
+      content:
+        'Eccola! Ora puoi assegnarla ai servizi: nel modulo di un servizio scegli questa categoria e il servizio ne eredita il colore. Da qui puoi modificarla o archiviarla quando vuoi.',
+      selector: '[data-tour="servizi-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
+export const lumeTours: LumeTour[] = [
+  introTour,
+  creaClienteTour,
+  creaServizioTour,
+  creaProdottoTour,
+  creaCategoriaServizioTour,
+];
 
 export function getTour(id: string | null | undefined): LumeTour | null {
   if (!id) return null;

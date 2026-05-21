@@ -44,6 +44,17 @@ export const tutorials: Tutorial[] = [
     articleSlug: 'crea-servizio',
   },
   {
+    id: 'crea-categoria-servizio',
+    slug: 'crea-categoria-servizio',
+    title: 'Organizzare i servizi in categorie',
+    summary:
+      'Crea e gestisci le categorie del listino — nome, colore e descrizione — per tenere i tuoi servizi ordinati.',
+    complexity: 'base',
+    scopes: ['servizi'],
+    tourId: 'crea-categoria-servizio',
+    articleSlug: 'crea-categoria-servizio',
+  },
+  {
     id: 'crea-prodotto',
     slug: 'crea-prodotto',
     title: 'Aggiungere un prodotto',

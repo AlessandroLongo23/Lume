@@ -7,6 +7,7 @@ import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { CATEGORY_PICKER_COLORS, DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
 interface AddServiceCategoryModalProps {
@@ -46,6 +47,8 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
       } else {
         await addCategory({ name: form.name.trim(), description: form.description.trim(), color: form.color });
         messagePopup.getState().success('Categoria aggiunta.');
+        // Advances an interactive guide's "save" step on a successful create.
+        emitTourEvent('service-category:created');
       }
       await fetchCategories();
       onClose();
@@ -82,6 +85,10 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
       title={selectedCategory ? 'Modifica Categoria' : 'Nuova Categoria'}
       subtitle="Categoria per i servizi del listino"
       confirmText={selectedCategory ? 'Aggiorna' : 'Aggiungi'}
+      confirmDataTour="save-service-category"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('service-category:modal-open')}
       classes="max-w-sm"
       footerContent={
         selectedCategory && (
@@ -103,6 +110,7 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
             <span className="size-5 rounded-full shrink-0 border border-zinc-300 dark:border-zinc-600" style={{ backgroundColor: form.color }} />
             <input
               type="text"
+              data-tour="field-service-category-name"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className={inputClass}
@@ -115,13 +123,14 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Descrizione</label>
           <input
             type="text"
+            data-tour="field-service-category-description"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             className={inputClass}
             placeholder="Descrizione opzionale"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5" data-tour="field-service-category-color">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Colore</label>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORY_PICKER_COLORS.map((c) => (
