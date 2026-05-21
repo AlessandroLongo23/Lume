@@ -54,7 +54,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
   const set = <K extends keyof ProductFormValue>(key: K, v: ProductFormValue[K]) => onChange({ ...value, [key]: v });
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5" data-tour="product-form">
       <div className="flex gap-4 flex-wrap">
         <div className="flex flex-1 min-w-48 flex-col gap-1.5">
           <label className={labelClass}>Nome *</label>
@@ -64,6 +64,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
             onChange={(e) => set('name', e.target.value)}
             className={inputClass}
             placeholder="Inserisci nome prodotto"
+            data-tour="field-product-name"
           />
           {errors?.name && <p className={errorClass}>{errors.name}</p>}
         </div>
@@ -115,14 +116,14 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5" data-tour="field-product-price">
           <label className={labelClass}>Prezzo Acquisto (€) *</label>
           <NumberInput value={value.price} onChange={(v) => set('price', v)} min={0} step={0.5} decimals={2} suffix="€" />
           {errors?.price && <p className={errorClass}>{errors.price}</p>}
         </div>
       </div>
 
-      <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+      <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50" data-tour="field-product-retail">
         <div>
           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Destinato alla rivendita</p>
           <p className="text-xs text-zinc-500 mt-0.5">Abilita un prezzo di vendita al pubblico</p>

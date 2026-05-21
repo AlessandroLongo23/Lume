@@ -43,6 +43,17 @@ export const tutorials: Tutorial[] = [
     tourId: 'crea-servizio',
     articleSlug: 'crea-servizio',
   },
+  {
+    id: 'crea-prodotto',
+    slug: 'crea-prodotto',
+    title: 'Aggiungere un prodotto',
+    summary:
+      'Aggiungi un prodotto al magazzino — nome e prezzo, e se vuoi marca, categoria e fornitore — pronto per fiche e ordini.',
+    complexity: 'base',
+    scopes: ['prodotti'],
+    tourId: 'crea-prodotto',
+    articleSlug: 'crea-prodotto',
+  },
 ];
 
 export function getTutorialBySlug(slug: string): Tutorial | null {

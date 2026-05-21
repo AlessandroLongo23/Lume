@@ -157,7 +157,7 @@ export default function MagazzinoPage() {
         onConfirm={deleteAllProducts}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6" data-tour="magazzino-page">
         <PageHeader
           title="Magazzino"
           subtitle="Sai sempre cosa c'è in scorta, e cosa sta finendo."
@@ -165,7 +165,7 @@ export default function MagazzinoPage() {
           actions={
             <>
               {activeTab === 'prodotti' ? (
-                <Button variant="primary" leadingIcon={Plus} onClick={openAddSheet}>
+                <Button variant="primary" leadingIcon={Plus} onClick={openAddSheet} data-tour="action-product-create">
                   Nuovo Prodotto
                 </Button>
               ) : activeTab === 'categorie' ? (

@@ -6,6 +6,7 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductsStore } from '@/lib/stores/products';
 import { ProductForm, emptyProductForm, type ProductFormValue, type ProductFormErrors } from './ProductForm';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { Product } from '@/lib/types/Product';
 
 interface ProductModalProps {
@@ -53,6 +54,8 @@ export function ProductModal({ isOpen, onClose, trackInventory }: ProductModalPr
       await addProduct(payload);
       await fetchProducts();
       messagePopup.getState().success('Prodotto aggiunto con successo.');
+      // Advances an interactive guide's "save" step on a successful create.
+      emitTourEvent('product:created');
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
@@ -71,6 +74,10 @@ export function ProductModal({ isOpen, onClose, trackInventory }: ProductModalPr
       confirmText="Aggiungi"
       classes="max-w-2xl"
       contentClasses="overflow-y-auto"
+      confirmDataTour="save-product"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('product:modal-open')}
     >
       <ProductForm value={form} onChange={setForm} errors={errors} trackInventory={trackInventory} />
     </AddModal>

@@ -406,7 +406,182 @@ const creaServizioTour: LumeTour = {
   ],
 };
 
-export const lumeTours: LumeTour[] = [introTour, creaClienteTour, creaServizioTour];
+/**
+ * Create-a-product task tour. Same locked-overlay create-flow shape as
+ * `crea-cliente`, adapted to the Magazzino page (products live in its "Prodotti"
+ * tab) and to a form whose only required fields are nome and prezzo. The marca,
+ * categoria and fornitore fields are custom `Select`s whose dropdowns portal at
+ * `z-popover` (below the tour overlay), so — like `crea-servizio`'s categoria —
+ * each optional Select step spotlights the WHOLE form (`[data-tour="product-form"]`)
+ * so the open dropdown sits inside the spotlight hole and stays clickable. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Magazzino page (spotlight the page).
+ *  2. ACTION  — open the modal (advance on `product:modal-open`).
+ *  3. ACTION  — write the nome; `advanceWhenFilled` gates "Avanti".
+ *  4. ACTION  — write the prezzo acquisto; `advanceWhenFilled` gates on the inner
+ *     `<input>` of the NumberInput (the wrapper carries the anchor, but TourCard
+ *     polls the real input's value).
+ *  5-7. ACTION (optional) — marca, categoria, fornitore: each spotlights the whole
+ *       form so its Select dropdown is reachable; skippable via "Salta".
+ *  8. ACTION (optional) — rivendita: the toggle that reveals the sell price.
+ *  9. ACTION  — save (advance on `product:created`).
+ * 10. ACTION  — search for the just-created product (gated on the search field).
+ * 11. NARRATE — wrap up over the whole page (spotlight the page).
+ */
+const creaProdottoTour: LumeTour = {
+  tour: 'crea-prodotto',
+  endRoute: '/admin/aiuto/crea-prodotto',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Magazzino',
+      content: 'Clicca su Magazzino nella barra laterale per aprire i tuoi prodotti.',
+      selector: '[data-tour="nav-magazzino"]',
+      side: 'right',
+      advanceOnRoute: '/admin/magazzino',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Magazzino',
+      content:
+        'Questo è il tuo magazzino: ogni prodotto che usi o vendi vive qui, con marca, categoria, fornitore e prezzi. Aggiungiamone uno nuovo.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo Prodotto"',
+      content: 'Clicca "Nuovo Prodotto" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-product-create"]',
+      side: 'bottom',
+      completeOn: 'product:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome',
+      content:
+        'Scrivi il nome del prodotto, per esempio "Siero Anticrespo", poi clicca Avanti. Nome e prezzo sono gli unici campi obbligatori.',
+      selector: '[data-tour="field-product-name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-product-name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il prezzo di acquisto',
+      content:
+        'Inserisci quanto ti costa il prodotto, poi clicca Avanti. Serve al bilancio per calcolare il tuo guadagno.',
+      selector: '[data-tour="field-product-price"]',
+      side: 'top',
+      advanceWhenFilled: '[data-tour="field-product-price"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Scegli la marca',
+      content:
+        'Apri il menù "Marca" e scegli il produttore del prodotto. È facoltativo: aiuta a filtrare e a riordinare. Compilalo oppure premi "Salta".',
+      // Spotlight the whole form, not just the Select: its dropdown opens in a
+      // portal below the trigger, and only what's inside the spotlight hole is
+      // clickable through the overlay — the form's box covers the open dropdown.
+      selector: '[data-tour="product-form"]',
+      side: 'right',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Scegli la categoria',
+      content:
+        'Apri il menù "Categoria" e scegli il gruppo a cui appartiene il prodotto (shampoo, colore, styling…). Tiene il magazzino ordinato. Facoltativo.',
+      selector: '[data-tour="product-form"]',
+      side: 'right',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Scegli il fornitore',
+      content:
+        'Apri il menù "Fornitore" e indica da chi acquisti il prodotto. Servirà quando crei un ordine di riassortimento. Facoltativo.',
+      selector: '[data-tour="product-form"]',
+      side: 'right',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Prodotto da rivendita',
+      content:
+        'Attiva questa opzione se vendi il prodotto al cliente: comparirà il campo "Prezzo Vendita" e Lume calcolerà il margine. Lasciala spenta per i prodotti a uso interno.',
+      selector: '[data-tour="field-product-retail"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva il prodotto',
+      content: 'Tutto pronto. Clicca "Aggiungi" per salvare il prodotto nel magazzino.',
+      selector: '[data-tour="save-product"]',
+      side: 'top',
+      completeOn: 'product:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Ritrova il prodotto',
+      content:
+        'Il nuovo prodotto è ora nel magazzino. Per ritrovarlo, scrivi il suo nome qui nella ricerca, poi clicca Avanti.',
+      selector: 'input[placeholder="Cerca prodotto..."]',
+      side: 'bottom',
+      advanceWhenFilled: 'input[placeholder="Cerca prodotto..."]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Ecco il tuo magazzino',
+      content:
+        'Eccolo! Ogni prodotto che aggiungi è pronto da scaricare nelle fiche, da riordinare ai fornitori e da contare nel bilancio. Da qui puoi modificarlo, regolare la giacenza o crearne altri.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
+export const lumeTours: LumeTour[] = [introTour, creaClienteTour, creaServizioTour, creaProdottoTour];
 
 export function getTour(id: string | null | undefined): LumeTour | null {
   if (!id) return null;
