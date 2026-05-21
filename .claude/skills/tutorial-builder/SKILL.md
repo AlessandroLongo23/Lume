@@ -110,18 +110,28 @@ never touch another salon (`salon_id` literal + `WHERE NOT EXISTS`). Read exact 
 type models (`src/lib/types/<Entity>.ts`) and `tests/fixtures/seed.ts`. This is where the demo salon
 gains advanced content (abbonamenti, discounts, gift cards) so it's ready for any future tutorial.
 
-### Step 4 — Capture screenshots (Playwright MCP)
+### Step 4 — Capture screenshots (Playwright)
 
 1. `browser_navigate` to `/login`; `browser_fill_form` / `browser_type` the demo owner email
    ("Email o telefono") and password ("Password"); click "Accedi". If it lands on `/select-salon`, pick
    the demo salon.
-2. `browser_resize` to 1440×900.
+2. `browser_resize` to 1440×900. After login, **dismiss the cookie banner** (click "Accetta") or it sits
+   at the bottom of every shot.
 3. Walk the real flow: `browser_navigate` / `browser_click`, `browser_wait_for` each meaningful state,
-   `browser_take_screenshot` → `public/tutorials/<slug>/NN-name.png` (`01-open-clienti.png`,
-   `02-modal.png`, …), one shot per article section. **Pick a worked-example name that does NOT already
-   exist in the demo salon** (check first via a quick `execute_sql` count or the list UI): the final
-   "find the new row" search must return exactly one result, or the screenshot is ambiguous (e.g. reusing
-   "Taglio donna" surfaced two rows; switching to "Piega serale" fixed it).
+   one shot per article section, named `NN-name.png` (`01-open-clienti.png`, `02-modal.png`, …).
+   **Capture at 2× (Retina).** Screenshots open near-fullscreen in the in-article lightbox
+   ([ImageLightbox.tsx](src/lib/components/admin/tutorials/ImageLightbox.tsx)), so a 1× capture looks soft
+   on Retina and when zoomed. The Playwright **MCP shoots at 1×** (no device-scale-factor flag), so use it
+   to drive/verify the flow, but capture the deliverable PNGs with a short standalone Playwright script:
+   `chromium.launch()` → `newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 })` →
+   log in with the `.env.test` owner creds (`E2E_OWNER_EMAIL` / `E2E_OWNER_PASSWORD`) → navigate each state →
+   `page.screenshot()`. Output is 2880×1800. Run it from the repo root (so it resolves `playwright` from
+   `node_modules`), then delete the script. **Pick a worked-example name that does NOT already exist in the
+   demo salon** (check first via a quick `execute_sql` count or the list UI): the final "find the new row"
+   search must return exactly one result, or the screenshot is ambiguous (e.g. reusing "Taglio donna"
+   surfaced two rows; switching to "Piega serale" fixed it). If the example must exist for a "find it" shot,
+   create it, capture, then **delete it to leave the demo unchanged** (the delete dialog is type-to-confirm:
+   type the exact name, then "Elimina servizio").
 4. Assert each Step-2 anchor exists (`browser_evaluate` `document.querySelector('[data-tour="…"]')`).
 5. **Smoke-test the tour itself** (don't just screenshot the flow — generate the tour first, or do this
    after Step 6). Start the guide and click through every step, asserting via `browser_evaluate`:
