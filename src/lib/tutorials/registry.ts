@@ -1,5 +1,5 @@
 import type { Tutorial } from './types';
-import { hasClients, hasServices, hasOperators } from './prerequisites';
+import { hasClients, hasServices, hasOperators, hasFiches } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -105,6 +105,20 @@ export const tutorials: Tutorial[] = [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
       { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
       { label: 'almeno un operatore', met: hasOperators, tutorialId: 'crea-operatore' },
+    ],
+  },
+  {
+    id: 'modifica-appuntamento',
+    slug: 'modifica-appuntamento',
+    title: 'Spostare, modificare o cancellare un appuntamento',
+    summary:
+      'Sposta un appuntamento trascinandolo, allungane o accorciane la durata, modificane i dettagli o eliminalo — tutto dal calendario.',
+    complexity: 'base',
+    scopes: ['agenda', 'fiches'],
+    tourId: 'modifica-appuntamento',
+    articleSlug: 'modifica-appuntamento',
+    prerequisites: [
+      { label: 'almeno un appuntamento in agenda', met: hasFiches, tutorialId: 'prenota-appuntamento' },
     ],
   },
 ];

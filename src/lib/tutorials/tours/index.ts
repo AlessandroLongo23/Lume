@@ -1115,6 +1115,127 @@ const prenotaAppuntamentoTour: LumeTour = {
   ],
 };
 
+/**
+ * Move/edit/delete-an-appointment tour. The headline operations — dragging a
+ * block to reschedule and dragging its edges to resize — are free pointer
+ * gestures that can't be gated like a field (and a real drag/delete would mutate
+ * the demo appointment), so per the `usare-calendario` precedent they are
+ * NARRATED over the whole calendar rather than forced. The one safe interaction
+ * is opening an appointment: clicking a block opens `FicheModal` in edit mode,
+ * which advances on `fiche:edit-open` (emitted from the modal's onEnterComplete
+ * in edit mode, mirroring add mode's `fiche:modal-open`). The last two steps then
+ * narrate inside that modal (edit the details; delete via "Altre azioni"); the
+ * final "Fine" → `endRoute` unmounts the calendar and closes the modal. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — intro: an appointment in the agenda isn't fixed (whole page).
+ *  2. NARRATE — drag a block to reschedule it (whole page).
+ *  3. NARRATE — drag the top/bottom edges to change the duration (whole page).
+ *  4. NARRATE — the confirm modal + optional client notify after a move (whole page).
+ *  5. ACTION  — click an appointment to open it (whole page; advance on fiche:edit-open).
+ *  6. NARRATE — edit the details in the open card (spotlight the details column).
+ *  7. NARRATE — delete via "Altre azioni" → "Elimina fiche" (spotlight the delete control).
+ * Whole-page steps OMIT `side` so the card renders fixed-centered (a `side` on a
+ * full-page target overflows the viewport).
+ */
+const modificaAppuntamentoTour: LumeTour = {
+  tour: 'modifica-appuntamento',
+  endRoute: '/admin/aiuto/modifica-appuntamento',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Calendario',
+      content: 'Clicca su Calendario nella barra laterale per aprire la tua agenda.',
+      selector: '[data-tour="nav-calendario"]',
+      side: 'right',
+      advanceOnRoute: '/admin/calendario',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Un appuntamento non è fisso',
+      content:
+        'Un appuntamento già in agenda puoi cambiarlo quando vuoi, tutto da qui: spostarlo, allungarne o accorciarne la durata, modificarne i dettagli o eliminarlo. Vediamo come.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Spostalo trascinandolo',
+      content:
+        'Per spostare un appuntamento, afferra il suo blocco e trascinalo: a un altro orario nella stessa colonna, o nella colonna di un altro operatore per cambiare chi lo esegue. Trascina l\'intestazione per spostare tutto, la riga di un servizio per spostare solo quello.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Cambia la durata',
+      content:
+        'Per allungare o accorciare un appuntamento lavori sui suoi bordi: trascina il bordo superiore ("Sposta inizio") per cambiare l\'inizio, o quello inferiore ("Sposta fine") per cambiare la fine. La durata si aggiorna da sola.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Conferma e avvisa il cliente',
+      content:
+        'Dopo ogni spostamento Lume mostra la finestra "Conferma modifica appuntamento" con il riepilogo prima → dopo. Da lì puoi avvisare il cliente con "Notifica via Email" o "Apri WhatsApp", poi clicca "Conferma".',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri un appuntamento',
+      content:
+        'Per cambiare cliente, servizi o operatore — o per eliminarlo — clicca su un appuntamento in agenda: si apre la sua scheda.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card. The hole exposes
+      // the whole grid, so the user can click any appointment to open its card.
+      completeOn: 'fiche:edit-open',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Modifica i dettagli',
+      content:
+        'Questa è la scheda "Modifica fiche". Da qui cambi il cliente, l\'orario e — nel riquadro a destra — i servizi e l\'operatore di ogni riga. Quando hai finito clicchi "Salva".',
+      selector: '[data-tour="fiche-details"]',
+      side: 'right',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Eliminare l\'appuntamento',
+      content:
+        'Se l\'appuntamento salta, eliminalo da qui: apri "Altre azioni" e scegli "Elimina fiche". Lume ti chiede conferma perché l\'operazione è irreversibile. E con questo sai gestire qualunque cambiamento in agenda.',
+      selector: '[data-tour="fiche-delete"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1124,6 +1245,7 @@ export const lumeTours: LumeTour[] = [
   creaOperatoreTour,
   usareCalendarioTour,
   prenotaAppuntamentoTour,
+  modificaAppuntamentoTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

@@ -1059,9 +1059,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         isOpen={isOpen}
         onClose={onClose}
         onSubmit={onConfirm}
-        // Advances the "clicca su uno spazio libero" step once the booking modal
-        // has settled, so the next step's coachmark measures the final layout.
-        onEnterComplete={mode === 'add' ? () => emitTourEvent('fiche:modal-open') : undefined}
+        // Advances the booking/edit tour once the modal has settled, so the next
+        // step's coachmark measures the final layout. Add mode powers the
+        // "clicca su uno spazio libero" step; edit mode powers the
+        // "apri un appuntamento" step of the modifica-appuntamento tour.
+        onEnterComplete={() => emitTourEvent(mode === 'add' ? 'fiche:modal-open' : 'fiche:edit-open')}
         confirmDataTour={!isEdit ? 'save-fiche' : undefined}
         title={
           isEdit
@@ -1170,18 +1172,20 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   Incassa
                 </Button>
               )}
-              <DropdownMenu
-                items={[
-                  {
-                    label: 'Elimina fiche',
-                    icon: Trash2,
-                    destructive: true,
-                    onClick: () => setShowDeleteConfirm(true),
-                  },
-                ]}
-                width="w-56"
-                ariaLabel="Altre azioni"
-              />
+              <span data-tour="fiche-delete" className="inline-flex">
+                <DropdownMenu
+                  items={[
+                    {
+                      label: 'Elimina fiche',
+                      icon: Trash2,
+                      destructive: true,
+                      onClick: () => setShowDeleteConfirm(true),
+                    },
+                  ]}
+                  width="w-56"
+                  ariaLabel="Altre azioni"
+                />
+              </span>
             </>
           ) : isEdit && isPaymentTab && !isCompleted ? (
             <Button
