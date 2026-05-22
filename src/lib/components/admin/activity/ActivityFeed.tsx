@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Search, X, ChevronDown, ArrowRight } from 'lucide-react';
 import { isToday, isYesterday } from 'date-fns';
@@ -11,10 +11,10 @@ import { describeActivity, activityChanges, entityLabel, actionLabel } from '@/l
 import type { ActivityLog, ActivityAction } from '@/lib/types/ActivityLog';
 
 const ACTION_DOT: Record<ActivityAction, string> = {
-  create: 'bg-[var(--lume-success-fg)]',
+  create: 'bg-success-strong',
   update: 'bg-primary',
-  delete: 'bg-[var(--lume-danger-fg)]',
-  bulk: 'bg-[var(--lume-warning-fg)]',
+  delete: 'bg-danger-strong',
+  bulk: 'bg-warning-strong',
 };
 
 const ALL_ACTIONS: ActivityAction[] = ['create', 'update', 'delete', 'bulk'];
@@ -38,18 +38,18 @@ function ActivityRow({ entry }: { entry: ActivityLog }) {
   const time = formatDateDisplay(entry.created_at, 'HH:mm');
 
   return (
-    <div className="border-t border-zinc-100 dark:border-zinc-800 first:border-t-0">
+    <div className="border-t border-border/60 first:border-t-0">
       <button
         type="button"
         onClick={() => hasDetail && setOpen((o) => !o)}
         aria-expanded={hasDetail ? open : undefined}
         className={[
           'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
-          hasDetail ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer' : 'cursor-default',
+          hasDetail ? 'hover:bg-muted/60 cursor-pointer' : 'cursor-default',
         ].join(' ')}
       >
         <span
-          className={`shrink-0 size-2 rounded-full ${ACTION_DOT[entry.action] ?? 'bg-zinc-400'}`}
+          className={`shrink-0 size-2 rounded-full ${ACTION_DOT[entry.action] ?? 'bg-muted-foreground'}`}
           aria-hidden
         />
         <span className="flex-1 text-sm text-foreground">
@@ -73,26 +73,26 @@ function ActivityRow({ entry }: { entry: ActivityLog }) {
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-3 pl-9 flex flex-col gap-3">
+            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 px-4 pb-3.5 pl-9 text-[13px] leading-relaxed">
               {changes.map((ch, i) => (
-                <div key={i} className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    {ch.label}
-                  </span>
-                  {ch.isDiff ? (
-                    <div className="flex items-center gap-2 flex-wrap text-sm">
-                      <span className="text-zinc-400 dark:text-zinc-500 line-through decoration-1 decoration-zinc-300 dark:decoration-zinc-600">
-                        {ch.before}
+                <Fragment key={i}>
+                  <dt className="text-muted-foreground">{ch.label}</dt>
+                  <dd className="min-w-0 text-foreground">
+                    {ch.isDiff ? (
+                      <span className="inline-flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-muted-foreground line-through decoration-border ${ch.mono ? 'font-mono' : ''}`}>
+                          {ch.before}
+                        </span>
+                        <ArrowRight className="size-3 text-muted-foreground shrink-0" aria-hidden />
+                        <span className={`font-medium ${ch.mono ? 'font-mono' : ''}`}>{ch.after}</span>
                       </span>
-                      <ArrowRight className="size-3.5 text-zinc-400 shrink-0" />
-                      <span className="text-foreground font-medium">{ch.after}</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-foreground">{ch.after}</span>
-                  )}
-                </div>
+                    ) : (
+                      <span className={ch.mono ? 'font-mono' : ''}>{ch.after}</span>
+                    )}
+                  </dd>
+                </Fragment>
               ))}
-            </div>
+            </dl>
           </motion.div>
         )}
       </AnimatePresence>
@@ -162,17 +162,15 @@ export function ActivityFeed({ items }: { items: ActivityLog[] }) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex items-center flex-1 max-w-sm">
-          <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
+          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder="Cerca nell'attività..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
-              border-zinc-200 dark:border-zinc-800
-              focus:border-zinc-300 dark:focus:border-zinc-700
-              text-zinc-900 dark:text-zinc-100
-              placeholder:text-zinc-400 outline-none transition-colors"
+              border-border focus:border-foreground/30
+              text-foreground placeholder:text-muted-foreground outline-none transition-colors"
           />
           {query && (
             <Button
@@ -201,7 +199,7 @@ export function ActivityFeed({ items }: { items: ActivityLog[] }) {
         ) : (
           groups.map((group) => (
             <div key={group.key} className="flex flex-col gap-2">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500 px-1">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground px-1">
                 {group.label}
               </h3>
               <div className="overflow-hidden bg-card border border-border rounded-xl">

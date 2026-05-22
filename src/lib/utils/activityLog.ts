@@ -1,5 +1,5 @@
 import type { ActivityLog, ActivityAction } from '@/lib/types/ActivityLog';
-import { formatDateDisplay } from '@/lib/utils/format';
+import { formatDateDisplay, formatCurrency } from '@/lib/utils/format';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useServicesStore } from '@/lib/stores/services';
@@ -69,24 +69,45 @@ export function actionLabel(action: ActivityAction): string {
   return labels[action] ?? action;
 }
 
+// Every column that can surface in an activity entry needs a plain-Italian
+// label here. Anything missing is dropped by `activityChanges` rather than
+// shown raw, so a stray English/snake_case column never reaches the operator.
 const FIELD_LABELS: Record<string, string> = {
   name: 'nome', firstName: 'nome', lastName: 'cognome',
   price: 'prezzo', sell_price: 'prezzo di vendita', product_cost: 'costo',
+  list_price: 'prezzo di listino', final_price: 'prezzo finale',
   duration: 'durata', description: 'descrizione', note: 'note', notes: 'note',
   status: 'stato', archived_at: 'archiviazione', datetime: 'data e ora',
-  start_time: 'inizio', end_time: 'fine',
+  start_time: 'inizio', end_time: 'fine', date: 'data', data: 'data',
+  start_date: 'inizio', end_date: 'fine', applied_at: 'applicato il',
   client_id: 'cliente', recipient_client_id: 'destinatario', purchaser_client_id: 'acquirente',
   operator_id: 'operatore', service_id: 'servizio', product_id: 'prodotto',
   category_id: 'categoria', service_category_id: 'categoria', product_category_id: 'categoria',
   manufacturer_id: 'produttore', supplier_id: 'fornitore', abbonamento_id: 'abbonamento',
-  stock_quantity: 'giacenza', stock: 'giacenza',
-  min_threshold: 'soglia minima', email: 'email', phoneNumber: 'telefono',
-  phonePrefix: 'prefisso', total_paid: 'totale incassato', total_override: 'totale',
+  coupon_id: 'coupon', code: 'codice',
+  stock_quantity: 'giacenza', stock: 'giacenza', quantity: 'quantità', quantity_ml: 'quantità (ml)',
+  min_threshold: 'soglia minima', email: 'email', phoneNumber: 'telefono', phone: 'telefono',
+  phonePrefix: 'prefisso', city: 'città',
+  total_paid: 'totale incassato', total_override: 'totale',
+  amount: 'importo', importo: 'importo', method: 'metodo', sale_amount: 'importo vendita',
+  sale_payment_method: 'metodo di pagamento', amount_applied: 'importo applicato',
+  remaining_after: 'rimanente',
   valid_until: 'scadenza', valid_from: 'inizio validità', discount_value: 'sconto',
-  discount_percent: 'sconto %', is_active: 'attivo', color: 'colore', paid: 'pagato',
+  discount_percent: 'sconto %', discount_type: 'tipo di sconto',
+  kind: 'tipo', type: 'tipo', value: 'valore', reason: 'motivo', title: 'titolo',
+  original_value: 'valore iniziale', remaining_value: 'valore rimanente', free_item_kind: 'omaggio',
+  is_active: 'attivo', color: 'colore', paid: 'pagato',
   miscela: 'miscela', tecnica: 'tecnica',
+  booking_source: 'origine prenotazione', send_review_request: 'richiesta recensione',
   bookable_online: 'prenotabile online', can_book_online: 'prenotabile online',
   is_for_retail: 'in vendita',
+  gender: 'genere', isTourist: 'turista', birthDate: 'data di nascita',
+  photoUrl: 'foto', avatar_url: 'foto', working_hours: 'orari di lavoro',
+  must_change_password: 'cambio password richiesto', role: 'ruolo',
+  total_purchased: 'totale acquistato', total_sold: 'totale venduto',
+  hourly_rate: 'paga oraria', commission: 'provvigione', commission_percent: 'provvigione %',
+  categoria: 'categoria', fornitore: 'fornitore',
+  target: 'obiettivo', period: 'periodo', month: 'mese', year: 'anno',
 };
 
 function fieldLabel(key: string): string {
@@ -198,6 +219,22 @@ function subjectPhrase(entry: ActivityLog): string {
 const TIME_FIELDS = new Set(['datetime', 'start_time', 'end_time']);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Numeric fields, rendered in JetBrains Mono and with their natural unit.
+const CURRENCY_FIELDS = new Set([
+  'price', 'sell_price', 'product_cost', 'list_price', 'final_price', 'amount',
+  'total_paid', 'total_override', 'sale_amount', 'amount_applied', 'remaining_after',
+  'discount_value', 'original_value', 'remaining_value', 'importo', 'hourly_rate', 'commission',
+]);
+const PERCENT_FIELDS = new Set(['discount_percent', 'commission_percent']);
+const NUMERIC_FIELDS = new Set([
+  'quantity', 'stock_quantity', 'stock', 'min_threshold', 'quantity_ml',
+  'total_purchased', 'total_sold', 'duration', 'discount_percent', 'commission_percent',
+]);
+
+function isMonoValue(field: string): boolean {
+  return CURRENCY_FIELDS.has(field) || NUMERIC_FIELDS.has(field);
+}
+
 function formatValue(field: string, v: unknown): string {
   if (v === null || v === undefined || v === '') return '—';
   if (typeof v === 'boolean') return v ? 'sì' : 'no';
@@ -205,13 +242,20 @@ function formatValue(field: string, v: unknown): string {
   const s = String(v);
 
   const resolver = REF_RESOLVERS[field];
-  if (resolver && UUID_RE.test(s)) {
-    return resolver(s) ?? '—';
-  }
+  if (resolver && UUID_RE.test(s)) return resolver(s) ?? '—';
+  if (UUID_RE.test(s)) return '—'; // never show a raw identifier to the operator
 
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
     const fmt = TIME_FIELDS.has(field) ? 'd MMM yyyy, HH:mm' : 'd MMM yyyy';
     try { return formatDateDisplay(s, fmt); } catch { /* fall through */ }
+  }
+
+  const n = Number(s);
+  if (s.trim() !== '' && Number.isFinite(n)) {
+    if (CURRENCY_FIELDS.has(field)) return formatCurrency(n);
+    if (PERCENT_FIELDS.has(field)) return `${n}%`;
+    if (field === 'duration') return `${n} min`;
+    if (field === 'quantity_ml') return `${n} ml`;
   }
 
   return s.length > 60 ? `${s.slice(0, 60)}…` : s;
@@ -253,7 +297,7 @@ function fmtTimeRange(start: unknown, end: unknown): string {
 }
 
 /** A single change to render: a before→after diff, or a snapshot value. */
-export type ActivityChange = { label: string; before?: string; after: string; isDiff: boolean };
+export type ActivityChange = { label: string; before?: string; after: string; isDiff: boolean; mono?: boolean };
 
 const SNAPSHOT_SKIP = new Set([
   'id', 'salon_id', 'created_at', 'updated_at', 'updated_by', 'user_id', 'ids', 'patch', 'fiche_id',
@@ -299,12 +343,33 @@ export function activityChanges(entry: ActivityLog): ActivityChange[] {
     });
   }
 
+  // A fiche service snapshots its name twice: in `name` and via `service_id`.
+  // Keep the resolvable foreign key ("Servizio"), drop the denormalized copy.
+  if (entry.entity_type === 'fiche_services' && map.has('service_id')) {
+    map.delete('name');
+  }
+
+  // Collapse an identical listino/finale price into a single "Prezzo" line
+  // (no discount applied) so it reads as one fact, not two repeated numbers.
+  const lp = map.get('list_price');
+  const fp = map.get('final_price');
+  if (lp && fp && !lp.hasOld && !fp.hasOld && String(lp.new) === String(fp.new)) {
+    map.delete('list_price');
+    map.delete('final_price');
+    out.push({ label: 'Prezzo', after: formatValue('final_price', fp.new), isDiff: false, mono: true });
+  }
+
   for (const [k, v] of map) {
+    // Never surface an untranslated (English/snake_case) column to the operator.
+    if (!(k in FIELD_LABELS)) continue;
+    // Drop unresolvable foreign-key UUIDs in snapshots rather than show raw hex.
+    if (!v.hasOld && typeof v.new === 'string' && UUID_RE.test(v.new) && !REF_RESOLVERS[k]) continue;
     out.push({
       label: capitalize(fieldLabel(k)),
       before: v.hasOld ? formatValue(k, v.old) : undefined,
       after: formatValue(k, v.new),
       isDiff: v.hasOld,
+      mono: isMonoValue(k),
     });
   }
   return out;
