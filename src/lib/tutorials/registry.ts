@@ -1,5 +1,5 @@
 import type { Tutorial } from './types';
-import { hasClients, hasServices, hasOperators, hasFiches } from './prerequisites';
+import { hasClients, hasServices, hasOperators, hasProducts, hasFiches } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -119,6 +119,22 @@ export const tutorials: Tutorial[] = [
     articleSlug: 'modifica-appuntamento',
     prerequisites: [
       { label: 'almeno un appuntamento in agenda', met: hasFiches, tutorialId: 'prenota-appuntamento' },
+    ],
+  },
+  {
+    id: 'crea-fiche',
+    slug: 'crea-fiche',
+    title: 'Registrare una fiche',
+    summary:
+      'Trasforma una visita in scontrino: aggiungi i servizi svolti e i prodotti venduti, poi salva la fiche pronta da incassare.',
+    complexity: 'base',
+    scopes: ['fiches'],
+    tourId: 'crea-fiche',
+    articleSlug: 'crea-fiche',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+      { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
+      { label: 'almeno un prodotto', met: hasProducts, tutorialId: 'crea-prodotto' },
     ],
   },
 ];

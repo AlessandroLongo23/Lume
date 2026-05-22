@@ -1236,6 +1236,155 @@ const modificaAppuntamentoTour: LumeTour = {
   ],
 };
 
+/**
+ * Register-a-fiche task tour. A fiche in Lume is the receipt of a visit: the
+ * services performed plus the products sold. This tour creates one from scratch
+ * on the Fiches page (the "Nuova fiche" header button opens the SAME `FicheModal`
+ * used by the calendar, in add mode) and focuses on the part that sets it apart
+ * from `prenota-appuntamento`: adding a PRODUCT alongside the service. It stops
+ * before payment — that's the next tutorial (`incassa-fiche`). The modal's
+ * anchors and events already exist from the appointment tours; this tour adds the
+ * product step, advancing on the new `fiche:product-added` event (emitted from
+ * `addProductToList`). Three modal fields need the column-spotlight trick because
+ * their dropdowns portal at `z-popover` (below the overlay) and are only clickable
+ * inside the spotlight hole: cliente (left "Dettagli" column → `fiche:client-selected`),
+ * servizio and prodotto (both in the right "Servizi/Prodotti" column → `fiche:service-added`
+ * / `fiche:product-added`). The datetime is a plain input, so it gates with
+ * `advanceWhenFilled` on the inner `<input>` (the anchor is its wrapper). Unlike the
+ * "create X" tours there's no "find the new row" step: a fiche has no unique name to
+ * search, so — like `prenota-appuntamento` — it wraps up with a narrate over the page.
+ * The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Fiches page (spotlight the page; omit side).
+ *  2. ACTION  — open "Nuova fiche" (advance on `fiche:modal-open`).
+ *  3. ACTION  — fill "Data e ora" (`advanceWhenFilled` on the inner input).
+ *  4. ACTION  — pick the cliente (spotlight left column; advance on selection).
+ *  5. ACTION  — add a servizio (spotlight right column; advance on add).
+ *  6. ACTION  — switch to Prodotti and add a prodotto (spotlight right column; advance on add).
+ *  7. ACTION  — save (advance on `fiche:created`).
+ *  8. NARRATE — wrap up over the whole page; point to incassare next.
+ */
+const creaFicheTour: LumeTour = {
+  tour: 'crea-fiche',
+  endRoute: '/admin/aiuto/crea-fiche',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri le Fiches',
+      content: 'Clicca su Fiches nella barra laterale per aprire l\'elenco delle visite.',
+      selector: '[data-tour="nav-fiches"]',
+      side: 'right',
+      advanceOnRoute: '/admin/fiches',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Fiches',
+      content:
+        'La fiche è lo scontrino di una visita: i servizi svolti, i prodotti venduti e, alla fine, l\'incasso. Registriamone una nuova.',
+      selector: '[data-tour="fiches-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuova fiche"',
+      content: 'Clicca "Nuova fiche" per aprire la scheda della visita.',
+      selector: '[data-tour="action-fiche-create"]',
+      side: 'bottom',
+      completeOn: 'fiche:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli data e ora',
+      content:
+        'Indica quando si è svolta la visita, poi clicca Avanti. La data e ora è obbligatoria.',
+      selector: '[data-tour="fiche-field-datetime"]',
+      side: 'bottom',
+      // The anchor is the field's wrapper (label + input); gate on the real input.
+      advanceWhenFilled: '[data-tour="fiche-field-datetime"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il cliente',
+      content:
+        'Apri il menù "Cliente" e scegli chi è venuto. Non lo trovi? Scrivi il nome e premi "Nuovo" per crearlo al volo, senza uscire da qui.',
+      // Spotlight the whole left column: the Cliente Select's dropdown opens in a
+      // portal just below the trigger, and only what's inside the spotlight hole
+      // is clickable through the overlay — the column's box covers the dropdown.
+      selector: '[data-tour="fiche-details"]',
+      side: 'right',
+      completeOn: 'fiche:client-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Aggiungi un servizio',
+      content:
+        'Nel riquadro "Servizi", scrivi nel campo di ricerca e clicca il servizio svolto: si aggiunge alla fiche con la sua durata e il suo prezzo. Nella riga, scegli dal menù "Operatore" chi l\'ha eseguito. Aggiungi pure più di un servizio.',
+      // Spotlight the whole right column: the services search dropdown is absolute,
+      // below the input, so the column's box keeps it inside the spotlight hole.
+      selector: '[data-tour="fiche-services"]',
+      side: 'left',
+      completeOn: 'fiche:service-added',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Aggiungi un prodotto',
+      content:
+        'Hai venduto un prodotto? Clicca la scheda "Prodotti" qui in alto, cercalo e cliccalo: si aggiunge allo scontrino. Regola la quantità con i pulsanti − e +.',
+      // Same right column as the service step — it also contains the Servizi/Prodotti
+      // tab switcher, so switching tab and adding a product both happen inside the hole.
+      selector: '[data-tour="fiche-services"]',
+      side: 'left',
+      completeOn: 'fiche:product-added',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva la fiche',
+      content:
+        'In basso trovi il subtotale, aggiornato con servizi e prodotti. Clicca "Aggiungi" per registrare la fiche.',
+      selector: '[data-tour="save-fiche"]',
+      side: 'top',
+      completeOn: 'fiche:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Fiche registrata',
+      content:
+        'Eccola nell\'elenco! La fiche raccoglie i servizi e i prodotti della visita. Il passo successivo è incassare e chiuderla: aprila di nuovo, scegli il metodo di pagamento e, se serve, calcola il resto.',
+      selector: '[data-tour="fiches-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1246,6 +1395,7 @@ export const lumeTours: LumeTour[] = [
   usareCalendarioTour,
   prenotaAppuntamentoTour,
   modificaAppuntamentoTour,
+  creaFicheTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

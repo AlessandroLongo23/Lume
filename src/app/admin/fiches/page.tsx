@@ -163,7 +163,7 @@ export default function FichesPage() {
         onConfirm={deleteAllFiches}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-8">
+      <div data-tour="fiches-page" className="flex-1 min-h-0 flex flex-col gap-8">
         <PageHeader
           title="Fiches"
           subtitle="La storia di ogni visita, dal check-in al saldo."
@@ -178,6 +178,7 @@ export default function FichesPage() {
                 icons={[TableProperties, LayoutGrid]}
               />
               <Button
+                data-tour="action-fiche-create"
                 variant="primary"
                 leadingIcon={Ticket}
                 onClick={() => setShowAdd(true)}

@@ -620,6 +620,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     });
     setProdQuery('');
     setProdOpen(false);
+    // Advances the "aggiungi un prodotto" step of the registra-fiche guide (no-op without a tour).
+    emitTourEvent('fiche:product-added');
   }
 
   function updateProductQuantity(productId: string, delta: number) {
