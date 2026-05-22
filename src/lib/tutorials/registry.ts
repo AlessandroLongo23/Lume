@@ -1,5 +1,5 @@
 import type { Tutorial } from './types';
-import { hasOperators } from './prerequisites';
+import { hasClients, hasServices, hasOperators } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -88,6 +88,22 @@ export const tutorials: Tutorial[] = [
     tourId: 'usare-calendario',
     articleSlug: 'usare-calendario',
     prerequisites: [
+      { label: 'almeno un operatore', met: hasOperators, tutorialId: 'crea-operatore' },
+    ],
+  },
+  {
+    id: 'prenota-appuntamento',
+    slug: 'prenota-appuntamento',
+    title: 'Prenotare un appuntamento',
+    summary:
+      'Trasforma uno spazio libero del calendario in un appuntamento: scegli orario, cliente, servizio e operatore in pochi clic.',
+    complexity: 'base',
+    scopes: ['agenda', 'fiches'],
+    tourId: 'prenota-appuntamento',
+    articleSlug: 'prenota-appuntamento',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+      { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
       { label: 'almeno un operatore', met: hasOperators, tutorialId: 'crea-operatore' },
     ],
   },

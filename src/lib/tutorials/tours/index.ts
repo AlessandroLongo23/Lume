@@ -970,6 +970,151 @@ const usareCalendarioTour: LumeTour = {
   ],
 };
 
+/**
+ * Book-an-appointment task tour. Unlike the "create X" tours, the appointment
+ * isn't born from a header "Nuovo" button — it starts by clicking an empty slot
+ * on the calendar, which opens the shared `FicheModal` in add mode (the same
+ * modal used to register a fiche, but here we only fill the booking essentials:
+ * orario, cliente, almeno un servizio, operatore). Two flow-specific shapes:
+ *  • The "click a free slot" step spotlights the WHOLE calendar (omit `side` ⇒
+ *    fixed-centered card) and advances on `fiche:modal-open` (emitted from the
+ *    modal's onEnterComplete) — there's no single deterministic slot to anchor,
+ *    so the hole exposes the whole grid and the user clicks any free cell.
+ *  • Cliente is a custom `Select` (its dropdown portals at z-popover, below the
+ *    overlay) and Servizio is an inline search-and-add (its dropdown is absolute,
+ *    same z-issue). Both are only clickable inside the spotlight hole, so those
+ *    steps spotlight the whole COLUMN that contains the open dropdown (the left
+ *    "Dettagli" column for cliente, the right "Servizi" column for servizio) and
+ *    advance on `fiche:client-selected` / `fiche:service-added` rather than
+ *    `advanceWhenFilled` (which can't read a value off a Select).
+ * The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the calendar as the booking starting point (whole page).
+ *  2. ACTION  — click a free slot (whole page; advance on `fiche:modal-open`).
+ *  3. NARRATE — the appointment card opened; the orario is pre-filled from the slot.
+ *  4. ACTION  — pick the cliente (spotlight left column; advance on selection).
+ *  5. ACTION  — add a servizio (spotlight right column; advance on add).
+ *  6. NARRATE — the operatore, set per service row, defaults to the clicked column.
+ *  7. ACTION  — save (advance on `fiche:created`).
+ *  8. NARRATE — wrap up over the whole calendar (the new appointment is in agenda).
+ */
+const prenotaAppuntamentoTour: LumeTour = {
+  tour: 'prenota-appuntamento',
+  endRoute: '/admin/aiuto/prenota-appuntamento',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Calendario',
+      content: 'Clicca su Calendario nella barra laterale per aprire la tua agenda.',
+      selector: '[data-tour="nav-calendario"]',
+      side: 'right',
+      advanceOnRoute: '/admin/calendario',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Si parte dal calendario',
+      content:
+        'Un appuntamento nasce qui, in agenda. Ogni colonna è un operatore e ogni riga un orario: dove non c\'è nulla, lo spazio è libero. Prenotiamone uno.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Clicca su uno spazio libero',
+      content:
+        'Clicca su un orario libero nella colonna di un operatore: si aprirà la scheda del nuovo appuntamento, già impostata su quell\'orario e quell\'operatore.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card. The hole exposes
+      // the entire grid, so the user can click any free cell to open the modal.
+      completeOn: 'fiche:modal-open',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La scheda dell\'appuntamento',
+      content:
+        'Questa è la scheda dell\'appuntamento. La "Data e ora" è già compilata con lo spazio che hai cliccato: se hai sbagliato fascia, puoi correggerla proprio qui.',
+      selector: '[data-tour="fiche-field-datetime"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il cliente',
+      content:
+        'Apri il menù "Cliente" e scegli per chi è l\'appuntamento. Non lo trovi? Scrivi il nome e premi "Nuovo" per crearlo al volo, senza uscire da qui.',
+      // Spotlight the whole left column: the Cliente Select's dropdown opens in a
+      // portal just below the trigger, and only what's inside the spotlight hole
+      // is clickable through the overlay — the column's box covers the dropdown.
+      selector: '[data-tour="fiche-details"]',
+      side: 'right',
+      completeOn: 'fiche:client-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Aggiungi un servizio',
+      content:
+        'Nel riquadro "Servizi", scrivi nel campo di ricerca e clicca il servizio giusto: viene aggiunto all\'appuntamento. Serve almeno un servizio per prenotare.',
+      // Spotlight the whole right column: the services search dropdown is absolute,
+      // below the input, so the column's box keeps it inside the spotlight hole.
+      selector: '[data-tour="fiche-services"]',
+      side: 'left',
+      completeOn: 'fiche:service-added',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'L\'operatore',
+      content:
+        'Ogni servizio ha la sua riga, con l\'operatore già impostato su quello della colonna che hai cliccato. Puoi cambiarlo dal menù "Operatore" e regolare durata e prezzo, se serve.',
+      selector: '[data-tour="fiche-services"]',
+      side: 'left',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva l\'appuntamento',
+      content: 'Tutto pronto. Clicca "Aggiungi" per mettere l\'appuntamento in agenda.',
+      selector: '[data-tour="save-fiche"]',
+      side: 'top',
+      completeOn: 'fiche:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Appuntamento prenotato',
+      content:
+        'Eccolo in agenda! L\'appuntamento è ora un blocco nella colonna dell\'operatore. Quando il cliente arriva, cliccaci sopra per registrare la fiche e incassare.',
+      selector: '[data-tour="calendario-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -978,6 +1123,7 @@ export const lumeTours: LumeTour[] = [
   creaCategoriaServizioTour,
   creaOperatoreTour,
   usareCalendarioTour,
+  prenotaAppuntamentoTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

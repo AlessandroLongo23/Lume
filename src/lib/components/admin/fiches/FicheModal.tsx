@@ -46,6 +46,7 @@ import { AbbonamentoCell } from '@/lib/components/admin/fiches/AbbonamentoCell';
 import { FicheHistoryTab } from '@/lib/components/admin/fiches/FicheHistoryTab';
 import { ConfirmEditClosedFicheDialog } from '@/lib/components/admin/fiches/ConfirmEditClosedFicheDialog';
 import { formatCurrency } from '@/lib/utils/format';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import { supabase } from '@/lib/supabase/client';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -512,6 +513,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     });
     setSvcQuery('');
     setSvcOpen(false);
+    // Advances the "aggiungi un servizio" step of the booking guide (no-op without a tour).
+    emitTourEvent('fiche:service-added');
   }
 
   /** Editing "Data e ora" moves the whole appointment: every service shifts by the
@@ -943,6 +946,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setShowEditConfirm(false);
       onClose();
       messagePopup.getState().success(mode === 'add' ? 'Appuntamento creato con successo' : 'Appuntamento aggiornato con successo');
+      // Advances the "salva" step of the booking guide (no-op without a tour).
+      if (mode === 'add') emitTourEvent('fiche:created');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     } finally {
@@ -1054,6 +1059,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         isOpen={isOpen}
         onClose={onClose}
         onSubmit={onConfirm}
+        // Advances the "clicca su uno spazio libero" step once the booking modal
+        // has settled, so the next step's coachmark measures the final layout.
+        onEnterComplete={mode === 'add' ? () => emitTourEvent('fiche:modal-open') : undefined}
+        confirmDataTour={!isEdit ? 'save-fiche' : undefined}
         title={
           isEdit
             ? activeTopTab === 'payment'
@@ -1242,11 +1251,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             >
 
               {/* ── LEFT: Dettagli ── */}
-              <div className="flex flex-col gap-5 xl:overflow-y-auto xl:pr-1">
+              <div data-tour="fiche-details" className="flex flex-col gap-5 xl:overflow-y-auto xl:pr-1">
 
                 {/* Row 1: Data, Cliente, Stato — 3-col below 2xl when there's room, stacked at 2xl (narrow column) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-5">
-                  <div className="flex flex-col gap-1.5">
+                  <div data-tour="fiche-field-datetime" className="flex flex-col gap-1.5">
                     <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
                     <input
                       type="datetime-local"
@@ -1264,7 +1273,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                       labelKey="fullName"
                       valueKey="id"
                       value={clientId}
-                      onChange={setClientId}
+                      onChange={(v) => {
+                        setClientId(v);
+                        // Advances the "scegli il cliente" step of the booking guide.
+                        emitTourEvent('fiche:client-selected');
+                      }}
                       placeholder="Cerca cliente…"
                       maxHeight="max-h-48"
                       createAction={{
@@ -1390,7 +1403,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               </div>
 
               {/* ── RIGHT: Servizi / Prodotti ── */}
-              <div className="flex flex-col gap-4 min-h-0">
+              <div data-tour="fiche-services" className="flex flex-col gap-4 min-h-0">
 
                 {/* Tab switcher (nested) */}
                 <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
