@@ -8,13 +8,15 @@ interface DetailSectionProps {
   id?: string;
   trailing?: React.ReactNode;
   children: React.ReactNode;
+  dataTour?: string;
 }
 
-export function DetailSection({ label, index = 0, id, trailing, children }: DetailSectionProps) {
+export function DetailSection({ label, index = 0, id, trailing, children, dataTour }: DetailSectionProps) {
   const reduceMotion = useReducedMotion();
   return (
     <motion.section
       id={id}
+      data-tour={dataTour}
       className="scroll-mt-6"
       initial={reduceMotion ? false : { opacity: 0, y: 8, filter: 'blur(4px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}

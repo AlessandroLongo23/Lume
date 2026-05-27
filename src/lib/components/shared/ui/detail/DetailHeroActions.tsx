@@ -13,6 +13,7 @@ interface DetailHeroActionsProps {
   onCancel: () => void;
   onSave: () => void;
   menuItems: DropdownMenuItem[];
+  editDataTour?: string;
 }
 
 export function DetailHeroActions({
@@ -24,6 +25,7 @@ export function DetailHeroActions({
   onCancel,
   onSave,
   menuItems,
+  editDataTour,
 }: DetailHeroActionsProps) {
   if (isEditing) {
     return (
@@ -47,7 +49,7 @@ export function DetailHeroActions({
   return (
     <>
       {!isLocked && (
-        <Button variant="secondary" size="md" leadingIcon={Edit} onClick={onEdit}>
+        <Button variant="secondary" size="md" leadingIcon={Edit} onClick={onEdit} data-tour={editDataTour}>
           Modifica
         </Button>
       )}

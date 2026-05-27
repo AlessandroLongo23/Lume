@@ -12,12 +12,14 @@ interface DetailHeroProps {
   chips?: React.ReactNode;
   aside?: React.ReactNode;
   actions: React.ReactNode;
+  dataTour?: string;
 }
 
-export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions }: DetailHeroProps) {
+export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions, dataTour }: DetailHeroProps) {
   const reduceMotion = useReducedMotion();
   return (
     <motion.header
+      data-tour={dataTour}
       initial={reduceMotion ? false : { opacity: 0, y: -6, filter: 'blur(4px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ type: 'spring', duration: 0.45, bounce: 0 }}

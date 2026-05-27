@@ -151,6 +151,130 @@ export const tutorials: Tutorial[] = [
       { label: 'almeno una fiche da incassare', met: hasOpenFiches, tutorialId: 'crea-fiche' },
     ],
   },
+  {
+    id: 'scheda-cliente',
+    slug: 'scheda-cliente',
+    title: 'La scheda cliente',
+    summary:
+      'Apri la scheda di un cliente per vedere foto, contatti, storico delle visite, scheda tecnica e note — tutto in un colpo d\'occhio.',
+    complexity: 'base',
+    scopes: ['clienti'],
+    tourId: 'scheda-cliente',
+    articleSlug: 'scheda-cliente',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+    ],
+  },
+  {
+    id: 'crea-coupon',
+    slug: 'crea-coupon',
+    title: 'Creare un coupon',
+    summary:
+      'Prepara un buono sconto per un cliente — percentuale, importo fisso o servizio omaggio — pronto da applicare in fiche.',
+    complexity: 'base',
+    scopes: ['coupons'],
+    comingSoon: true,
+  },
+  {
+    id: 'applica-sconto',
+    slug: 'applica-sconto',
+    title: 'Applicare uno sconto a una fiche',
+    summary:
+      'Scala il coupon del cliente sul totale della fiche, con il calcolo automatico del nuovo importo da incassare.',
+    complexity: 'avanzato',
+    scopes: ['fiches', 'coupons'],
+    comingSoon: true,
+  },
+  {
+    id: 'vendi-abbonamento',
+    slug: 'vendi-abbonamento',
+    title: 'Vendere un abbonamento',
+    summary:
+      'Configura un pacchetto di servizi prepagato, vendilo al cliente e tieni traccia delle sedute residue ad ogni fiche.',
+    complexity: 'avanzato',
+    scopes: ['abbonamenti'],
+    comingSoon: true,
+  },
+  {
+    id: 'vendi-gift-card',
+    slug: 'vendi-gift-card',
+    title: 'Vendere una gift card',
+    summary:
+      'Emetti una gift card di un importo a scelta, consegnala al cliente e riscuotila in una fiche futura come metodo di pagamento.',
+    complexity: 'avanzato',
+    scopes: ['coupons'],
+    comingSoon: true,
+  },
+  {
+    id: 'gestisci-magazzino',
+    slug: 'gestisci-magazzino',
+    title: 'Gestire il magazzino',
+    summary:
+      'Tieni sotto controllo le scorte: aggiorna le quantità, imposta le soglie minime e gestisci gli ordini ai fornitori.',
+    complexity: 'base',
+    scopes: ['prodotti'],
+    comingSoon: true,
+  },
+  {
+    id: 'configura-prenotazioni-online',
+    slug: 'configura-prenotazioni-online',
+    title: 'Attivare le prenotazioni online',
+    summary:
+      'Pubblica la pagina di prenotazione del salone: scegli quali servizi mostrare, gli orari disponibili e come gestire le richieste in arrivo.',
+    complexity: 'avanzato',
+    scopes: ['prenotazioni'],
+    comingSoon: true,
+  },
+  {
+    id: 'raccogli-recensioni',
+    slug: 'raccogli-recensioni',
+    title: 'Raccogliere recensioni dai clienti',
+    summary:
+      'Invia automaticamente la richiesta di recensione dopo la visita e monitora i feedback in arrivo dai tuoi clienti.',
+    complexity: 'avanzato',
+    scopes: ['recensioni'],
+    comingSoon: true,
+  },
+  {
+    id: 'leggi-bilancio',
+    slug: 'leggi-bilancio',
+    title: 'Leggere il bilancio del salone',
+    summary:
+      'Capisci a colpo d\'occhio incassi, spese e margini del mese, e scarica il report da condividere con il commercialista.',
+    complexity: 'base',
+    scopes: ['bilancio'],
+    comingSoon: true,
+  },
+  {
+    id: 'analizza-statistiche',
+    slug: 'analizza-statistiche',
+    title: 'Analizzare le statistiche',
+    summary:
+      'Scopri i servizi più richiesti, gli operatori più produttivi e i clienti più fedeli con i grafici della sezione Statistiche.',
+    complexity: 'avanzato',
+    scopes: ['bilancio'],
+    comingSoon: true,
+  },
+  {
+    id: 'configura-salone',
+    slug: 'configura-salone',
+    title: 'Configurare orari e dati del salone',
+    summary:
+      'Imposta gli orari di apertura, i dati di fatturazione, il logo e le preferenze generali del tuo salone.',
+    complexity: 'base',
+    scopes: ['impostazioni'],
+    comingSoon: true,
+  },
+  {
+    id: 'importa-clienti',
+    slug: 'importa-clienti',
+    title: 'Importare i clienti da un altro gestionale',
+    summary:
+      'Porta in Lume la tua anagrafica esistente: prepara il file, controlla l\'anteprima e completa l\'importazione in pochi passi.',
+    complexity: 'avanzato',
+    scopes: ['clienti'],
+    comingSoon: true,
+  },
 ];
 
 export function getTutorialBySlug(slug: string): Tutorial | null {

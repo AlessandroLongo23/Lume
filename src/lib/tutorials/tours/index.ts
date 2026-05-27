@@ -1504,6 +1504,136 @@ const incassaFicheTour: LumeTour = {
   ],
 };
 
+/**
+ * Tour of the client detail page (scheda-cliente). Pure narration — no creation,
+ * no destructive interaction. The single ACTION is "click a row to open a card":
+ * row ids are not deterministic anchors, so the step spotlights the WHOLE list
+ * (omit `side`) and advances on `client:detail-open` (emitted from the detail
+ * page's load effect once the client is hydrated from the store). All subsequent
+ * steps NARRATE the major surfaces of the open card — hero (foto + nome +
+ * contatti), Modifica button (entry point to edit contacts & upload a photo),
+ * Storico fiche, Note. Whole-page narrate steps omit `side` so the card renders
+ * fixed-centered (anchored placement overflows a full-page target). The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the Clienti list (whole page; omit `side`).
+ *  2. ACTION  — click any client (whole list; advance on `client:detail-open`).
+ *  3. NARRATE — the scheda as a whole (whole detail page; omit `side`).
+ *  4. NARRATE — hero: avatar/foto, nome, etichette, email & telefono.
+ *  5. NARRATE — "Modifica" to edit contatti + caricare la foto.
+ *  6. NARRATE — Storico fiche.
+ *  7. NARRATE — Note.
+ *  8. NARRATE — wrap up over the whole detail page.
+ */
+const schedaClienteTour: LumeTour = {
+  tour: 'scheda-cliente',
+  endRoute: '/admin/aiuto/scheda-cliente',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri i Clienti',
+      content: 'Clicca su Clienti nella barra laterale per aprire la tua lista.',
+      selector: '[data-tour="nav-clienti"]',
+      side: 'right',
+      advanceOnRoute: '/admin/clienti',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Clienti',
+      content:
+        'Qui vivono tutte le persone del tuo salone. Ogni riga è una scheda: apriamone una per vedere cosa c\'è dentro.',
+      selector: '[data-tour="clienti-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card. With a `side`,
+      // NextStep tries to place the card beside a target taller than the
+      // viewport and pushes it off-screen.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda di un cliente',
+      content:
+        'Clicca su un cliente qualsiasi della lista per aprire la sua scheda. Si apre a schermo intero, con tutte le sue informazioni.',
+      selector: '[data-tour="clienti-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card. The hole exposes
+      // the whole list, so the user can click any row to open its card.
+      completeOn: 'client:detail-open',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La scheda cliente',
+      content:
+        'Questa è la scheda completa del cliente: in cima i suoi dati, sotto la valutazione, lo storico delle visite, la scheda tecnica, i coupon e le note. Vediamole una alla volta.',
+      selector: '[data-tour="cliente-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Foto, nome e contatti',
+      content:
+        'L\'intestazione raccoglie le informazioni di colpo d\'occhio: avatar (foto o iniziali), nome, eventuali etichette e — sulla destra — email e telefono. Clicca sull\'icona accanto a un contatto per copiarlo negli appunti.',
+      selector: '[data-tour="cliente-hero"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Modifica e carica la foto',
+      content:
+        'Clicca "Modifica" per cambiare nome, genere, data di nascita, aggiungere email o telefono e caricare una foto del cliente con "Carica immagine". Quando hai finito, premi Salva.',
+      selector: '[data-tour="cliente-edit"]',
+      side: 'bottom',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Storico fiche',
+      content:
+        'Lo storico mostra ogni visita del cliente in ordine di data, con i servizi svolti e l\'importo. Clicca su una fiche per riaprirla.',
+      selector: '[data-tour="cliente-storico"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Note',
+      content:
+        'In fondo c\'è il campo Note: un blocco libero dove tenere a mente preferenze, allergie o qualunque dettaglio sul cliente. Per scriverla o cambiarla, entra in Modifica e usa il campo "Note" del modulo.',
+      selector: '[data-tour="cliente-note"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Tutto sul cliente',
+      content:
+        'Ora sai dove guardare. Da qui prenoti al cliente un nuovo appuntamento dal Calendario, o apri la Scheda tecnica (sopra le note) per ricordare colori, formule e annotazioni delle visite passate.',
+      selector: '[data-tour="cliente-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1516,6 +1646,7 @@ export const lumeTours: LumeTour[] = [
   modificaAppuntamentoTour,
   creaFicheTour,
   incassaFicheTour,
+  schedaClienteTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

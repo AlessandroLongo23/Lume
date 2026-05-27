@@ -16,7 +16,12 @@ export type Scope =
   | 'prodotti'
   | 'fiches'
   | 'bilancio'
-  | 'operatori';
+  | 'operatori'
+  | 'coupons'
+  | 'abbonamenti'
+  | 'prenotazioni'
+  | 'recensioni'
+  | 'impostazioni';
 
 export const COMPLEXITY_ORDER: Complexity[] = ['base', 'avanzato', 'power'];
 
@@ -35,6 +40,11 @@ export const SCOPE_ORDER: Scope[] = [
   'fiches',
   'bilancio',
   'operatori',
+  'coupons',
+  'abbonamenti',
+  'prenotazioni',
+  'recensioni',
+  'impostazioni',
 ];
 
 export const SCOPE_LABELS: Record<Scope, string> = {
@@ -46,6 +56,11 @@ export const SCOPE_LABELS: Record<Scope, string> = {
   fiches: 'Fiches',
   bilancio: 'Bilancio',
   operatori: 'Operatori',
+  coupons: 'Coupon',
+  abbonamenti: 'Abbonamenti',
+  prenotazioni: 'Prenotazioni online',
+  recensioni: 'Recensioni',
+  impostazioni: 'Impostazioni',
 };
 
 /**
@@ -101,6 +116,13 @@ export interface Tutorial {
    * ones are resolved by chaining their own tutorials first (see `Prerequisite`).
    */
   prerequisites?: Prerequisite[];
+  /**
+   * Placeholder entry shown in the hub with an "In arrivo" badge — the card is
+   * rendered non-interactive (no link, no hover). Use when the topic is on the
+   * roadmap but has no tour, article or video yet. Pair with no `tourId` /
+   * `articleSlug` so nothing tries to launch.
+   */
+  comingSoon?: boolean;
 }
 
 /** A tour step is interactive (`action`) or just explained (`narrate`). */

@@ -6,6 +6,7 @@ import { format, parse, isValid } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle, KeyRound, Globe } from 'lucide-react';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
@@ -130,6 +131,7 @@ export default function ClientDetailPage() {
       subtitle: client.email ?? client.phoneNumber ?? undefined,
       href: `/admin/clienti/${client.id}`,
     });
+    emitTourEvent('client:detail-open');
   }, [client]);
 
   // Auto-enter edit mode when arrived via "Modifica X" command (?edit=<id>).
@@ -309,8 +311,9 @@ export default function ClientDetailPage() {
         tone="warning"
       />
 
-      <div className="flex flex-col">
+      <div className="flex flex-col" data-tour="cliente-page">
         <DetailHero
+          dataTour="cliente-hero"
           onBack={handleBack}
           avatar={<HeroAvatar initials={initials} photoUrl={client.photoUrl} />}
           title={`${client.firstName} ${client.lastName}`}
@@ -377,6 +380,7 @@ export default function ClientDetailPage() {
           }
           actions={
             <DetailHeroActions
+              editDataTour="cliente-edit"
               isEditing={isEditing}
               isLocked={client.isArchived}
               saving={saving}
@@ -451,7 +455,7 @@ export default function ClientDetailPage() {
                   )}
                 </DetailSection>
 
-                <DetailSection index={1} label="Storico fiche">
+                <DetailSection index={1} label="Storico fiche" dataTour="cliente-storico">
                   <FicheHistory clientId={client.id} />
                 </DetailSection>
 
@@ -467,7 +471,7 @@ export default function ClientDetailPage() {
                   <OnlineBookingToggle client={client} setClient={setClient} />
                 </DetailSection>
 
-                <DetailSection index={5} label="Note">
+                <DetailSection index={5} label="Note" dataTour="cliente-note">
                   {client.note ? (
                     <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
                       {client.note}
