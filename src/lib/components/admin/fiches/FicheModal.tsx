@@ -980,6 +980,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       }
 
       await closeFiche(ficheId, salonId, payments);
+      // Advances the "Conferma pagamento" step of the incassa-fiche guide.
+      emitTourEvent('fiche:closed');
       onClose();
       messagePopup.getState().success('Fiche chiusa con successo');
     } catch (err) {
@@ -1065,8 +1067,27 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         // step's coachmark measures the final layout. Add mode powers the
         // "clicca su uno spazio libero" step; edit mode powers the
         // "apri un appuntamento" step of the modifica-appuntamento tour.
-        onEnterComplete={() => emitTourEvent(mode === 'add' ? 'fiche:modal-open' : 'fiche:edit-open')}
-        confirmDataTour={!isEdit ? 'save-fiche' : undefined}
+        onEnterComplete={() => {
+          if (mode === 'add') {
+            emitTourEvent('fiche:modal-open');
+            return;
+          }
+          // Edit mode: differentiate the entry point. Opening straight on the
+          // payment tab (from the FicheCard "Chiudi Fiche" shortcut) powers the
+          // incassa-fiche tour; everything else is the standard edit-open.
+          if (initialView === 'payment') {
+            emitTourEvent('fiche:checkout-open');
+          } else {
+            emitTourEvent('fiche:edit-open');
+          }
+        }}
+        confirmDataTour={
+          !isEdit
+            ? 'save-fiche'
+            : isPaymentTab && !isCompleted
+              ? 'confirm-fiche-payment'
+              : undefined
+        }
         title={
           isEdit
             ? activeTopTab === 'payment'

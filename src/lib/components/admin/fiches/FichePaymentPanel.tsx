@@ -5,6 +5,7 @@ import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: FichePaymentMethod.CASH, label: 'Contanti' },
@@ -114,7 +115,7 @@ export function FichePaymentPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
+      <div data-tour="fiche-payment-methods">
         <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
           Metodo di pagamento
         </p>
@@ -130,7 +131,11 @@ export function FichePaymentPanel({
             <button
               key={key ?? 'null'}
               type="button"
-              onClick={() => onViewChange(key)}
+              onClick={() => {
+                onViewChange(key);
+                // Advances the "scegli il metodo" step of the incassa-fiche guide.
+                emitTourEvent('fiche:payment-method-selected');
+              }}
               className={[
                 'flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border text-xs font-medium transition-all',
                 view === key
@@ -147,7 +152,7 @@ export function FichePaymentPanel({
 
       <div className="min-h-[100px]">
         {view === FichePaymentMethod.CASH && (
-          <div className="flex flex-col gap-3">
+          <div data-tour="fiche-payment-cash" className="flex flex-col gap-3">
             <div>
               <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
                 Soldi ricevuti (€)

@@ -1,5 +1,5 @@
 import type { Tutorial } from './types';
-import { hasClients, hasServices, hasOperators, hasProducts, hasFiches } from './prerequisites';
+import { hasClients, hasServices, hasOperators, hasProducts, hasFiches, hasOpenFiches } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -135,6 +135,20 @@ export const tutorials: Tutorial[] = [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
       { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
       { label: 'almeno un prodotto', met: hasProducts, tutorialId: 'crea-prodotto' },
+    ],
+  },
+  {
+    id: 'incassa-fiche',
+    slug: 'incassa-fiche',
+    title: 'Incassare e chiudere la fiche',
+    summary:
+      'Apri una fiche da incassare, scegli il metodo di pagamento e — con i contanti — vedi al volo il resto da dare al cliente.',
+    complexity: 'base',
+    scopes: ['fiches', 'bilancio'],
+    tourId: 'incassa-fiche',
+    articleSlug: 'incassa-fiche',
+    prerequisites: [
+      { label: 'almeno una fiche da incassare', met: hasOpenFiches, tutorialId: 'crea-fiche' },
     ],
   },
 ];

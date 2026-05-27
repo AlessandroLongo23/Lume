@@ -1385,6 +1385,125 @@ const creaFicheTour: LumeTour = {
   ],
 };
 
+/**
+ * Incassa-fiche (close-a-fiche) task tour. Picks up where `crea-fiche` ends: a
+ * fiche has been registered, now it must be paid and closed. The flow opens
+ * the Fiches page, clicks "Chiudi Fiche" on any open fiche card (whole-page
+ * spotlight, since one specific card can't be deterministically anchored — same
+ * pattern as the calendar-slot click in `prenota-appuntamento`), then drives
+ * the user through method + cash + confirm. Two flow-specific shapes:
+ *  • "Click Chiudi Fiche on a card" spotlights the whole page; the hole exposes
+ *    every open card and `fiche:checkout-open` fires when the modal opens with
+ *    `initialView='payment'` (emitted from FicheModal's onEnterComplete).
+ *  • The payment method picker is a row of four buttons; spotlighting it as a
+ *    block (`[data-tour="fiche-payment-methods"]`) and advancing on the new
+ *    `fiche:payment-method-selected` event lets the user pick any method without
+ *    forcing one — though the next step narrates the Contanti view because the
+ *    cash + change calculation is the headline of this tutorial.
+ * The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Fiches page (spotlight the page; omit side).
+ *  2. ACTION  — click "Chiudi Fiche" on any card (whole page; advance on
+ *               `fiche:checkout-open`).
+ *  3. ACTION  — pick a metodo di pagamento; nudges toward "Contanti" so the next
+ *               step's cash/resto demo applies (advance on
+ *               `fiche:payment-method-selected`).
+ *  4. ACTION  — write "Soldi ricevuti" (`advanceWhenFilled` on the inner input).
+ *  5. ACTION  — confirm payment (advance on `fiche:closed`, emitted from the
+ *               successful close path in handlePay).
+ *  6. NARRATE — wrap up over the whole Fiches page; the fiche is now "Conclusa".
+ */
+const incassaFicheTour: LumeTour = {
+  tour: 'incassa-fiche',
+  endRoute: '/admin/aiuto/incassa-fiche',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri le Fiches',
+      content: 'Clicca su Fiches nella barra laterale per aprire l\'elenco delle visite.',
+      selector: '[data-tour="nav-fiches"]',
+      side: 'right',
+      advanceOnRoute: '/admin/fiches',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Le fiche da incassare',
+      content:
+        'Ogni fiche non ancora pagata vive nelle schede "Prenotate" (visite future) e "Arretrate" (visite passate): hanno il pulsante "Chiudi Fiche" pronto. Incassiamone una.',
+      selector: '[data-tour="fiches-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Clicca "Chiudi Fiche"',
+      content:
+        'Sulla fiche che vuoi incassare, clicca "Chiudi Fiche": si apre la schermata di chiusura, con lo scontrino a sinistra e il pagamento a destra.',
+      selector: '[data-tour="fiches-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card. The hole exposes
+      // every open card, so the user can click "Chiudi Fiche" on any of them.
+      completeOn: 'fiche:checkout-open',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il metodo di pagamento',
+      content:
+        'Clicca come ha pagato il cliente: "Contanti" (con calcolo del resto), "POS", "Altro" (bonifico, assegno…) o "Misto" per dividere fra più metodi. Per imparare il resto, scegli "Contanti".',
+      selector: '[data-tour="fiche-payment-methods"]',
+      side: 'bottom',
+      completeOn: 'fiche:payment-method-selected',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Soldi ricevuti e resto',
+      content:
+        'Scrivi quanto ti ha dato il cliente, poi clicca Avanti. Lume calcola subito il resto da ridargli — in verde quando l\'importo è sufficiente, in rosso quanto manca se non basta.',
+      selector: '[data-tour="fiche-payment-cash"]',
+      side: 'bottom',
+      // NumberInput renders an inner <input>; the wrapper carries the anchor.
+      advanceWhenFilled: '[data-tour="fiche-payment-cash"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Conferma pagamento',
+      content: 'Tutto pronto. Clicca "Conferma pagamento" per registrare l\'incasso e chiudere la fiche.',
+      selector: '[data-tour="confirm-fiche-payment"]',
+      side: 'top',
+      completeOn: 'fiche:closed',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Fiche conclusa',
+      content:
+        'Pagata! La fiche si sposta sotto "Concluse" con il badge verde, e l\'importo entra nelle entrate del Bilancio e nelle statistiche del salone.',
+      selector: '[data-tour="fiches-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1396,6 +1515,7 @@ export const lumeTours: LumeTour[] = [
   prenotaAppuntamentoTour,
   modificaAppuntamentoTour,
   creaFicheTour,
+  incassaFicheTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {
