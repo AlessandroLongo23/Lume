@@ -220,10 +220,14 @@ export const tutorials: Tutorial[] = [
     slug: 'vendi-gift-card',
     title: 'Vendere una gift card',
     summary:
-      'Emetti una gift card di un importo a scelta, consegnala al cliente e riscuotila in una fiche futura come metodo di pagamento.',
+      'Emetti una gift card di un importo a scelta: scegli acquirente e destinatario, la validità, e avvisa subito chi la riceve. Il credito si spende poi in una fiche come metodo di pagamento.',
     complexity: 'avanzato',
     scopes: ['coupons'],
-    comingSoon: true,
+    tourId: 'vendi-gift-card',
+    articleSlug: 'vendi-gift-card',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+    ],
   },
   {
     id: 'gestisci-magazzino',

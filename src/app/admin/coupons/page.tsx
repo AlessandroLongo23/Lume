@@ -18,6 +18,7 @@ import { DeleteCouponModal } from '@/lib/components/admin/coupons/DeleteCouponMo
 import type { Coupon } from '@/lib/types/Coupon';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 type Tab = 'gift' | 'gift_card';
 
@@ -100,7 +101,7 @@ export default function CouponsPage() {
                   Nuovo coupon
                 </Button>
               ) : (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftCardModalOpen(true)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftCardModalOpen(true)} data-tour="action-gift-card-create">
                   Vendi gift card
                 </Button>
               )}
@@ -123,7 +124,12 @@ export default function CouponsPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                data-tour={id === 'gift_card' ? 'tab-gift-card' : undefined}
+                onClick={() => {
+                  setActiveTab(id);
+                  // Advances an interactive guide's "open the Gift card tab" step.
+                  if (id === 'gift_card') emitTourEvent('gift-card:tab-open');
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   isActive
                     ? 'border-primary text-primary-hover dark:text-primary/70'

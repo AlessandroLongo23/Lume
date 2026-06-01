@@ -1904,6 +1904,218 @@ const creaCouponTour: LumeTour = {
   ],
 };
 
+/**
+ * Sell-a-gift-card task tour (vendi-gift-card). Gift cards live in the "Gift card"
+ * TAB of the Coupons page (the same page as gift coupons), sold via the header
+ * "Vendi gift card" button → `GiftCardModal` (`kind:'gift_card'`). Same
+ * locked-overlay create-flow shape as `crea-coupon`, with these flow-specific shapes:
+ *  • The Coupons page lands on the "Coupon regalo" tab, so an extra ACTION step
+ *    switches to the "Gift card" tab before the "Vendi gift card" button appears
+ *    (advance on `gift-card:tab-open`, emitted from the tab button's onClick).
+ *  • "Acquirente" and "Destinatario" are custom `Select`s (their dropdowns portal at
+ *    z-popover, below the tour overlay), so — like `crea-coupon`'s destinatario —
+ *    each step spotlights the WHOLE form (`[data-tour="gift-card-form"]`) so the open
+ *    dropdown sits inside the spotlight hole, and advances on
+ *    `gift-card:purchaser-selected` / `gift-card:recipient-selected` rather than
+ *    `advanceWhenFilled` (which can't read a value off a Select). The recipient event
+ *    also fires when the user ticks "L'acquirente la usa per sé" (which resolves the
+ *    recipient without touching the Select), so that step never traps a self-buyer.
+ *  • Like `crea-coupon`, the modal does NOT close on save: a successful "Vendi gift
+ *    card" swaps the form for the shared success view (`[data-tour="coupon-notify"]`)
+ *    that offers to notify the recipient (WhatsApp / email), so the tour ends there
+ *    and the final "Fine" → `endRoute` unmounts the page and closes the modal.
+ * The valore is a NumberInput, so its step gates with `advanceWhenFilled` on the inner
+ * `<input>`; the metodo di pagamento is a ToggleButton (has a default), so it NARRATES.
+ * The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Coupon page + its two tabs (spotlight the page).
+ *  2. ACTION  — open the "Gift card" tab (advance on `gift-card:tab-open`).
+ *  3. NARRATE — what a gift card is, vs a coupon (spotlight the page).
+ *  4. ACTION  — open "Vendi gift card" (advance on `gift-card:modal-open`).
+ *  5. ACTION  — pick the acquirente (spotlight the form; advance on selection).
+ *  6. ACTION  — pick the destinatario / tick "usa per sé" (spotlight the form; advance).
+ *  7. ACTION  — write the valore; `advanceWhenFilled` on the NumberInput's input.
+ *  8. NARRATE — the metodo di pagamento toggle (how the buyer pays for the card).
+ *  9. ACTION (optional) — validità: prefilled a one year; editable or skippable.
+ * 10. ACTION (optional) — ambito: limit to services/products or leave unlimited.
+ * 11. ACTION (optional) — note interne: private note, editable or skippable.
+ * 12. ACTION  — save (advance on `gift-card:created`).
+ * 13. NARRATE — the success view: notify the recipient; ends here → endRoute.
+ */
+const vendiGiftCardTour: LumeTour = {
+  tour: 'vendi-gift-card',
+  endRoute: '/admin/aiuto/vendi-gift-card',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri i Coupon',
+      content: 'Clicca su Coupons nella barra laterale: le gift card vivono qui, insieme ai coupon sconto.',
+      selector: '[data-tour="nav-coupons"]',
+      side: 'right',
+      advanceOnRoute: '/admin/coupons',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Coupon',
+      content:
+        'Questa pagina ha due schede: "Coupon regalo", i buoni sconto, e "Gift card", i buoni prepagati che un cliente compra e regala. Andiamo nelle gift card.',
+      selector: '[data-tour="coupons-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda "Gift card"',
+      content: 'Clicca sulla scheda "Gift card" per vedere e vendere i buoni prepagati.',
+      selector: '[data-tour="tab-gift-card"]',
+      side: 'bottom',
+      completeOn: 'gift-card:tab-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Cos\'è una gift card',
+      content:
+        'A differenza di un coupon, la gift card è un importo prepagato: il cliente la paga oggi e chi la riceve la spende quando vuole, in una o più visite. Vendiamone una.',
+      selector: '[data-tour="coupons-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Vendi gift card"',
+      content: 'Clicca "Vendi gift card" per aprire il modulo della vendita.',
+      selector: '[data-tour="action-gift-card-create"]',
+      side: 'bottom',
+      completeOn: 'gift-card:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli l\'acquirente',
+      content:
+        'Apri il menù "Acquirente" e scegli il cliente che compra e paga la gift card. Se non è ancora tra i tuoi clienti, aggiungilo prima dalla sezione Clienti.',
+      // Spotlight the whole form, not just the Select: its dropdown opens in a
+      // portal below the trigger, and only what's inside the spotlight hole is
+      // clickable through the overlay — the form's box covers the open dropdown.
+      selector: '[data-tour="gift-card-form"]',
+      side: 'right',
+      completeOn: 'gift-card:purchaser-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il destinatario',
+      content:
+        'Apri il menù "Destinatario" e scegli chi riceve la gift card e potrà spenderla. Se l\'acquirente la tiene per sé, spunta invece "L\'acquirente la usa per sé".',
+      selector: '[data-tour="gift-card-form"]',
+      side: 'right',
+      completeOn: 'gift-card:recipient-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Il valore della gift card',
+      content:
+        'Scrivi il valore della gift card in euro — è il credito che il destinatario potrà spendere — poi clicca Avanti.',
+      selector: '[data-tour="gift-card-field-amount"]',
+      side: 'bottom',
+      // The anchor is the field's wrapper (label + NumberInput); gate on the real
+      // <input> inside it (TourCard polls its value to enable "Avanti").
+      advanceWhenFilled: '[data-tour="gift-card-field-amount"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Come la paga l\'acquirente',
+      content:
+        'Indica come l\'acquirente salda la gift card: "Contanti", "Carta" o "Bonifico". Così la vendita resta registrata con il metodo giusto. Per questa guida lascia "Contanti".',
+      selector: '[data-tour="gift-card-field-payment"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Validità della gift card',
+      content:
+        'Da quando a quando si può usare la gift card. Lume propone già un anno di validità: cambia le date se vuoi, oppure premi "Salta".',
+      selector: '[data-tour="gift-card-field-validity"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'A cosa si applica',
+      content:
+        'Lasciato vuoto, il credito vale su tutto. Vuoi limitarlo? Scegli qui i servizi, i prodotti o le categorie su cui la gift card può essere spesa. È facoltativo: imposta l\'ambito oppure premi "Salta".',
+      selector: '[data-tour="gift-card-field-scope"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Note interne',
+      content:
+        'Una nota privata sulla gift card, per esempio l\'occasione del regalo. La vedi solo tu, non il cliente. Scrivila oppure premi "Salta".',
+      selector: '[data-tour="gift-card-field-notes"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Vendi la gift card',
+      content: 'Tutto pronto. Clicca "Vendi gift card" per registrare la vendita ed emettere il buono.',
+      selector: '[data-tour="save-gift-card"]',
+      side: 'top',
+      completeOn: 'gift-card:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Gift card emessa: avvisa il cliente',
+      content:
+        'Fatto! La gift card è emessa e ti aspetta nella lista "Gift card". Avvisa subito chi la riceve: "Invia su WhatsApp" apre la chat col messaggio già pronto, "Invia via email" glielo manda per email. Quando verrà a spendere il credito, la userai come metodo di pagamento per chiudere la sua fiche.',
+      selector: '[data-tour="coupon-notify"]',
+      side: 'left',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1919,6 +2131,7 @@ export const lumeTours: LumeTour[] = [
   schedaClienteTour,
   gestisciPrenotazioniTour,
   creaCouponTour,
+  vendiGiftCardTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

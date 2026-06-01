@@ -16,6 +16,7 @@ import { CouponNotifySuccess } from './CouponNotifySuccess';
 import { buildCouponMessage, sendCouponEmail } from '@/lib/utils/coupon-notify';
 import type { Coupon, CouponSalePaymentMethod } from '@/lib/types/Coupon';
 import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface GiftCardModalProps {
   isOpen: boolean;
@@ -116,6 +117,8 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
       setSuccessMessage(message);
       setView('success');
       messagePopup.getState().success('Gift card creata.');
+      // Advances an interactive guide's "save" step on a successful sale.
+      emitTourEvent('gift-card:created');
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Errore sconosciuto');
       messagePopup.getState().error('Errore nella vendita della gift card.');
@@ -144,6 +147,10 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
       contentClasses="overflow-y-auto"
       confirmText={confirmText}
       confirmDisabled={isSubmitting}
+      confirmDataTour="save-gift-card"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('gift-card:modal-open')}
     >
       {view === 'success' && createdCoupon && recipient ? (
         <CouponNotifySuccess
@@ -153,7 +160,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           onSendEmail={() => sendCouponEmail({ recipient, coupon: createdCoupon, salonName, message: successMessage })}
         />
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5" data-tour="gift-card-form">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}><UserPlus className="size-3.5" />Acquirente *</label>
@@ -162,7 +169,12 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                 labelKey="fullName"
                 valueKey="id"
                 value={purchaserId}
-                onChange={setPurchaserId}
+                onChange={(v) => {
+                  // Advances an interactive guide's "choose the buyer" step once the
+                  // user picks a client (no-op when no tour is running).
+                  if (v && v !== purchaserId) emitTourEvent('gift-card:purchaser-selected');
+                  setPurchaserId(v);
+                }}
                 placeholder="Cerca acquirente…"
               />
             </div>
@@ -181,7 +193,11 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                   labelKey="fullName"
                   valueKey="id"
                   value={recipientId}
-                  onChange={setRecipientId}
+                  onChange={(v) => {
+                    // Advances an interactive guide's "choose the recipient" step.
+                    if (v && v !== recipientId) emitTourEvent('gift-card:recipient-selected');
+                    setRecipientId(v);
+                  }}
                   placeholder="Cerca destinatario…"
                 />
               )}
@@ -189,11 +205,20 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Checkbox checked={forSelf} onChange={(e) => { const v = e.target.checked; setForSelf(v); if (v) setRecipientId(''); }} />
+            <Checkbox checked={forSelf} onChange={(e) => {
+              const v = e.target.checked;
+              setForSelf(v);
+              if (v) {
+                setRecipientId('');
+                // Checking "uses it for self" also resolves the recipient, so it
+                // advances the guide's recipient step like picking one from the menu.
+                emitTourEvent('gift-card:recipient-selected');
+              }
+            }} />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">L&apos;acquirente la usa per sé</span>
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-amount">
             <label className={labelClass}><Wallet className="size-3.5" />Valore della gift card *</label>
             <NumberInput
               value={amount}
@@ -206,7 +231,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-payment">
             <label className={labelClass}>Metodo di pagamento *</label>
             <ToggleButton
               options={['cash', 'card', 'transfer'] as CouponSalePaymentMethod[]}
@@ -218,7 +243,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4" data-tour="gift-card-field-validity">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}><Calendar className="size-3.5" />Valida dal *</label>
               <input
@@ -239,12 +264,12 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-scope">
             <label className={labelClass}>Ambito</label>
             <CouponScopePicker value={scope} onChange={setScope} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-notes">
             <label className={labelClass}><FileText className="size-3.5" />Note</label>
             <textarea
               className={`${inputClass} resize-none`}
