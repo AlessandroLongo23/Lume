@@ -166,6 +166,22 @@ export const tutorials: Tutorial[] = [
     ],
   },
   {
+    id: 'gestisci-prenotazioni',
+    slug: 'gestisci-prenotazioni',
+    title: 'Gestire le richieste di prenotazione online',
+    summary:
+      'Approva o rifiuta le richieste arrivate dal sito: con un clic confermi l\'appuntamento e avvisi il cliente, oppure liberi lo spazio.',
+    complexity: 'avanzato',
+    scopes: ['prenotazioni', 'agenda'],
+    tourId: 'gestisci-prenotazioni',
+    articleSlug: 'gestisci-prenotazioni',
+    // No prerequisites: pending requests are produced by clients on the public
+    // booking site, not by any tutorial — and `tourQueue.runnable()` drops a
+    // chained tutorial that has no tour, so a prerequisite chain can't guarantee
+    // the inbox is non-empty. The tour is instead self-robust to an empty inbox
+    // (it spotlights only the stable page + tab anchors). See the tour's doc comment.
+  },
+  {
     id: 'crea-coupon',
     slug: 'crea-coupon',
     title: 'Creare un coupon',

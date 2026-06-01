@@ -89,14 +89,14 @@ export default function PrenotazioniPage() {
   const list = bucketed[tab];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-tour="prenotazioni-page">
       <PageHeader
         icon={Globe}
         title="Prenotazioni online"
         subtitle="Approva, monitora e consulta lo storico delle richieste arrivate dal sito pubblico."
       />
 
-      <div role="tablist" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+      <div role="tablist" data-tour="prenotazioni-tabs" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
         {(['pending', 'upcoming', 'history'] as const).map((t) => {
           const active = t === tab;
           return (

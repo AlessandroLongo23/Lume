@@ -1634,6 +1634,105 @@ const schedaClienteTour: LumeTour = {
   ],
 };
 
+/**
+ * Manage-online-bookings tour (gestisci-prenotazioni). A "tour of a page" like
+ * `usare-calendario`: after the single ACTION step that navigates to the page, it
+ * NARRATES the online-bookings inbox. The headline actions — Approva / Rifiuta —
+ * are NOT forced: approving flips a fiche's status AND fires a real confirmation
+ * email to the client (best-effort, via Resend), so per the `modifica-appuntamento`
+ * precedent (a real drag/delete would mutate demo data) they are narrated, not
+ * triggered. Crucially, pending requests are produced by clients on the public
+ * booking site — no tutorial can create one — and `tourQueue.runnable()` drops a
+ * queued prerequisite tutorial that has no tour, so a chain can't guarantee the
+ * inbox is non-empty. Therefore every content step spotlights a STABLE anchor that
+ * exists whether the inbox is full or empty: the page root (`prenotazioni-page`,
+ * whole-page ⇒ omit `side` ⇒ fixed-centered card) and the tab bar
+ * (`prenotazioni-tabs`). It never hard-targets a request row or the action buttons
+ * (those vanish on an empty inbox / non-pending tab) — the row anatomy and the two
+ * buttons are described in the narration instead. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the inbox (whole page; omit side).
+ *  2. NARRATE — the three tabs + their counters (spotlight the tab bar).
+ *  3. NARRATE — the anatomy of a pending request (whole page).
+ *  4. NARRATE — the Approva / Rifiuta actions and what each does (whole page).
+ *  5. NARRATE — wrap up: approved → Prossime + Calendario (whole page).
+ */
+const gestisciPrenotazioniTour: LumeTour = {
+  tour: 'gestisci-prenotazioni',
+  endRoute: '/admin/aiuto/gestisci-prenotazioni',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri le Prenotazioni online',
+      content:
+        'Clicca su Prenotazioni online nella barra laterale per aprire le richieste arrivate dal sito del salone.',
+      selector: '[data-tour="nav-prenotazioni"]',
+      side: 'right',
+      advanceOnRoute: '/admin/prenotazioni',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Le prenotazioni online',
+      content:
+        'Questa è la tua casella delle prenotazioni online: ogni richiesta che un cliente invia dal sito del salone arriva qui, pronta da approvare. Vediamo come gestirle.',
+      selector: '[data-tour="prenotazioni-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Da approvare, Prossime, Storico',
+      content:
+        'Tre schede dividono le richieste: "Da approvare" sono quelle in attesa di una tua risposta, "Prossime" gli appuntamenti già confermati e ancora da svolgere, "Storico" quelli passati e quelli rifiutati. Il numero accanto a ogni scheda dice quante ne contiene.',
+      selector: '[data-tour="prenotazioni-tabs"]',
+      side: 'bottom',
+      pointerPadding: 6,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Una richiesta in arrivo',
+      content:
+        'Ogni richiesta mostra a colpo d\'occhio chi l\'ha inviata, il servizio scelto con l\'operatore richiesto e quando vorrebbe venire. Così decidi se va bene senza aprire nient\'altro.',
+      selector: '[data-tour="prenotazioni-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Approva o rifiuta',
+      content:
+        'Su ogni richiesta in attesa hai due pulsanti: "Approva" conferma l\'appuntamento, lo mette in agenda e avvisa il cliente via email; "Rifiuta" libera lo spazio e gli manda comunque un\'email cortese. In entrambi i casi la richiesta esce dalla scheda "Da approvare".',
+      selector: '[data-tour="prenotazioni-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Tutto finisce in agenda',
+      content:
+        'Fatto! Le richieste che approvi diventano appuntamenti veri: li ritrovi nella scheda "Prossime" e nel Calendario, come quelli che crei a mano. Quali servizi rendere prenotabili e se chiedere l\'approvazione lo decidi dalle impostazioni delle prenotazioni online.',
+      selector: '[data-tour="prenotazioni-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1647,6 +1746,7 @@ export const lumeTours: LumeTour[] = [
   creaFicheTour,
   incassaFicheTour,
   schedaClienteTour,
+  gestisciPrenotazioniTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {
