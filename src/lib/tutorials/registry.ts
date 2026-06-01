@@ -187,9 +187,13 @@ export const tutorials: Tutorial[] = [
     title: 'Creare un coupon',
     summary:
       'Prepara un buono sconto per un cliente — percentuale, importo fisso o servizio omaggio — pronto da applicare in fiche.',
-    complexity: 'base',
+    complexity: 'avanzato',
     scopes: ['coupons'],
-    comingSoon: true,
+    tourId: 'crea-coupon',
+    articleSlug: 'crea-coupon',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+    ],
   },
   {
     id: 'applica-sconto',

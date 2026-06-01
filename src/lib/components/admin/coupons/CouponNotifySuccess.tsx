@@ -54,7 +54,7 @@ export function CouponNotifySuccess({
   })();
 
   return (
-    <div className="flex flex-col gap-5 py-2">
+    <div className="flex flex-col gap-5 py-2" data-tour="coupon-notify">
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
           <CheckCircle2 className="size-6 text-emerald-500" />

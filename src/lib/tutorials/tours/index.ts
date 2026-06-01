@@ -1733,6 +1733,177 @@ const gestisciPrenotazioniTour: LumeTour = {
   ],
 };
 
+/**
+ * Create-a-coupon task tour (crea-coupon). Builds a gift discount coupon on the
+ * Coupons page via the "Nuovo coupon" header button → `GiftCouponModal`
+ * (`kind:'gift'`). Same locked-overlay create-flow shape as `crea-cliente`, with
+ * two flow-specific shapes:
+ *  • "Destinatario" is a custom `Select` (its dropdown portals at z-popover, below
+ *    the tour overlay), so — like `crea-servizio`'s categoria — its step spotlights
+ *    the WHOLE form (`[data-tour="coupon-form"]`) so the open dropdown sits inside
+ *    the spotlight hole, and advances on `coupon:recipient-selected` (emitted from
+ *    the Select's onChange) rather than `advanceWhenFilled`, which can't read a
+ *    value off a Select.
+ *  • The modal does NOT close on save: a successful "Crea coupon" swaps the form
+ *    for a success view that offers to notify the recipient (WhatsApp / email). So
+ *    unlike the other create tours there's no "find the new row" step over the list
+ *    — the tour ends ON that success view (`[data-tour="coupon-notify"]`), and the
+ *    final "Fine" → `endRoute` unmounts the page and closes the modal.
+ * The discount type defaults to "Importo fisso" (a NumberInput), so the importo
+ * step gates with `advanceWhenFilled` on its inner `<input>`; the type step before
+ * it just NARRATES the three choices (fisso / percentuale / omaggio). The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Coupon page + its two tabs (spotlight the page).
+ *  2. ACTION  — open "Nuovo coupon" (advance on `coupon:modal-open`).
+ *  3. ACTION  — pick the destinatario (spotlight the form; advance on selection).
+ *  4. NARRATE — the tipo di sconto toggle (fisso / percentuale / omaggio).
+ *  5. ACTION  — write the importo; `advanceWhenFilled` on the NumberInput's input.
+ *  6. ACTION (optional) — validità: prefilled a one year; editable or skippable.
+ *  7. ACTION (optional) — ambito: limit to services/products or leave unlimited.
+ *  8. ACTION (optional) — note interne: private note, editable or skippable.
+ *  9. ACTION  — save (advance on `coupon:created`).
+ * 10. NARRATE — the success view: notify the recipient; ends here → endRoute.
+ */
+const creaCouponTour: LumeTour = {
+  tour: 'crea-coupon',
+  endRoute: '/admin/aiuto/crea-coupon',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri i Coupon',
+      content: 'Clicca su Coupons nella barra laterale per aprire i tuoi buoni sconto.',
+      selector: '[data-tour="nav-coupons"]',
+      side: 'right',
+      advanceOnRoute: '/admin/coupons',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Coupon',
+      content:
+        'Questa è la sezione Coupon e gift card. Nella scheda "Coupon regalo" prepari buoni sconto da regalare a un cliente; in "Gift card" vendi buoni prepagati. Creiamo un coupon sconto.',
+      selector: '[data-tour="coupons-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo coupon"',
+      content: 'Clicca "Nuovo coupon" per aprire il modulo del buono sconto.',
+      selector: '[data-tour="action-coupon-create"]',
+      side: 'bottom',
+      completeOn: 'coupon:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il destinatario',
+      content:
+        'Apri il menù "Destinatario" e scegli il cliente a cui regali il coupon: il buono sarà valido solo per lui. È l\'unico dato sempre obbligatorio.',
+      // Spotlight the whole form, not just the Select: its dropdown opens in a
+      // portal below the trigger, and only what's inside the spotlight hole is
+      // clickable through the overlay — the form's box covers the open dropdown.
+      selector: '[data-tour="coupon-form"]',
+      side: 'right',
+      completeOn: 'coupon:recipient-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Il tipo di sconto',
+      content:
+        'Scegli che tipo di sconto è: "Importo fisso" toglie un valore in euro, "Percentuale" una quota del totale, "Omaggio" regala un servizio o un prodotto. Per questa guida lasciamo "Importo fisso".',
+      selector: '[data-tour="coupon-field-discount"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'L\'importo dello sconto',
+      content:
+        'Scrivi quanto vale lo sconto — con "Importo fisso" sono euro — poi clicca Avanti. Con "Percentuale" scriveresti invece un numero da 1 a 100.',
+      selector: '[data-tour="coupon-field-discount"]',
+      side: 'bottom',
+      // The anchor wraps the toggle + the value field; gate on the NumberInput's
+      // real <input> (TourCard polls its value to enable "Avanti").
+      advanceWhenFilled: '[data-tour="coupon-field-discount"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Validità del coupon',
+      content:
+        'Da quando a quando il coupon si può usare. Lume propone già un anno di validità: cambia le date se vuoi, oppure premi "Salta".',
+      selector: '[data-tour="coupon-field-validity"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'A cosa si applica',
+      content:
+        'Lasciato vuoto, il coupon vale su tutto. Vuoi limitarlo? Scegli qui i servizi, i prodotti o le categorie su cui può essere usato. È facoltativo: imposta l\'ambito oppure premi "Salta".',
+      selector: '[data-tour="coupon-field-scope"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Note interne',
+      content:
+        'Una nota privata sul coupon, per esempio il motivo del regalo. La vedi solo tu, non il cliente. Scrivila oppure premi "Salta".',
+      selector: '[data-tour="coupon-field-notes"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Crea il coupon',
+      content: 'Tutto pronto. Clicca "Crea coupon" per generare il buono.',
+      selector: '[data-tour="save-coupon"]',
+      side: 'top',
+      completeOn: 'coupon:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Coupon pronto: avvisa il cliente',
+      content:
+        'Fatto! Il coupon è creato e ti aspetta nella lista "Coupon regalo". Da qui avvisi subito il cliente: "Invia su WhatsApp" apre la chat col messaggio già pronto, "Invia via email" glielo manda per email. Più avanti lo sconto si scala dal totale di una sua fiche.',
+      selector: '[data-tour="coupon-notify"]',
+      side: 'left',
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -1747,6 +1918,7 @@ export const lumeTours: LumeTour[] = [
   incassaFicheTour,
   schedaClienteTour,
   gestisciPrenotazioniTour,
+  creaCouponTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

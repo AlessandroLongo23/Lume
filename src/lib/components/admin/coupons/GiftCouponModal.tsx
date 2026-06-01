@@ -17,6 +17,7 @@ import { CouponNotifySuccess } from './CouponNotifySuccess';
 import { buildCouponMessage, sendCouponEmail } from '@/lib/utils/coupon-notify';
 import type { Coupon, CouponDiscountType, CouponFreeItemKind } from '@/lib/types/Coupon';
 import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface GiftCouponModalProps {
   isOpen: boolean;
@@ -122,6 +123,8 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
       setSuccessMessage(message);
       setView('success');
       messagePopup.getState().success('Coupon creato.');
+      // Advances an interactive guide's "save" step on a successful create.
+      emitTourEvent('coupon:created');
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Errore sconosciuto');
       messagePopup.getState().error("Errore nella creazione del coupon.");
@@ -150,6 +153,10 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
       contentClasses="overflow-y-auto"
       confirmText={confirmText}
       confirmDisabled={isSubmitting}
+      confirmDataTour="save-coupon"
+      // Emit only after the open animation settles, so the guide's next step
+      // (anchored on a field inside the modal) measures its final position.
+      onEnterComplete={() => emitTourEvent('coupon:modal-open')}
     >
       {view === 'success' && createdCoupon && recipient ? (
         <CouponNotifySuccess
@@ -159,7 +166,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
           onSendEmail={() => sendCouponEmail({ recipient, coupon: createdCoupon, salonName, message: successMessage })}
         />
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5" data-tour="coupon-form">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}><User className="size-3.5" />Destinatario *</label>
             <Select
@@ -167,12 +174,17 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
               labelKey="fullName"
               valueKey="id"
               value={recipientId}
-              onChange={setRecipientId}
+              onChange={(v) => {
+                // Advances an interactive guide's "choose the recipient" step once
+                // the user picks a client (no-op when no tour is running).
+                if (v && v !== recipientId) emitTourEvent('coupon:recipient-selected');
+                setRecipientId(v);
+              }}
               placeholder="Cerca cliente…"
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" data-tour="coupon-field-discount">
             <label className={labelClass}>Tipo di sconto *</label>
             <ToggleButton
               options={['fixed', 'percent', 'free_item'] as CouponDiscountType[]}
@@ -235,7 +247,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4" data-tour="coupon-field-validity">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}><Calendar className="size-3.5" />Valido dal *</label>
               <input
@@ -256,12 +268,12 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="coupon-field-scope">
             <label className={labelClass}>Ambito</label>
             <CouponScopePicker value={scope} onChange={setScope} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5" data-tour="coupon-field-notes">
             <label className={labelClass}><FileText className="size-3.5" />Note</label>
             <textarea
               className={`${inputClass} resize-none`}

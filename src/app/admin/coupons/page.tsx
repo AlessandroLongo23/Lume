@@ -88,7 +88,7 @@ export default function CouponsPage() {
         onConfirm={deleteAllCoupons}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6" data-tour="coupons-page">
         <PageHeader
           title="Coupon e gift card"
           subtitle="Sconti da attivare, regali da stampare."
@@ -96,7 +96,7 @@ export default function CouponsPage() {
           actions={
             <>
               {activeTab === 'gift' ? (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftModalOpen(true)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setGiftModalOpen(true)} data-tour="action-coupon-create">
                   Nuovo coupon
                 </Button>
               ) : (
