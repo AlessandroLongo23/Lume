@@ -2116,6 +2116,210 @@ const vendiGiftCardTour: LumeTour = {
   ],
 };
 
+/**
+ * Create-an-abbonamento task tour (crea-abbonamento). An abbonamento is a prepaid
+ * package of sessions: the client pays today for a block of treatments at a
+ * discounted price and redeems one per visit. Built on the Abbonamenti page via
+ * the "Nuovo abbonamento" header button → `AddAbbonamentoModal`. Same locked-overlay
+ * create-flow shape as `crea-cliente`, with two flow-specific shapes:
+ *  • "Cliente" is a custom `Select` and "Servizi inclusi" is an inline search-list
+ *    multiselect — neither exposes a value `advanceWhenFilled` can poll, and the
+ *    Select's dropdown portals at z-popover (below the tour overlay). So — like
+ *    `crea-coupon`'s destinatario — both steps spotlight the WHOLE form
+ *    (`[data-tour="abbonamento-form"]`) so the open dropdown / the service list sit
+ *    inside the spotlight hole, and advance on `abbonamento:client-selected` /
+ *    `abbonamento:service-added` (emitted from the Select's onChange and the
+ *    multiselect's onChange) rather than `advanceWhenFilled`.
+ *  • The modal CLOSES on save (unlike crea-coupon's success view), so the flow ends
+ *    like the other "create X" tours: a "find the new row" step gated on the table's
+ *    "Cerca per cliente..." search, then a wrap-up narrate over the page.
+ * "Sedute totali" and the "Prezzo" block are NumberInputs prefilled from the salon's
+ * form defaults (5 sedute, 10% sconto), so their steps gate with `advanceWhenFilled`
+ * on the inner `<input>` (enabled immediately, but re-gated if the user clears it or
+ * switches "Prezzo" to the empty "Totale manuale" field). The metodo di pagamento is
+ * a ToggleButton with a default, so it NARRATES; validità and note are optional. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Abbonamenti page (spotlight the page; omit side).
+ *  2. ACTION  — open "Nuovo abbonamento" (advance on `abbonamento:modal-open`).
+ *  3. ACTION  — pick the cliente (spotlight the form; advance on selection).
+ *  4. ACTION  — add the servizi inclusi (spotlight the form; advance on add).
+ *  5. ACTION  — sedute totali; `advanceWhenFilled` on the NumberInput's input.
+ *  6. ACTION  — prezzo (sconto % o totale manuale); `advanceWhenFilled` on the input.
+ *  7. NARRATE — the metodo di pagamento toggle (how the client pays for the package).
+ *  8. ACTION (optional) — validità: valido dal + scadenza facoltativa; editable or skippable.
+ *  9. ACTION (optional) — note interne: private note, editable or skippable.
+ * 10. ACTION  — save (advance on `abbonamento:created`).
+ * 11. ACTION  — search for the just-created package by client (gated on the search field).
+ * 12. NARRATE — wrap up over the whole page; how "Rimanenti" decreases per redemption.
+ */
+const creaAbbonamentoTour: LumeTour = {
+  tour: 'crea-abbonamento',
+  endRoute: '/admin/aiuto/crea-abbonamento',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri gli Abbonamenti',
+      content: 'Clicca su Abbonamenti nella barra laterale per aprire i pacchetti prepagati.',
+      selector: '[data-tour="nav-abbonamenti"]',
+      side: 'right',
+      advanceOnRoute: '/admin/abbonamenti',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Abbonamenti',
+      content:
+        'Questa è la sezione Abbonamenti: pacchetti di sedute prepagate per i clienti che tornano spesso. Il cliente paga oggi un blocco di trattamenti a prezzo agevolato e ne scala uno a ogni visita. Creiamone uno.',
+      selector: '[data-tour="abbonamenti-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo abbonamento"',
+      content: 'Clicca "Nuovo abbonamento" per aprire il modulo del pacchetto.',
+      selector: '[data-tour="action-abbonamento-create"]',
+      side: 'bottom',
+      completeOn: 'abbonamento:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il cliente',
+      content:
+        'Apri il menù "Cliente" e scegli a chi vendi l\'abbonamento: il pacchetto sarà legato a lui e solo lui potrà usarne le sedute.',
+      // Spotlight the whole form, not just the Select: its dropdown opens in a
+      // portal below the trigger, and only what's inside the spotlight hole is
+      // clickable through the overlay — the form's box covers the open dropdown.
+      selector: '[data-tour="abbonamento-form"]',
+      side: 'right',
+      completeOn: 'abbonamento:client-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli i servizi inclusi',
+      content:
+        'Nel riquadro "Servizi inclusi" cerca e clicca i trattamenti che il pacchetto copre. Con un solo servizio ogni seduta vale quel trattamento; con più servizi il cliente sceglie quale usare a ogni visita. Serve almeno un servizio.',
+      // Same whole-form spotlight: the services search list lives inside the form,
+      // so the hole exposes it and the user can pick a service through the overlay.
+      selector: '[data-tour="abbonamento-form"]',
+      side: 'right',
+      completeOn: 'abbonamento:service-added',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Quante sedute',
+      content:
+        'Scrivi quante sedute comprende il pacchetto, poi clicca Avanti. È il numero di volte che il cliente potrà usarlo prima di esaurirlo.',
+      selector: '[data-tour="field-abbonamento-treatments"]',
+      side: 'bottom',
+      // The anchor is the field's wrapper (label + NumberInput); gate on the real
+      // <input> inside it (TourCard polls its value to enable "Avanti").
+      advanceWhenFilled: '[data-tour="field-abbonamento-treatments"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Il prezzo del pacchetto',
+      content:
+        'Decidi quanto incassi. "Sconto %" applica una percentuale al prezzo di listino e Lume calcola il totale da incassare; "Totale manuale" ti lascia scrivere l\'importo esatto. Imposta il valore, poi clicca Avanti.',
+      selector: '[data-tour="field-abbonamento-pricing"]',
+      side: 'bottom',
+      // The anchor wraps the toggle + the value field; gate on the NumberInput's
+      // real <input> (in "Totale manuale" it starts empty, re-disabling "Avanti").
+      advanceWhenFilled: '[data-tour="field-abbonamento-pricing"] input',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Come paga il cliente',
+      content:
+        'Indica come il cliente salda il pacchetto: "Contanti", "Carta" o "Bonifico". L\'incasso entra subito nel bilancio del salone.',
+      selector: '[data-tour="field-abbonamento-payment"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Da quando, fino a quando',
+      content:
+        'Il pacchetto vale dalla data "Valido dal". Vuoi che scada? Attiva "Scadenza" e scegli la data entro cui usarlo; lasciala spenta per un pacchetto senza scadenza. Imposta le date oppure premi "Salta".',
+      selector: '[data-tour="field-abbonamento-validity"]',
+      side: 'bottom',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Note',
+      content:
+        'Una nota privata sul pacchetto, per esempio l\'accordo preso col cliente. La vedi solo tu, non il cliente. Scrivila oppure premi "Salta".',
+      selector: '[data-tour="field-abbonamento-notes"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Crea l\'abbonamento',
+      content: 'Tutto pronto. Clicca "Crea abbonamento" per registrare il pacchetto e l\'incasso.',
+      selector: '[data-tour="save-abbonamento"]',
+      side: 'top',
+      completeOn: 'abbonamento:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Ritrova l\'abbonamento',
+      content:
+        'Il nuovo pacchetto è ora nell\'elenco. Per ritrovarlo, scrivi il nome del cliente qui nella ricerca, poi clicca Avanti.',
+      selector: 'input[placeholder="Cerca per cliente..."]',
+      side: 'bottom',
+      advanceWhenFilled: 'input[placeholder="Cerca per cliente..."]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Pacchetto attivo',
+      content:
+        'Eccolo! La colonna "Rimanenti" mostra quante sedute restano: scende di una ogni volta che, registrando una fiche per quel cliente, scegli di scalare il servizio dall\'abbonamento. Da qui puoi modificarlo o seguire il credito residuo nel tempo.',
+      selector: '[data-tour="abbonamenti-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -2132,6 +2336,7 @@ export const lumeTours: LumeTour[] = [
   gestisciPrenotazioniTour,
   creaCouponTour,
   vendiGiftCardTour,
+  creaAbbonamentoTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

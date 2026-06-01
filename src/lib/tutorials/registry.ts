@@ -206,14 +206,19 @@ export const tutorials: Tutorial[] = [
     comingSoon: true,
   },
   {
-    id: 'vendi-abbonamento',
-    slug: 'vendi-abbonamento',
-    title: 'Vendere un abbonamento',
+    id: 'crea-abbonamento',
+    slug: 'crea-abbonamento',
+    title: 'Creare un abbonamento',
     summary:
-      'Configura un pacchetto di servizi prepagato, vendilo al cliente e tieni traccia delle sedute residue ad ogni fiche.',
+      'Configura un pacchetto di sedute prepagato per un cliente — servizi inclusi, numero di sedute, prezzo scontato e incasso — pronto da scalare a ogni visita.',
     complexity: 'avanzato',
     scopes: ['abbonamenti'],
-    comingSoon: true,
+    tourId: 'crea-abbonamento',
+    articleSlug: 'crea-abbonamento',
+    prerequisites: [
+      { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
+      { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
+    ],
   },
   {
     id: 'vendi-gift-card',

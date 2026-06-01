@@ -77,7 +77,7 @@ export default function AbbonamentiPage() {
         onConfirm={deleteAllAbbonamenti}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6">
+      <div data-tour="abbonamenti-page" className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Abbonamenti"
           subtitle="Pacchetti prepagati per chi torna spesso."
@@ -85,6 +85,7 @@ export default function AbbonamentiPage() {
           actions={
             <>
               <Button
+                data-tour="action-abbonamento-create"
                 variant="primary"
                 leadingIcon={Plus}
                 onClick={() => setAddOpen(true)}

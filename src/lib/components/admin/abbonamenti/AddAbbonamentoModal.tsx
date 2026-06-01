@@ -14,6 +14,7 @@ import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { ServicesMultiSelect } from './ServicesMultiSelect';
 import type { AbbonamentoPaymentMethod, AbbonamentoPricingMode } from '@/lib/types/Abbonamento';
 import { useFormDefaults, todayPlusMonthsISO } from '@/lib/hooks/useFormDefaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddAbbonamentoModalProps {
   isOpen: boolean;
@@ -123,6 +124,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
         notes: notes.trim() || null,
       });
       messagePopup.getState().success('Abbonamento creato.');
+      emitTourEvent('abbonamento:created');
       onClose();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Errore sconosciuto';
@@ -149,8 +151,10 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
       classes="max-w-2xl"
       contentClasses="overflow-y-auto"
       confirmText={isSubmitting ? 'Creazione…' : 'Crea abbonamento'}
+      confirmDataTour="save-abbonamento"
+      onEnterComplete={() => emitTourEvent('abbonamento:modal-open')}
     >
-      <div className="flex flex-col gap-5">
+      <div data-tour="abbonamento-form" className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}><User className="size-3.5" />Cliente *</label>
           <Select
@@ -158,14 +162,17 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
             labelKey="fullName"
             valueKey="id"
             value={clientId}
-            onChange={setClientId}
+            onChange={(v) => { setClientId(v); emitTourEvent('abbonamento:client-selected'); }}
             placeholder="Cerca cliente…"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Servizi inclusi *</label>
-          <ServicesMultiSelect selectedIds={scopeIds} onChange={setScopeIds} />
+          <ServicesMultiSelect
+            selectedIds={scopeIds}
+            onChange={(ids) => { setScopeIds(ids); if (ids.length > 0) emitTourEvent('abbonamento:service-added'); }}
+          />
           {scopeIds.length > 0 && (
             <p className="text-xs text-zinc-500">
               {scopeIds.length === 1
@@ -175,7 +182,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div data-tour="field-abbonamento-treatments" className="flex flex-col gap-1.5">
           <label className={labelClass}><Hash className="size-3.5" />Sedute totali *</label>
           <NumberInput
             value={totalTreatments}
@@ -188,7 +195,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div data-tour="field-abbonamento-pricing" className="flex flex-col gap-2">
           <label className={labelClass}>Prezzo *</label>
           <ToggleButton
             options={['percent', 'manual'] as AbbonamentoPricingMode[]}
@@ -243,7 +250,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div data-tour="field-abbonamento-payment" className="flex flex-col gap-1.5">
           <label className={labelClass}>Metodo di pagamento *</label>
           <ToggleButton
             options={['cash', 'card', 'transfer'] as AbbonamentoPaymentMethod[]}
@@ -255,7 +262,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div data-tour="field-abbonamento-validity" className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}><Calendar className="size-3.5" />Valido dal *</label>
             <input
@@ -283,7 +290,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div data-tour="field-abbonamento-notes" className="flex flex-col gap-1.5">
           <label className={labelClass}><FileText className="size-3.5" />Note</label>
           <textarea
             className={`${inputClass} resize-none`}
