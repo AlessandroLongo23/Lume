@@ -29,7 +29,6 @@ import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
@@ -1195,20 +1194,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   Incassa
                 </Button>
               )}
-              <span data-tour="fiche-delete" className="inline-flex">
-                <DropdownMenu
-                  items={[
-                    {
-                      label: 'Elimina fiche',
-                      icon: Trash2,
-                      destructive: true,
-                      onClick: () => setShowDeleteConfirm(true),
-                    },
-                  ]}
-                  width="w-56"
-                  ariaLabel="Altre azioni"
-                />
-              </span>
+              <Button
+                variant="destructive-outline"
+                leadingIcon={Trash2}
+                onClick={() => setShowDeleteConfirm(true)}
+                data-tour="fiche-delete"
+              >
+                Elimina
+              </Button>
             </>
           ) : isEdit && isPaymentTab && !isCompleted ? (
             <Button

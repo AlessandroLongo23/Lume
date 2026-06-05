@@ -47,8 +47,6 @@ interface BeginResizeArgs {
   pointer: { clientX: number; clientY: number };
 }
 
-const NOW_GUARD_MS = 60_000;
-
 /** Build a fiche_id → client_id map for cross-operator client-overlap detection. */
 function getFicheClientMap(): Map<string, string> {
   const fiches = useFichesStore.getState().fiches;
@@ -190,7 +188,7 @@ export function useCalendarDrag({ getSchedule, pixelsPerSlot, timeStep, onDrop }
         end: new Date(newEnd),
       };
 
-      let preview: PreviewSegment[] = [previewAnchor];
+      const preview: PreviewSegment[] = [previewAnchor];
 
       if (cascade) {
         const allFs = useFicheServicesStore.getState().fiche_services;
@@ -220,14 +218,6 @@ export function useCalendarDrag({ getSchedule, pixelsPerSlot, timeStep, onDrop }
           }
         }
       }
-
-      const now = Date.now();
-      preview = preview.map((p) => {
-        if (p.start.getTime() < now - NOW_GUARD_MS) {
-          return { ...p, start: new Date(now) };
-        }
-        return p;
-      });
 
       const ficheClientMap = getFicheClientMap();
       const conflict = wouldBlockCollide({

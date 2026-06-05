@@ -4,7 +4,7 @@ import { forwardRef, type ButtonHTMLAttributes, type ComponentType, type SVGProp
 import { cn } from '@/lib/utils';
 import { Slot } from './Slot';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'destructive-outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
@@ -60,6 +60,15 @@ const variantClasses: Record<ButtonVariant, string> = {
     'hover:bg-[var(--lume-button-destructive-bg-hover)]',
     'hover:-translate-y-px',
     'max-md:active:translate-y-0',
+  ),
+  // Outlined destructive: same card shape as `secondary` (so it sits naturally
+  // beside neutral actions) but carries the danger identity — red text/icon,
+  // danger-tinted border, soft danger wash on hover. The confirm dialog stays
+  // the loud moment; this is the quiet, visible affordance.
+  'destructive-outline': cn(
+    'bg-[var(--lume-button-secondary-bg)] text-[var(--lume-danger-fg)]',
+    'border border-[var(--lume-danger-border)]',
+    'hover:bg-[var(--lume-danger-bg)]',
   ),
 };
 
