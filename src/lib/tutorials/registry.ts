@@ -235,14 +235,18 @@ export const tutorials: Tutorial[] = [
     ],
   },
   {
-    id: 'gestisci-magazzino',
-    slug: 'gestisci-magazzino',
-    title: 'Gestire il magazzino',
+    id: 'gestione-giacenza',
+    slug: 'gestione-giacenza',
+    title: 'Gestire la giacenza',
     summary:
-      'Tieni sotto controllo le scorte: aggiorna le quantità, imposta le soglie minime e gestisci gli ordini ai fornitori.',
-    complexity: 'base',
+      'Attiva il tracciamento delle scorte, imposta giacenze e soglie minime, e tieni le quantità aggiornate con un clic — con l\'avviso rosso quando un prodotto sta finendo.',
+    complexity: 'avanzato',
     scopes: ['prodotti'],
-    comingSoon: true,
+    tourId: 'gestione-giacenza',
+    articleSlug: 'gestione-giacenza',
+    prerequisites: [
+      { label: 'almeno un prodotto', met: hasProducts, tutorialId: 'crea-prodotto' },
+    ],
   },
   {
     id: 'configura-prenotazioni-online',

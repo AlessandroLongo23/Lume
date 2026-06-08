@@ -2320,6 +2320,105 @@ const creaAbbonamentoTour: LumeTour = {
   ],
 };
 
+/**
+ * Manage-stock tour (gestione-giacenza). A feature tour of the Magazzino page, NOT
+ * a create flow: it teaches the three giacenza concepts where they live — the
+ * per-row Giacenza adjuster (+/−), the "Soglia Min." column with its red scorte-basse
+ * alert, and the product form's "Gestione Scorte" section (initial stock + per-product
+ * threshold). Like `gestisci-prenotazioni`, the table-overview steps spotlight the
+ * STABLE whole-page anchor (`magazzino-page`, omit side ⇒ fixed-centered card) rather
+ * than a single cell: the Giacenza / Soglia columns sit at the far right of a wide,
+ * horizontally-scrolling table, so a per-cell spotlight (`stock-adjuster`) can land
+ * off-screen. The +/− buttons are NOT triggered — a click writes stock to the DB, so
+ * per the `modifica-appuntamento` precedent they're narrated, not forced. Turning
+ * tracking on/off lives in Impostazioni → Magazzino (a nested settings page); per the
+ * chosen scope it is NARRATED in the closing step, not navigated into (the article
+ * covers it with a screenshot). The flow ends INSIDE the open "Nuovo Prodotto" modal
+ * on its Gestione Scorte section (like `crea-coupon` ends on its success view) —
+ * "Fine" → endRoute unmounts the page, discarding the empty form, so no throwaway row
+ * is created. The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the Magazzino page (whole page; omit side).
+ *  2. NARRATE — the Giacenza column + the +/− adjuster (whole page).
+ *  3. NARRATE — the Soglia Min. column + the red scorte-basse alert (whole page).
+ *  4. ACTION  — open "Nuovo Prodotto" (advance on `product:modal-open`).
+ *  5. NARRATE — the Gestione Scorte section (giacenza iniziale + soglia minima); closes
+ *     by pointing to Impostazioni → Magazzino to attivare il tracciamento; ends here.
+ */
+const gestioneGiacenzaTour: LumeTour = {
+  tour: 'gestione-giacenza',
+  endRoute: '/admin/aiuto/gestione-giacenza',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Magazzino',
+      content: 'Clicca su Magazzino nella barra laterale per aprire i tuoi prodotti e le loro scorte.',
+      selector: '[data-tour="nav-magazzino"]',
+      side: 'right',
+      advanceOnRoute: '/admin/magazzino',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Tieni d\'occhio le scorte',
+      content:
+        'Questo è il Magazzino. Con il tracciamento attivo ogni prodotto porta con sé la sua giacenza — quante unità hai — e una soglia minima che ti avvisa quando sta finendo. Vediamo come funziona.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: whole-page spotlight ⇒ fixed-centered card (never overflows).
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La giacenza, sempre aggiornata',
+      content:
+        'Nella colonna "Giacenza", in fondo a ogni riga, vedi le unità rimaste. I pulsanti − e + le aggiornano al volo: ogni clic toglie o aggiunge un pezzo e Lume salva da solo. Perfetto per correggere una scorta dopo un conteggio.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'L\'avviso scorte basse',
+      content:
+        'Accanto c\'è la "Soglia Min.": il livello sotto cui non vuoi scendere. Quando la giacenza tocca o scende sotto la soglia, il numero si tinge di rosso — un colpo d\'occhio per sapere cosa riordinare.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Imposta giacenza e soglia',
+      content:
+        'Giacenza e soglia si impostano su ogni prodotto. Clicca "Nuovo Prodotto" per vedere dove — vale anche quando apri e modifichi un prodotto già esistente.',
+      selector: '[data-tour="action-product-create"]',
+      side: 'bottom',
+      completeOn: 'product:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione "Gestione Scorte"',
+      content:
+        'Eccola, in fondo al modulo. In "Giacenza Iniziale" scrivi le unità che hai ora; in "Soglia Minima" il livello dell\'avviso rosso. Tutto qui. Per attivare o disattivare il tracciamento e scegliere la soglia predefinita dei nuovi prodotti, vai in Impostazioni → Magazzino.',
+      selector: '[data-tour="product-stock-section"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -2337,6 +2436,7 @@ export const lumeTours: LumeTour[] = [
   creaCouponTour,
   vendiGiftCardTour,
   creaAbbonamentoTour,
+  gestioneGiacenzaTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

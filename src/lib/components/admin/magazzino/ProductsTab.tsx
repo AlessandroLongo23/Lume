@@ -92,7 +92,7 @@ function StockAdjuster({ productId, initialQuantity, minThreshold }: {
   };
 
   return (
-    <div className="flex items-center gap-1" data-no-row-click>
+    <div className="flex items-center gap-1" data-no-row-click data-tour="stock-adjuster">
       <button
         onClick={(e) => adjust(e, -1)}
         className="size-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"

@@ -139,7 +139,7 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
       )}
 
       {trackInventory && (
-        <div className="flex flex-col gap-4 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+        <div className="flex flex-col gap-4 pt-2 border-t border-zinc-200 dark:border-zinc-700" data-tour="product-stock-section">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Gestione Scorte</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
