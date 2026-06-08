@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { Manufacturer } from '@/lib/types/Manufacturer';
 
 interface AddMarchioModalProps {
@@ -40,6 +41,8 @@ export function AddMarchioModal({ isOpen, onClose, selectedManufacturer }: AddMa
       } else {
         await addManufacturer({ name: form.name.trim() });
         messagePopup.getState().success('Marchio aggiunto.');
+        // Advances an interactive guide's "save" step on a successful create.
+        emitTourEvent('manufacturer:created');
       }
       onClose();
     } catch (err) {
@@ -59,12 +62,15 @@ export function AddMarchioModal({ isOpen, onClose, selectedManufacturer }: AddMa
       subtitle="Marchio o produttore dei prodotti del magazzino"
       confirmText={selectedManufacturer ? 'Aggiorna' : 'Aggiungi'}
       classes="max-w-sm"
+      confirmDataTour="save-manufacturer"
+      onEnterComplete={() => emitTourEvent('manufacturer:modal-open')}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
           <input
             type="text"
+            data-tour="field-manufacturer-name"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             className={inputClass}

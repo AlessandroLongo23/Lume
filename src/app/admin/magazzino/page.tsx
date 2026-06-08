@@ -21,6 +21,7 @@ import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS } from '@/lib/const/tab-defaults';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 type Tab = 'prodotti' | 'categorie' | 'fornitori' | 'marchi';
 
@@ -169,15 +170,15 @@ export default function MagazzinoPage() {
                   Nuovo Prodotto
                 </Button>
               ) : activeTab === 'categorie' ? (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setCategorieAddTrigger((n) => n + 1)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setCategorieAddTrigger((n) => n + 1)} data-tour="action-product-category-create">
                   Nuova Categoria
                 </Button>
               ) : activeTab === 'fornitori' ? (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setFornitoriAddTrigger((n) => n + 1)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setFornitoriAddTrigger((n) => n + 1)} data-tour="action-supplier-create">
                   Nuovo Fornitore
                 </Button>
               ) : (
-                <Button variant="primary" leadingIcon={Plus} onClick={() => setMarchiAddTrigger((n) => n + 1)}>
+                <Button variant="primary" leadingIcon={Plus} onClick={() => setMarchiAddTrigger((n) => n + 1)} data-tour="action-manufacturer-create">
                   Nuovo Marchio
                 </Button>
               )}
@@ -207,7 +208,8 @@ export default function MagazzinoPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                data-tour={`tab-magazzino-${id}`}
+                onClick={() => { setActiveTab(id); emitTourEvent(`magazzino:tab-${id}`); }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   isActive
                     ? 'border-primary text-primary-hover dark:text-primary/70'

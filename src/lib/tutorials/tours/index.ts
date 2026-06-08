@@ -2419,6 +2419,238 @@ const gestioneGiacenzaTour: LumeTour = {
   ],
 };
 
+/**
+ * Set-up-the-product-registries tour. Unlike the single-entity "create X" tours,
+ * this one walks the THREE anagrafiche that organize the Magazzino — marchi
+ * (manufacturers), fornitori (suppliers) and categorie prodotto — each living in
+ * its own TAB of the Magazzino page, and creates one of each. Two flow-specific
+ * shapes recur three times:
+ *  • A TAB step (`completeOn:'magazzino:tab-<id>'`, emitted from the tab button's
+ *    onClick) switches to a registry's tab; the matching header "Nuovo …" button
+ *    only renders while that tab is active, so the create step right after it can
+ *    anchor on `action-<entity>-create`.
+ *  • Each create is the canonical modal flow: open (`<entity>:modal-open` from the
+ *    modal's onEnterComplete) → fill the required nome (`advanceWhenFilled`) →
+ *    optional field (`optional:true`) → save (`<entity>:created`).
+ * All three modals are plain-input forms (no Select), so nome gates with
+ * `advanceWhenFilled` and the optional fields never trap the user. The flow:
+ *  0. ACTION  — open the Magazzino page (advance on route).
+ *  1. NARRATE — introduce the page and its three registries (whole page).
+ *  2-5.   MARCHI    — open tab → open modal → nome → save.
+ *  6-10.  FORNITORI — open tab → open modal → nome → optional contatti → save.
+ *  11-15. CATEGORIE — open tab → open modal → nome → optional colore → save.
+ * 16. NARRATE — wrap up: products can now carry marca/categoria/fornitore (whole page).
+ * No `startRoute`: step 0 is itself the navigation action.
+ */
+const marcheFornitoriTour: LumeTour = {
+  tour: 'marche-fornitori',
+  endRoute: '/admin/aiuto/marche-fornitori',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri il Magazzino',
+      content: 'Clicca su Magazzino nella barra laterale per aprire prodotti e anagrafiche.',
+      selector: '[data-tour="nav-magazzino"]',
+      side: 'right',
+      advanceOnRoute: '/admin/magazzino',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Le anagrafiche del magazzino',
+      content:
+        'Questo è il Magazzino. Oltre ai Prodotti, ha tre anagrafiche che li tengono in ordine: i Marchi (il brand), i Fornitori (da chi li compri) e le Categorie (come li raggruppi). Prepariamole una alla volta.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    // ── MARCHI ──────────────────────────────────────────────────────────────
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda "Marchi"',
+      content:
+        'Clicca sulla scheda "Marchi". Qui registri il brand dei tuoi prodotti — L\'Oréal, Wella, Davines… — così puoi raggruppare e filtrare il magazzino per produttore.',
+      selector: '[data-tour="tab-magazzino-marchi"]',
+      side: 'bottom',
+      completeOn: 'magazzino:tab-marchi',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo Marchio"',
+      content: 'Clicca "Nuovo Marchio" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-manufacturer-create"]',
+      side: 'bottom',
+      completeOn: 'manufacturer:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome del marchio',
+      content:
+        'Scrivi il nome del marchio, per esempio "Redken", poi clicca Avanti. Il nome è l\'unico campo richiesto.',
+      selector: '[data-tour="field-manufacturer-name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-manufacturer-name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva il marchio',
+      content: 'Clicca "Aggiungi" per salvare il marchio.',
+      selector: '[data-tour="save-manufacturer"]',
+      side: 'top',
+      completeOn: 'manufacturer:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    // ── FORNITORI ───────────────────────────────────────────────────────────
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda "Fornitori"',
+      content:
+        'Ora clicca sulla scheda "Fornitori". Qui tieni l\'elenco di chi ti rifornisce: serve per gli ordini di magazzino, dove scegli il fornitore a cui inviare la richiesta.',
+      selector: '[data-tour="tab-magazzino-fornitori"]',
+      side: 'bottom',
+      completeOn: 'magazzino:tab-fornitori',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo Fornitore"',
+      content: 'Clicca "Nuovo Fornitore" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-supplier-create"]',
+      side: 'bottom',
+      completeOn: 'supplier:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome del fornitore',
+      content:
+        'Scrivi il nome del fornitore, per esempio "Distribuzione Sud Srl", poi clicca Avanti. Il nome è l\'unico campo richiesto.',
+      selector: '[data-tour="field-supplier-name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-supplier-name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Recapiti del fornitore',
+      content:
+        'Città, telefono ed email sono facoltativi ma tornano utili: la città per ritrovarlo, telefono ed email per contattarlo quando fai un ordine. Compilali oppure premi "Salta".',
+      // Spotlight the whole form so all three contact inputs are inside the
+      // spotlight hole and reachable under the click-locking overlay.
+      selector: '[data-tour="supplier-form"]',
+      side: 'right',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva il fornitore',
+      content: 'Clicca "Aggiungi" per salvare il fornitore.',
+      selector: '[data-tour="save-supplier"]',
+      side: 'top',
+      completeOn: 'supplier:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    // ── CATEGORIE ───────────────────────────────────────────────────────────
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri la scheda "Categorie"',
+      content:
+        'Infine clicca sulla scheda "Categorie". Le categorie raggruppano i prodotti per tipo — Shampoo, Colore, Styling… — per tenere il magazzino ordinato e leggere meglio i consumi.',
+      selector: '[data-tour="tab-magazzino-categorie"]',
+      side: 'bottom',
+      completeOn: 'magazzino:tab-categorie',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuova Categoria"',
+      content: 'Clicca "Nuova Categoria" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-product-category-create"]',
+      side: 'bottom',
+      completeOn: 'product-category:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scrivi il nome della categoria',
+      content:
+        'Scrivi il nome della categoria, per esempio "Trattamenti", poi clicca Avanti. Il nome è l\'unico campo richiesto.',
+      selector: '[data-tour="field-product-category-name"]',
+      side: 'bottom',
+      advanceWhenFilled: '[data-tour="field-product-category-name"]',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      optional: true,
+      title: 'Scegli il colore',
+      content:
+        'Scegli una tinta: è il colore con cui la categoria appare accanto ai prodotti. Ha già un valore predefinito, quindi puoi anche premere "Salta" (anche la descrizione, qui sopra, è facoltativa).',
+      selector: '[data-tour="field-product-category-color"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva la categoria',
+      content: 'Clicca "Aggiungi" per salvare la categoria.',
+      selector: '[data-tour="save-product-category"]',
+      side: 'top',
+      completeOn: 'product-category:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Magazzino in ordine',
+      content:
+        'Fatto! Ora, quando crei o modifichi un prodotto, puoi assegnargli marca, categoria e fornitore — così filtri il magazzino a colpo d\'occhio e, con un fornitore in elenco, sei pronto a creare un ordine di riassortimento.',
+      selector: '[data-tour="magazzino-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -2437,6 +2669,7 @@ export const lumeTours: LumeTour[] = [
   vendiGiftCardTour,
   creaAbbonamentoTour,
   gestioneGiacenzaTour,
+  marcheFornitoriTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

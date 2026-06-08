@@ -7,6 +7,7 @@ import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { CATEGORY_PICKER_COLORS, DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { ProductCategory } from '@/lib/types/ProductCategory';
 
 interface AddCategoryModalProps {
@@ -50,6 +51,8 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
       } else {
         await addProductCategory({ name: form.name.trim(), description: form.description.trim(), color: form.color });
         messagePopup.getState().success('Categoria aggiunta.');
+        // Advances an interactive guide's "save" step on a successful create.
+        emitTourEvent('product-category:created');
       }
       await fetchProductCategories();
       onClose();
@@ -87,6 +90,8 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
       subtitle="Categoria per i prodotti del magazzino"
       confirmText={selectedCategory ? 'Aggiorna' : 'Aggiungi'}
       classes="max-w-sm"
+      confirmDataTour="save-product-category"
+      onEnterComplete={() => emitTourEvent('product-category:modal-open')}
       footerContent={
         selectedCategory && (
           <Button
@@ -107,6 +112,7 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
             <span className="size-5 rounded-full shrink-0 border border-zinc-300 dark:border-zinc-600" style={{ backgroundColor: form.color }} />
             <input
               type="text"
+              data-tour="field-product-category-name"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className={inputClass}
@@ -125,7 +131,7 @@ export function AddCategoryModal({ isOpen, onClose, selectedCategory }: AddCateg
             placeholder="Descrizione opzionale"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5" data-tour="field-product-category-color">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Colore</label>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORY_PICKER_COLORS.map((c) => (

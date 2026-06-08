@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { Supplier } from '@/lib/types/Supplier';
 
 interface AddFornitoreModalProps {
@@ -51,6 +52,8 @@ export function AddFornitoreModal({ isOpen, onClose, selectedSupplier }: AddForn
       } else {
         await addSupplier(payload);
         messagePopup.getState().success('Fornitore aggiunto.');
+        // Advances an interactive guide's "save" step on a successful create.
+        emitTourEvent('supplier:created');
       }
       onClose();
     } catch (err) {
@@ -70,12 +73,15 @@ export function AddFornitoreModal({ isOpen, onClose, selectedSupplier }: AddForn
       subtitle="Aggiungi o modifica un fornitore"
       confirmText={selectedSupplier ? 'Aggiorna' : 'Aggiungi'}
       classes="max-w-md"
+      confirmDataTour="save-supplier"
+      onEnterComplete={() => emitTourEvent('supplier:modal-open')}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4" data-tour="supplier-form">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
           <input
             type="text"
+            data-tour="field-supplier-name"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             className={inputClass}

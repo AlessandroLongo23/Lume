@@ -249,6 +249,21 @@ export const tutorials: Tutorial[] = [
     ],
   },
   {
+    id: 'marche-fornitori',
+    slug: 'marche-fornitori',
+    title: 'Marche, fornitori e categorie prodotto',
+    summary:
+      'Crea le anagrafiche che tengono in ordine il magazzino — i marchi dei prodotti, i fornitori da cui li acquisti e le categorie con cui li raggruppi.',
+    complexity: 'avanzato',
+    scopes: ['prodotti'],
+    tourId: 'marche-fornitori',
+    articleSlug: 'marche-fornitori',
+    // No prerequisites: marchi, fornitori e categorie prodotto are standalone
+    // registries that need no pre-existing data (unlike a product, which the
+    // crea-prodotto tour chains). They are themselves the building blocks a
+    // future crea-ordine tutorial will chain to (a fornitore must exist first).
+  },
+  {
     id: 'configura-prenotazioni-online',
     slug: 'configura-prenotazioni-online',
     title: 'Attivare le prenotazioni online',
