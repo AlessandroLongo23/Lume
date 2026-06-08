@@ -2651,6 +2651,150 @@ const marcheFornitoriTour: LumeTour = {
   ],
 };
 
+/**
+ * Create-a-supplier-order task tour (crea-ordine). Same locked-overlay create-flow
+ * shape as `crea-cliente`, on the Ordini page. An order in Lume is intentionally
+ * light — it carries only a fornitore, una data/ora and uno stato (no order-line
+ * items in the UI) — so the form has exactly three fields, and "ricezione merce"
+ * means moving the stato to "Consegnato" once the goods arrive (narrated after the
+ * save, not a separate screen). Two field-shapes drive the step design:
+ *  • Fornitore is a custom `Select` whose dropdown portals at z-popover (below the
+ *    tour overlay): like `crea-servizio`'s categoria, the step spotlights the WHOLE
+ *    form (`[data-tour="order-form"]`, side:'right') so the open dropdown sits inside
+ *    the spotlight hole, and advances on `order:supplier-selected` (emitted from the
+ *    Select's onChange) — `advanceWhenFilled` can't read a value off a Select.
+ *  • Data e ora is a plain `<input type="datetime-local">`, so it gates with
+ *    `advanceWhenFilled` on the input itself.
+ *  • Stato has a sensible default ("In attesa") and its Select dropdown would open
+ *    below the last field — outside the form box, so unreachable through the overlay.
+ *    It is therefore NARRATED (not an action): the user leaves it on the default and
+ *    learns the lifecycle, which the post-save steps complete.
+ * The flow:
+ *  0. ACTION  — click the sidebar link (advance on route).
+ *  1. NARRATE — introduce the whole Ordini page (spotlight the page; omit side).
+ *  2. ACTION  — open the modal (advance on `order:modal-open`).
+ *  3. ACTION  — pick the fornitore (spotlight the form; advance on selection).
+ *  4. ACTION  — pick data e ora (`advanceWhenFilled` on the datetime input).
+ *  5. NARRATE — the stato starts at "In attesa".
+ *  6. ACTION  — save (advance on `order:created`).
+ *  7. NARRATE — the new order is in the table with its stato (whole page).
+ *  8. NARRATE — update the stato as the order progresses; "Consegnato" = merce
+ *     ricevuta (whole page). Last step → endRoute.
+ * No `startRoute`: step 0 is itself the navigation action.
+ */
+const creaOrdineTour: LumeTour = {
+  tour: 'crea-ordine',
+  endRoute: '/admin/aiuto/crea-ordine',
+  steps: [
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri gli Ordini',
+      content: 'Clicca su Ordini nella barra laterale per aprire i tuoi ordini ai fornitori.',
+      selector: '[data-tour="nav-ordini"]',
+      side: 'right',
+      advanceOnRoute: '/admin/ordini',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'La sezione Ordini',
+      content:
+        'Questa è la sezione Ordini: qui tieni traccia delle richieste di riassortimento che invii ai fornitori, ognuna con la sua data e il suo stato. Creiamone una nuova.',
+      selector: '[data-tour="ordini-page"]',
+      // No `side`: NextStep then renders the card fixed-centered in the viewport,
+      // which never overflows. Anchored placement can't fit beside a spotlight
+      // taller than the screen (the whole page) — its clamp only flips once.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Apri "Nuovo Ordine"',
+      content: 'Clicca "Nuovo Ordine" per aprire il modulo di inserimento.',
+      selector: '[data-tour="action-order-create"]',
+      side: 'bottom',
+      completeOn: 'order:modal-open',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Scegli il fornitore',
+      content:
+        'Apri il menù "Fornitore" e scegli a chi è destinato l\'ordine. Trovi qui i fornitori che hai registrato in Magazzino → Fornitori. È il primo dei due campi obbligatori.',
+      // Spotlight the whole form, not just the Select: its dropdown opens in a
+      // portal below the trigger, and only what's inside the spotlight hole is
+      // clickable through the overlay — the form's box covers the open dropdown.
+      selector: '[data-tour="order-form"]',
+      side: 'right',
+      completeOn: 'order:supplier-selected',
+      pointerPadding: 10,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Imposta data e ora',
+      content:
+        'Scegli la data e l\'ora dell\'ordine, poi clicca Avanti. È il momento in cui invii la richiesta al fornitore — l\'altro campo obbligatorio.',
+      selector: '[data-tour="field-order-datetime"]',
+      side: 'top',
+      advanceWhenFilled: '[data-tour="field-order-datetime"]',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Lo stato dell\'ordine',
+      content:
+        'Ogni ordine parte da "In attesa". Più avanti lo aggiornerai man mano che procede: "Confermato" quando il fornitore accetta, "Consegnato" quando la merce arriva, "Annullato" se salta. Per ora lascialo così.',
+      selector: '[data-tour="field-order-status"]',
+      side: 'top',
+      pointerPadding: 8,
+      pointerRadius: 10,
+    },
+    {
+      mode: 'action',
+      icon: null,
+      title: 'Salva l\'ordine',
+      content: 'Tutto pronto. Clicca "Aggiungi" per registrare l\'ordine.',
+      selector: '[data-tour="save-order"]',
+      side: 'top',
+      completeOn: 'order:created',
+      pointerPadding: 6,
+      pointerRadius: 8,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Ecco il tuo ordine',
+      content:
+        'Eccolo nell\'elenco, con la sua data e lo stato "In attesa". Clicca l\'icona con la freccia per aprirne il dettaglio, oppure la matita per modificarlo.',
+      selector: '[data-tour="ordini-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+    {
+      mode: 'narrate',
+      icon: null,
+      title: 'Aggiorna lo stato e ricevi la merce',
+      content:
+        'Man mano che l\'ordine procede, aggiorna il suo stato dalla matita "Modifica" o dal dettaglio: portalo a "Consegnato" quando la merce arriva. Così l\'elenco riflette sempre cosa hai già ricevuto e cosa stai ancora aspettando.',
+      selector: '[data-tour="ordini-page"]',
+      // No `side`: see note above — whole-page spotlight ⇒ fixed-centered card.
+      pointerPadding: 8,
+      pointerRadius: 12,
+    },
+  ],
+};
+
 export const lumeTours: LumeTour[] = [
   introTour,
   creaClienteTour,
@@ -2670,6 +2814,7 @@ export const lumeTours: LumeTour[] = [
   creaAbbonamentoTour,
   gestioneGiacenzaTour,
   marcheFornitoriTour,
+  creaOrdineTour,
 ];
 
 export function getTour(id: string | null | undefined): LumeTour | null {

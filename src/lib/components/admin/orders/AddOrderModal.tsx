@@ -7,6 +7,7 @@ import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddOrderModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await addOrder({ ...order, datetime: new Date(order.datetime) as any });
+      emitTourEvent('order:created');
       messagePopup.getState().success('Ordine aggiunto con successo');
       setOrder(emptyOrder());
       onClose();
@@ -47,21 +49,21 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
   const labelClass = 'flex flex-row items-center gap-2';
 
   return (
-    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Aggiungi ordine" subtitle="Gestione ordini" classes="max-w-lg">
-      <div className="flex flex-col gap-4">
+    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Aggiungi ordine" subtitle="Gestione ordini" classes="max-w-lg" confirmDataTour="save-order" onEnterComplete={() => emitTourEvent('order:modal-open')}>
+      <div data-tour="order-form" className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Truck className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Fornitore *</span></label>
-          <Select options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => set('supplier_id', v)} placeholder="Seleziona fornitore" />
+          <Select options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => { set('supplier_id', v); emitTourEvent('order:supplier-selected'); }} placeholder="Seleziona fornitore" />
           {errors.supplier_id && <p className="text-xs text-red-500">{errors.supplier_id}</p>}
         </div>
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data e ora *</span></label>
-          <input type="datetime-local" className={inputClass} value={order.datetime} onChange={(e) => set('datetime', e.target.value)} />
+          <input data-tour="field-order-datetime" type="datetime-local" className={inputClass} value={order.datetime} onChange={(e) => set('datetime', e.target.value)} />
           {errors.datetime && <p className="text-xs text-red-500">{errors.datetime}</p>}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div data-tour="field-order-status" className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
           <Select
             value={order.status}

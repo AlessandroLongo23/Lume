@@ -1,5 +1,5 @@
 import type { Tutorial } from './types';
-import { hasClients, hasServices, hasOperators, hasProducts, hasFiches, hasOpenFiches } from './prerequisites';
+import { hasClients, hasServices, hasOperators, hasProducts, hasSuppliers, hasFiches, hasOpenFiches } from './prerequisites';
 
 /**
  * Source of truth for the Help Center hub. Each entry is a learning topic; the
@@ -260,8 +260,25 @@ export const tutorials: Tutorial[] = [
     articleSlug: 'marche-fornitori',
     // No prerequisites: marchi, fornitori e categorie prodotto are standalone
     // registries that need no pre-existing data (unlike a product, which the
-    // crea-prodotto tour chains). They are themselves the building blocks a
-    // future crea-ordine tutorial will chain to (a fornitore must exist first).
+    // crea-prodotto tour chains). They are themselves the building blocks the
+    // crea-ordine tutorial chains to (a fornitore must exist first).
+  },
+  {
+    id: 'crea-ordine',
+    slug: 'crea-ordine',
+    title: 'Creare un ordine a un fornitore',
+    summary:
+      'Registra una richiesta di riassortimento a un fornitore — con data e stato — e segui l\'ordine da "In attesa" fino a "Consegnato" quando la merce arriva.',
+    complexity: 'avanzato',
+    scopes: ['prodotti'],
+    tourId: 'crea-ordine',
+    articleSlug: 'crea-ordine',
+    // Only a fornitore is required: an order in Lume carries a supplier, a
+    // datetime and a status (no order-line items in the form), so products are
+    // not a prerequisite. The fornitore registry is taught by marche-fornitori.
+    prerequisites: [
+      { label: 'almeno un fornitore', met: hasSuppliers, tutorialId: 'marche-fornitori' },
+    ],
   },
   {
     id: 'configura-prenotazioni-online',

@@ -99,7 +99,7 @@ export default function OrdiniPage() {
         onConfirm={deleteAllOrders}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-8">
+      <div data-tour="ordini-page" className="flex-1 min-h-0 flex flex-col gap-8">
         <PageHeader
           title="Ordini"
           subtitle="Riordina prima che gli scaffali si svuotino."
@@ -115,6 +115,7 @@ export default function OrdiniPage() {
                 icons={[TableProperties, CalendarDays]}
               />
               <Button
+                data-tour="action-order-create"
                 variant="primary"
                 leadingIcon={ShoppingCart}
                 onClick={() => setShowAdd(true)}

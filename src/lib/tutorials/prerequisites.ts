@@ -11,6 +11,7 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useProductsStore } from '@/lib/stores/products';
+import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
@@ -20,6 +21,7 @@ export const hasClients = (): boolean => useClientsStore.getState().clients.leng
 export const hasServices = (): boolean => useServicesStore.getState().services.length > 0;
 export const hasOperators = (): boolean => useOperatorsStore.getState().operators.length > 0;
 export const hasProducts = (): boolean => useProductsStore.getState().products.length > 0;
+export const hasSuppliers = (): boolean => useSuppliersStore.getState().suppliers.length > 0;
 export const hasCoupons = (): boolean => useCouponsStore.getState().coupons.length > 0;
 export const hasFiches = (): boolean => useFichesStore.getState().fiches.length > 0;
 /** True when the salon has at least one fiche that is NOT yet closed/paid —
