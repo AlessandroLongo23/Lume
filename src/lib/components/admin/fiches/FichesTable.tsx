@@ -129,12 +129,19 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
             })
             .filter((e): e is { id: string; name: string; color: string } => e !== null);
           if (entries.length === 0) return <span className="text-zinc-400">—</span>;
+          // Keep every row exactly one line tall: chips never wrap. Variable row
+          // heights make useFitPageSize's "rows that fit" count oscillate and the
+          // table flicker on narrow screens. Surplus services collapse into a +N
+          // chip; the full list is one click away in the fiche modal.
+          const MAX_CHIPS = 3;
+          const shown = entries.slice(0, MAX_CHIPS);
+          const overflow = entries.length - shown.length;
           return (
-            <div className="flex flex-wrap gap-1">
-              {entries.map((entry) => (
+            <div className="flex items-center gap-1 overflow-hidden">
+              {shown.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
+                  className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap"
                   style={{
                     backgroundColor: `${entry.color}1A`,
                     borderColor: `${entry.color}33`,
@@ -144,6 +151,14 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
                   {entry.name}
                 </span>
               ))}
+              {overflow > 0 && (
+                <span
+                  className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 whitespace-nowrap"
+                  title={entries.slice(MAX_CHIPS).map((e) => e.name).join(', ')}
+                >
+                  +{overflow}
+                </span>
+              )}
             </div>
           );
         },

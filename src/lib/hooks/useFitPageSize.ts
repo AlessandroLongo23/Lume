@@ -18,6 +18,17 @@ export function useFitPageSize<T extends HTMLElement = HTMLDivElement>({
   const ref = useRef<T>(null);
   const [pageSize, setPageSize] = useState(fallback);
 
+  // Anti-oscillation state. The fitting count is derived from the measured row
+  // height; if a row's height depends on which rows are currently shown (e.g. a
+  // cell whose content wraps to a variable number of lines), the count becomes a
+  // function of pageSize, which is itself the input — a feedback loop that flips
+  // pageSize between two values and flickers the table. We refuse to flip back to
+  // the value we just left UNLESS the container height actually changed (a real
+  // resize, not the loop). In steady state this guard never triggers.
+  const sizeRef = useRef(fallback);
+  const leftValueRef = useRef(fallback);
+  const lastHeightRef = useRef(-1);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -37,7 +48,18 @@ export function useFitPageSize<T extends HTMLElement = HTMLDivElement>({
       if (measuredRow <= 0) return;
 
       const fitting = Math.max(min, Math.floor((h - measuredHeader) / measuredRow));
-      setPageSize((prev) => (prev === fitting ? prev : fitting));
+      const heightChanged = h !== lastHeightRef.current;
+      lastHeightRef.current = h;
+
+      const prev = sizeRef.current;
+      if (prev === fitting) return;
+      // Same container height, computing back to the value we just left → the
+      // measurement is oscillating. Hold steady instead of flickering.
+      if (!heightChanged && fitting === leftValueRef.current) return;
+
+      leftValueRef.current = prev;
+      sizeRef.current = fitting;
+      setPageSize(fitting);
     };
 
     const scheduleCompute = () => {
