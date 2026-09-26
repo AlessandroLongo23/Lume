@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Spesa } from '@/lib/types/Spesa';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
@@ -19,8 +20,11 @@ export const useSpeseStore = create<SpeseState>((set) => ({
 
   fetchSpese: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('spese').select('*').order('data', { ascending: false });
-    if (error) { set({ isLoading: false, error: error.message }); return; }
+    // paged: a salon's history easily exceeds PostgREST's 1000-row response cap
+    const { data, error } = await fetchAllPages<Record<string, unknown>>((from, to) =>
+      supabase.from('spese').select('*').order('data', { ascending: false }).order('id').range(from, to),
+    );
+    if (error) { set({ isLoading: false, error }); return; }
     set({ spese: data.map((s) => new Spesa(s)), isLoading: false, error: null });
   },
 

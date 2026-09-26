@@ -103,6 +103,12 @@
       var(--color-brand-primary-500) 0%,
       var(--color-brand-primary-400) 50%,
       var(--color-brand-primary-500) 100%);
+
+  /* Bilancio chart: revenue vs costs. Validated with the dataviz palette checker
+     (lightness band, chroma, CVD and normal-vision separation, contrast) on both
+     the light (#FFFFFF) and dark surfaces: indigo 500 + brass amber 700 pass all. */
+  --lume-chart-entrate:  var(--color-brand-primary-500);
+  --lume-chart-uscite:   var(--color-brand-secondary-700);
 }
 
 .dark {
@@ -215,4 +221,8 @@
       var(--color-brand-primary-500) 0%,
       var(--color-brand-primary-300) 50%,
       var(--color-brand-primary-500) 100%);
+
+  /* Same steps as light: they also pass every check against the dark surface. */
+  --lume-chart-entrate:  var(--color-brand-primary-500);
+  --lume-chart-uscite:   var(--color-brand-secondary-700);
 }

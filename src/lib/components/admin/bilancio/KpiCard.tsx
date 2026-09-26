@@ -1,49 +1,48 @@
 import type { LucideIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface KpiCardProps {
   label: string;
-  value: number;
-  accent?: 'green' | 'red';
-  dimmed?: boolean;
+  /** Amount without VAT: the headline figure. */
+  netto: number;
+  /** Same amount with VAT, shown underneath. */
+  lordo: number;
   icon: LucideIcon;
-  trend?: string | null;
-  trendUp?: boolean;
+  /** Change vs the comparison period, in percent. null hides it. */
+  trend?: number | null;
+  /** For costs a rise is bad news: flips the colour of the trend. */
+  higherIsWorse?: boolean;
 }
 
-export function KpiCard({ label, value, accent, dimmed, icon: Icon, trend, trendUp }: KpiCardProps) {
-  const valueColor =
-    accent === 'green' ? 'text-emerald-500' :
-    accent === 'red'   ? 'text-red-500' :
-    dimmed             ? 'text-zinc-400 dark:text-zinc-500' :
-                         'text-zinc-900 dark:text-zinc-50';
+export function KpiCard({ label, netto, lordo, icon: Icon, trend = null, higherIsWorse = false }: KpiCardProps) {
+  const good = trend === null ? null : (trend >= 0) !== higherIsWorse;
 
   return (
-    <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
-        <div className="rounded-md bg-zinc-100 dark:bg-zinc-800 p-1.5">
-          <Icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className={`text-2xl font-bold tabular-nums ${valueColor}`}>
-          {formatCurrency(value)}
+    <div className="rounded-lg border border-border bg-card p-6 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        <span className="rounded-md bg-muted p-1.5">
+          <Icon className="size-4 text-muted-foreground" aria-hidden />
+        </span>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <p className={`font-mono text-2xl font-semibold tabular-nums ${netto < 0 ? 'text-danger-strong' : 'text-foreground'}`}>
+          {formatCurrency(netto)}
         </p>
-        {trend && (
-          <p className="text-xs text-muted-foreground mt-1">
-            <span className={`inline-flex items-center gap-1 ${trendUp ? 'text-emerald-500' : 'text-red-400'}`}>
-              {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {trend}
-            </span>
-            {' '}vs periodo prec.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        <p className="text-xs text-muted-foreground tabular-nums">
+          Con IVA: <span className="font-mono">{formatCurrency(lordo)}</span>
+        </p>
+      </div>
+      {trend !== null && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <span className={`inline-flex items-center gap-1 font-medium ${good ? 'text-success-strong' : 'text-danger-strong'}`}>
+            {trend >= 0 ? <TrendingUp className="size-3.5" aria-hidden /> : <TrendingDown className="size-3.5" aria-hidden />}
+            {trend >= 0 ? '+' : '−'}{Math.abs(trend).toLocaleString('it-IT', { maximumFractionDigits: 1 })}%
+          </span>
+          rispetto al periodo di confronto
+        </p>
+      )}
+    </div>
   );
 }

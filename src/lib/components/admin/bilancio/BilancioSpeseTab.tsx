@@ -26,23 +26,23 @@ import { cardStyle } from '@/lib/const/appearance';
 import { formatCurrency, formatDateDisplay } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
-const CATEGORIE = ['Manutenzione', 'Prodotti', 'Utenze', 'Affitto', 'Marketing', 'Personale', 'Altro'] as const;
-
-const CATEGORIA_COLORS: Record<string, string> = {
-  Manutenzione: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  Prodotti:     'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
-  Utenze:       'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  Affitto:      'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-  Marketing:    'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
-  Personale:    'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-  Altro:        'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20',
-};
+// Ordered by P&L line; each one rolls up into a Bilancio heading through
+// public.bilancio_voce_spesa(). Add a new category there too.
+const CATEGORIE = [
+  'Prodotti', 'Accoglienza e allestimento', 'Pulizia', 'Attrezzatura',
+  'Utenze', 'Manutenzione', 'Marketing', 'Banca e POS', 'Telefono e internet', 'Gestionale',
+  'Formazione', 'Consulenze', 'Assicurazioni', 'Viaggi e trasferte',
+  'Affitto', 'Leasing attrezzature', 'Spese condominiali',
+  'Personale',
+  'Tasse e diritti', 'Ammortamenti', 'Altro',
+] as const;
 
 const emptyForm = () => ({
   data: '',
   fornitore: '',
-  categoria: 'Manutenzione' as string,
+  categoria: 'Prodotti' as string,
   importo: '',
+  imponibile: '',
 });
 
 export function BilancioSpeseTab() {
@@ -74,13 +74,20 @@ export function BilancioSpeseTab() {
       messagePopup.getState().error('Compila tutti i campi obbligatori.');
       return;
     }
+    const importo = parseFloat(form.importo);
+    const imponibile = form.imponibile ? parseFloat(form.imponibile) : null;
+    if (imponibile !== null && (isNaN(imponibile) || imponibile < 0 || imponibile > importo)) {
+      messagePopup.getState().error("L'importo senza IVA non può superare l'importo pagato.");
+      return;
+    }
     setIsSaving(true);
     try {
       await addSpesa({
         data: form.data,
         fornitore: form.fornitore.trim(),
         categoria: form.categoria,
-        importo: parseFloat(form.importo),
+        importo,
+        imponibile,
       });
       messagePopup.getState().success('Spesa aggiunta.');
       setDialogOpen(false);
@@ -119,7 +126,7 @@ export function BilancioSpeseTab() {
       accessorKey: 'categoria',
       header: 'Categoria',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${CATEGORIA_COLORS[row.original.categoria] ?? CATEGORIA_COLORS.Altro}`}>
+        <span className="rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
           {row.original.categoria}
         </span>
       ),
@@ -130,8 +137,19 @@ export function BilancioSpeseTab() {
       enableSorting: true,
       sortingFn: (a, b) => a.original.importo - b.original.importo,
       cell: ({ row }) => (
-        <span className="tabular-nums font-medium text-zinc-900 dark:text-zinc-100">
+        <span className="font-mono tabular-nums font-medium text-foreground">
           {formatCurrency(row.original.importo)}
+        </span>
+      ),
+    },
+    {
+      id: 'imponibile',
+      header: 'Senza IVA',
+      enableSorting: true,
+      sortingFn: (a, b) => (a.original.imponibile ?? a.original.importo) - (b.original.imponibile ?? b.original.importo),
+      cell: ({ row }) => (
+        <span className="font-mono tabular-nums text-muted-foreground">
+          {row.original.imponibile == null ? '—' : formatCurrency(row.original.imponibile)}
         </span>
       ),
     },
@@ -204,8 +222,15 @@ export function BilancioSpeseTab() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className={labelClass}>Importo (€) *</label>
+              <label className={labelClass}>Importo pagato, IVA inclusa (€) *</label>
               <input type="number" min="0" step="0.01" className={inputClass} placeholder="0,00" value={form.importo} onChange={(e) => set('importo', e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className={labelClass}>Importo senza IVA (€)</label>
+              <input type="number" min="0" step="0.01" className={inputClass} placeholder="Facoltativo" value={form.imponibile} onChange={(e) => set('imponibile', e.target.value)} />
+              <p className="text-xs text-muted-foreground">
+                Lo trovi in fattura come &quot;imponibile&quot;. Se lo lasci vuoto, nel bilancio conta l&apos;importo pagato.
+              </p>
             </div>
           </div>
 

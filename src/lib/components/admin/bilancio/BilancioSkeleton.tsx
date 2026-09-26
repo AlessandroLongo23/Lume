@@ -1,5 +1,5 @@
 function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-700/60 ${className}`} />;
+  return <div className={`animate-pulse rounded-md bg-muted ${className}`} />;
 }
 
 const SPESE_ROW_PATTERNS = [
@@ -19,9 +19,9 @@ export function BilancioSpeseSkeleton() {
       </div>
 
       {/* Table card */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900">
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
         {/* Header row */}
-        <div className="flex items-center gap-6 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center gap-6 px-4 py-3 bg-muted/40 border-b border-border">
           {['w-[16%]', 'w-[28%]', 'w-[18%]', 'w-[14%]', 'w-[8%]'].map((w, i) => (
             <Skeleton key={i} className={`h-3 ${w}`} />
           ))}
@@ -31,7 +31,7 @@ export function BilancioSpeseSkeleton() {
         {SPESE_ROW_PATTERNS.map((cols, i) => (
           <div
             key={i}
-            className="flex items-center gap-6 px-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+            className="flex items-center gap-6 px-4 py-3.5 border-b border-border last:border-0"
           >
             {cols.map((w, j) => (
               <Skeleton key={j} className={`h-4 ${w}`} />
@@ -53,7 +53,7 @@ export function BilancioObiettiviSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
       {/* Left — form card */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 flex flex-col gap-4">
+      <div className="rounded-lg border border-border bg-card p-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5 pb-2">
           <Skeleton className="h-4 w-48" />
           <Skeleton className="h-3 w-72 mt-1" />
@@ -76,13 +76,13 @@ export function BilancioObiettiviSkeleton() {
       </div>
 
       {/* Right — calculator card */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-6 flex flex-col gap-0">
+      <div className="rounded-lg border border-border bg-muted/40 p-6 flex flex-col gap-0">
         <div className="flex flex-col gap-1.5 pb-4">
           <Skeleton className="h-4 w-36" />
           <Skeleton className="h-3 w-56 mt-1" />
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center justify-between py-3 border-t border-zinc-200 dark:border-zinc-800">
+          <div key={i} className="flex items-center justify-between py-3 border-t border-border">
             <Skeleton className={`h-3 ${i === 4 ? 'w-40' : 'w-32'}`} />
             <Skeleton className={`h-${i === 4 ? '7 w-28' : '4 w-20'}`} />
           </div>
@@ -100,7 +100,7 @@ export function BilancioSkeleton() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6"
+            className="rounded-lg border border-border bg-card p-6"
           >
             <div className="flex items-center justify-between pb-2">
               <Skeleton className="h-3.5 w-28" />
@@ -114,10 +114,10 @@ export function BilancioSkeleton() {
       {/* Chart + Tax Simulator */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
-          <Skeleton className="h-[350px] rounded-xl" />
+          <Skeleton className="h-[350px] rounded-lg" />
         </div>
         <div className="lg:col-span-1">
-          <Skeleton className="h-[350px] rounded-xl" />
+          <Skeleton className="h-[350px] rounded-lg" />
         </div>
       </div>
     </>

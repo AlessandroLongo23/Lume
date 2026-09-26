@@ -1,163 +1,97 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { Wallet, Landmark, TrendingUp } from 'lucide-react';
-import { useFichesStore } from '@/lib/stores/fiches';
-import { useFicheServicesStore } from '@/lib/stores/fiche_services';
-import { useServicesStore } from '@/lib/stores/services';
-import { useStatsStore } from '@/lib/stores/stats';
-import {
-  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
-} from '@/components/ui/select';
-import { KpiCard } from '@/lib/components/admin/bilancio/KpiCard';
-import { RevenueChart } from '@/lib/components/admin/bilancio/RevenueChart';
-import { TaxSimulatorCard } from '@/lib/components/admin/bilancio/TaxSimulatorCard';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale, Wallet } from 'lucide-react';
+import { useBilancioStore } from '@/lib/stores/bilancio';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { BilancioSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
+import { BilancioPeriodControl } from '@/lib/components/admin/bilancio/BilancioPeriodControl';
+import { KpiCard } from '@/lib/components/admin/bilancio/KpiCard';
+import { EntrateUsciteChart } from '@/lib/components/admin/bilancio/EntrateUsciteChart';
+import { EntrateCard, UsciteCard } from '@/lib/components/admin/bilancio/BilancioVociCard';
+import { TaxSimulatorCard } from '@/lib/components/admin/bilancio/TaxSimulatorCard';
 
-type Period = 'month' | '3months' | 'year';
+/** Percentage change, or null when there is nothing to compare with. */
+function change(current: number, before: number | undefined): number | null {
+  if (before === undefined || before <= 0) return null;
+  return ((current - before) / before) * 100;
+}
 
-const PERIOD_OPTIONS: { value: Period; label: string; months: number }[] = [
-  { value: 'month',   label: 'Questo Mese',   months: 1  },
-  { value: '3months', label: 'Ultimi 3 Mesi', months: 3  },
-  { value: 'year',    label: "Quest'Anno",     months: 12 },
-];
-
-const PERIOD_ITEMS: Record<string, string> = {
-  month: 'Questo Mese',
-  '3months': 'Ultimi 3 Mesi',
-  year: "Quest'Anno",
-};
-
+/**
+ * Profit and loss for any period, computed in the database by public.bilancio():
+ * completed fiches at the price charged, package and gift-card sales, costs by P&L line,
+ * all shown without VAT with the VAT-inclusive figure alongside.
+ */
 export function BilancioPanoramicaTab() {
-  const fiches               = useFichesStore((s) => s.fiches);
-  const isFichesLoading      = useFichesStore((s) => s.isLoading);
-  const ficheServices        = useFicheServicesStore((s) => s.fiche_services);
-  const isFicheServicesLoading = useFicheServicesStore((s) => s.isLoading);
-  const services             = useServicesStore((s) => s.services);
-  const isServicesLoading    = useServicesStore((s) => s.isLoading);
-  const isLoading = isFichesLoading || isFicheServicesLoading || isServicesLoading;
-  const earningsByMonth   = useStatsStore((s) => s.earningsByMonth);
-  const earningsByDay     = useStatsStore((s) => s.earningsByDay);
-  const earningsByWeek    = useStatsStore((s) => s.earningsByWeek);
-  const prevPeriodEarnings = useStatsStore((s) => s.prevPeriodEarnings);
-  const setTimeRange      = useStatsStore((s) => s.setTimeRange);
-  const computeFromFiches = useStatsStore((s) => s.computeFromFiches);
-  const timeRange         = useStatsStore((s) => s.timeRange);
-
-  const [period, setPeriod] = useState<Period>('month');
+  const router = useRouter();
+  const data = useBilancioStore((s) => s.data);
+  const previous = useBilancioStore((s) => s.previous);
+  const isLoading = useBilancioStore((s) => s.isLoading);
+  const error = useBilancioStore((s) => s.error);
+  const fetchBilancio = useBilancioStore((s) => s.fetch);
   const [taxRate, setTaxRate] = useState(27);
 
   useEffect(() => {
-    setTimeRange(1);
-  }, [setTimeRange]);
+    void fetchBilancio();
+  }, [fetchBilancio]);
 
-  const handlePeriodChange = (value: Period) => {
-    const opt = PERIOD_OPTIONS.find((o) => o.value === value);
-    if (!opt) return;
-    setPeriod(value);
-    setTimeRange(opt.months);
-  };
-
-  useEffect(() => {
-    computeFromFiches(fiches, ficheServices, services);
-  }, [fiches, ficheServices, services, timeRange, computeFromFiches]);
-
-  const grossRevenue = useMemo(() => {
-    if (period === 'month')   return earningsByDay.reduce((sum, d) => sum + d.earnings, 0);
-    if (period === '3months') return earningsByWeek.reduce((sum, w) => sum + w.earnings, 0);
-    return earningsByMonth.reduce((sum, m) => sum + m.earnings, 0);
-  }, [period, earningsByDay, earningsByWeek, earningsByMonth]);
-
-  const estimatedTax = useMemo(
-    () => grossRevenue * (taxRate / 100),
-    [grossRevenue, taxRate]
-  );
-  const netProfit = useMemo(
-    () => grossRevenue - estimatedTax,
-    [grossRevenue, estimatedTax]
-  );
-
-  const trendPercent = useMemo(() => {
-    if (prevPeriodEarnings <= 0) return null;
-    return ((grossRevenue - prevPeriodEarnings) / prevPeriodEarnings) * 100;
-  }, [grossRevenue, prevPeriodEarnings]);
-
-  const trendLabel = useMemo(() => {
-    if (trendPercent === null) return null;
-    const sign = trendPercent >= 0 ? '+' : '';
-    return `${sign}${trendPercent.toFixed(1)}%`;
-  }, [trendPercent]);
-
-  const trendUp = trendPercent !== null ? trendPercent >= 0 : undefined;
-
-  const chartData = useMemo(() => {
-    if (period === 'month')   return earningsByDay;
-    if (period === '3months') return earningsByWeek;
-    return earningsByMonth.map((m) => ({ label: m.month, earnings: m.earnings }));
-  }, [period, earningsByDay, earningsByWeek, earningsByMonth]);
+  const vuoto = data && data.entrate.lordo === 0 && data.uscite.lordo === 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-end">
-        <Select
-          value={period}
-          onValueChange={(v) => handlePeriodChange(v as Period)}
-          items={PERIOD_ITEMS}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            {PERIOD_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <BilancioPeriodControl />
+        {data && (
+          <p className="text-xs text-muted-foreground max-w-sm">
+            Contano solo le fiche concluse. Gli importi sono senza IVA ({data.iva_pct}%), con l&apos;importo IVA inclusa accanto.
+          </p>
+        )}
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="rounded-lg border border-danger-line bg-danger-soft p-4 flex flex-wrap items-center gap-3 text-sm text-danger-strong">
+          <AlertCircle className="size-4 shrink-0" aria-hidden />
+          <span className="flex-1">{error}</span>
+          <Button variant="secondary" onClick={() => void fetchBilancio()}>Riprova</Button>
+        </div>
+      ) : !data ? (
         <BilancioSkeleton />
+      ) : vuoto ? (
+        <EmptyState
+          icon={Wallet}
+          title="Nessun movimento in questo periodo"
+          description="Le entrate arrivano dalle fiche concluse, le uscite dalle spese. Prova un altro periodo o registra una fiche."
+          action={{ label: 'Vai alle fiche', onClick: () => router.push('/admin/fiches') }}
+        />
       ) : (
-        <>
+        <div className={`flex flex-col gap-6 transition-opacity ${isLoading ? 'opacity-60' : ''}`} aria-busy={isLoading}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <KpiCard
-              label="Incassi Lordi"
-              value={grossRevenue}
-              icon={Wallet}
-              trend={trendLabel}
-              trendUp={trendUp}
-            />
-            <KpiCard
-              label="Tasse Stimate"
-              value={estimatedTax}
-              dimmed
-              icon={Landmark}
-            />
-            <KpiCard
-              label="Utile Netto"
-              value={netProfit}
-              accent={netProfit >= 0 ? 'green' : 'red'}
-              icon={TrendingUp}
-            />
+            <KpiCard label="Entrate" icon={ArrowUpRight} netto={data.entrate.netto} lordo={data.entrate.lordo}
+              trend={change(data.entrate.netto, previous?.entrate.netto)} />
+            <KpiCard label="Uscite" icon={ArrowDownRight} netto={data.uscite.netto} lordo={data.uscite.lordo}
+              trend={change(data.uscite.netto, previous?.uscite.netto)} higherIsWorse />
+            <KpiCard label="Utile" icon={Scale} netto={data.utile.netto} lordo={data.utile.lordo}
+              trend={change(data.utile.netto, previous?.utile.netto)} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
-              <RevenueChart data={chartData} isEmpty={grossRevenue === 0} />
+              {data.mesi.length > 1 ? (
+                <EntrateUsciteChart mesi={data.mesi} />
+              ) : (
+                <EntrateCard data={data} />
+              )}
             </div>
-            <div className="lg:col-span-1">
-              <TaxSimulatorCard
-                gross={grossRevenue}
-                taxRate={taxRate}
-                onTaxRateChange={setTaxRate}
-                tax={estimatedTax}
-                net={netProfit}
-              />
-            </div>
+            <TaxSimulatorCard utile={data.utile.netto} taxRate={taxRate} onTaxRateChange={setTaxRate} />
           </div>
-        </>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {data.mesi.length > 1 && <EntrateCard data={data} />}
+            <UsciteCard data={data} />
+          </div>
+        </div>
       )}
     </div>
   );

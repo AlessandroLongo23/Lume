@@ -1,80 +1,64 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface TaxSimulatorCardProps {
-  gross: number;
+  /** Profit without VAT, after costs: the base of the estimate. */
+  utile: number;
   taxRate: number;
   onTaxRateChange: (rate: number) => void;
-  tax: number;
-  net: number;
 }
 
-export function TaxSimulatorCard({ gross, taxRate, onTaxRateChange, tax, net }: TaxSimulatorCardProps) {
+export function TaxSimulatorCard({ utile, taxRate, onTaxRateChange }: TaxSimulatorCardProps) {
+  const tasse = utile > 0 ? utile * (taxRate / 100) : 0;
+  const resta = utile - tasse;
+
   return (
-    <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border">
-      <CardHeader className="px-6">
-        <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-          Simulatore Fiscale e INPS
-        </CardTitle>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-          Regimi forfettari tipici: 5% (primo anno) · 15% · 27% (IRPEF + INPS)
+    <div className="rounded-lg border border-border bg-card p-6 flex flex-col gap-5">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Stima delle tasse</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Calcolata sull&apos;utile senza IVA, al netto delle spese.
         </p>
-      </CardHeader>
-      <CardContent className="px-6 space-y-6">
-        {/* Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Aliquota stimata</span>
-            <span className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-              {taxRate}%
-            </span>
-          </div>
-          <Slider
-            min={0}
-            max={60}
-            step={1}
-            value={[taxRate]}
-            onValueChange={(values) => {
-              const v = Array.isArray(values) ? values[0] : values;
-              onTaxRateChange(v);
-            }}
-          />
-        </div>
+      </div>
 
-        {/* Breakdown — Lordo & Tasse */}
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Lordo</span>
-            <span className="text-sm font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-              {formatCurrency(gross)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-              Tasse ({taxRate}%)
-            </span>
-            <span className="text-sm font-medium tabular-nums text-red-400">
-              − {formatCurrency(tax)}
-            </span>
-          </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Aliquota stimata</span>
+          <span className="text-sm font-semibold tabular-nums text-foreground">{taxRate}%</span>
         </div>
+        <Slider
+          min={0}
+          max={60}
+          step={1}
+          value={[taxRate]}
+          aria-label="Aliquota stimata"
+          onValueChange={(values) => onTaxRateChange(Array.isArray(values) ? values[0] : values)}
+        />
+      </div>
 
-        {/* Utile Netto — standalone emphasized row */}
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Utile Netto</span>
-          <span className={`text-lg font-bold tabular-nums ${net >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            {formatCurrency(net)}
-          </span>
+      <dl className="flex flex-col divide-y divide-border rounded-md border border-border text-sm">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <dt className="text-muted-foreground">Utile</dt>
+          <dd className="font-mono tabular-nums text-foreground">{formatCurrency(utile)}</dd>
         </div>
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <dt className="text-muted-foreground">Tasse stimate ({taxRate}%)</dt>
+          <dd className="font-mono tabular-nums text-foreground">− {formatCurrency(tasse)}</dd>
+        </div>
+      </dl>
 
-        {/* Disclaimer */}
-        <p className="text-xs text-zinc-400 dark:text-zinc-600 italic leading-relaxed">
-          Nota: Questa stima assume un Regime Forfettario (senza scorporo IVA). Il calcolo è puramente indicativo.
-        </p>
-      </CardContent>
-    </Card>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">Ti resta</span>
+        <span className={`font-mono text-lg font-semibold tabular-nums ${resta < 0 ? 'text-danger-strong' : 'text-foreground'}`}>
+          {formatCurrency(resta)}
+        </span>
+      </div>
+
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        È una stima indicativa: il calcolo esatto dipende dalla tua situazione fiscale completa.
+      </p>
+    </div>
   );
 }
