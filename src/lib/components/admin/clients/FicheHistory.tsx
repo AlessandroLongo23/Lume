@@ -36,7 +36,7 @@ interface HistoryEntry {
 function toEntry(row: RawFicheRow): HistoryEntry {
   const servicesTotal = row.fiche_services.reduce((sum, fs) => sum + (fs.final_price ?? 0), 0);
   const productsTotal = row.fiche_products.reduce(
-    (sum, fp) => sum + (fp.final_price ?? 0) * (fp.quantity ?? 1),
+    (sum, fp) => sum + (fp.final_price ?? 0),
     0,
   );
   const services = row.fiche_services

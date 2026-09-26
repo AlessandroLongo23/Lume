@@ -47,7 +47,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
   const timeWindow = endLabel ? `${startLabel} – ${endLabel}` : startLabel;
 
   const servicesTotal = ficheServices.reduce((sum, fs) => sum + fs.final_price, 0);
-  const productsTotal = (ficheProducts as FicheProduct[]).reduce((sum, fp) => sum + (fp.final_price * fp.quantity), 0);
+  const productsTotal = (ficheProducts as FicheProduct[]).reduce((sum, fp) => sum + fp.final_price, 0);
   const total = servicesTotal + productsTotal;
 
   const formatPrice = (value: number) =>

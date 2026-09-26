@@ -71,7 +71,7 @@ export function couponMatchesFiche(
   return false;
 }
 
-/** Sum of `final_price` (× quantity for products) across line items eligible under the coupon's scope. */
+/** Sum of `final_price` across line items eligible under the coupon's scope (a product line's final_price is already the line total). */
 export function eligibleSubtotal(
   coupon: Coupon,
   services: ServiceLine[],
@@ -85,7 +85,7 @@ export function eligibleSubtotal(
   }
   for (const p of products) {
     if (lineMatches(null, null, coupon.scope_product_ids, coupon.scope_product_category_ids, p)) {
-      total += p.final_price * p.quantity;
+      total += p.final_price;
     }
   }
   return total;
@@ -136,7 +136,8 @@ export function freeItemDiscount(
   if (coupon.free_item_kind === 'product') {
     const candidate = products
       .filter((p) => p.product_id === coupon.free_item_id)
-      .reduce((max, p) => Math.max(max, p.final_price), 0);
+      // one free piece: the line total divided by its quantity
+      .reduce((max, p) => Math.max(max, p.final_price / (p.quantity || 1)), 0);
     return candidate;
   }
   return 0;

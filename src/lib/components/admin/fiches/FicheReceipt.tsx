@@ -173,8 +173,8 @@ export function FicheReceipt({
             {products.map((fp, i) => {
               const product = productMap.get(fp.product_id);
               const listTotal = fp.list_price * fp.quantity;
-              const finalTotalLine = fp.final_price * fp.quantity;
-              const isDiscounted = fp.final_price < fp.list_price;
+              const finalTotalLine = fp.final_price;
+              const isDiscounted = fp.final_price < listTotal;
               const isGift = fp.final_price === 0 && fp.list_price > 0;
               return (
                 <div key={fp.id ?? `prod-${i}`} className="flex items-baseline justify-between gap-2 py-0.5">

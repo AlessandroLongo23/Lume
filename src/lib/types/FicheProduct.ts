@@ -4,7 +4,9 @@ export class FicheProduct {
   fiche_id: string;
   product_id: string;
   quantity: number;
+  /** Catalog price of ONE piece. */
   list_price: number;
+  /** What was charged for the WHOLE line (all pieces), exact to the cent. Never multiply by quantity. */
   final_price: number;
 
   constructor(ficheProduct: FicheProduct) {

@@ -217,7 +217,7 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       }
       const productSums = new Map<string, number>();
       for (const p of productsRes.data) {
-        productSums.set(p.fiche_id, (productSums.get(p.fiche_id) ?? 0) + p.final_price * p.quantity);
+        productSums.set(p.fiche_id, (productSums.get(p.fiche_id) ?? 0) + p.final_price);
       }
 
       // Group by YYYY-MM

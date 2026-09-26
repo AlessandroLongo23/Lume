@@ -260,8 +260,8 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
                 {ficheProducts.map((fp) => {
                   const product = productMap.get(fp.product_id);
                   const listTotal = fp.list_price * fp.quantity;
-                  const finalTotal = fp.final_price * fp.quantity;
-                  const isDiscounted = fp.final_price < fp.list_price;
+                  const finalTotal = fp.final_price;
+                  const isDiscounted = fp.final_price < listTotal;
                   return (
                     <div key={fp.id} className="flex items-baseline justify-between gap-2 py-0.5">
                       <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">

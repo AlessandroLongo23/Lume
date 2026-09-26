@@ -31,7 +31,7 @@ export function computeKpis(
   }
   const productSums = new Map<string, number>();
   for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price * fp.quantity);
+    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
   }
 
   let totalRevenue = 0;
@@ -113,7 +113,7 @@ export function computeClientLeaderboard(
   }
   const productSums = new Map<string, number>();
   for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price * fp.quantity);
+    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
   }
 
   const map = new Map<string, { presenze: number; incasso: number }>();
@@ -305,7 +305,7 @@ export function computeProductLeaderboard(
     map.set(fp.product_id, {
       ...curr,
       qty: curr.qty + fp.quantity,
-      incasso: curr.incasso + fp.final_price * fp.quantity,
+      incasso: curr.incasso + fp.final_price,
     });
   }
 
@@ -331,7 +331,7 @@ export function computeProductsByCategory(
     const catId = prod.product_category_id;
     const catName = categoryMap.get(catId)?.name ?? 'Senza categoria';
     const curr = map.get(catId) ?? { name: catName, value: 0, count: 0 };
-    map.set(catId, { ...curr, value: curr.value + fp.final_price * fp.quantity, count: curr.count + fp.quantity });
+    map.set(catId, { ...curr, value: curr.value + fp.final_price, count: curr.count + fp.quantity });
   }
 
   return Array.from(map.values()).sort((a, b) => b.value - a.value);
@@ -364,7 +364,7 @@ export function computeOperatorSummary(
   }
   const productSums = new Map<string, number>();
   for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price * fp.quantity);
+    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
   }
 
   // Group fiches by primary operator (operator of the first service on the fiche)

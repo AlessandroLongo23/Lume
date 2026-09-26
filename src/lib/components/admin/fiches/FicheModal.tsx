@@ -442,7 +442,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const subtotal = useMemo(
     () =>
       ficheServices.reduce((acc, s) => acc + s.final_price, 0) +
-      ficheProducts.reduce((acc, p) => acc + p.final_price * p.quantity, 0),
+      ficheProducts.reduce((acc, p) => acc + p.final_price, 0),
     [ficheServices, ficheProducts],
   );
   const couponsDiscount = useMemo(
@@ -623,6 +623,9 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     emitTourEvent('fiche:product-added');
   }
 
+  // A product line's final_price is the LINE TOTAL (all pieces), exact to the cent;
+  // list_price is the price of one piece. Readers never multiply final_price by quantity.
+  // Changing the quantity resets the line to list price x quantity.
   function updateProductQuantity(productId: string, delta: number) {
     setFicheProducts((prev) =>
       prev.map((p) => {
@@ -640,10 +643,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     );
   }
 
-  function setProductFinalPrice(productId: string, raw: string) {
-    const price = parseFloat(raw);
+  function setProductLineTotal(productId: string, raw: string) {
+    const total = parseFloat(raw);
     setFicheProducts((prev) =>
-      prev.map((p) => p.product_id === productId ? { ...p, final_price: isNaN(price) ? p.final_price : price } : p),
+      prev.map((p) => p.product_id === productId ? { ...p, final_price: isNaN(total) ? p.final_price : total } : p),
     );
   }
 
@@ -1735,7 +1738,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   <div className="flex items-center gap-1 shrink-0">
                                     <button
                                       type="button"
-                                      onClick={() => setProductFinalPrice(prod.product_id, prod.final_price === 0 ? String(prod.list_price * prod.quantity) : '0')}
+                                      onClick={() => setProductLineTotal(prod.product_id, prod.final_price === 0 ? String(prod.list_price * prod.quantity) : '0')}
                                       aria-pressed={prod.final_price === 0}
                                       className={`p-1 rounded-md transition-colors ${
                                         prod.final_price === 0
@@ -1753,7 +1756,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                       step={0.01}
                                       value={prod.final_price.toFixed(2)}
                                       size={Math.max(4, prod.final_price.toFixed(2).length)}
-                                      onChange={(e) => setProductFinalPrice(prod.product_id, e.target.value)}
+                                      onChange={(e) => setProductLineTotal(prod.product_id, e.target.value)}
                                       className="min-w-12 text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
                                     />
                                     <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>

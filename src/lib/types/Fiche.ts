@@ -99,7 +99,7 @@ export class Fiche {
   getSubtotal(): number {
     const servicesTotal = this.getFicheServices().reduce((sum, fs) => sum + fs.final_price, 0);
     const productsTotal = this.getFicheProducts().reduce(
-      (sum: number, fp: FicheProduct) => sum + (fp.final_price * (fp.quantity ?? 1)),
+      (sum: number, fp: FicheProduct) => sum + fp.final_price,
       0
     );
     return servicesTotal + productsTotal;
