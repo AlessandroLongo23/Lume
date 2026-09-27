@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
+import { useEnsureFichesLoadedFrom } from '@/lib/stores/ficheWindow';
+import { getMonthDays, getWeekDays } from '@/lib/utils/date';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
@@ -34,6 +36,16 @@ const PIXELS_PER_SLOT = 32; // h-8 in CSS
 export function Calendar() {
   const { currentView, selectedDate, currentMonth, focusedOperatorId, selectedOperatorIds } = useCalendarStore();
   const { setSelectedDate, setView, setHoveredTime, setFocusedOperatorId } = useCalendarStore();
+
+  // The stores start with the last 90 days: load the period on screen when it is older.
+  const visibleFrom = useMemo(() => {
+    if (currentView === 'month') return getMonthDays(currentMonth)[0].date;
+    if (currentView === 'week') return getWeekDays(selectedDate)[0];
+    const d = new Date(selectedDate);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [currentView, currentMonth, selectedDate]);
+  useEnsureFichesLoadedFrom(visibleFrom);
   const applyPlannedSegments = useFicheServicesStore((s) => s.applyPlannedSegments);
   const operators = useOperatorsStore((s) => s.operators);
   const salonSettings = useSalonSettingsStore((s) => s.settings);

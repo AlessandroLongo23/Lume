@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { ClientRating, type RawClientRating } from '@/lib/types/ClientRating';
 
 interface ClientRatingsState {
@@ -16,10 +17,13 @@ export const useClientRatingsStore = create<ClientRatingsState>((set) => ({
 
   fetchClientRatings: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('client_ratings').select('*');
-    if (error) { set({ isLoading: false, error: error.message }); return; }
+    // paged: one row per client, and salons can pass PostgREST's 1000-row cap
+    const { data, error } = await fetchAllPages<RawClientRating>((from, to) =>
+      supabase.from('client_ratings').select('*').order('client_id').range(from, to),
+    );
+    if (error) { set({ isLoading: false, error }); return; }
     const ratings: Record<string, ClientRating> = {};
-    for (const row of data as RawClientRating[]) {
+    for (const row of data) {
       const r = new ClientRating(row);
       ratings[r.client_id] = r;
     }

@@ -7,6 +7,7 @@ import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { updateFicheWithAudit } from '@/lib/actions/fiches';
+import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
 
 const PENDING_TTL_MS = 1500; // covers the 300ms realtime debounce + roundtrip
 
@@ -33,7 +34,14 @@ interface FichesState {
   selectedFiche: Fiche | null;
   /** Fiche ids whose realtime echo should be ignored (we just wrote them locally). */
   pendingMutationIds: Set<string>;
+  /** Fiches are loaded from this date onwards (future included). Starts at 90 days ago. */
+  loadedFrom: Date;
+  /** True while an older period is being loaded on demand. */
+  isLoadingOlder: boolean;
+  /** Reloads everything from `loadedFrom` on; older periods already loaded are kept. */
   fetchFiches: () => Promise<void>;
+  /** Loads the fiches between `from` and `loadedFrom` if not loaded yet (calendar, fiche list). */
+  ensureLoadedFrom: (from: Date) => Promise<void>;
   addFiche: (fiche: Partial<Fiche>) => Promise<Fiche>;
   updateFiche: (
     ficheId: string,
@@ -46,17 +54,20 @@ interface FichesState {
   closeFiche: (ficheId: string, salonId: string, payments: PaymentSplit[]) => Promise<void>;
 }
 
-export const useFichesStore = create<FichesState>((set) => ({
+let olderInFlight = 0;
+
+export const useFichesStore = create<FichesState>((set, get) => ({
   fiches: [],
   isLoading: true,
   error: null,
   selectedFiche: null,
   pendingMutationIds: new Set<string>(),
+  loadedFrom: initialLoadedFrom(),
+  isLoadingOlder: false,
 
   fetchFiches: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const since = new Date();
-    since.setDate(since.getDate() - 90);
+    const since = get().loadedFrom;
     const { data, error } = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
       (from, to) =>
         supabase
@@ -70,7 +81,47 @@ export const useFichesStore = create<FichesState>((set) => ({
       set({ isLoading: false, error });
       return;
     }
-    set({ fiches: data.map((f) => new Fiche(f)), isLoading: false, error: null });
+    const fresh = data.map((f) => new Fiche(f));
+    // keep what an on-demand load brought in before `since` (it may have landed meanwhile)
+    set((s) => ({
+      fiches: [...s.fiches.filter((f) => f.datetime && new Date(f.datetime) < since), ...fresh],
+      isLoading: false,
+      error: null,
+    }));
+  },
+
+  ensureLoadedFrom: async (from) => {
+    const until = get().loadedFrom;
+    if (from >= until) return;
+    olderInFlight++;
+    set({ isLoadingOlder: true });
+    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
+      (a, b) =>
+        supabase
+          .from('fiches')
+          .select('*')
+          .gte('datetime', from.toISOString())
+          .lt('datetime', until.toISOString())
+          .order('datetime', { ascending: true })
+          .range(a, b),
+    );
+    olderInFlight--;
+    if (error) {
+      set({ isLoadingOlder: olderInFlight > 0, error });
+      return;
+    }
+    const older = data.map((f) => new Fiche(f));
+    set((s) => {
+      const known = new Set(s.fiches.map((f) => f.id));
+      const merged = [...older.filter((f) => !known.has(f.id)), ...s.fiches].sort(
+        (x, y) => new Date(x.datetime).getTime() - new Date(y.datetime).getTime(),
+      );
+      return {
+        fiches: merged,
+        loadedFrom: from < s.loadedFrom ? from : s.loadedFrom,
+        isLoadingOlder: olderInFlight > 0,
+      };
+    });
   },
 
   addFiche: async (fiche) => {

@@ -147,7 +147,8 @@ export interface NewVsReturning {
 
 export function computeNewVsReturning(
   periodFiches: Fiche[],
-  allFiches: Fiche[],
+  /** First visit ever per client, from the client_stats view (whole history, not the loaded window). */
+  firstVisitByClient: Record<string, { first_visit: Date | null }>,
 ): NewVsReturning[] {
   const periodClientIds = new Set(periodFiches.map((f) => f.client_id));
   const periodStart = periodFiches.reduce(
@@ -156,17 +157,10 @@ export function computeNewVsReturning(
   );
 
   // A client is "new" if their earliest fiche ever is within the period
-  const firstVisit = new Map<string, number>();
-  for (const f of allFiches) {
-    const t = new Date(f.datetime).getTime();
-    const curr = firstVisit.get(f.client_id);
-    if (curr === undefined || t < curr) firstVisit.set(f.client_id, t);
-  }
-
   let newClients = 0;
   let returningClients = 0;
   for (const clientId of periodClientIds) {
-    const first = firstVisit.get(clientId) ?? Infinity;
+    const first = firstVisitByClient[clientId]?.first_visit?.getTime() ?? Infinity;
     if (first >= periodStart) newClients++;
     else returningClients++;
   }

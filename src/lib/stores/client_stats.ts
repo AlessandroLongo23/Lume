@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllPages } from '@/lib/supabase/paginate';
 import { ClientStat, type RawClientStat } from '@/lib/types/ClientStat';
 
 interface ClientStatsState {
@@ -16,10 +17,13 @@ export const useClientStatsStore = create<ClientStatsState>((set) => ({
 
   fetchClientStats: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await supabase.from('client_stats').select('*');
-    if (error) { set({ isLoading: false, error: error.message }); return; }
+    // paged: one row per client, and salons easily pass PostgREST's 1000-row cap
+    const { data, error } = await fetchAllPages<RawClientStat>((from, to) =>
+      supabase.from('client_stats').select('*').order('client_id').range(from, to),
+    );
+    if (error) { set({ isLoading: false, error }); return; }
     const stats: Record<string, ClientStat> = {};
-    for (const row of data as RawClientStat[]) {
+    for (const row of data) {
       const s = new ClientStat(row);
       stats[s.client_id] = s;
     }

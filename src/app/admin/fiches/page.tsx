@@ -4,6 +4,12 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
+import { useEnsureFichesLoadedFrom } from '@/lib/stores/ficheWindow';
+import {
+  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
+} from '@/components/ui/select';
+
 import { loadFicheById } from '@/lib/stores/loadFicheById';
 import { useClientsStore } from '@/lib/stores/clients';
 import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
@@ -27,6 +33,13 @@ import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
 import { TAB_DEFAULTS, TAB_LABELS } from '@/lib/const/tab-defaults';
 
 type TabValue = 'prenotate' | 'arretrate' | 'concluse' | 'tutte';
+
+type Periodo = 'recenti' | 'anno' | 'tutto';
+const PERIODO_LABELS: Record<Periodo, string> = {
+  recenti: 'Ultimi 3 mesi',
+  anno: 'Ultimo anno',
+  tutto: 'Tutto lo storico',
+};
 
 const DEFAULT_ORDER = TAB_DEFAULTS.fiches as readonly TabValue[];
 
@@ -55,6 +68,8 @@ export default function FichesPage() {
   const activeTab: TabValue = userTab && visible.includes(userTab) ? userTab : visible[0];
   const setActiveTab = (t: TabValue) => setUserTab(t);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [periodo, setPeriodo] = useState<Periodo>('recenti');
+  const isLoadingOlder = useFichesStore((s) => s.isLoadingOlder);
   const [prefillClientId, setPrefillClientId] = useState<string | null>(null);
   const [commandTarget, setCommandTarget] = useState<Fiche | null>(null);
   const [commandMode, setCommandMode] = useState<'edit' | 'delete' | null>(null);
@@ -97,20 +112,35 @@ export default function FichesPage() {
 
   const clientMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
 
+  // The app loads the last 90 days at startup: older periods load when chosen here.
+  const periodFrom = useMemo(() => {
+    if (periodo === 'tutto') return new Date(2000, 0, 1);
+    if (periodo === 'anno') {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() - 1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    return initialLoadedFrom();
+  }, [periodo]);
+  useEnsureFichesLoadedFrom(periodFrom);
+
   const fichesWithBucket = useMemo(
-    () => fiches.map((f) => ({ fiche: f, bucket: getFicheBucket(f) })),
-    [fiches]
+    () => fiches
+      .filter((f) => !f.datetime || new Date(f.datetime) >= periodFrom)
+      .map((f) => ({ fiche: f, bucket: getFicheBucket(f) })),
+    [fiches, periodFrom]
   );
 
   const counts = useMemo(() => {
-    const c = { prenotate: 0, arretrate: 0, concluse: 0, tutte: fiches.length };
+    const c = { prenotate: 0, arretrate: 0, concluse: 0, tutte: fichesWithBucket.length };
     for (const { bucket } of fichesWithBucket) {
       if (bucket === FicheBucket.PRENOTATA) c.prenotate++;
       else if (bucket === FicheBucket.ARRETRATA) c.arretrate++;
       else if (bucket === FicheBucket.CONCLUSA) c.concluse++;
     }
     return c;
-  }, [fichesWithBucket, fiches.length]);
+  }, [fichesWithBucket]);
 
   const filteredFiches = useMemo(() => {
     let data = fichesWithBucket;
@@ -215,6 +245,21 @@ export default function FichesPage() {
                 <NumberBadge value={counts[id]} variant={activeTab === id ? 'primary' : 'neutral'} size="md" />
               </button>
             ))}
+            <div className="ml-auto mb-1.5 flex items-center gap-3">
+              {isLoadingOlder && (
+                <span className="text-xs text-muted-foreground" aria-live="polite">Carico le fiche…</span>
+              )}
+              <Select value={periodo} onValueChange={(v) => v && setPeriodo(v as Periodo)} items={PERIODO_LABELS}>
+                <SelectTrigger aria-label="Periodo delle fiche" className="w-44 data-[size=default]:h-[var(--lume-control-h-md)]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {(Object.keys(PERIODO_LABELS) as Periodo[]).map((p) => (
+                    <SelectItem key={p} value={p}>{PERIODO_LABELS[p]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Search (grid view only — table view embeds the search in its toolbar) */}

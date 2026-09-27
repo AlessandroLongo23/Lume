@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
 import { useClientsStore } from '@/lib/stores/clients';
-import { useFichesStore } from '@/lib/stores/fiches';
+import { useClientStatsStore } from '@/lib/stores/client_stats';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { ClientLeaderboardTable } from '@/lib/components/admin/statistiche/clienti/ClientLeaderboardTable';
 import { NewVsReturningDonut } from '@/lib/components/admin/statistiche/clienti/NewVsReturningDonut';
@@ -18,7 +18,7 @@ export default function ClientiPage() {
   const statFicheProducts = useStatisticheStore((s) => s.statFicheProducts);
   const isLoading         = useStatisticheStore((s) => s.isLoading);
   const clients           = useClientsStore((s) => s.clients);
-  const allFiches         = useFichesStore((s) => s.fiches);
+  const clientStats       = useClientStatsStore((s) => s.stats);
 
   const leaderboard = useMemo(
     () => computeClientLeaderboard(statFiches, statFicheServices, statFicheProducts, clients),
@@ -26,8 +26,8 @@ export default function ClientiPage() {
   );
 
   const newVsReturning = useMemo(
-    () => computeNewVsReturning(statFiches, allFiches),
-    [statFiches, allFiches],
+    () => computeNewVsReturning(statFiches, clientStats),
+    [statFiches, clientStats],
   );
 
   const dayDist = useMemo(() => computeDayDistribution(statFiches), [statFiches]);

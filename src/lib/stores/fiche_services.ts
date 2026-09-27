@@ -4,6 +4,7 @@ import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheService } from '@/lib/types/FicheService';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useFichesStore } from '@/lib/stores/fiches';
+import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
 
 interface PlannedSegment {
   ficheServiceId: string;
@@ -18,7 +19,12 @@ interface FicheServicesState {
   error: string | null;
   /** Ids whose realtime echoes should be ignored (we just wrote them locally). */
   pendingMutationIds: Set<string>;
+  /** Lines are loaded from this start_time onwards; mirrors useFichesStore.loadedFrom. */
+  loadedFrom: Date;
+  /** Reloads everything from `loadedFrom` on; older periods already loaded are kept. */
   fetchFicheServices: () => Promise<void>;
+  /** Loads the lines between `from` and `loadedFrom` if not loaded yet. */
+  ensureLoadedFrom: (from: Date) => Promise<void>;
   addFicheService: (ficheService: Partial<FicheService>) => Promise<FicheService>;
   updateFicheService: (id: string, updated: Partial<FicheService>) => Promise<FicheService>;
   deleteFicheService: (id: string) => Promise<void>;
@@ -46,11 +52,11 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
   isLoading: true,
   error: null,
   pendingMutationIds: new Set<string>(),
+  loadedFrom: initialLoadedFrom(),
 
   fetchFicheServices: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const since = new Date();
-    since.setDate(since.getDate() - 90);
+    const since = get().loadedFrom;
     const { data, error } = await fetchAllPages<FicheService>(
       (from, to) =>
         supabase
@@ -64,7 +70,40 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
       set({ isLoading: false, error });
       return;
     }
-    set({ fiche_services: data.map((fs) => new FicheService(fs)), isLoading: false, error: null });
+    const fresh = data.map((fs) => new FicheService(fs));
+    // keep what an on-demand load brought in before `since`
+    set((s) => ({
+      fiche_services: [...s.fiche_services.filter((fs) => new Date(fs.start_time) < since), ...fresh],
+      isLoading: false,
+      error: null,
+    }));
+  },
+
+  ensureLoadedFrom: async (from) => {
+    const until = get().loadedFrom;
+    if (from >= until) return;
+    const { data, error } = await fetchAllPages<FicheService>(
+      (a, b) =>
+        supabase
+          .from('fiche_services')
+          .select('*')
+          .gte('start_time', from.toISOString())
+          .lt('start_time', until.toISOString())
+          .order('start_time', { ascending: true })
+          .range(a, b),
+    );
+    if (error) {
+      set({ error });
+      return;
+    }
+    const older = data.map((fs) => new FicheService(fs));
+    set((s) => {
+      const known = new Set(s.fiche_services.map((fs) => fs.id));
+      const merged = [...older.filter((fs) => !known.has(fs.id)), ...s.fiche_services].sort(
+        (x, y) => new Date(x.start_time).getTime() - new Date(y.start_time).getTime(),
+      );
+      return { fiche_services: merged, loadedFrom: from < s.loadedFrom ? from : s.loadedFrom };
+    });
   },
 
   addFicheService: async (ficheService) => {
