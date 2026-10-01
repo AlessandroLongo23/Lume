@@ -247,6 +247,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const svcDropdownRef = useRef<HTMLDivElement>(null);
   const prodInputRef = useRef<HTMLInputElement>(null);
   const prodDropdownRef = useRef<HTMLDivElement>(null);
+  const lastValidBaseRef = useRef<Date | null>(null);
 
   // Initialise state when the modal opens
   useEffect(() => {
@@ -311,6 +312,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       setFicheServices([]);
       setFicheProducts([]);
     }
+    lastValidBaseRef.current = null;
     setErrors({});
     setErrorMessage('');
     setSvcQuery('');
@@ -497,8 +499,15 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   function addServiceToList(svc: Service) {
-    const operatorId = mode === 'add' ? (operator?.id ?? '') : '';
     setFicheServices((prev) => {
+      // The calendar draws a service in its operator's column, so a row without
+      // one is invisible there. A new row takes the slot's operator when booking,
+      // else the operator of the row above, else the one already on the fiche.
+      const operatorId =
+        (mode === 'add' ? operator?.id : undefined) ||
+        prev.filter((s) => s.operator_id).at(-1)?.operator_id ||
+        (mode === 'edit' ? fiche?.getFicheServices().find((fs) => fs.operator_id)?.operator_id : undefined) ||
+        '';
       // New services start right after the latest existing service (contiguous),
       // or at the appointment time when this is the first one.
       const start =
@@ -520,7 +529,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
    *  same delta, so gaps between services are preserved (mirrors dragging an entire
    *  appointment on the calendar). */
   function handleDatetimeChange(value: string) {
-    const prevBase = baseTime;
+    // The move is measured from the last valid value: while the field is empty
+    // or half-typed baseTime falls back to "now", and a delta taken from there
+    // would throw the services to an arbitrary time.
+    const current = datetimeStr ? new Date(datetimeStr) : null;
+    if (current && !isNaN(current.getTime())) lastValidBaseRef.current = current;
+    const prevBase = lastValidBaseRef.current ?? baseTime;
     setDatetimeStr(value);
     const next = value ? new Date(value) : null;
     if (!next || isNaN(next.getTime())) return;
@@ -773,6 +787,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     if (!clientId) newErrors.client_id = 'Seleziona un cliente';
     if (!datetimeStr) newErrors.datetime = 'Inserisci data e ora';
     if (!ficheServices.length) newErrors.services = 'Aggiungi almeno un servizio';
+    else if (ficheServices.some((s) => !s.operator_id)) newErrors.services = 'Scegli un operatore per ogni servizio';
     setErrors(newErrors);
     return !Object.values(newErrors).some(Boolean);
   }
