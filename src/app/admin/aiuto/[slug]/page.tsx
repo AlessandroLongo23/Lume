@@ -7,6 +7,7 @@ import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { getTutorialBySlug } from '@/lib/tutorials/registry';
 import { StartGuideButton } from '@/lib/components/admin/tutorials/StartGuideButton';
 import { TutorialArticle } from '@/lib/components/admin/tutorials/TutorialArticle';
+import { TutorialVideo } from '@/lib/components/admin/tutorials/TutorialVideo';
 import { ComplexityBadge, ScopeChips } from '@/lib/components/admin/tutorials/TutorialTags';
 
 export default function TutorialPage() {
@@ -52,15 +53,21 @@ export default function TutorialPage() {
         <ScopeChips scopes={tutorial.scopes} />
       </div>
 
-      {/* Video — Phase 4 wires Supabase Storage playback. */}
-      <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-muted-foreground dark:border-zinc-700 dark:bg-zinc-900/50">
-        <div className="flex flex-col items-center gap-2 text-sm">
-          <PlayCircle className="size-8 opacity-60" />
-          Video in arrivo
+      {/* Video, as wide as the page: it is the first thing to reach for. Until a
+          tutorial has one, a quiet placeholder holds a smaller spot. */}
+      {tutorial.videoPath ? (
+        <TutorialVideo key={tutorial.videoPath} videoPath={tutorial.videoPath} title={tutorial.title} />
+      ) : (
+        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-xl border border-dashed border-[var(--lume-border)] bg-[var(--lume-surface-raised)] text-muted-foreground">
+          <div className="flex flex-col items-center gap-2 text-sm">
+            <PlayCircle className="size-8 opacity-60" />
+            Video in arrivo
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Article — Markdown served from public/tutorials/<slug>/article.md. */}
+      {/* Article: the same steps in words and screenshots, for whoever would
+          rather read. Markdown served from public/tutorials/<slug>/article.md. */}
       {tutorial.articleSlug ? (
         <TutorialArticle key={tutorial.articleSlug} slug={tutorial.articleSlug} />
       ) : (

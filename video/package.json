@@ -1,0 +1,19 @@
+{
+  "name": "lume-tutorial-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record": "node record.mjs",
+    "all": "node all.mjs",
+    "check": "node all.mjs --check",
+    "studio": "remotion studio src/index.ts",
+    "upload": "node upload.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.533",
+    "@remotion/cli": "4.0.533",
+    "@remotion/google-fonts": "4.0.533",
+    "@remotion/renderer": "^4.0.533",
+    "remotion": "4.0.533"
+  }
+}
