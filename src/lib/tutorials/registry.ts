@@ -16,6 +16,8 @@ export const tutorials: Tutorial[] = [
     complexity: 'base',
     scopes: ['generale', 'agenda', 'clienti', 'servizi', 'prodotti'],
     tourId: 'intro',
+    articleSlug: 'primi-passi',
+    videoPath: 'primi-passi/video.mp4',
     isIntro: true,
     welcome: {
       title: 'Benvenuto in Lume',
@@ -32,6 +34,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['clienti'],
     tourId: 'crea-cliente',
     articleSlug: 'crea-cliente',
+    videoPath: 'crea-cliente/video.mp4',
   },
   {
     id: 'crea-servizio',
@@ -43,6 +46,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['servizi'],
     tourId: 'crea-servizio',
     articleSlug: 'crea-servizio',
+    videoPath: 'crea-servizio/video.mp4',
   },
   {
     id: 'crea-categoria-servizio',
@@ -54,6 +58,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['servizi'],
     tourId: 'crea-categoria-servizio',
     articleSlug: 'crea-categoria-servizio',
+    videoPath: 'crea-categoria-servizio/video.mp4',
   },
   {
     id: 'crea-prodotto',
@@ -65,6 +70,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['prodotti'],
     tourId: 'crea-prodotto',
     articleSlug: 'crea-prodotto',
+    videoPath: 'crea-prodotto/video.mp4',
   },
   {
     id: 'crea-operatore',
@@ -76,6 +82,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['operatori'],
     tourId: 'crea-operatore',
     articleSlug: 'crea-operatore',
+    videoPath: 'crea-operatore/video.mp4',
   },
   {
     id: 'usare-calendario',
@@ -87,6 +94,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['agenda'],
     tourId: 'usare-calendario',
     articleSlug: 'usare-calendario',
+    videoPath: 'usare-calendario/video.mp4',
     prerequisites: [
       { label: 'almeno un operatore', met: hasOperators, tutorialId: 'crea-operatore' },
     ],
@@ -101,6 +109,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['agenda', 'fiches'],
     tourId: 'prenota-appuntamento',
     articleSlug: 'prenota-appuntamento',
+    videoPath: 'prenota-appuntamento/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
       { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
@@ -117,6 +126,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['agenda', 'fiches'],
     tourId: 'modifica-appuntamento',
     articleSlug: 'modifica-appuntamento',
+    videoPath: 'modifica-appuntamento/video.mp4',
     prerequisites: [
       { label: 'almeno un appuntamento in agenda', met: hasFiches, tutorialId: 'prenota-appuntamento' },
     ],
@@ -131,6 +141,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['fiches'],
     tourId: 'crea-fiche',
     articleSlug: 'crea-fiche',
+    videoPath: 'crea-fiche/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
       { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
@@ -147,6 +158,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['fiches', 'bilancio'],
     tourId: 'incassa-fiche',
     articleSlug: 'incassa-fiche',
+    videoPath: 'incassa-fiche/video.mp4',
     prerequisites: [
       { label: 'almeno una fiche da incassare', met: hasOpenFiches, tutorialId: 'crea-fiche' },
     ],
@@ -161,6 +173,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['clienti'],
     tourId: 'scheda-cliente',
     articleSlug: 'scheda-cliente',
+    videoPath: 'scheda-cliente/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
     ],
@@ -175,6 +188,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['prenotazioni', 'agenda'],
     tourId: 'gestisci-prenotazioni',
     articleSlug: 'gestisci-prenotazioni',
+    videoPath: 'gestisci-prenotazioni/video.mp4',
     // No prerequisites: pending requests are produced by clients on the public
     // booking site, not by any tutorial — and `tourQueue.runnable()` drops a
     // chained tutorial that has no tour, so a prerequisite chain can't guarantee
@@ -191,6 +205,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['coupons'],
     tourId: 'crea-coupon',
     articleSlug: 'crea-coupon',
+    videoPath: 'crea-coupon/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
     ],
@@ -215,6 +230,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['abbonamenti'],
     tourId: 'crea-abbonamento',
     articleSlug: 'crea-abbonamento',
+    videoPath: 'crea-abbonamento/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
       { label: 'almeno un servizio', met: hasServices, tutorialId: 'crea-servizio' },
@@ -230,6 +246,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['coupons'],
     tourId: 'vendi-gift-card',
     articleSlug: 'vendi-gift-card',
+    videoPath: 'vendi-gift-card/video.mp4',
     prerequisites: [
       { label: 'almeno un cliente', met: hasClients, tutorialId: 'crea-cliente' },
     ],
@@ -244,6 +261,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['prodotti'],
     tourId: 'gestione-giacenza',
     articleSlug: 'gestione-giacenza',
+    videoPath: 'gestione-giacenza/video.mp4',
     prerequisites: [
       { label: 'almeno un prodotto', met: hasProducts, tutorialId: 'crea-prodotto' },
     ],
@@ -258,6 +276,7 @@ export const tutorials: Tutorial[] = [
     scopes: ['prodotti'],
     tourId: 'marche-fornitori',
     articleSlug: 'marche-fornitori',
+    videoPath: 'marche-fornitori/video.mp4',
     // No prerequisites: marchi, fornitori e categorie prodotto are standalone
     // registries that need no pre-existing data (unlike a product, which the
     // crea-prodotto tour chains). They are themselves the building blocks the
