@@ -1,8 +1,13 @@
 'use client';
 
-import { useStatisticheStore, type Preset } from '@/lib/stores/statistiche';
+import { endOfDay, format, parseISO } from 'date-fns';
+import {
+  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
+} from '@/components/ui/select';
+import { useStatisticheStore, type QuickPreset, type YearPreset } from '@/lib/stores/statistiche';
+import { usePastYears } from '@/lib/hooks/usePastYears';
 
-const PRESETS: { value: Preset; label: string }[] = [
+const PRESETS: { value: QuickPreset; label: string }[] = [
   { value: '7d',    label: '7g' },
   { value: 'month', label: 'Mese' },
   { value: '3m',    label: '3m' },
@@ -17,9 +22,13 @@ export function PeriodPicker() {
   const setDateFrom = useStatisticheStore((s) => s.setDateFrom);
   const setDateTo   = useStatisticheStore((s) => s.setDateTo);
   const fetchForPeriod = useStatisticheStore((s) => s.fetchForPeriod);
+  // "Anno" covers the current year; the ones before it are picked from the list.
+  const pastYears = usePastYears(new Date().getFullYear() - 1);
+  const yearItems = Object.fromEntries(pastYears.map((y) => [`anno_${y}`, String(y)]));
+  const selectedYear = preset.startsWith('anno_') ? preset : null;
 
   function handleFromChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const d = new Date(e.target.value);
+    const d = parseISO(e.target.value);
     if (!isNaN(d.getTime())) {
       setDateFrom(d);
       fetchForPeriod(d, dateTo);
@@ -27,7 +36,7 @@ export function PeriodPicker() {
   }
 
   function handleToChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const d = new Date(e.target.value);
+    const d = endOfDay(parseISO(e.target.value));
     if (!isNaN(d.getTime())) {
       setDateTo(d);
       fetchForPeriod(dateFrom, d);
@@ -35,7 +44,7 @@ export function PeriodPicker() {
   }
 
   function toInputValue(d: Date) {
-    return d.toISOString().slice(0, 10);
+    return format(d, 'yyyy-MM-dd');
   }
 
   return (
@@ -80,6 +89,30 @@ export function PeriodPicker() {
           </button>
         ))}
       </div>
+
+      {pastYears.length > 0 && (
+        <Select
+          value={selectedYear}
+          onValueChange={(v) => {
+            if (v) setPreset(v as YearPreset);
+          }}
+          items={yearItems}
+        >
+          <SelectTrigger
+            aria-label="Anni precedenti"
+            className="w-full rounded-md border-border bg-card text-xs text-foreground data-[size=default]:h-[var(--lume-control-h-sm)]"
+          >
+            <SelectValue placeholder="Anni precedenti" />
+          </SelectTrigger>
+          <SelectContent align="start">
+            {pastYears.map((y) => (
+              <SelectItem key={y} value={`anno_${y}`}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }

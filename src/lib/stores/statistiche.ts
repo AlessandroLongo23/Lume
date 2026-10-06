@@ -1,7 +1,7 @@
 // src/lib/stores/statistiche.ts
 import { create } from 'zustand';
 import {
-  startOfMonth, startOfYear, subDays, subMonths,
+  startOfMonth, startOfYear, endOfYear, subDays, subMonths,
   endOfDay, startOfDay, format,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -13,11 +13,18 @@ import { FicheProduct } from '@/lib/types/FicheProduct';
 import { FichePayment } from '@/lib/types/FichePayment';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 
-export type Preset = '7d' | 'month' | '3m' | 'year';
+/** `anno_2023` is a whole past calendar year; `custom` is a range typed in "Dal / Al". */
+export type YearPreset = `anno_${number}`;
+export type QuickPreset = '7d' | 'month' | '3m' | 'year';
+export type Preset = QuickPreset | YearPreset | 'custom';
 
-function presetDates(preset: Preset): { from: Date; to: Date } {
+function presetDates(preset: QuickPreset | YearPreset): { from: Date; to: Date } {
   const today = endOfDay(new Date());
-  switch (preset) {
+  if (preset.startsWith('anno_')) {
+    const jan1 = new Date(Number(preset.slice('anno_'.length)), 0, 1);
+    return { from: jan1, to: endOfYear(jan1) };
+  }
+  switch (preset as QuickPreset) {
     case '7d':
       return { from: startOfDay(subDays(new Date(), 6)), to: today };
     case 'month':
@@ -51,7 +58,7 @@ interface StatisticheState {
   historicalEarnings: MonthlyEarnings[];
   isHistoricalLoading: boolean;
 
-  setPreset: (preset: Preset) => void;
+  setPreset: (preset: QuickPreset | YearPreset) => void;
   setDateFrom: (date: Date) => void;
   setDateTo: (date: Date) => void;
   fetchForPeriod: (from: Date, to: Date) => Promise<void>;
@@ -79,8 +86,8 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       get().fetchForPeriod(from, to);
     },
 
-    setDateFrom: (date) => set({ dateFrom: date, preset: 'month' }),
-    setDateTo: (date) => set({ dateTo: date, preset: 'month' }),
+    setDateFrom: (date) => set({ dateFrom: date, preset: 'custom' }),
+    setDateTo: (date) => set({ dateTo: date, preset: 'custom' }),
 
     fetchForPeriod: async (from, to) => {
       set({ isLoading: true, error: null });
