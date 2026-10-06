@@ -51,7 +51,10 @@ interface StatisticheState {
   statFicheServices: FicheService[];
   statFicheProducts: FicheProduct[];
   statFichePayments: FichePayment[];
+  /** First load of the page: nothing to show yet. */
   isLoading: boolean;
+  /** A new period is loading while the previous one stays on screen. */
+  isRefreshing: boolean;
   error: string | null;
 
   // 13-month historical trend (independent of period picker)
@@ -59,11 +62,16 @@ interface StatisticheState {
   isHistoricalLoading: boolean;
 
   setPreset: (preset: QuickPreset | YearPreset) => void;
-  setDateFrom: (date: Date) => void;
-  setDateTo: (date: Date) => void;
+  /** A range typed in "Dal / Al": `from` at the start of its day, `to` at the end. */
+  setRange: (from: Date, to: Date) => void;
   fetchForPeriod: (from: Date, to: Date) => Promise<void>;
   fetchHistoricalEarnings: () => Promise<void>;
 }
+
+// Only the latest period request may write to the store: an older one that
+// answers late would put another period's numbers under the current dates.
+let periodRequestId = 0;
+let hasLoadedPeriod = false;
 
 export const useStatisticheStore = create<StatisticheState>((set, get) => {
   const initial = presetDates('month');
@@ -76,6 +84,7 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
     statFicheProducts: [],
     statFichePayments: [],
     isLoading: false,
+    isRefreshing: false,
     error: null,
     historicalEarnings: [],
     isHistoricalLoading: false,
@@ -86,11 +95,15 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       get().fetchForPeriod(from, to);
     },
 
-    setDateFrom: (date) => set({ dateFrom: date, preset: 'custom' }),
-    setDateTo: (date) => set({ dateTo: date, preset: 'custom' }),
+    setRange: (from, to) => {
+      set({ preset: 'custom', dateFrom: from, dateTo: to });
+      get().fetchForPeriod(from, to);
+    },
 
     fetchForPeriod: async (from, to) => {
-      set({ isLoading: true, error: null });
+      const id = ++periodRequestId;
+      const first = !hasLoadedPeriod;
+      set({ isLoading: first, isRefreshing: !first, error: null });
       const fichesRes = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
         (rangeFrom, rangeTo) =>
           supabase
@@ -103,8 +116,9 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
             .range(rangeFrom, rangeTo),
       );
 
+      if (id !== periodRequestId) return; // a newer period was requested meanwhile
       if (fichesRes.error) {
-        set({ isLoading: false, error: fichesRes.error });
+        set({ isLoading: false, isRefreshing: false, error: fichesRes.error });
         return;
       }
       const fiches = fichesRes.data.map((f) => new Fiche(f));
@@ -117,7 +131,9 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
           statFicheProducts: [],
           statFichePayments: [],
           isLoading: false,
+          isRefreshing: false,
         });
+        hasLoadedPeriod = true;
         return;
       }
 
@@ -148,12 +164,15 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
         ),
       ]);
 
+      if (id !== periodRequestId) return;
+      hasLoadedPeriod = true;
       set({
         statFiches: fiches,
         statFicheServices: servRes.data.map((s) => new FicheService(s)),
         statFicheProducts: prodRes.data.map((p) => new FicheProduct(p)),
         statFichePayments: payRes.data.map((p) => new FichePayment(p)),
         isLoading: false,
+        isRefreshing: false,
         error: servRes.error ?? prodRes.error ?? payRes.error ?? null,
       });
     },

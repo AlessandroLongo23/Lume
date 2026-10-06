@@ -13,6 +13,7 @@ export default function StatisticheLayout({ children }: { children: React.ReactN
   const fetchFicheProducts = useFicheProductsStore((s) => s.fetchFicheProducts);
   const dateFrom = useStatisticheStore((s) => s.dateFrom);
   const dateTo = useStatisticheStore((s) => s.dateTo);
+  const isRefreshing = useStatisticheStore((s) => s.isRefreshing);
 
   useEffect(() => {
     fetchFicheProducts();
@@ -31,7 +32,10 @@ export default function StatisticheLayout({ children }: { children: React.ReactN
       />
       <div className="flex gap-8 items-start">
         <StatisticheSidebar />
-        <div className="flex-1 min-w-0">{children}</div>
+        {/* While a new period loads, the previous numbers stay readable but dimmed. */}
+        <div className={`flex-1 min-w-0 transition-opacity ${isRefreshing ? 'opacity-60' : ''}`} aria-busy={isRefreshing}>
+          {children}
+        </div>
       </div>
     </div>
   );
