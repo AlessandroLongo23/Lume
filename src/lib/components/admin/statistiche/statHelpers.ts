@@ -1,15 +1,8 @@
 // src/lib/components/admin/statistiche/statHelpers.ts
-import { Fiche } from '@/lib/types/Fiche';
-import { FicheService } from '@/lib/types/FicheService';
-import { FicheProduct } from '@/lib/types/FicheProduct';
-import { FichePayment } from '@/lib/types/FichePayment';
-import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
-import { Client } from '@/lib/types/Client';
-import { Service } from '@/lib/types/Service';
-import { Product } from '@/lib/types/Product';
-import { Operator } from '@/lib/types/Operator';
-import { ServiceCategory } from '@/lib/types/ServiceCategory';
-import { ProductCategory } from '@/lib/types/ProductCategory';
+//
+// The numbers are computed in the database by public.statistiche(); these helpers
+// only reshape that result into the rows each chart and table takes.
+import type { StatisticheResult } from '@/lib/types/Statistiche';
 
 // ── KPIs ────────────────────────────────────────────────────────────────────
 
@@ -20,35 +13,15 @@ export interface KpiResult {
   activeClients: number;
 }
 
-export function computeKpis(
-  fiches: Fiche[],
-  ficheServices: FicheService[],
-  ficheProducts: FicheProduct[],
-): KpiResult {
-  const serviceSums = new Map<string, number>();
-  for (const fs of ficheServices) {
-    serviceSums.set(fs.fiche_id, (serviceSums.get(fs.fiche_id) ?? 0) + fs.final_price);
-  }
-  const productSums = new Map<string, number>();
-  for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
-  }
-
-  let totalRevenue = 0;
-  for (const f of fiches) {
-    totalRevenue += f.total_override ?? ((serviceSums.get(f.id) ?? 0) + (productSums.get(f.id) ?? 0));
-  }
-
-  const ficheCount = fiches.length;
-  const avgTicket = ficheCount > 0 ? totalRevenue / ficheCount : 0;
-  const activeClients = new Set(fiches.map((f) => f.client_id)).size;
-
-  return { totalRevenue, ficheCount, avgTicket, activeClients };
-}
-
-export function computeTrend(current: number, previous: number): number | null {
-  if (previous === 0) return null;
-  return ((current - previous) / previous) * 100;
+export function toKpis(data: StatisticheResult | null): KpiResult {
+  const totalRevenue = data?.kpi.incasso ?? 0;
+  const ficheCount = data?.kpi.fiche ?? 0;
+  return {
+    totalRevenue,
+    ficheCount,
+    avgTicket: ficheCount > 0 ? totalRevenue / ficheCount : 0,
+    activeClients: data?.kpi.clienti_attivi ?? 0,
+  };
 }
 
 // ── Payment breakdown ────────────────────────────────────────────────────────
@@ -58,17 +31,12 @@ export interface PaymentBreakdownItem {
   value: number;
 }
 
-export function computePaymentBreakdown(payments: FichePayment[]): PaymentBreakdownItem[] {
-  const sums = { cash: 0, pos: 0, other: 0 };
-  for (const p of payments) {
-    if (p.method === FichePaymentMethod.CASH) sums.cash += p.amount;
-    else if (p.method === FichePaymentMethod.POS) sums.pos += p.amount;
-    else sums.other += p.amount;
-  }
+export function toPaymentBreakdown(data: StatisticheResult | null): PaymentBreakdownItem[] {
+  if (!data) return [];
   return [
-    { name: 'Contanti', value: sums.cash },
-    { name: 'POS', value: sums.pos },
-    { name: 'Altro', value: sums.other },
+    { name: 'Contanti', value: data.pagamenti.contanti },
+    { name: 'POS', value: data.pagamenti.pos },
+    { name: 'Altro', value: data.pagamenti.altro },
   ].filter((item) => item.value > 0);
 }
 
@@ -81,14 +49,8 @@ export interface DayCount {
   count: number;
 }
 
-export function computeDayDistribution(fiches: Fiche[]): DayCount[] {
-  const counts = [0, 0, 0, 0, 0, 0, 0];
-  for (const f of fiches) {
-    const jsDay = new Date(f.datetime).getDay(); // 0=Sun
-    const itDay = (jsDay + 6) % 7; // 0=Mon...6=Sun
-    counts[itDay]++;
-  }
-  return IT_DAYS.map((day, i) => ({ day, count: counts[i] }));
+export function toDayDistribution(data: StatisticheResult | null): DayCount[] {
+  return IT_DAYS.map((day, i) => ({ day, count: data?.giorni[i] ?? 0 }));
 }
 
 // ── Client leaderboard ───────────────────────────────────────────────────────
@@ -101,41 +63,15 @@ export interface ClientRow {
   avgTicket: number;
 }
 
-export function computeClientLeaderboard(
-  fiches: Fiche[],
-  ficheServices: FicheService[],
-  ficheProducts: FicheProduct[],
-  clients: Client[],
-): ClientRow[] {
-  const serviceSums = new Map<string, number>();
-  for (const fs of ficheServices) {
-    serviceSums.set(fs.fiche_id, (serviceSums.get(fs.fiche_id) ?? 0) + fs.final_price);
-  }
-  const productSums = new Map<string, number>();
-  for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
-  }
-
-  const map = new Map<string, { presenze: number; incasso: number }>();
-  for (const f of fiches) {
-    const total = f.total_override ?? ((serviceSums.get(f.id) ?? 0) + (productSums.get(f.id) ?? 0));
-    const curr = map.get(f.client_id) ?? { presenze: 0, incasso: 0 };
-    map.set(f.client_id, { presenze: curr.presenze + 1, incasso: curr.incasso + total });
-  }
-
-  const clientMap = new Map(clients.map((c) => [c.id, c]));
-  return Array.from(map.entries())
-    .map(([clientId, stats]) => {
-      const c = clientMap.get(clientId);
-      return {
-        clientId,
-        name: c?.getFullName() ?? 'Cliente eliminato',
-        presenze: stats.presenze,
-        incasso: stats.incasso,
-        avgTicket: stats.presenze > 0 ? stats.incasso / stats.presenze : 0,
-      };
-    })
-    .sort((a, b) => b.incasso - a.incasso);
+/** Sorted by incasso, highest first. */
+export function toClientLeaderboard(data: StatisticheResult | null): ClientRow[] {
+  return (data?.clienti ?? []).map((c) => ({
+    clientId: c.id ?? '',
+    name: c.nome,
+    presenze: c.presenze,
+    incasso: c.incasso,
+    avgTicket: c.presenze > 0 ? c.incasso / c.presenze : 0,
+  }));
 }
 
 // ── New vs returning ─────────────────────────────────────────────────────────
@@ -145,29 +81,12 @@ export interface NewVsReturning {
   value: number;
 }
 
-export function computeNewVsReturning(
-  periodFiches: Fiche[],
-  /** First visit ever per client, from the client_stats view (whole history, not the loaded window). */
-  firstVisitByClient: Record<string, { first_visit: Date | null }>,
-): NewVsReturning[] {
-  const periodClientIds = new Set(periodFiches.map((f) => f.client_id));
-  const periodStart = periodFiches.reduce(
-    (min, f) => Math.min(min, new Date(f.datetime).getTime()),
-    Infinity,
-  );
-
-  // A client is "new" if their earliest fiche ever is within the period
-  let newClients = 0;
-  let returningClients = 0;
-  for (const clientId of periodClientIds) {
-    const first = firstVisitByClient[clientId]?.first_visit?.getTime() ?? Infinity;
-    if (first >= periodStart) newClients++;
-    else returningClients++;
-  }
-
+/** "Nuovi" had no fiche at the salon before the period started. */
+export function toNewVsReturning(data: StatisticheResult | null): NewVsReturning[] {
+  if (!data) return [];
   return [
-    { name: 'Nuovi', value: newClients },
-    { name: 'Abituali', value: returningClients },
+    { name: 'Nuovi', value: data.nuovi_abituali.nuovi },
+    { name: 'Abituali', value: data.nuovi_abituali.abituali },
   ].filter((item) => item.value > 0);
 }
 
@@ -182,33 +101,20 @@ export interface ServiceRow {
   pctIncasso: number;
 }
 
-export function computeServiceLeaderboard(
-  ficheServices: FicheService[],
-  services: Service[],
-  categories: ServiceCategory[],
-): ServiceRow[] {
-  const serviceMap = new Map(services.map((s) => [s.id, s]));
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  const map = new Map<string, { name: string; categoryName: string; count: number; incasso: number }>();
-  for (const fs of ficheServices) {
-    const svc = serviceMap.get(fs.service_id);
-    const catName = svc ? (categoryMap.get(svc.category_id)?.name ?? '—') : '—';
-    const curr = map.get(fs.service_id) ?? { name: fs.name, categoryName: catName, count: 0, incasso: 0 };
-    map.set(fs.service_id, { ...curr, count: curr.count + 1, incasso: curr.incasso + fs.final_price });
-  }
-
-  const totalIncasso = Array.from(map.values()).reduce((s, r) => s + r.incasso, 0);
-  return Array.from(map.entries())
-    .map(([serviceId, r]) => ({
-      serviceId,
-      ...r,
-      pctIncasso: totalIncasso > 0 ? (r.incasso / totalIncasso) * 100 : 0,
-    }))
-    .sort((a, b) => b.incasso - a.incasso);
+export function toServiceLeaderboard(data: StatisticheResult | null): ServiceRow[] {
+  const rows = data?.servizi ?? [];
+  const totalIncasso = rows.reduce((s, r) => s + r.incasso, 0);
+  return rows.map((r) => ({
+    serviceId: r.id ?? '',
+    name: r.nome,
+    categoryName: r.categoria,
+    count: r.numero,
+    incasso: r.incasso,
+    pctIncasso: totalIncasso > 0 ? (r.incasso / totalIncasso) * 100 : 0,
+  }));
 }
 
-// ── Services by category ─────────────────────────────────────────────────────
+// ── Breakdown by category (services and products) ────────────────────────────
 
 export interface CategoryBreakdown {
   name: string;
@@ -216,25 +122,8 @@ export interface CategoryBreakdown {
   count: number;
 }
 
-export function computeServicesByCategory(
-  ficheServices: FicheService[],
-  services: Service[],
-  categories: ServiceCategory[],
-): CategoryBreakdown[] {
-  const serviceMap = new Map(services.map((s) => [s.id, s]));
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  const map = new Map<string, { name: string; value: number; count: number }>();
-  for (const fs of ficheServices) {
-    const svc = serviceMap.get(fs.service_id);
-    if (!svc) continue;
-    const catId = svc.category_id;
-    const catName = categoryMap.get(catId)?.name ?? 'Senza categoria';
-    const curr = map.get(catId) ?? { name: catName, value: 0, count: 0 };
-    map.set(catId, { ...curr, value: curr.value + fs.final_price, count: curr.count + 1 });
-  }
-
-  return Array.from(map.values()).sort((a, b) => b.value - a.value);
+export function toCategoryBreakdown(rows: { nome: string; incasso: number; numero: number }[] | undefined): CategoryBreakdown[] {
+  return (rows ?? []).map((r) => ({ name: r.nome, value: r.incasso, count: r.numero }));
 }
 
 // ── Services by operator ──────────────────────────────────────────────────────
@@ -246,26 +135,13 @@ export interface OperatorServiceRow {
   incasso: number;
 }
 
-export function computeServicesByOperator(
-  ficheServices: FicheService[],
-  operators: Operator[],
-): OperatorServiceRow[] {
-  const operatorMap = new Map(operators.map((o) => [o.id, o]));
-  const map = new Map<string, { operatorName: string; serviceName: string; count: number; incasso: number }>();
-
-  for (const fs of ficheServices) {
-    const key = `${fs.operator_id}__${fs.service_id}`;
-    const op = operatorMap.get(fs.operator_id);
-    const curr = map.get(key) ?? {
-      operatorName: op?.getFullName() ?? 'Operatore eliminato',
-      serviceName: fs.name,
-      count: 0,
-      incasso: 0,
-    };
-    map.set(key, { ...curr, count: curr.count + 1, incasso: curr.incasso + fs.final_price });
-  }
-
-  return Array.from(map.values()).sort((a, b) => b.incasso - a.incasso);
+export function toServicesByOperator(data: StatisticheResult | null): OperatorServiceRow[] {
+  return (data?.servizi_operatori ?? []).map((r) => ({
+    operatorName: r.operatore,
+    serviceName: r.servizio,
+    count: r.numero,
+    incasso: r.incasso,
+  }));
 }
 
 // ── Product leaderboard ───────────────────────────────────────────────────────
@@ -278,57 +154,14 @@ export interface ProductRow {
   incasso: number;
 }
 
-export function computeProductLeaderboard(
-  ficheProducts: FicheProduct[],
-  products: Product[],
-  categories: ProductCategory[],
-): ProductRow[] {
-  const productMap = new Map(products.map((p) => [p.id, p]));
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  const map = new Map<string, { name: string; categoryName: string; qty: number; incasso: number }>();
-  for (const fp of ficheProducts) {
-    const prod = productMap.get(fp.product_id);
-    const catName = prod ? (categoryMap.get(prod.product_category_id)?.name ?? '—') : '—';
-    const curr = map.get(fp.product_id) ?? {
-      name: prod?.name ?? 'Prodotto eliminato',
-      categoryName: catName,
-      qty: 0,
-      incasso: 0,
-    };
-    map.set(fp.product_id, {
-      ...curr,
-      qty: curr.qty + fp.quantity,
-      incasso: curr.incasso + fp.final_price,
-    });
-  }
-
-  return Array.from(map.entries())
-    .map(([productId, r]) => ({ productId, ...r }))
-    .sort((a, b) => b.incasso - a.incasso);
-}
-
-// ── Products by category ──────────────────────────────────────────────────────
-
-export function computeProductsByCategory(
-  ficheProducts: FicheProduct[],
-  products: Product[],
-  categories: ProductCategory[],
-): CategoryBreakdown[] {
-  const productMap = new Map(products.map((p) => [p.id, p]));
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  const map = new Map<string, { name: string; value: number; count: number }>();
-  for (const fp of ficheProducts) {
-    const prod = productMap.get(fp.product_id);
-    if (!prod) continue;
-    const catId = prod.product_category_id;
-    const catName = categoryMap.get(catId)?.name ?? 'Senza categoria';
-    const curr = map.get(catId) ?? { name: catName, value: 0, count: 0 };
-    map.set(catId, { ...curr, value: curr.value + fp.final_price, count: curr.count + fp.quantity });
-  }
-
-  return Array.from(map.values()).sort((a, b) => b.value - a.value);
+export function toProductLeaderboard(data: StatisticheResult | null): ProductRow[] {
+  return (data?.prodotti ?? []).map((r) => ({
+    productId: r.id ?? '',
+    name: r.nome,
+    categoryName: r.categoria,
+    qty: r.quantita,
+    incasso: r.incasso,
+  }));
 }
 
 // ── Operator summary ──────────────────────────────────────────────────────────
@@ -343,67 +176,15 @@ export interface OperatorSummaryRow {
   clientCount: number;
 }
 
-export function computeOperatorSummary(
-  fiches: Fiche[],
-  ficheServices: FicheService[],
-  ficheProducts: FicheProduct[],
-  operators: Operator[],
-): OperatorSummaryRow[] {
-  const operatorMap = new Map(operators.map((o) => [o.id, o]));
-
-  // Build per-fiche totals
-  const serviceSums = new Map<string, number>();
-  for (const fs of ficheServices) {
-    serviceSums.set(fs.fiche_id, (serviceSums.get(fs.fiche_id) ?? 0) + fs.final_price);
-  }
-  const productSums = new Map<string, number>();
-  for (const fp of ficheProducts) {
-    productSums.set(fp.fiche_id, (productSums.get(fp.fiche_id) ?? 0) + fp.final_price);
-  }
-
-  // Group fiches by primary operator (operator of the first service on the fiche)
-  const ficheToOperator = new Map<string, string>();
-  for (const fs of ficheServices) {
-    if (!ficheToOperator.has(fs.fiche_id)) {
-      ficheToOperator.set(fs.fiche_id, fs.operator_id);
-    }
-  }
-
-  // Per-operator: service name counts (for top service)
-  const opServiceCounts = new Map<string, Map<string, number>>();
-  for (const fs of ficheServices) {
-    let inner = opServiceCounts.get(fs.operator_id);
-    if (!inner) { inner = new Map(); opServiceCounts.set(fs.operator_id, inner); }
-    inner.set(fs.name, (inner.get(fs.name) ?? 0) + 1);
-  }
-
-  const opStats = new Map<string, { ficheCount: number; incasso: number; clients: Set<string> }>();
-  for (const f of fiches) {
-    const opId = ficheToOperator.get(f.id);
-    if (!opId) continue;
-    const total = f.total_override ?? ((serviceSums.get(f.id) ?? 0) + (productSums.get(f.id) ?? 0));
-    const curr = opStats.get(opId) ?? { ficheCount: 0, incasso: 0, clients: new Set<string>() };
-    curr.ficheCount++;
-    curr.incasso += total;
-    curr.clients.add(f.client_id);
-    opStats.set(opId, curr);
-  }
-
-  return Array.from(opStats.entries())
-    .map(([operatorId, stats]) => {
-      const serviceCounter = opServiceCounts.get(operatorId);
-      const topService = serviceCounter
-        ? Array.from(serviceCounter.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
-        : '—';
-      return {
-        operatorId,
-        name: operatorMap.get(operatorId)?.getFullName() ?? 'Operatore eliminato',
-        ficheCount: stats.ficheCount,
-        incasso: stats.incasso,
-        avgTicket: stats.ficheCount > 0 ? stats.incasso / stats.ficheCount : 0,
-        topService,
-        clientCount: stats.clients.size,
-      };
-    })
-    .sort((a, b) => b.incasso - a.incasso);
+/** A fiche counts for the operator of its earliest service. */
+export function toOperatorSummary(data: StatisticheResult | null): OperatorSummaryRow[] {
+  return (data?.operatori ?? []).map((r) => ({
+    operatorId: r.id,
+    name: r.nome,
+    ficheCount: r.fiche,
+    incasso: r.incasso,
+    avgTicket: r.fiche > 0 ? r.incasso / r.fiche : 0,
+    topService: r.top_servizio,
+    clientCount: r.clienti,
+  }));
 }
