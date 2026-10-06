@@ -1,7 +1,7 @@
 // src/lib/stores/statistiche.ts
 import { create } from 'zustand';
 import {
-  startOfMonth, startOfYear, subDays, subMonths,
+  startOfMonth, startOfYear, endOfYear, subDays, subMonths,
   endOfDay, startOfDay, format,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -13,11 +13,18 @@ import { FicheProduct } from '@/lib/types/FicheProduct';
 import { FichePayment } from '@/lib/types/FichePayment';
 import { FicheStatus } from '@/lib/types/ficheStatus';
 
-export type Preset = '7d' | 'month' | '3m' | 'year';
+/** `anno_2023` is a whole past calendar year; `custom` is a range typed in "Dal / Al". */
+export type YearPreset = `anno_${number}`;
+export type QuickPreset = '7d' | 'month' | '3m' | 'year';
+export type Preset = QuickPreset | YearPreset | 'custom';
 
-function presetDates(preset: Preset): { from: Date; to: Date } {
+function presetDates(preset: QuickPreset | YearPreset): { from: Date; to: Date } {
   const today = endOfDay(new Date());
-  switch (preset) {
+  if (preset.startsWith('anno_')) {
+    const jan1 = new Date(Number(preset.slice('anno_'.length)), 0, 1);
+    return { from: jan1, to: endOfYear(jan1) };
+  }
+  switch (preset as QuickPreset) {
     case '7d':
       return { from: startOfDay(subDays(new Date(), 6)), to: today };
     case 'month':
@@ -44,19 +51,27 @@ interface StatisticheState {
   statFicheServices: FicheService[];
   statFicheProducts: FicheProduct[];
   statFichePayments: FichePayment[];
+  /** First load of the page: nothing to show yet. */
   isLoading: boolean;
+  /** A new period is loading while the previous one stays on screen. */
+  isRefreshing: boolean;
   error: string | null;
 
   // 13-month historical trend (independent of period picker)
   historicalEarnings: MonthlyEarnings[];
   isHistoricalLoading: boolean;
 
-  setPreset: (preset: Preset) => void;
-  setDateFrom: (date: Date) => void;
-  setDateTo: (date: Date) => void;
+  setPreset: (preset: QuickPreset | YearPreset) => void;
+  /** A range typed in "Dal / Al": `from` at the start of its day, `to` at the end. */
+  setRange: (from: Date, to: Date) => void;
   fetchForPeriod: (from: Date, to: Date) => Promise<void>;
   fetchHistoricalEarnings: () => Promise<void>;
 }
+
+// Only the latest period request may write to the store: an older one that
+// answers late would put another period's numbers under the current dates.
+let periodRequestId = 0;
+let hasLoadedPeriod = false;
 
 export const useStatisticheStore = create<StatisticheState>((set, get) => {
   const initial = presetDates('month');
@@ -69,6 +84,7 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
     statFicheProducts: [],
     statFichePayments: [],
     isLoading: false,
+    isRefreshing: false,
     error: null,
     historicalEarnings: [],
     isHistoricalLoading: false,
@@ -79,11 +95,15 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
       get().fetchForPeriod(from, to);
     },
 
-    setDateFrom: (date) => set({ dateFrom: date, preset: 'month' }),
-    setDateTo: (date) => set({ dateTo: date, preset: 'month' }),
+    setRange: (from, to) => {
+      set({ preset: 'custom', dateFrom: from, dateTo: to });
+      get().fetchForPeriod(from, to);
+    },
 
     fetchForPeriod: async (from, to) => {
-      set({ isLoading: true, error: null });
+      const id = ++periodRequestId;
+      const first = !hasLoadedPeriod;
+      set({ isLoading: first, isRefreshing: !first, error: null });
       const fichesRes = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
         (rangeFrom, rangeTo) =>
           supabase
@@ -96,8 +116,9 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
             .range(rangeFrom, rangeTo),
       );
 
+      if (id !== periodRequestId) return; // a newer period was requested meanwhile
       if (fichesRes.error) {
-        set({ isLoading: false, error: fichesRes.error });
+        set({ isLoading: false, isRefreshing: false, error: fichesRes.error });
         return;
       }
       const fiches = fichesRes.data.map((f) => new Fiche(f));
@@ -110,7 +131,9 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
           statFicheProducts: [],
           statFichePayments: [],
           isLoading: false,
+          isRefreshing: false,
         });
+        hasLoadedPeriod = true;
         return;
       }
 
@@ -141,12 +164,15 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
         ),
       ]);
 
+      if (id !== periodRequestId) return;
+      hasLoadedPeriod = true;
       set({
         statFiches: fiches,
         statFicheServices: servRes.data.map((s) => new FicheService(s)),
         statFicheProducts: prodRes.data.map((p) => new FicheProduct(p)),
         statFichePayments: payRes.data.map((p) => new FichePayment(p)),
         isLoading: false,
+        isRefreshing: false,
         error: servRes.error ?? prodRes.error ?? payRes.error ?? null,
       });
     },

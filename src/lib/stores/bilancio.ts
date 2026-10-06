@@ -6,7 +6,14 @@ import {
 import { supabase } from '@/lib/supabase/client';
 import type { BilancioResult } from '@/lib/types/Bilancio';
 
-export type BilancioPreset = 'questo_mese' | 'mese_scorso' | 'quest_anno' | 'anno_scorso' | 'ultimi_12_mesi' | 'personalizzato';
+/** `anno_2023` is a whole past calendar year, offered for as far back as the salon has fiches. */
+export type BilancioYearPreset = `anno_${number}`;
+export type BilancioPreset =
+  | 'questo_mese' | 'mese_scorso' | 'quest_anno' | 'anno_scorso' | 'ultimi_12_mesi'
+  | BilancioYearPreset
+  | 'personalizzato';
+
+const isYearPreset = (preset: BilancioPreset): preset is BilancioYearPreset => preset.startsWith('anno_') && preset !== 'anno_scorso';
 
 export const BILANCIO_PRESETS: { value: BilancioPreset; label: string }[] = [
   { value: 'questo_mese', label: 'Questo mese' },
@@ -20,6 +27,10 @@ export const BILANCIO_PRESETS: { value: BilancioPreset; label: string }[] = [
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
 
 function presetRange(preset: Exclude<BilancioPreset, 'personalizzato'>, today = new Date()): { dal: string; al: string } {
+  if (isYearPreset(preset)) {
+    const year = Number(preset.slice('anno_'.length));
+    return { dal: `${year}-01-01`, al: `${year}-12-31` };
+  }
   switch (preset) {
     case 'questo_mese':
       return { dal: ymd(startOfMonth(today)), al: ymd(today) };
@@ -46,6 +57,7 @@ function presetRange(preset: Exclude<BilancioPreset, 'personalizzato'>, today = 
 function previousRange(preset: BilancioPreset, dal: string, al: string): { dal: string; al: string } {
   const from = parseISO(dal);
   const to = parseISO(al);
+  if (isYearPreset(preset)) return { dal: ymd(subYears(from, 1)), al: ymd(subYears(to, 1)) };
   switch (preset) {
     case 'questo_mese':
     case 'mese_scorso':
