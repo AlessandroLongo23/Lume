@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { Euro, Receipt, TrendingUp, Users } from 'lucide-react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
-import { useClientsStore } from '@/lib/stores/clients';
 import { StatKpiCard } from '@/lib/components/admin/statistiche/StatKpiCard';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { StatRevenueAreaChart } from '@/lib/components/admin/statistiche/overview/StatRevenueAreaChart';
@@ -11,39 +10,19 @@ import { PaymentMethodsDonut } from '@/lib/components/admin/statistiche/overview
 import { DayDistributionBar } from '@/lib/components/admin/statistiche/overview/DayDistributionBar';
 import { TopClientsPreviewTable } from '@/lib/components/admin/statistiche/overview/TopClientsPreviewTable';
 import {
-  computeKpis, computePaymentBreakdown,
-  computeDayDistribution, computeClientLeaderboard,
+  toKpis, toPaymentBreakdown, toDayDistribution, toClientLeaderboard,
 } from '@/lib/components/admin/statistiche/statHelpers';
 import { formatCurrency } from '@/lib/utils/format';
 
 export default function OverviewPage() {
-  const statFiches         = useStatisticheStore((s) => s.statFiches);
-  const statFicheServices  = useStatisticheStore((s) => s.statFicheServices);
-  const statFicheProducts  = useStatisticheStore((s) => s.statFicheProducts);
-  const statFichePayments  = useStatisticheStore((s) => s.statFichePayments);
+  const data               = useStatisticheStore((s) => s.data);
   const historicalEarnings = useStatisticheStore((s) => s.historicalEarnings);
   const isLoading          = useStatisticheStore((s) => s.isLoading);
-  const clients            = useClientsStore((s) => s.clients);
 
-  const kpis = useMemo(
-    () => computeKpis(statFiches, statFicheServices, statFicheProducts),
-    [statFiches, statFicheServices, statFicheProducts],
-  );
-
-  const paymentBreakdown = useMemo(
-    () => computePaymentBreakdown(statFichePayments),
-    [statFichePayments],
-  );
-
-  const dayDistribution = useMemo(
-    () => computeDayDistribution(statFiches),
-    [statFiches],
-  );
-
-  const clientLeaderboard = useMemo(
-    () => computeClientLeaderboard(statFiches, statFicheServices, statFicheProducts, clients),
-    [statFiches, statFicheServices, statFicheProducts, clients],
-  );
+  const kpis = useMemo(() => toKpis(data), [data]);
+  const paymentBreakdown = useMemo(() => toPaymentBreakdown(data), [data]);
+  const dayDistribution = useMemo(() => toDayDistribution(data), [data]);
+  const clientLeaderboard = useMemo(() => toClientLeaderboard(data), [data]);
 
   if (isLoading) {
     return (

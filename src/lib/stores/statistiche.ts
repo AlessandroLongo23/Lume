@@ -2,16 +2,11 @@
 import { create } from 'zustand';
 import {
   startOfMonth, startOfYear, endOfYear, subDays, subMonths,
-  endOfDay, startOfDay, format,
+  endOfDay, startOfDay, format, parseISO,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase/client';
-import { fetchAllPages, fetchAllByIn } from '@/lib/supabase/paginate';
-import { Fiche } from '@/lib/types/Fiche';
-import { FicheService } from '@/lib/types/FicheService';
-import { FicheProduct } from '@/lib/types/FicheProduct';
-import { FichePayment } from '@/lib/types/FichePayment';
-import { FicheStatus } from '@/lib/types/ficheStatus';
+import type { StatisticheMese, StatisticheResult } from '@/lib/types/Statistiche';
 
 /** `anno_2023` is a whole past calendar year; `custom` is a range typed in "Dal / Al". */
 export type YearPreset = `anno_${number}`;
@@ -37,7 +32,7 @@ function presetDates(preset: QuickPreset | YearPreset): { from: Date; to: Date }
 }
 
 export interface MonthlyEarnings {
-  label: string; // e.g. "mag 2026"
+  label: string; // e.g. "mag 26"
   earnings: number;
 }
 
@@ -46,11 +41,8 @@ interface StatisticheState {
   dateTo: Date;
   preset: Preset;
 
-  // Period-filtered data (fetched from DB for selected range)
-  statFiches: Fiche[];
-  statFicheServices: FicheService[];
-  statFicheProducts: FicheProduct[];
-  statFichePayments: FichePayment[];
+  /** Everything the five sections show for the period, computed by public.statistiche(). */
+  data: StatisticheResult | null;
   /** First load of the page: nothing to show yet. */
   isLoading: boolean;
   /** A new period is loading while the previous one stays on screen. */
@@ -68,10 +60,11 @@ interface StatisticheState {
   fetchHistoricalEarnings: () => Promise<void>;
 }
 
+const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
+
 // Only the latest period request may write to the store: an older one that
 // answers late would put another period's numbers under the current dates.
 let periodRequestId = 0;
-let hasLoadedPeriod = false;
 
 export const useStatisticheStore = create<StatisticheState>((set, get) => {
   const initial = presetDates('month');
@@ -79,11 +72,8 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
     dateFrom: initial.from,
     dateTo: initial.to,
     preset: 'month',
-    statFiches: [],
-    statFicheServices: [],
-    statFicheProducts: [],
-    statFichePayments: [],
-    isLoading: false,
+    data: null,
+    isLoading: true, // the layout loads the period as soon as it mounts
     isRefreshing: false,
     error: null,
     historicalEarnings: [],
@@ -102,169 +92,34 @@ export const useStatisticheStore = create<StatisticheState>((set, get) => {
 
     fetchForPeriod: async (from, to) => {
       const id = ++periodRequestId;
-      const first = !hasLoadedPeriod;
+      const first = get().data === null;
       set({ isLoading: first, isRefreshing: !first, error: null });
-      const fichesRes = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
-        (rangeFrom, rangeTo) =>
-          supabase
-            .from('fiches')
-            .select('*')
-            .eq('status', FicheStatus.COMPLETED)
-            .gte('datetime', from.toISOString())
-            .lte('datetime', to.toISOString())
-            .order('datetime', { ascending: true })
-            .range(rangeFrom, rangeTo),
-      );
 
+      const { data, error } = await supabase.rpc('statistiche', { p_from: ymd(from), p_to: ymd(to) });
       if (id !== periodRequestId) return; // a newer period was requested meanwhile
-      if (fichesRes.error) {
-        set({ isLoading: false, isRefreshing: false, error: fichesRes.error });
-        return;
-      }
-      const fiches = fichesRes.data.map((f) => new Fiche(f));
-      const ficheIds = fiches.map((f) => f.id);
 
-      if (ficheIds.length === 0) {
+      if (error) {
         set({
-          statFiches: [],
-          statFicheServices: [],
-          statFicheProducts: [],
-          statFichePayments: [],
           isLoading: false,
           isRefreshing: false,
+          error: 'Impossibile caricare le statistiche. Riprova tra qualche istante.',
         });
-        hasLoadedPeriod = true;
         return;
       }
-
-      const [servRes, prodRes, payRes] = await Promise.all([
-        fetchAllByIn<FicheService>(ficheIds, (chunk, rangeFrom, rangeTo) =>
-          supabase
-            .from('fiche_services')
-            .select('*')
-            .in('fiche_id', chunk)
-            .order('id', { ascending: true })
-            .range(rangeFrom, rangeTo),
-        ),
-        fetchAllByIn<FicheProduct>(ficheIds, (chunk, rangeFrom, rangeTo) =>
-          supabase
-            .from('fiche_products')
-            .select('*')
-            .in('fiche_id', chunk)
-            .order('id', { ascending: true })
-            .range(rangeFrom, rangeTo),
-        ),
-        fetchAllByIn<FichePayment>(ficheIds, (chunk, rangeFrom, rangeTo) =>
-          supabase
-            .from('fiche_payments')
-            .select('*')
-            .in('fiche_id', chunk)
-            .order('id', { ascending: true })
-            .range(rangeFrom, rangeTo),
-        ),
-      ]);
-
-      if (id !== periodRequestId) return;
-      hasLoadedPeriod = true;
-      set({
-        statFiches: fiches,
-        statFicheServices: servRes.data.map((s) => new FicheService(s)),
-        statFicheProducts: prodRes.data.map((p) => new FicheProduct(p)),
-        statFichePayments: payRes.data.map((p) => new FichePayment(p)),
-        isLoading: false,
-        isRefreshing: false,
-        error: servRes.error ?? prodRes.error ?? payRes.error ?? null,
-      });
+      set({ data: data as StatisticheResult | null, isLoading: false, isRefreshing: false });
     },
 
     fetchHistoricalEarnings: async () => {
       set({ isHistoricalLoading: true });
-      const since = startOfMonth(subMonths(new Date(), 12));
-
-      type HistoricalFicheRow = { id: string; datetime: string; total_override: number | null };
-      const fichesRes = await fetchAllPages<HistoricalFicheRow>(
-        (rangeFrom, rangeTo) =>
-          supabase
-            .from('fiches')
-            .select('id, datetime, total_override')
-            .eq('status', FicheStatus.COMPLETED)
-            .gte('datetime', since.toISOString())
-            .order('datetime', { ascending: true })
-            .range(rangeFrom, rangeTo),
-      );
-
-      if (fichesRes.error) {
+      const { data, error } = await supabase.rpc('statistiche_andamento', { p_mesi: 13 });
+      if (error) {
         set({ isHistoricalLoading: false });
         return;
       }
-
-      const allHistoricalFicheIds = fichesRes.data.map((f) => f.id);
-
-      if (allHistoricalFicheIds.length === 0) {
-        // Build months array with all zeros
-        const months: MonthlyEarnings[] = [];
-        for (let i = 12; i >= 0; i--) {
-          const d = subMonths(new Date(), i);
-          months.push({ label: format(d, 'MMM yy', { locale: it }), earnings: 0 });
-        }
-        set({ historicalEarnings: months, isHistoricalLoading: false });
-        return;
-      }
-
-      type ServiceSumRow = { fiche_id: string; final_price: number };
-      type ProductSumRow = { fiche_id: string; final_price: number; quantity: number };
-      const [servicesRes, productsRes] = await Promise.all([
-        fetchAllByIn<ServiceSumRow>(allHistoricalFicheIds, (chunk, rangeFrom, rangeTo) =>
-          supabase
-            .from('fiche_services')
-            .select('fiche_id, final_price')
-            .in('fiche_id', chunk)
-            .order('fiche_id', { ascending: true })
-            .range(rangeFrom, rangeTo),
-        ),
-        fetchAllByIn<ProductSumRow>(allHistoricalFicheIds, (chunk, rangeFrom, rangeTo) =>
-          supabase
-            .from('fiche_products')
-            .select('fiche_id, final_price, quantity')
-            .in('fiche_id', chunk)
-            .order('fiche_id', { ascending: true })
-            .range(rangeFrom, rangeTo),
-        ),
-      ]);
-
-      if (servicesRes.error || productsRes.error) {
-        set({ isHistoricalLoading: false });
-        return;
-      }
-
-      const serviceSums = new Map<string, number>();
-      for (const s of servicesRes.data) {
-        serviceSums.set(s.fiche_id, (serviceSums.get(s.fiche_id) ?? 0) + s.final_price);
-      }
-      const productSums = new Map<string, number>();
-      for (const p of productsRes.data) {
-        productSums.set(p.fiche_id, (productSums.get(p.fiche_id) ?? 0) + p.final_price);
-      }
-
-      // Group by YYYY-MM
-      const byMonth = new Map<string, number>();
-      for (const f of fichesRes.data) {
-        const key = f.datetime.slice(0, 7); // "YYYY-MM"
-        const total = f.total_override ?? ((serviceSums.get(f.id) ?? 0) + (productSums.get(f.id) ?? 0));
-        byMonth.set(key, (byMonth.get(key) ?? 0) + total);
-      }
-
-      // Build last 13 months array (oldest → newest)
-      const months: MonthlyEarnings[] = [];
-      for (let i = 12; i >= 0; i--) {
-        const d = subMonths(new Date(), i);
-        const key = format(d, 'yyyy-MM');
-        months.push({
-          label: format(d, 'MMM yy', { locale: it }),
-          earnings: byMonth.get(key) ?? 0,
-        });
-      }
-
+      const months = ((data ?? []) as StatisticheMese[]).map((m) => ({
+        label: format(parseISO(`${m.mese}-01`), 'MMM yy', { locale: it }),
+        earnings: m.incasso,
+      }));
       set({ historicalEarnings: months, isHistoricalLoading: false });
     },
   };

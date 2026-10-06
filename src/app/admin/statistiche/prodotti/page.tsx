@@ -2,22 +2,18 @@
 
 import { useMemo } from 'react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
-import { useProductsStore } from '@/lib/stores/products';
-import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { TopProductsBarChart } from '@/lib/components/admin/statistiche/prodotti/TopProductsBarChart';
 import { ProductsByCategoryDonut } from '@/lib/components/admin/statistiche/prodotti/ProductsByCategoryDonut';
-import { computeProductLeaderboard, computeProductsByCategory } from '@/lib/components/admin/statistiche/statHelpers';
+import { toProductLeaderboard, toCategoryBreakdown } from '@/lib/components/admin/statistiche/statHelpers';
 import { formatCurrency } from '@/lib/utils/format';
 
 export default function ProdottiPage() {
-  const statFicheProducts = useStatisticheStore((s) => s.statFicheProducts);
-  const isLoading         = useStatisticheStore((s) => s.isLoading);
-  const products          = useProductsStore((s) => s.products);
-  const categories        = useProductCategoriesStore((s) => s.product_categories);
+  const data      = useStatisticheStore((s) => s.data);
+  const isLoading = useStatisticheStore((s) => s.isLoading);
 
-  const leaderboard = useMemo(() => computeProductLeaderboard(statFicheProducts, products, categories), [statFicheProducts, products, categories]);
-  const byCategory  = useMemo(() => computeProductsByCategory(statFicheProducts, products, categories), [statFicheProducts, products, categories]);
+  const leaderboard = useMemo(() => toProductLeaderboard(data), [data]);
+  const byCategory  = useMemo(() => toCategoryBreakdown(data?.prodotti_categorie), [data]);
 
   if (isLoading) {
     return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;

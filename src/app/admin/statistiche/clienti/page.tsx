@@ -2,35 +2,21 @@
 
 import { useMemo } from 'react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
-import { useClientsStore } from '@/lib/stores/clients';
-import { useClientStatsStore } from '@/lib/stores/client_stats';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { ClientLeaderboardTable } from '@/lib/components/admin/statistiche/clienti/ClientLeaderboardTable';
 import { NewVsReturningDonut } from '@/lib/components/admin/statistiche/clienti/NewVsReturningDonut';
 import { DayDistributionBar } from '@/lib/components/admin/statistiche/overview/DayDistributionBar';
 import {
-  computeClientLeaderboard, computeNewVsReturning, computeDayDistribution,
+  toClientLeaderboard, toNewVsReturning, toDayDistribution,
 } from '@/lib/components/admin/statistiche/statHelpers';
 
 export default function ClientiPage() {
-  const statFiches        = useStatisticheStore((s) => s.statFiches);
-  const statFicheServices = useStatisticheStore((s) => s.statFicheServices);
-  const statFicheProducts = useStatisticheStore((s) => s.statFicheProducts);
-  const isLoading         = useStatisticheStore((s) => s.isLoading);
-  const clients           = useClientsStore((s) => s.clients);
-  const clientStats       = useClientStatsStore((s) => s.stats);
+  const data      = useStatisticheStore((s) => s.data);
+  const isLoading = useStatisticheStore((s) => s.isLoading);
 
-  const leaderboard = useMemo(
-    () => computeClientLeaderboard(statFiches, statFicheServices, statFicheProducts, clients),
-    [statFiches, statFicheServices, statFicheProducts, clients],
-  );
-
-  const newVsReturning = useMemo(
-    () => computeNewVsReturning(statFiches, clientStats),
-    [statFiches, clientStats],
-  );
-
-  const dayDist = useMemo(() => computeDayDistribution(statFiches), [statFiches]);
+  const leaderboard = useMemo(() => toClientLeaderboard(data), [data]);
+  const newVsReturning = useMemo(() => toNewVsReturning(data), [data]);
+  const dayDist = useMemo(() => toDayDistribution(data), [data]);
 
   if (isLoading) {
     return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;

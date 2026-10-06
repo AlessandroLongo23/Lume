@@ -2,28 +2,22 @@
 
 import { useMemo } from 'react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
-import { useServicesStore } from '@/lib/stores/services';
-import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
-import { useOperatorsStore } from '@/lib/stores/operators';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { TopServicesBarChart } from '@/lib/components/admin/statistiche/servizi/TopServicesBarChart';
 import { ServicesByCategoryDonut } from '@/lib/components/admin/statistiche/servizi/ServicesByCategoryDonut';
 import { ServicesByOperatorTable } from '@/lib/components/admin/statistiche/servizi/ServicesByOperatorTable';
 import {
-  computeServiceLeaderboard, computeServicesByCategory, computeServicesByOperator,
+  toServiceLeaderboard, toCategoryBreakdown, toServicesByOperator,
 } from '@/lib/components/admin/statistiche/statHelpers';
 import { formatCurrency } from '@/lib/utils/format';
 
 export default function ServiziPage() {
-  const statFicheServices = useStatisticheStore((s) => s.statFicheServices);
-  const isLoading         = useStatisticheStore((s) => s.isLoading);
-  const services          = useServicesStore((s) => s.services);
-  const categories        = useServiceCategoriesStore((s) => s.service_categories);
-  const operators         = useOperatorsStore((s) => s.operators);
+  const data      = useStatisticheStore((s) => s.data);
+  const isLoading = useStatisticheStore((s) => s.isLoading);
 
-  const leaderboard   = useMemo(() => computeServiceLeaderboard(statFicheServices, services, categories), [statFicheServices, services, categories]);
-  const byCategory    = useMemo(() => computeServicesByCategory(statFicheServices, services, categories), [statFicheServices, services, categories]);
-  const byOperator    = useMemo(() => computeServicesByOperator(statFicheServices, operators), [statFicheServices, operators]);
+  const leaderboard = useMemo(() => toServiceLeaderboard(data), [data]);
+  const byCategory  = useMemo(() => toCategoryBreakdown(data?.servizi_categorie), [data]);
+  const byOperator  = useMemo(() => toServicesByOperator(data), [data]);
 
   if (isLoading) {
     return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;
