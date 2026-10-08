@@ -19,6 +19,7 @@ const FIELD_LABELS: Record<string, string> = {
   tecnica: 'Tecnica',
   paid: 'Pagata',
   payment_added: 'Pagamento aggiunto',
+  payment_method_changed: 'Metodo di pagamento',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -53,9 +54,10 @@ interface FicheHistoryTabProps {
 }
 
 function formatValue(field: string, value: unknown): string {
-  // payment_added carries an object payload ({method, amount, …}); render it
-  // before the null-guard so an explicit `null` for `old` still becomes `—`.
-  if (field === 'payment_added') {
+  // payment_added / payment_method_changed carry an object payload
+  // ({method, amount, …}); render it before the null-guard so an explicit
+  // `null` for `old` still becomes `—`.
+  if (field === 'payment_added' || field === 'payment_method_changed') {
     if (value === null || value === undefined) return '—';
     return formatPaymentAdded(value);
   }
