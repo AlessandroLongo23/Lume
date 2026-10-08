@@ -46,7 +46,7 @@ export function ClientCard({ client, onArchive, onRestore, showArchived = false 
   const birthdayReminder =
     usePreferencesStore((s) => s.preferences.clientsTable?.birthdayReminder) ??
     FACTORY_PREFERENCES.clientsTable.birthdayReminder;
-  const created = (client as unknown as { created_at?: string }).created_at;
+  const created = client.created_at;
   const initials = `${client.firstName?.[0] ?? ''}${client.lastName?.[0] ?? ''}`.toUpperCase();
   const fullName = `${client.firstName} ${client.lastName}`.trim();
 

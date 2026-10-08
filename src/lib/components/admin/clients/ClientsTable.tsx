@@ -353,6 +353,16 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         },
       },
       {
+        id: 'created_at',
+        header: 'Cliente dal',
+        accessorFn: (row) => (row.created_at ? new Date(row.created_at).getTime() : 0),
+        cell: ({ row }) => {
+          const v = row.original.created_at;
+          if (!v) return <span className="text-zinc-400">—</span>;
+          return <span className="tabular-nums">{new Date(v).toLocaleDateString('it-IT')}</span>;
+        },
+      },
+      {
         accessorKey: 'isTourist',
         header: '',
         cell: ({ getValue }) =>
@@ -384,6 +394,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       { label: 'Scontrino medio (€)', accessor: (c) => stats[c.id]?.avg_ticket ?? 0 },
       { label: 'Prima visita', accessor: (c) => stats[c.id]?.first_visit ?? null },
       { label: 'Ultima visita', accessor: (c) => stats[c.id]?.last_visit ?? null },
+      { label: 'Cliente dal', accessor: (c) => (c.created_at ? new Date(c.created_at) : null) },
       { label: 'Servizio preferito', accessor: (c) => stats[c.id]?.top_service_name ?? '' },
       { label: 'Operatore preferito', accessor: (c) => stats[c.id]?.top_operator_name ?? '' },
     ],
