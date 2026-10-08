@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { prefixes } from '@/lib/const/prefixes';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+
+// Matches the panel's max-h-72; used to decide whether it fits below the trigger.
+const PANEL_MAX_HEIGHT = 288;
 
 interface PhoneNumberProps {
   prefixCode: string;
@@ -24,10 +28,13 @@ export function PhoneNumber({
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPos, setDropdownPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const selectedPrefix = prefixes.find((p) => p.code === prefixCode) ?? prefixes[0];
 
@@ -35,9 +42,14 @@ export function PhoneNumber({
     .filter((p) => p.country.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => a.country.localeCompare(b.country));
 
+  // Close on outside click — must check both the trigger and the portal dropdown
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        (!portalRef.current || !portalRef.current.contains(target))
+      ) {
         setShowDropdown(false);
         setSearchQuery('');
         setHighlightedIndex(-1);
@@ -46,6 +58,21 @@ export function PhoneNumber({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Close on any scroll so the fixed dropdown doesn't drift from its trigger.
+  // Scrolls inside the dropdown itself (the options list) don't move the trigger.
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handleScroll = (e: Event) => {
+      const target = e.target as Node | null;
+      if (target && portalRef.current?.contains(target)) return;
+      setShowDropdown(false);
+      setSearchQuery('');
+      setHighlightedIndex(-1);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [showDropdown]);
 
   // Scroll highlighted option into view
   useEffect(() => {
@@ -72,6 +99,17 @@ export function PhoneNumber({
 
   const openDropdown = () => {
     if (disabled) return;
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      // Open upward when the panel wouldn't fit below and there's more room above.
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < PANEL_MAX_HEIGHT + 8 && rect.top > spaceBelow;
+      setDropdownPos(
+        openUp
+          ? { left: rect.left, bottom: window.innerHeight - rect.top + 4 }
+          : { left: rect.left, top: rect.bottom + 4 },
+      );
+    }
     setShowDropdown(true);
     setSearchQuery('');
     setHighlightedIndex(-1);
@@ -118,6 +156,7 @@ export function PhoneNumber({
     <div className={`flex flex-row gap-2 ${className}`}>
       <div ref={dropdownRef} className="relative">
         <button
+          ref={triggerRef}
           type="button"
           aria-label="Seleziona prefisso telefonico"
           aria-haspopup="listbox"
@@ -136,46 +175,52 @@ export function PhoneNumber({
           <ChevronDown className={`size-4 text-zinc-500 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
         </button>
 
-        {showDropdown && (
-          <div className="absolute max-h-72 overflow-hidden top-full left-0 mt-1 w-60 bg-white dark:bg-zinc-900 border border-zinc-500/25 rounded-lg shadow-lg z-popover">
-            <div className="p-2 border-b border-zinc-500/25">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                placeholder="Cerca paese..."
-                className="w-full px-2 py-1 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 rounded focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
-                onKeyDown={handleKeyNavigation}
-              />
+        {showDropdown && dropdownPos && (
+          <Portal>
+            <div
+              ref={portalRef}
+              style={{ position: 'fixed', ...dropdownPos }}
+              className="max-h-72 overflow-hidden w-60 bg-white dark:bg-zinc-900 border border-zinc-500/25 rounded-lg shadow-lg z-popover"
+            >
+              <div className="p-2 border-b border-zinc-500/25">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
+                  placeholder="Cerca paese..."
+                  className="w-full px-2 py-1 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 rounded focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
+                  onKeyDown={handleKeyNavigation}
+                />
+              </div>
+              <div ref={optionsRef} role="listbox" className="max-h-56 overflow-y-auto py-1">
+                {filteredPrefixes.map((p, i) => {
+                  const isHighlighted = highlightedIndex === i;
+                  const isSelected = p.code === prefixCode;
+                  return (
+                    <button
+                      key={p.code + p.country}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      className={`w-full px-3 py-2 text-left transition-colors
+                        ${isSelected
+                          ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
+                          : isHighlighted
+                            ? 'bg-zinc-100 dark:bg-zinc-800'
+                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        }`}
+                      onClick={() => handleSelect(p.code)}
+                      onMouseEnter={() => setHighlightedIndex(i)}
+                    >
+                      <span className={isSelected ? '' : 'text-zinc-900 dark:text-zinc-100'}>{p.code}</span>
+                      <span className={`text-sm ml-2 ${isSelected ? 'text-primary/70' : 'text-zinc-500'}`}>{p.country}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div ref={optionsRef} role="listbox" className="max-h-56 overflow-y-auto py-1">
-              {filteredPrefixes.map((p, i) => {
-                const isHighlighted = highlightedIndex === i;
-                const isSelected = p.code === prefixCode;
-                return (
-                  <button
-                    key={p.code + p.country}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    className={`w-full px-3 py-2 text-left transition-colors
-                      ${isSelected
-                        ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                        : isHighlighted
-                          ? 'bg-zinc-100 dark:bg-zinc-800'
-                          : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                      }`}
-                    onClick={() => handleSelect(p.code)}
-                    onMouseEnter={() => setHighlightedIndex(i)}
-                  >
-                    <span className={isSelected ? '' : 'text-zinc-900 dark:text-zinc-100'}>{p.code}</span>
-                    <span className={`text-sm ml-2 ${isSelected ? 'text-primary/70' : 'text-zinc-500'}`}>{p.country}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          </Portal>
         )}
       </div>
 
