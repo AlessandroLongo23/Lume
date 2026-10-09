@@ -49,6 +49,7 @@ import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import { supabase } from '@/lib/supabase/client';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import type { Fiche } from '@/lib/types/Fiche';
+import type { FichePayment } from '@/lib/types/FichePayment';
 import type { Operator } from '@/lib/types/Operator';
 import type { Service } from '@/lib/types/Service';
 import type { Product } from '@/lib/types/Product';
@@ -205,6 +206,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const salonName = useSubscriptionStore((s) => s.salonName) || 'Il tuo salone';
   const salonHours = useSalonSettingsStore((s) => s.settings?.operating_hours ?? null);
   const fichePayments = useFichePaymentsStore((s) => s.fiche_payments);
+  const updateFichePaymentMethod = useFichePaymentsStore((s) => s.updateFichePaymentMethod);
 
   const [clientId, setClientId] = useState('');
   const [datetimeStr, setDatetimeStr] = useState('');
@@ -232,10 +234,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   // Confirm dialog state for editing a CONCLUSA fiche
   const [showEditConfirm, setShowEditConfirm] = useState(false);
 
-  // Append-payment row (only used when fiche is CONCLUSA and total drifted)
-  const [appendMethod, setAppendMethod] = useState<FichePaymentMethod>(FichePaymentMethod.CASH);
-  const [appendAmount, setAppendAmount] = useState<number | null>(null);
-  const [isAppendingPayment, setIsAppendingPayment] = useState(false);
+  // Id of the registered payment whose method is being changed (CONCLUSA only)
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
 
   // Payment state
   const [paymentView, setPaymentView] = useState<PaymentView>(FichePaymentMethod.CASH);
@@ -329,9 +329,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     setIsSubmitting(false);
     setPendingAction(null);
     setShowEditConfirm(false);
-    setAppendMethod(FichePaymentMethod.CASH);
-    setAppendAmount(null);
-    setIsAppendingPayment(false);
+    setUpdatingPaymentId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fiche, mode, initialView]);
 
@@ -346,8 +344,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   // ── Closed-fiche payment derivations ──────────────────────────────────────
   // Hoisted up here (instead of grouped with the other render-time constants
-  // below) so the "pre-fill the append-payment delta" effect can depend on
-  // them without TDZ issues.
+  // below) so the handlers and the Pagamento tab can share them.
   const isCompleted = fiche?.status === FicheStatus.COMPLETED;
 
   const existingPayments = useMemo(() => {
@@ -373,28 +370,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   }, [isCompleted, fiche]);
   const paymentDelta = closedFicheCurrentTotal - paidSum;
   const showPaymentMismatch = isCompleted && Math.abs(paymentDelta) >= 0.01;
-
-  // Pre-fill the append-payment row with the current delta so the user can
-  // confirm with one click. We only nudge the value when the user hasn't
-  // typed something else (appendAmount === null) to avoid clobbering manual edits.
-  useEffect(() => {
-    if (!isCompleted) return;
-    if (activeTopTab !== 'payment') return;
-    if (appendAmount !== null) return;
-    if (paymentDelta > 0.005) {
-      setAppendAmount(Number(paymentDelta.toFixed(2)));
-    }
-  }, [isCompleted, activeTopTab, paymentDelta, appendAmount]);
-
-  // When the realtime echo lands a new payment row, reset appendAmount so the
-  // prefill effect above re-runs against the fresh delta. Trade-off: a manual
-  // edit the user typed before the echo arrived is wiped, but it would no
-  // longer match the displayed mismatch banner anyway. Manual edits within a
-  // single payments-list snapshot are still preserved.
-  const existingPaymentsCount = existingPayments.length;
-  useEffect(() => {
-    setAppendAmount(null);
-  }, [existingPaymentsCount]);
 
   // Close service dropdown on outside click
   useEffect(() => {
@@ -872,87 +847,59 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     await runPersist();
   }
 
-  /** Append a payment row on a closed fiche to reconcile a delta with the
-   *  current total. Goes directly to fiche_payments (NOT through the audit RPC
-   *  — payments are not fiche-table fields). The realtime subscription on
-   *  fiche_payments refreshes the read-only list.
-   *
-   *  After the payment insert succeeds we also write a `fiche_edits` row so
-   *  the post-close reconciliation shows up in the Cronologia tab — without
-   *  it the most common post-close action would leave no audit trail. The
-   *  edit insert is best-effort: if it fails we surface a popup but do NOT
-   *  roll back the payment (the money is real and shouldn't be undone).
-   *  salon_id is read from the workspace store (matches the convention in
-   *  fiches.addFiche) rather than fiche.salon_id. */
-  async function handleAppendPayment() {
+  /** Change the method of a payment already registered on a closed fiche
+   *  (e.g. closed as Contanti, the client actually paid by POS). Only the
+   *  method changes: the amount stays, so the incassato is untouched. It is
+   *  the only edit allowed on registered payments: rows are never added or
+   *  removed after the close. The fiche_edits row that feeds the Cronologia
+   *  tab is best-effort — the payment update is not rolled back if the audit
+   *  insert fails. */
+  async function handleChangePaymentMethod(payment: FichePayment, method: FichePaymentMethod) {
     if (!fiche?.id) return;
-    if (isAppendingPayment) return;
-    const amount = appendAmount ?? 0;
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (updatingPaymentId) return;
+    if (method === payment.method) return;
     const activeSalonId = useWorkspaceStore.getState().activeSalonId;
     if (!activeSalonId) {
       messagePopup.getState().error('Nessun salone attivo selezionato.');
       return;
     }
-    setIsAppendingPayment(true);
-    const methodSnapshot = appendMethod;
-    const paidSumBefore = paidSum;
+    setUpdatingPaymentId(payment.id);
     try {
-      const { error } = await supabase.from('fiche_payments').insert({
-        fiche_id: fiche.id,
-        salon_id: activeSalonId,
-        method: methodSnapshot,
-        amount,
-      });
-      if (error) throw new Error(error.message);
-      messagePopup.getState().success('Pagamento aggiunto');
-      setAppendAmount(null);
-      setAppendMethod(FichePaymentMethod.CASH);
+      await updateFichePaymentMethod(payment.id, method);
+      messagePopup.getState().success('Metodo di pagamento aggiornato');
 
-      // Best-effort audit row — RLS requires edited_by = auth.uid(),
-      // so look up the current user. If anything here fails the payment
-      // is already persisted; surface the gap to the user but don't throw.
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          messagePopup
-            .getState()
-            .error('Pagamento registrato ma cronologia non aggiornata');
-          return;
-        }
-        const { error: editError } = await supabase.from('fiche_edits').insert({
-          salon_id: activeSalonId,
-          fiche_id: fiche.id,
-          edited_by: user.id,
-          changes: {
-            payment_added: {
-              old: null,
-              new: {
-                method: methodSnapshot,
-                amount,
-                paid_sum_before: paidSumBefore,
-                paid_sum_after: paidSumBefore + amount,
+        const { error: editError } = user
+          ? await supabase.from('fiche_edits').insert({
+              salon_id: activeSalonId,
+              fiche_id: fiche.id,
+              edited_by: user.id,
+              changes: {
+                payment_method_changed: {
+                  old: { method: payment.method, amount: payment.amount },
+                  new: { method, amount: payment.amount },
+                },
               },
-            },
-          },
-          reason: null,
-        });
+              reason: null,
+            })
+          : { error: true };
         if (editError) {
           messagePopup
             .getState()
-            .error('Pagamento registrato ma cronologia non aggiornata');
+            .error('Metodo aggiornato ma cronologia non aggiornata');
         }
       } catch {
         messagePopup
           .getState()
-          .error('Pagamento registrato ma cronologia non aggiornata');
+          .error('Metodo aggiornato ma cronologia non aggiornata');
       }
     } catch (err) {
       messagePopup
         .getState()
-        .error(err instanceof Error ? err.message : 'Errore durante l\'aggiunta del pagamento');
+        .error(err instanceof Error ? err.message : 'Errore durante il cambio del metodo di pagamento');
     } finally {
-      setIsAppendingPayment(false);
+      setUpdatingPaymentId(null);
     }
   }
 
@@ -1040,9 +987,9 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const isPaymentTab = activeTopTab === 'payment';
   const isHistoryTab = activeTopTab === 'history';
 
-  // The Payment tab on a CONCLUSA fiche is read-only at the top level
-  // (existing splits + a delta-reconcile row that has its own button), so
-  // we hide the modal's primary confirm to avoid a misleading second action.
+  // The Payment tab on a CONCLUSA fiche only lets the user change the method
+  // of each registered payment, and that saves on selection, so we hide the
+  // modal's primary confirm to avoid a misleading second action.
   const hideConfirm = isEdit
     ? isHistoryTab || isEditTab || (isPaymentTab && isCompleted)
     : false;
@@ -1258,8 +1205,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         // Going TO the payment tab from "edit" still requires
                         // a valid form for not-yet-closed fiches (so the
                         // close-fiche flow has the right data). For closed
-                        // fiches the payment tab is read-only / append-only,
-                        // so no validation is needed.
+                        // fiches the payment tab only changes payment
+                        // methods, so no validation is needed.
                         if (id === 'payment' && !isCompleted) {
                           if (!validateForm()) return;
                         }
@@ -1817,7 +1764,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               )}
             </div>
           ) : isCompleted ? (
-            /* ══ PAGAMENTO TAB — fiche già chiusa (read-only + append) ══════ */
+            /* ══ PAGAMENTO TAB — fiche già chiusa (solo metodo modificabile) ══════ */
             <div
               role="tabpanel"
               id="fiche-panel-payment"
@@ -1854,7 +1801,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         Incassato <span className="font-semibold">{formatCurrency(paidSum)}</span>,
                         totale ora <span className="font-semibold">{formatCurrency(closedFicheCurrentTotal)}</span>.{' '}
                         {paymentDelta > 0
-                          ? `Aggiungi un pagamento da ${formatCurrency(paymentDelta)} per pareggiare.`
+                          ? `Mancano ${formatCurrency(paymentDelta)}.`
                           : `Cliente in credito di ${formatCurrency(Math.abs(paymentDelta))}.`}
                       </p>
                     </div>
@@ -1870,20 +1817,26 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   ) : (
                     <ul className="flex flex-col gap-2 list-none pl-0">
                       {existingPayments.map((p) => {
-                        const methodLabel =
-                          p.method === FichePaymentMethod.CASH
-                            ? 'Contanti'
-                            : p.method === FichePaymentMethod.POS
-                              ? 'POS'
-                              : 'Altro';
                         return (
                           <li
                             key={p.id}
                             className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-zinc-500/20 bg-zinc-50/60 dark:bg-zinc-800/40 text-sm"
                           >
-                            <span className="font-medium text-zinc-700 dark:text-zinc-200">
-                              {methodLabel}
-                            </span>
+                            <Select
+                              value={p.method}
+                              onChange={(v) => void handleChangePaymentMethod(p, v as FichePaymentMethod)}
+                              options={[
+                                { value: FichePaymentMethod.CASH, label: 'Contanti' },
+                                { value: FichePaymentMethod.POS, label: 'POS' },
+                                { value: FichePaymentMethod.OTHER, label: 'Altro' },
+                              ]}
+                              labelKey="label"
+                              valueKey="value"
+                              searchable={false}
+                              disabled={updatingPaymentId !== null}
+                              size="sm"
+                              width="w-36"
+                            />
                             <span className="text-zinc-700 dark:text-zinc-200 font-mono">
                               {formatCurrency(p.amount)}
                             </span>
@@ -1897,50 +1850,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   )}
                 </div>
 
-                {/* Append a new payment row to reconcile a delta. */}
-                <div className="flex flex-col gap-2 pt-1">
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                    Aggiungi pagamento
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={appendMethod}
-                      onChange={(v) => setAppendMethod(v as FichePaymentMethod)}
-                      options={[
-                        { value: FichePaymentMethod.CASH, label: 'Contanti' },
-                        { value: FichePaymentMethod.POS, label: 'POS' },
-                        { value: FichePaymentMethod.OTHER, label: 'Altro' },
-                      ]}
-                      labelKey="label"
-                      valueKey="value"
-                      searchable={false}
-                      size="sm"
-                      classes="flex-1"
-                    />
-                    <NumberInput
-                      value={appendAmount}
-                      onChange={(v) => setAppendAmount(v)}
-                      min={0}
-                      step={0.5}
-                      decimals={2}
-                      placeholder="0,00"
-                      suffix="€"
-                      size="sm"
-                      width="w-32"
-                    />
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      leadingIcon={Plus}
-                      onClick={handleAppendPayment}
-                      disabled={
-                        isAppendingPayment || !((appendAmount ?? 0) > 0)
-                      }
-                    >
-                      {isAppendingPayment ? 'Salvataggio…' : 'Aggiungi pagamento'}
-                    </Button>
-                  </div>
-                </div>
               </div>
             </div>
           ) : (
