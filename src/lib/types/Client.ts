@@ -18,6 +18,8 @@ export class Client {
   birthDate: string;
   note: string;
   archived_at: string | null;
+  /** When the client was added to the salon. Set by the database. */
+  created_at: string | null;
   photoUrl: string | null;
   /** Explicit per-client color override. NULL means "use the deterministic
    *  hash of `id`" — see {@link colorForClient}. */
@@ -41,6 +43,7 @@ export class Client {
     this.birthDate = client.birthDate;
     this.note = client.note;
     this.archived_at = client.archived_at ?? null;
+    this.created_at = client.created_at ?? null;
     this.photoUrl = client.photoUrl ?? null;
     this.color = client.color ?? null;
     this.can_book_online = client.can_book_online ?? true;

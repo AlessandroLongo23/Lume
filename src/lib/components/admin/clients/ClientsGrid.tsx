@@ -5,8 +5,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Users } from 'lucide-react';
 import { ClientCard } from './ClientCard';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
+import { SortMenu } from '@/lib/components/admin/table/SortMenu';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { useClientsStore } from '@/lib/stores/clients';
+import { useClientStatsStore } from '@/lib/stores/client_stats';
+import { useViewsStore } from '@/lib/stores/views';
+import { CLIENT_SORT_OPTIONS, sortClients } from '@/lib/utils/clientSort';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Client } from '@/lib/types/Client';
 
@@ -30,6 +34,9 @@ function getColCount(width: number): number {
 export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps) {
   const archiveClient = useClientsStore((s) => s.archiveClient);
   const restoreClient = useClientsStore((s) => s.restoreClient);
+  const stats = useClientStatsStore((s) => s.stats);
+  const sortKey = useViewsStore((s) => s.clientsSort);
+  const setView = useViewsStore((s) => s.setView);
 
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
@@ -46,8 +53,8 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
         `${c.phonePrefix ?? ''} ${c.phoneNumber ?? ''}`.toLowerCase().includes(q)
       );
     }
-    return data;
-  }, [clients, selectedGenders, globalFilter]);
+    return sortClients(data, sortKey, stats);
+  }, [clients, selectedGenders, globalFilter, sortKey, stats]);
 
   const handleArchive = async (client: Client) => {
     try {
@@ -123,6 +130,11 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
     virtualizer.measure();
   }, [colCount, virtualizer]);
 
+  // A new order starts from its first client, not from the old scroll position.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [sortKey]);
+
   const colsClass =
     colCount === 3 ? 'grid-cols-3' : colCount === 2 ? 'grid-cols-2' : 'grid-cols-1';
 
@@ -136,6 +148,11 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
           onChange={setGlobalFilter}
         />
         <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
+        <SortMenu
+          options={CLIENT_SORT_OPTIONS}
+          value={sortKey}
+          onChange={(v) => setView('clientsSort', v)}
+        />
       </div>
 
       {isEmpty ? (
