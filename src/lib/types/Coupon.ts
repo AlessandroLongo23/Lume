@@ -1,5 +1,6 @@
 import { User, UserPlus, Tag, Calendar, CreditCard, Wallet, Banknote, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 
 export type CouponKind = 'gift' | 'gift_card';
 export type CouponDiscountType = 'fixed' | 'percent' | 'free_item';
@@ -42,30 +43,30 @@ export class Coupon {
   created_by: string | null;
   created_at: string;
 
-  constructor(c: Coupon) {
-    this.id = c.id;
-    this.salon_id = c.salon_id;
-    this.kind = c.kind;
-    this.recipient_client_id = c.recipient_client_id;
-    this.purchaser_client_id = c.purchaser_client_id ?? null;
-    this.discount_type = c.discount_type;
-    this.discount_value = c.discount_value ?? null;
-    this.free_item_kind = c.free_item_kind ?? null;
-    this.free_item_id = c.free_item_id ?? null;
-    this.original_value = c.original_value ?? null;
-    this.remaining_value = c.remaining_value ?? null;
-    this.valid_from = c.valid_from;
-    this.valid_until = c.valid_until;
-    this.scope_service_ids = c.scope_service_ids ?? null;
-    this.scope_product_ids = c.scope_product_ids ?? null;
-    this.scope_service_category_ids = c.scope_service_category_ids ?? null;
-    this.scope_product_category_ids = c.scope_product_category_ids ?? null;
-    this.sale_amount = c.sale_amount ?? null;
-    this.sale_payment_method = c.sale_payment_method ?? null;
-    this.notes = c.notes ?? null;
-    this.is_active = c.is_active;
-    this.created_by = c.created_by ?? null;
-    this.created_at = c.created_at;
+  constructor(row: Tables<'coupons'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.kind = row.kind;
+    this.recipient_client_id = row.recipient_client_id;
+    this.purchaser_client_id = row.purchaser_client_id;
+    this.discount_type = row.discount_type;
+    this.discount_value = row.discount_value;
+    this.free_item_kind = row.free_item_kind;
+    this.free_item_id = row.free_item_id;
+    this.original_value = row.original_value;
+    this.remaining_value = row.remaining_value;
+    this.valid_from = row.valid_from;
+    this.valid_until = row.valid_until;
+    this.scope_service_ids = row.scope_service_ids;
+    this.scope_product_ids = row.scope_product_ids;
+    this.scope_service_category_ids = row.scope_service_category_ids;
+    this.scope_product_category_ids = row.scope_product_category_ids;
+    this.sale_amount = row.sale_amount;
+    this.sale_payment_method = row.sale_payment_method;
+    this.notes = row.notes;
+    this.is_active = row.is_active;
+    this.created_by = row.created_by;
+    this.created_at = row.created_at;
   }
 
   get isExpired(): boolean {

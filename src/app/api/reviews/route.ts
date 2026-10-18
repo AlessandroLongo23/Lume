@@ -63,7 +63,7 @@ async function publicList() {
     .select('id, first_name, last_name, role, salon_id')
     .in('id', authorIds);
 
-  const salonIds = [...new Set((profiles ?? []).map((p) => p.salon_id).filter(Boolean))];
+  const salonIds = [...new Set((profiles ?? []).flatMap((p) => (p.salon_id ? [p.salon_id] : [])))];
   const { data: salons } = salonIds.length
     ? await admin.from('salons').select('id, name').in('id', salonIds)
     : { data: [] as { id: string; name: string | null }[] };

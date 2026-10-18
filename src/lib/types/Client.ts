@@ -1,6 +1,8 @@
 import { User, AtSign, Phone, VenusAndMars, Calendar, Plane } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
 import type { Fiche } from './Fiche';
+import type { Gender } from './Gender';
+import type { Tables } from '@/lib/supabase/types';
 import { GenderTd } from '@/lib/components/admin/table/GenderTd';
 import { TouristTd } from '@/lib/components/admin/table/TouristTd';
 
@@ -13,13 +15,13 @@ export class Client {
   email: string | null;
   phonePrefix: string | null;
   phoneNumber: string | null;
-  gender: string;
+  gender: Gender | null;
   isTourist: boolean;
-  birthDate: string;
-  note: string;
+  birthDate: string | null;
+  note: string | null;
   archived_at: string | null;
   /** When the client was added to the salon. Set by the database. */
-  created_at: string | null;
+  created_at: string;
   photoUrl: string | null;
   /** Explicit per-client color override. NULL means "use the deterministic
    *  hash of `id`" — see {@link colorForClient}. */
@@ -29,24 +31,24 @@ export class Client {
    *  clients keep working when an owner switches to selected mode. */
   can_book_online: boolean;
 
-  constructor(client: Client) {
-    this.id = client.id;
-    this.salon_id = client.salon_id;
-    this.user_id = client.user_id ?? null;
-    this.firstName = client.firstName;
-    this.lastName = client.lastName;
-    this.email = client.email ?? null;
-    this.phonePrefix = client.phonePrefix ?? null;
-    this.phoneNumber = client.phoneNumber ?? null;
-    this.gender = client.gender;
-    this.isTourist = client.isTourist;
-    this.birthDate = client.birthDate;
-    this.note = client.note;
-    this.archived_at = client.archived_at ?? null;
-    this.created_at = client.created_at ?? null;
-    this.photoUrl = client.photoUrl ?? null;
-    this.color = client.color ?? null;
-    this.can_book_online = client.can_book_online ?? true;
+  constructor(row: Tables<'clients'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.user_id = row.user_id;
+    this.firstName = row.firstName;
+    this.lastName = row.lastName;
+    this.email = row.email;
+    this.phonePrefix = row.phonePrefix;
+    this.phoneNumber = row.phoneNumber;
+    this.gender = row.gender;
+    this.isTourist = row.isTourist ?? false;
+    this.birthDate = row.birthDate;
+    this.note = row.note;
+    this.archived_at = row.archived_at;
+    this.created_at = row.created_at;
+    this.photoUrl = row.photoUrl;
+    this.color = row.color;
+    this.can_book_online = row.can_book_online;
   }
 
   get isArchived(): boolean {

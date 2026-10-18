@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Manufacturer } from '@/lib/types/Manufacturer';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface ManufacturersState {
@@ -8,8 +9,8 @@ interface ManufacturersState {
   isLoading: boolean;
   error: string | null;
   fetchManufacturers: () => Promise<void>;
-  addManufacturer: (manufacturer: Partial<Manufacturer>) => Promise<Manufacturer>;
-  updateManufacturer: (id: string, updated: Partial<Manufacturer>) => Promise<Manufacturer>;
+  addManufacturer: (manufacturer: Omit<TablesInsert<'manufacturers'>, 'salon_id'>) => Promise<Manufacturer>;
+  updateManufacturer: (id: string, updated: TablesUpdate<'manufacturers'>) => Promise<Manufacturer>;
   deleteManufacturer: (id: string) => Promise<void>;
 }
 

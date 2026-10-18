@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Spesa } from '@/lib/types/Spesa';
+import type { TablesInsert } from '@/lib/supabase/types';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface SpeseState {
@@ -9,7 +10,7 @@ interface SpeseState {
   isLoading: boolean;
   error: string | null;
   fetchSpese: () => Promise<void>;
-  addSpesa: (data: Partial<Spesa>) => Promise<Spesa>;
+  addSpesa: (spesa: Omit<TablesInsert<'spese'>, 'salon_id'>) => Promise<Spesa>;
   deleteSpesa: (id: string) => Promise<void>;
 }
 
@@ -21,7 +22,7 @@ export const useSpeseStore = create<SpeseState>((set) => ({
   fetchSpese: async () => {
     set((s) => ({ ...s, isLoading: true }));
     // paged: a salon's history easily exceeds PostgREST's 1000-row response cap
-    const { data, error } = await fetchAllPages<Record<string, unknown>>((from, to) =>
+    const { data, error } = await fetchAllPages((from, to) =>
       supabase.from('spese').select('*').order('data', { ascending: false }).order('id').range(from, to),
     );
     if (error) { set({ isLoading: false, error }); return; }

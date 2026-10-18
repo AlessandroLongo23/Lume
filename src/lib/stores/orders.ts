@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Order } from '@/lib/types/Order';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface OrdersState {
@@ -9,8 +10,8 @@ interface OrdersState {
   isLoading: boolean;
   error: string | null;
   fetchOrders: () => Promise<void>;
-  addOrder: (order: Partial<Order>) => Promise<Order>;
-  updateOrder: (id: string, updated: Partial<Order>) => Promise<Order>;
+  addOrder: (order: Omit<TablesInsert<'orders'>, 'salon_id'>) => Promise<Order>;
+  updateOrder: (id: string, updated: TablesUpdate<'orders'>) => Promise<Order>;
   deleteOrder: (id: string) => Promise<void>;
   deleteAllOrders: () => Promise<void>;
 }
@@ -22,7 +23,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
 
   fetchOrders: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Order>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('orders')

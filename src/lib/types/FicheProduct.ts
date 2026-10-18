@@ -1,3 +1,5 @@
+import type { Tables } from '@/lib/supabase/types';
+
 export class FicheProduct {
   id: string;
   salon_id: string;
@@ -9,13 +11,13 @@ export class FicheProduct {
   /** What was charged for the WHOLE line (all pieces), exact to the cent. Never multiply by quantity. */
   final_price: number;
 
-  constructor(ficheProduct: FicheProduct) {
-    this.id = ficheProduct.id;
-    this.salon_id = ficheProduct.salon_id;
-    this.fiche_id = ficheProduct.fiche_id;
-    this.product_id = ficheProduct.product_id;
-    this.quantity = ficheProduct.quantity ?? 1;
-    this.list_price = ficheProduct.list_price ?? 0;
-    this.final_price = ficheProduct.final_price ?? 0;
+  constructor(row: Tables<'fiche_products'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.fiche_id = row.fiche_id;
+    this.product_id = row.product_id;
+    this.quantity = row.quantity;
+    this.list_price = row.list_price;
+    this.final_price = row.final_price;
   }
 }

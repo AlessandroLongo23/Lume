@@ -1,15 +1,18 @@
+import type { Tables } from '@/lib/supabase/types';
+
 export class Order {
   id: string;
   salon_id: string;
   supplier_id: string;
-  datetime: Date;
-  status: string;
+  /** ISO timestamp, or null when the order has no date yet. */
+  datetime: string | null;
+  status: string | null;
 
-  constructor(order: Order) {
-    this.id = order.id;
-    this.salon_id = order.salon_id;
-    this.supplier_id = order.supplier_id;
-    this.datetime = order.datetime;
-    this.status = order.status;
+  constructor(row: Tables<'orders'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.supplier_id = row.supplier_id;
+    this.datetime = row.datetime;
+    this.status = row.status;
   }
 }

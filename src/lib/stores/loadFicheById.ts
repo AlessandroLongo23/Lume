@@ -23,7 +23,7 @@ export async function loadFicheById(id: string): Promise<Fiche | null> {
 
   const { data, error } = await supabase.from('fiches').select('*').eq('id', id).single();
   if (error || !data) return null;
-  const fiche = new Fiche(data as ConstructorParameters<typeof Fiche>[0]);
+  const fiche = new Fiche(data);
 
   const [{ data: servicesData }, { data: productsData }] = await Promise.all([
     supabase.from('fiche_services').select('*').eq('fiche_id', id),

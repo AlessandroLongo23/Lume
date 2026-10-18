@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Product } from '@/lib/types/Product';
+import { withPatch } from '@/lib/types/withPatch';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 interface ProductsState {
   products: Product[];
@@ -8,8 +10,8 @@ interface ProductsState {
   isLoading: boolean;
   error: string | null;
   fetchProducts: () => Promise<void>;
-  addProduct: (product: Partial<Product>) => Promise<Product>;
-  updateProduct: (id: string, updated: Partial<Product>) => Promise<Product>;
+  addProduct: (product: Omit<TablesInsert<'products'>, 'salon_id'>) => Promise<Product>;
+  updateProduct: (id: string, updated: TablesUpdate<'products'>) => Promise<Product>;
   archiveProduct: (id: string) => Promise<void>;
   restoreProduct: (id: string) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -102,7 +104,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     const previous = get().products.find((p) => p.id === id)?.stock_quantity ?? 0;
     set((s) => ({
       products: s.products.map((p) =>
-        p.id === id ? new Product({ ...p, stock_quantity: p.stock_quantity + delta } as Product) : p
+        p.id === id ? withPatch(p, { stock_quantity: p.stock_quantity + delta }) : p
       ),
     }));
     const response = await fetch('/api/products', {
@@ -114,7 +116,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     if (!result.success) {
       set((s) => ({
         products: s.products.map((p) =>
-          p.id === id ? new Product({ ...p, stock_quantity: previous } as Product) : p
+          p.id === id ? withPatch(p, { stock_quantity: previous }) : p
         ),
       }));
       throw new Error(result.error);
@@ -133,7 +135,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       products: s.products.map((p) =>
-        ids.includes(p.id) ? new Product({ ...p, ...patch } as Product) : p
+        ids.includes(p.id) ? withPatch(p, patch) : p
       ),
     }));
   },
@@ -149,7 +151,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     const archived_at = new Date().toISOString();
     set((s) => ({
       products: s.products.map((p) =>
-        ids.includes(p.id) ? new Product({ ...p, archived_at } as Product) : p
+        ids.includes(p.id) ? withPatch(p, { archived_at }) : p
       ),
     }));
   },
@@ -164,7 +166,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       products: s.products.map((p) =>
-        ids.includes(p.id) ? new Product({ ...p, archived_at: null } as Product) : p
+        ids.includes(p.id) ? withPatch(p, { archived_at: null }) : p
       ),
     }));
   },

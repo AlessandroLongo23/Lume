@@ -8,6 +8,7 @@ import type { FicheService } from './FicheService';
 import type { FicheProduct } from './FicheProduct';
 import type { DataColumn } from './dataColumn';
 import type { Client } from './Client';
+import type { Tables } from '@/lib/supabase/types';
 
 export enum FicheBucket {
   PRENOTATA = 'prenotata',
@@ -46,32 +47,26 @@ export class Fiche {
   id: string;
   salon_id: string;
   client_id: string;
-  datetime: Date;
+  /** ISO timestamp. */
+  datetime: string;
   status: FicheStatus;
-  note: string;
+  note: string | null;
   total_override: number | null;
   miscela: string | null;
   tecnica: string | null;
   booking_source: FicheBookingSource;
 
-  constructor(
-    fiche: Pick<Fiche, 'id' | 'salon_id' | 'client_id' | 'datetime' | 'status' | 'note'> & {
-      total_override?: number | null;
-      miscela?: string | null;
-      tecnica?: string | null;
-      booking_source?: FicheBookingSource;
-    },
-  ) {
-    this.id = fiche.id;
-    this.salon_id = fiche.salon_id;
-    this.client_id = fiche.client_id;
-    this.datetime = fiche.datetime;
-    this.status = fiche.status;
-    this.note = fiche.note;
-    this.total_override = fiche.total_override ?? null;
-    this.miscela = fiche.miscela ?? null;
-    this.tecnica = fiche.tecnica ?? null;
-    this.booking_source = fiche.booking_source ?? 'manual';
+  constructor(row: Tables<'fiches'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.client_id = row.client_id;
+    this.datetime = row.datetime;
+    this.status = row.status;
+    this.note = row.note;
+    this.total_override = row.total_override;
+    this.miscela = row.miscela;
+    this.tecnica = row.tecnica;
+    this.booking_source = row.booking_source;
   }
 
   hasTreatmentData(): boolean {

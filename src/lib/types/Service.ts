@@ -1,32 +1,34 @@
 import { Tag, Clock, Euro, ALargeSmall, ShoppingCart } from 'lucide-react';
 import { Filter } from './filters/Filter';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 import type { ServiceCategory } from './ServiceCategory';
 
 export class Service {
   id: string;
   salon_id: string;
   name: string;
-  duration: number;
+  /** Minutes; null when the salon never set one. */
+  duration: number | null;
   price: number;
   product_cost: number;
-  category_id: string;
-  description: string;
+  category_id: string | null;
+  description: string | null;
   archived_at: string | null;
   /** When true, the service appears in the public booking catalog. */
   bookable_online: boolean;
 
-  constructor(service: Service) {
-    this.id = service.id;
-    this.salon_id = service.salon_id;
-    this.name = service.name;
-    this.duration = service.duration;
-    this.price = service.price;
-    this.product_cost = service.product_cost ?? 0;
-    this.category_id = service.category_id;
-    this.description = service.description;
-    this.archived_at = service.archived_at ?? null;
-    this.bookable_online = service.bookable_online ?? false;
+  constructor(row: Tables<'services'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.name = row.name;
+    this.duration = row.duration;
+    this.price = row.price;
+    this.product_cost = row.product_cost;
+    this.category_id = row.category_id;
+    this.description = row.description;
+    this.archived_at = row.archived_at;
+    this.bookable_online = row.bookable_online;
   }
 
   get isArchived(): boolean {

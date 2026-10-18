@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Coupon, type CouponRedemption } from '@/lib/types/Coupon';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 interface CouponsState {
   coupons: Coupon[];
@@ -10,8 +11,8 @@ interface CouponsState {
   error: string | null;
   fetchCoupons: () => Promise<void>;
   fetchRedemptions: () => Promise<void>;
-  addCoupon: (coupon: Partial<Coupon>) => Promise<Coupon>;
-  updateCoupon: (id: string, updated: Partial<Coupon>) => Promise<Coupon>;
+  addCoupon: (coupon: Omit<TablesInsert<'coupons'>, 'salon_id'>) => Promise<Coupon>;
+  updateCoupon: (id: string, updated: TablesUpdate<'coupons'>) => Promise<Coupon>;
   deleteCoupon: (id: string) => Promise<void>;
   deleteAllCoupons: () => Promise<void>;
   /**
@@ -29,7 +30,7 @@ export const useCouponsStore = create<CouponsState>((set) => ({
 
   fetchCoupons: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Coupon>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('coupons')
@@ -45,7 +46,7 @@ export const useCouponsStore = create<CouponsState>((set) => ({
   },
 
   fetchRedemptions: async () => {
-    const { data, error } = await fetchAllPages<CouponRedemption>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('coupon_redemptions')

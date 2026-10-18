@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 import type { BookingConfig, BusinessType, SalonFiscal, SalonFormDefaults, SalonEmailNotifications } from '@/lib/types/Salon';
 
-export interface OperatingHourShift {
+export type OperatingHourShift = {
   start: string;
   end: string;
-}
+};
 
-export interface OperatingHourDay {
+export type OperatingHourDay = {
   day: number;
   isOpen: boolean;
   shifts: OperatingHourShift[];
-}
+};
 
 export interface SalonSettings {
   name: string;

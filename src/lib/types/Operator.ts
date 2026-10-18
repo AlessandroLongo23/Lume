@@ -1,6 +1,7 @@
 import { User, AtSign, Phone } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
 import type { OperatingHourDay } from '@/lib/stores/salonSettings';
+import type { Tables } from '@/lib/supabase/types';
 
 export class Operator {
   id: string;
@@ -10,26 +11,29 @@ export class Operator {
   firstName: string;
   lastName: string;
   email: string | null;
-  phonePrefix: string;
-  phoneNumber: string;
+  phonePrefix: string | null;
+  phoneNumber: string | null;
   avatar_url: string | null;
   archived_at: string | null;
   /** Per-operator weekly schedule. `null` means: follow the salon's operating_hours. */
   working_hours: OperatingHourDay[] | null;
 
-  constructor(operator: Operator) {
-    this.id = operator.id;
-    this.salon_id = operator.salon_id;
-    this.user_id = operator.user_id ?? null;
-    this.must_change_password = operator.must_change_password ?? false;
-    this.firstName = operator.firstName;
-    this.lastName = operator.lastName;
-    this.email = operator.email ?? null;
-    this.phonePrefix = operator.phonePrefix;
-    this.phoneNumber = operator.phoneNumber;
-    this.avatar_url = operator.avatar_url ?? null;
-    this.archived_at = operator.archived_at ?? null;
-    this.working_hours = operator.working_hours ?? null;
+  constructor(row: Tables<'operators'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.user_id = row.user_id;
+    this.must_change_password = row.must_change_password;
+    this.firstName = row.firstName;
+    this.lastName = row.lastName;
+    this.email = row.email;
+    this.phonePrefix = row.phonePrefix;
+    this.phoneNumber = row.phoneNumber;
+    this.avatar_url = row.avatar_url;
+    this.archived_at = row.archived_at;
+    // Written only by OperatorWorkingHoursPanel, always as an OperatingHourDay[].
+    this.working_hours = Array.isArray(row.working_hours)
+      ? (row.working_hours as unknown as OperatingHourDay[])
+      : null;
   }
 
   get isArchived(): boolean {

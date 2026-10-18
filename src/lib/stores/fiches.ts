@@ -8,6 +8,7 @@ import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { updateFicheWithAudit } from '@/lib/actions/fiches';
 import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
+import type { Json, TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 const PENDING_TTL_MS = 1500; // covers the 300ms realtime debounce + roundtrip
 
@@ -21,6 +22,7 @@ const FICHE_EDITABLE_FIELDS = [
   'tecnica',
   'paid',
 ] as const;
+type FicheEditableField = (typeof FICHE_EDITABLE_FIELDS)[number];
 
 export interface PaymentSplit {
   method: FichePaymentMethod;
@@ -42,10 +44,10 @@ interface FichesState {
   fetchFiches: () => Promise<void>;
   /** Loads the fiches between `from` and `loadedFrom` if not loaded yet (calendar, fiche list). */
   ensureLoadedFrom: (from: Date) => Promise<void>;
-  addFiche: (fiche: Partial<Fiche>) => Promise<Fiche>;
+  addFiche: (fiche: Omit<TablesInsert<'fiches'>, 'salon_id'>) => Promise<Fiche>;
   updateFiche: (
     ficheId: string,
-    updatedFiche: Partial<Fiche>,
+    updatedFiche: Pick<TablesUpdate<'fiches'>, FicheEditableField>,
     reason?: string | null,
   ) => Promise<Fiche>;
   deleteFiche: (ficheId: string) => Promise<void>;
@@ -68,7 +70,7 @@ export const useFichesStore = create<FichesState>((set, get) => ({
   fetchFiches: async () => {
     set((s) => ({ ...s, isLoading: true }));
     const since = get().loadedFrom;
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('fiches')
@@ -95,7 +97,7 @@ export const useFichesStore = create<FichesState>((set, get) => ({
     if (from >= until) return;
     olderInFlight++;
     set({ isLoadingOlder: true });
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Fiche>[0]>(
+    const { data, error } = await fetchAllPages(
       (a, b) =>
         supabase
           .from('fiches')
@@ -136,14 +138,10 @@ export const useFichesStore = create<FichesState>((set, get) => ({
   },
 
   updateFiche: async (ficheId, updatedFiche, reason) => {
-    // Build a plain patch from the whitelisted editable fields, coercing
-    // Date values to ISO strings for the JSONB payload.
-    const patch: Record<string, unknown> = {};
+    // Only whitelisted fields reach the RPC, which rejects anything else.
+    const patch: { [field: string]: Json | undefined } = {};
     for (const k of FICHE_EDITABLE_FIELDS) {
-      if (k in updatedFiche) {
-        const v = (updatedFiche as Record<string, unknown>)[k];
-        patch[k] = v instanceof Date ? v.toISOString() : v;
-      }
+      if (k in updatedFiche) patch[k] = updatedFiche[k];
     }
 
     // Mark the id as pending BEFORE the network call so realtime echo dedup
@@ -154,7 +152,7 @@ export const useFichesStore = create<FichesState>((set, get) => ({
 
     const result = await updateFicheWithAudit(ficheId, patch, reason ?? null);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       set((s) => {
         const next = new Set(s.pendingMutationIds);
         next.delete(ficheId);
@@ -163,7 +161,7 @@ export const useFichesStore = create<FichesState>((set, get) => ({
       throw new Error(result.error ?? 'Impossibile aggiornare la fiche.');
     }
 
-    const updated = new Fiche(result.data as ConstructorParameters<typeof Fiche>[0]);
+    const updated = new Fiche(result.data);
     set((s) => ({ fiches: s.fiches.map((f) => (f.id === ficheId ? updated : f)) }));
 
     setTimeout(() => {

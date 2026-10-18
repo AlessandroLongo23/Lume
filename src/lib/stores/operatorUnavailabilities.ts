@@ -41,7 +41,7 @@ export const useOperatorUnavailabilitiesStore = create<OperatorUnavailabilitiesS
     // floor so the calendar never shows torn data when navigating backward.
     const since = new Date();
     since.setFullYear(since.getFullYear() - 1);
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof OperatorUnavailability>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('operator_unavailabilities')

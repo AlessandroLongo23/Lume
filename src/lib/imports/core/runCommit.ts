@@ -3,11 +3,17 @@ import { loadParsedFile } from './loadParsedFile';
 import { resolveFkColumns } from './fkResolver';
 import { getEntityConfig } from '../entities/registry';
 import type { ColumnMapping, DedupKeyConfig, FailedRow } from '../entities/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const PROGRESS_THROTTLE_MS = 250;
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>;
+
+/** Untyped table builder: the entity config picks the destination table at runtime. */
+function dynamicTable(supabase: SupabaseAdmin, table: string) {
+  return (supabase as SupabaseClient).from(table);
+}
 
 /**
  * Stage 2 of the import pipeline. Runs synchronously inside the API route
@@ -44,6 +50,7 @@ export async function runCommitImport(
       .single();
     if (jobErr || !job) throw new Error(`job ${jobId} not found: ${jobErr?.message}`);
 
+    if (!job.entity) throw new Error(`job ${jobId} has no entity`);
     const config = getEntityConfig(job.entity);
     const salonId = job.salon_id;
 
@@ -75,7 +82,7 @@ export async function runCommitImport(
     for (let i = 0; i < toInsert.length; i++) {
       const row = toInsert[i];
       const payload = config.buildInsertPayload(row, { salonId });
-      const { error: insErr } = await supabase.from(config.table).insert(payload);
+      const { error: insErr } = await dynamicTable(supabase, config.table).insert(payload);
       if (insErr) {
         failures.push({
           ok: false,
@@ -146,7 +153,7 @@ async function dedupRows<T extends Record<string, unknown>>(
     // Chunk to avoid PostgREST URL length limits
     for (let i = 0; i < candidates.length; i += 500) {
       const chunk = candidates.slice(i, i + 500);
-      const { data } = await supabase.from(table).select(key.column).eq('salon_id', salonId).in(key.column, chunk);
+      const { data } = await dynamicTable(supabase, table).select(key.column).eq('salon_id', salonId).in(key.column, chunk);
       for (const r of (data ?? []) as unknown as Record<string, unknown>[]) {
         const norm = normalizeKey(r[key.column], key.normalize);
         if (norm) set.add(norm);

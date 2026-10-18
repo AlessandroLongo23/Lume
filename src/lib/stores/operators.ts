@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Operator } from '@/lib/types/Operator';
+import type { TablesUpdate } from '@/lib/supabase/types';
 
 interface OperatorsState {
   operators: Operator[];
@@ -13,7 +14,7 @@ interface OperatorsState {
   fetchPendingInvites: () => Promise<void>;
   addOperator: (operatorData: Partial<Operator>) => Promise<{ operator: Operator; invited: boolean }>;
   addCredentials: (operatorId: string, credentials: { email: string; password: string }) => Promise<void>;
-  updateOperator: (operatorId: string, updatedOperator: Partial<Operator>) => Promise<Operator>;
+  updateOperator: (operatorId: string, updatedOperator: TablesUpdate<'operators'>) => Promise<Operator>;
   archiveOperator: (operatorId: string) => Promise<void>;
   restoreOperator: (operatorId: string) => Promise<void>;
   deleteOperator: (operatorId: string) => Promise<void>;

@@ -250,6 +250,7 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-real-ip') ||
       null;
     const userAgent = request.headers.get('user-agent');
+    const acceptingUserId = userId;
     const acceptanceRows = [
       { document_type: 'terms',                document_version: LEGAL_VERSIONS.terms },
       { document_type: 'privacy',              document_version: LEGAL_VERSIONS.privacy },
@@ -257,7 +258,7 @@ export async function POST(request: NextRequest) {
       { document_type: 'vessatorie_1341_1342', document_version: LEGAL_VERSIONS.terms },
     ].map((row) => ({
       ...row,
-      user_id:    userId,
+      user_id:    acceptingUserId,
       salon_id:   salonId,
       ip_address: ipAddress,
       user_agent: userAgent,

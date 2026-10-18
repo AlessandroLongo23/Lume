@@ -18,7 +18,7 @@ export const useFicheEditsStore = create<FicheEditsState>((set, get) => ({
 
   fetchFicheEdits: async () => {
     set({ isLoading: true });
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof FicheEdit>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('fiche_edits')

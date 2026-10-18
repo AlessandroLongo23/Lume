@@ -59,7 +59,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    if (!profile || !canManageSalon(profile.role)) {
+    if (!profile || !profile.salon_id || !canManageSalon(profile.role)) {
       return NextResponse.json({ error: 'Solo il proprietario può visualizzare le fatture.' }, { status: 403 });
     }
 

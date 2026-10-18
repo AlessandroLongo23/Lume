@@ -62,8 +62,7 @@ async function deleteAllForEntity(admin: AdminClient, entity: Entity, salonId: s
     }
 
     case 'operators': {
-      // fiche_services.operator_id NO ACTION → null it; orders.supplier_id
-      // NO ACTION → null it. operator_unavailabilities CASCADEs.
+      // fiche_services.operator_id NO ACTION → null it. operator_unavailabilities CASCADEs.
       const { data: ops, error: opsLookupError } = await admin
         .from('operators')
         .select('id')
@@ -77,12 +76,6 @@ async function deleteAllForEntity(admin: AdminClient, entity: Entity, salonId: s
           .update({ operator_id: null })
           .in('operator_id', opIds);
         if (fsError) throw fsError;
-
-        const { error: ordError } = await admin
-          .from('orders')
-          .update({ supplier_id: null })
-          .in('supplier_id', opIds);
-        if (ordError) throw ordError;
       }
 
       const { error } = await admin.from('operators').delete().eq('salon_id', salonId);

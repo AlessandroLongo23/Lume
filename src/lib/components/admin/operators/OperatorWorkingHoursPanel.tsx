@@ -70,7 +70,7 @@ export function OperatorWorkingHoursPanel({ operator, readOnly: readOnlyProp = f
         // Switch to "follow salon hours" → store NULL.
         await updateOperator(operator.id, {
           working_hours: null,
-        } as Partial<Operator>);
+        });
         messagePopup.getState().success('Ora segue gli orari del salone');
       } else {
         // Switch to "custom" → seed with current salon hours so the form has
@@ -78,7 +78,7 @@ export function OperatorWorkingHoursPanel({ operator, readOnly: readOnlyProp = f
         const seed = salonHours && salonHours.length > 0 ? salonHours : DEFAULT_WORKING_HOURS;
         await updateOperator(operator.id, {
           working_hours: seed,
-        } as Partial<Operator>);
+        });
         messagePopup.getState().success('Orari personalizzati attivi');
       }
     } catch {
@@ -120,7 +120,7 @@ export function OperatorWorkingHoursPanel({ operator, readOnly: readOnlyProp = f
             try {
               await updateOperator(operator.id, {
                 working_hours,
-              } as Partial<Operator>);
+              });
               messagePopup.getState().success('Orari salvati');
             } catch {
               messagePopup.getState().error('Errore durante il salvataggio');

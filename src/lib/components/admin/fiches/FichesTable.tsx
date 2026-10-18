@@ -124,7 +124,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
             .map((fs) => {
               const svc = serviceMap.get(fs.service_id);
               if (!svc) return null;
-              const color = categoryMap.get(svc.category_id)?.color ?? DEFAULT_CATEGORY_COLOR;
+              const color = (svc.category_id ? categoryMap.get(svc.category_id)?.color : undefined) ?? DEFAULT_CATEGORY_COLOR;
               return { id: fs.id, name: svc.name, color };
             })
             .filter((e): e is { id: string; name: string; color: string } => e !== null);

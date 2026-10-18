@@ -4,6 +4,7 @@ import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon } from '@/lib/auth/roles';
 import type { SalonFiscal, RegimeFiscale, BusinessType, SalonFormDefaults, SalonEmailNotifications, BookingConfig, BookingAccessMode, BookingApprovalScope } from '@/lib/types/Salon';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isJsonObject } from '@/lib/supabase/json';
 
 async function getAuthContext() {
   const supabase = await createServerClient();
@@ -482,7 +483,8 @@ export async function PATCH(req: NextRequest) {
       .select('booking_config')
       .eq('id', ctx.salonId)
       .single();
-    const merged = { ...(existing?.booking_config ?? {}), ...bc };
+    const current = existing?.booking_config;
+    const merged = { ...(isJsonObject(current) ? current : {}), ...bc };
     updates.booking_config = merged;
   }
 

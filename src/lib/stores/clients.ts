@@ -3,6 +3,8 @@ import posthog from 'posthog-js';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Client } from '@/lib/types/Client';
+import { withPatch } from '@/lib/types/withPatch';
+import type { TablesUpdate } from '@/lib/supabase/types';
 
 interface AddClientOptions {
   /** When false, skips creating an auth.users row even if phone/email is set. */
@@ -19,7 +21,7 @@ interface ClientsState {
   selectedClient: Client | null;
   fetchClients: () => Promise<void>;
   addClient: (clientData: Partial<Client>, opts?: AddClientOptions) => Promise<Client>;
-  updateClient: (clientId: string, updatedClient: Partial<Client>) => Promise<Client>;
+  updateClient: (clientId: string, updatedClient: TablesUpdate<'clients'>) => Promise<Client>;
   updateClientContact: (clientId: string, contact: { email?: string; phonePrefix?: string; phoneNumber?: string }) => Promise<void>;
   archiveClient: (clientId: string) => Promise<void>;
   restoreClient: (clientId: string) => Promise<void>;
@@ -45,7 +47,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
   fetchClients: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Client>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('clients')
@@ -154,7 +156,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       clients: s.clients.map((c) =>
-        ids.includes(c.id) ? new Client({ ...c, ...patch } as Client) : c
+        ids.includes(c.id) ? withPatch(c, patch) : c
       ),
     }));
   },
@@ -170,7 +172,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
     const archived_at = new Date().toISOString();
     set((s) => ({
       clients: s.clients.map((c) =>
-        ids.includes(c.id) ? new Client({ ...c, archived_at } as Client) : c
+        ids.includes(c.id) ? withPatch(c, { archived_at }) : c
       ),
     }));
   },
@@ -185,7 +187,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       clients: s.clients.map((c) =>
-        ids.includes(c.id) ? new Client({ ...c, archived_at: null } as Client) : c
+        ids.includes(c.id) ? withPatch(c, { archived_at: null }) : c
       ),
     }));
   },

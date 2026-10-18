@@ -24,8 +24,8 @@ interface EditOrderModalProps {
 
 export function EditOrderModal({ isOpen, onClose, editedOrder, onEditedOrderChange, selectedOrder }: EditOrderModalProps) {
   const updateOrder = useOrdersStore((s) => s.updateOrder);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const set = (key: string, value: any) => onEditedOrderChange({ ...editedOrder, [key]: value });
+  const set = <K extends keyof Order>(key: K, value: Order[K]) =>
+    onEditedOrderChange({ ...editedOrder, [key]: value });
 
   const handleSubmit = async () => {
     if (!selectedOrder) return;
@@ -49,14 +49,13 @@ export function EditOrderModal({ isOpen, onClose, editedOrder, onEditedOrderChan
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data e ora</span></label>
-          <input type="datetime-local" className={inputClass} value={datetimeValue} onChange={(e) => set('datetime', new Date(e.target.value))} />
+          <input type="datetime-local" className={inputClass} value={datetimeValue} onChange={(e) => set('datetime', e.target.value ? new Date(e.target.value).toISOString() : null)} />
         </div>
 
         <div className="flex flex-col gap-2">
           <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
           <Select
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            value={(editedOrder as any).status ?? null}
+            value={editedOrder.status ?? null}
             onChange={(v) => set('status', v)}
             options={ORDER_STATUS_OPTIONS}
             labelKey="label"

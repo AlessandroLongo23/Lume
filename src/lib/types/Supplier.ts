@@ -1,5 +1,6 @@
 import { Truck, MapPin, Phone, Mail } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 
 export class Supplier {
   id: string;
@@ -9,13 +10,13 @@ export class Supplier {
   phone: string | null;
   email: string | null;
 
-  constructor(supplier: Supplier) {
-    this.id = supplier.id;
-    this.salon_id = supplier.salon_id;
-    this.name = supplier.name;
-    this.city = supplier.city ?? null;
-    this.phone = supplier.phone ?? null;
-    this.email = supplier.email ?? null;
+  constructor(row: Tables<'suppliers'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.name = row.name;
+    this.city = row.city;
+    this.phone = row.phone;
+    this.email = row.email;
   }
 
   static dataColumns: DataColumn[] = [

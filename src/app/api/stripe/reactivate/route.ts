@@ -19,7 +19,7 @@ export async function POST() {
       .eq('id', user.id)
       .single();
 
-    if (!profile || !canManageSalon(profile.role)) {
+    if (!profile || !profile.salon_id || !canManageSalon(profile.role)) {
       return NextResponse.json({ error: 'Solo il proprietario può riattivare l\'abbonamento.' }, { status: 403 });
     }
 

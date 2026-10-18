@@ -1,5 +1,6 @@
 import { User, Scissors, Hash, Wallet, CreditCard, Calendar, ShieldCheck } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 import type { FicheService } from './FicheService';
 
 export type AbbonamentoPricingMode = 'percent' | 'manual';
@@ -23,22 +24,22 @@ export class Abbonamento {
   created_by: string | null;
   created_at: string;
 
-  constructor(a: Abbonamento) {
-    this.id = a.id;
-    this.salon_id = a.salon_id;
-    this.client_id = a.client_id;
-    this.scope_service_ids = a.scope_service_ids ?? [];
-    this.total_treatments = a.total_treatments;
-    this.pricing_mode = a.pricing_mode;
-    this.discount_percent = a.discount_percent ?? null;
-    this.total_paid = Number(a.total_paid);
-    this.sale_payment_method = a.sale_payment_method;
-    this.valid_from = a.valid_from;
-    this.valid_until = a.valid_until ?? null;
-    this.notes = a.notes ?? null;
-    this.is_active = a.is_active;
-    this.created_by = a.created_by ?? null;
-    this.created_at = a.created_at;
+  constructor(row: Tables<'abbonamenti'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.client_id = row.client_id;
+    this.scope_service_ids = row.scope_service_ids;
+    this.total_treatments = row.total_treatments;
+    this.pricing_mode = row.pricing_mode;
+    this.discount_percent = row.discount_percent;
+    this.total_paid = row.total_paid;
+    this.sale_payment_method = row.sale_payment_method;
+    this.valid_from = row.valid_from;
+    this.valid_until = row.valid_until;
+    this.notes = row.notes;
+    this.is_active = row.is_active;
+    this.created_by = row.created_by;
+    this.created_at = row.created_at;
   }
 
   get isExpired(): boolean {

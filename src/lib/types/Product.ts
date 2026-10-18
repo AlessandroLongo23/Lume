@@ -1,14 +1,15 @@
 import { Tag, Factory, Truck, Euro, ALargeSmall } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 
 export class Product {
   id: string;
   salon_id: string;
   name: string;
-  product_category_id: string;
-  manufacturer_id: string;
-  supplier_id: string;
-  price: number;
+  product_category_id: string | null;
+  manufacturer_id: string | null;
+  supplier_id: string | null;
+  price: number | null;
   sell_price: number | null;
   is_for_retail: boolean;
   stock_quantity: number;
@@ -18,22 +19,23 @@ export class Product {
   total_purchased: number;
   total_sold: number;
 
-  constructor(product: Product) {
-    this.id = product.id;
-    this.salon_id = product.salon_id;
-    this.name = product.name;
-    this.product_category_id = product.product_category_id;
-    this.manufacturer_id = product.manufacturer_id;
-    this.supplier_id = product.supplier_id;
-    this.price = product.price;
-    this.sell_price = product.sell_price ?? null;
-    this.is_for_retail = product.is_for_retail ?? false;
-    this.stock_quantity = product.stock_quantity ?? 0;
-    this.min_threshold = product.min_threshold ?? 0;
-    this.quantity_ml = product.quantity_ml ?? null;
-    this.archived_at = product.archived_at ?? null;
-    this.total_purchased = product.total_purchased ?? 0;
-    this.total_sold = product.total_sold ?? 0;
+  /** Accepts a products_with_stats row, or a plain products row (totals then default to 0). */
+  constructor(row: Tables<'products'> | Tables<'products_with_stats'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.name = row.name;
+    this.product_category_id = row.product_category_id;
+    this.manufacturer_id = row.manufacturer_id;
+    this.supplier_id = row.supplier_id;
+    this.price = row.price;
+    this.sell_price = row.sell_price;
+    this.is_for_retail = row.is_for_retail;
+    this.stock_quantity = row.stock_quantity;
+    this.min_threshold = row.min_threshold;
+    this.quantity_ml = row.quantity_ml;
+    this.archived_at = row.archived_at;
+    this.total_purchased = 'total_purchased' in row ? row.total_purchased : 0;
+    this.total_sold = 'total_sold' in row ? row.total_sold : 0;
   }
 
   get isArchived(): boolean {

@@ -60,7 +60,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
   const categoryColors = useMemo(() => {
     return ficheServices.map((fs) => {
       const svc = serviceMap.get(fs.service_id);
-      const cat = svc ? categoryMap.get(svc.category_id) : null;
+      const cat = svc?.category_id ? categoryMap.get(svc.category_id) : null;
       return cat?.color ?? DEFAULT_CATEGORY_COLOR;
     });
   }, [ficheServices, serviceMap, categoryMap]);

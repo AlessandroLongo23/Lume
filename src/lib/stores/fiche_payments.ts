@@ -20,7 +20,7 @@ export const useFichePaymentsStore = create<FichePaymentsState>((set) => ({
 
   fetchFichePayments: async () => {
     set({ isLoading: true });
-    const { data, error } = await fetchAllPages<FichePayment>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('fiche_payments')

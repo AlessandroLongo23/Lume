@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import type { ProspectStatus } from '@/lib/types/Prospect';
 import { PROSPECT_STATUSES } from '@/lib/types/Prospect';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { TablesInsert } from '@/lib/supabase/types';
 
 const TEXT_FIELDS = [
   'name', 'phone_shop', 'phone_personal', 'owner_name', 'google_maps_url',
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   const name = pickText(body, 'name');
   if (!name) return NextResponse.json({ error: 'Il nome del salone è obbligatorio' }, { status: 400 });
 
-  const insert: Record<string, unknown> = { name, created_by: guard.user.id };
+  const insert: TablesInsert<'prospects'> = { name, created_by: guard.user.id };
   for (const f of TEXT_FIELDS) {
     if (f === 'name') continue;
     const v = pickText(body, f);
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
 
   // Optional initial status (rarely used — usually defaults to 'not_contacted')
   if (typeof body.status === 'string' && PROSPECT_STATUSES.includes(body.status as ProspectStatus)) {
-    insert.status = body.status;
+    insert.status = body.status as ProspectStatus;
   }
 
   const admin = createAdminClient();

@@ -90,6 +90,9 @@ interface CategoryGroup<T> {
   items: T[];
 }
 
+/** Group id for catalogue items without a category (shown as "Altro"). */
+const UNCATEGORISED = 'uncategorised';
+
 interface CategoryDropdownProps<T> {
   groups: CategoryGroup<T>[];
   query: string;
@@ -447,10 +450,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     for (const svc of filtered) {
       const cat = serviceCategories.find((c) => c.id === svc.category_id);
       const catName = cat?.name ?? 'Altro';
-      if (!groups.has(svc.category_id)) {
-        groups.set(svc.category_id, { categoryId: svc.category_id, categoryName: catName, items: [] });
+      const key = svc.category_id ?? UNCATEGORISED;
+      if (!groups.has(key)) {
+        groups.set(key, { categoryId: key, categoryName: catName, items: [] });
       }
-      groups.get(svc.category_id)!.items.push(svc);
+      groups.get(key)!.items.push(svc);
     }
     return Array.from(groups.values()).sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'it'));
   }, [services, serviceCategories, svcQuery]);
@@ -463,10 +467,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     for (const prod of filtered) {
       const cat = productCategories.find((c) => c.id === prod.product_category_id);
       const catName = cat?.name ?? 'Altro';
-      if (!groups.has(prod.product_category_id)) {
-        groups.set(prod.product_category_id, { categoryId: prod.product_category_id, categoryName: catName, items: [] });
+      const key = prod.product_category_id ?? UNCATEGORISED;
+      if (!groups.has(key)) {
+        groups.set(key, { categoryId: key, categoryName: catName, items: [] });
       }
-      groups.get(prod.product_category_id)!.items.push(prod);
+      groups.get(key)!.items.push(prod);
     }
     return Array.from(groups.values()).sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'it'));
   }, [products, productCategories, prodQuery]);
@@ -491,7 +496,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           : baseTime;
       return [
         ...prev,
-        { service_id: svc.id, name: svc.name, operator_id: operatorId, start_time: start, duration: svc.duration, list_price: svc.price, final_price: svc.price, abbonamento_id: null },
+        { service_id: svc.id, name: svc.name, operator_id: operatorId, start_time: start, duration: svc.duration ?? 0, list_price: svc.price, final_price: svc.price, abbonamento_id: null },
       ];
     });
     setSvcQuery('');
@@ -603,7 +608,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   function addProductToList(prod: Product) {
     setFicheProducts((prev) => {
       if (prev.some((p) => p.product_id === prod.id)) return prev;
-      const snapPrice = prod.sell_price ?? prod.price;
+      // A product with no price yet goes in at 0; the line price stays editable.
+      const snapPrice = prod.sell_price ?? prod.price ?? 0;
       return [...prev, { product_id: prod.id, name: prod.name, quantity: 1, list_price: snapPrice, final_price: snapPrice }];
     });
     setProdQuery('');
@@ -672,8 +678,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     if (validation.error) throw new Error(validation.error);
 
     if (mode === 'add') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime as any, status: FicheStatus.CREATED, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
+      const newFiche = await addFiche({ client_id: clientId, datetime: baseTime.toISOString(), status: FicheStatus.CREATED, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
       await Promise.all(
         servicesWithTimes.map((svc) =>
           addFicheService({
@@ -681,10 +686,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             service_id: svc.service_id,
             name: svc.name,
             operator_id: svc.operator_id || undefined,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            start_time: svc.start_time as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            end_time: svc.end_time as any,
+            start_time: svc.start_time.toISOString(),
+            end_time: svc.end_time.toISOString(),
             duration: svc.duration,
             list_price: svc.list_price,
             final_price: svc.final_price,
@@ -703,8 +706,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     }
 
     if (!fiche) throw new Error('Fiche mancante');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime as any, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null }, reason);
+    await updateFiche(fiche.id, { client_id: clientId, datetime: baseTime.toISOString(), note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null }, reason);
 
     const currentServiceIds = new Set(ficheServices.filter((s) => s.id).map((s) => s.id!));
     for (const fs of fiche.getFicheServices()) {
@@ -715,10 +717,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         await updateFicheService(svc.id, {
           name: svc.name,
           operator_id: svc.operator_id || undefined,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          start_time: svc.start_time as any,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          end_time: svc.end_time as any,
+          start_time: svc.start_time.toISOString(),
+          end_time: svc.end_time.toISOString(),
           duration: svc.duration,
           list_price: svc.list_price,
           final_price: svc.final_price,
@@ -730,10 +730,8 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           service_id: svc.service_id,
           name: svc.name,
           operator_id: svc.operator_id || undefined,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          start_time: svc.start_time as any,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          end_time: svc.end_time as any,
+          start_time: svc.start_time.toISOString(),
+          end_time: svc.end_time.toISOString(),
           duration: svc.duration,
           list_price: svc.list_price,
           final_price: svc.final_price,
@@ -1638,7 +1636,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                 <>
                                   <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
                                   <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
-                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price).toFixed(2)}
+                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price)?.toFixed(2) ?? '—'}
                                   </span>
                                 </>
                               )}

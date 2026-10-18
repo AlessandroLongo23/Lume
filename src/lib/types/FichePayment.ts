@@ -1,4 +1,5 @@
 import type { FichePaymentMethod } from './fichePaymentMethod';
+import type { Tables } from '@/lib/supabase/types';
 
 export class FichePayment {
   id: string;
@@ -6,14 +7,15 @@ export class FichePayment {
   salon_id: string;
   method: FichePaymentMethod;
   amount: number;
-  created_at: Date;
+  /** ISO timestamp. */
+  created_at: string;
 
-  constructor(fp: FichePayment) {
-    this.id = fp.id;
-    this.fiche_id = fp.fiche_id;
-    this.salon_id = fp.salon_id;
-    this.method = fp.method;
-    this.amount = fp.amount;
-    this.created_at = fp.created_at;
+  constructor(row: Tables<'fiche_payments'>) {
+    this.id = row.id;
+    this.fiche_id = row.fiche_id;
+    this.salon_id = row.salon_id;
+    this.method = row.method;
+    this.amount = row.amount;
+    this.created_at = row.created_at;
   }
 }

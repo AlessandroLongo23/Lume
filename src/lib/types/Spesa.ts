@@ -1,3 +1,5 @@
+import type { Tables } from '@/lib/supabase/types';
+
 export class Spesa {
   id: string;
   salon_id: string;
@@ -10,14 +12,14 @@ export class Spesa {
   imponibile: number | null;
   created_at: string;
 
-  constructor(data: Record<string, unknown>) {
-    this.id = data.id as string;
-    this.salon_id = data.salon_id as string;
-    this.data = data.data as string;
-    this.fornitore = data.fornitore as string;
-    this.categoria = data.categoria as string;
-    this.importo = Number(data.importo);
-    this.imponibile = data.imponibile == null ? null : Number(data.imponibile);
-    this.created_at = data.created_at as string;
+  constructor(row: Tables<'spese'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.data = row.data;
+    this.fornitore = row.fornitore;
+    this.categoria = row.categoria;
+    this.importo = row.importo;
+    this.imponibile = row.imponibile;
+    this.created_at = row.created_at;
   }
 }

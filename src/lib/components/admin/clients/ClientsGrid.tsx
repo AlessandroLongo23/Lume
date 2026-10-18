@@ -43,7 +43,7 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
 
   const filteredClients = useMemo(() => {
     let data = clients;
-    if (selectedGenders.length > 0) data = data.filter((c) => selectedGenders.includes(c.gender));
+    if (selectedGenders.length > 0) data = data.filter((c) => c.gender !== null && selectedGenders.includes(c.gender));
     if (globalFilter.trim()) {
       const q = globalFilter.toLowerCase();
       data = data.filter((c) =>

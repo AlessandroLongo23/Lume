@@ -26,7 +26,7 @@ function formatEur(amount: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
-function formatDuration(minutes: number): string {
+function formatDuration(minutes: number | null): string {
   if (!minutes) return '—';
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);

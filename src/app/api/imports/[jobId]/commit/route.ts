@@ -5,6 +5,7 @@ import { isSalonStaff } from '@/lib/auth/roles';
 import { runCommitImport } from '@/lib/imports/core/runCommit';
 import type { ColumnMapping } from '@/lib/imports/entities/types';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isJsonObject } from '@/lib/supabase/json';
 
 export const maxDuration = 300; // covers per-row insert of up to ~10k rows
 
@@ -51,7 +52,7 @@ export async function POST(
     await admin
       .from('import_jobs')
       .update({
-        mapping_json: { ...(job.mapping_json ?? {}), mappings, confirmedByUser: true },
+        mapping_json: { ...(isJsonObject(job.mapping_json) ? job.mapping_json : {}), mappings, confirmedByUser: true },
         status: 'committing',
       })
       .eq('id', jobId);

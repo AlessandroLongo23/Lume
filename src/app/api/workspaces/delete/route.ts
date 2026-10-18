@@ -34,9 +34,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
     }
 
-    // Use profile.salon_id directly — the cookie (getActiveSalonId) could point to
-    // a salon this user is a client of, which would fail the owner_id check below.
+    // Use the profile's own salon: only its owner may delete it (checked below).
     const salonId = profile.salon_id;
+    if (!salonId) return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
 
     const { data: salon } = await admin
       .from('salons')

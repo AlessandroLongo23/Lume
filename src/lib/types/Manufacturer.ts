@@ -1,15 +1,16 @@
 import { Factory } from 'lucide-react';
 import type { DataColumn } from './dataColumn';
+import type { Tables } from '@/lib/supabase/types';
 
 export class Manufacturer {
   id: string;
   salon_id: string;
   name: string;
 
-  constructor(manufacturer: Manufacturer) {
-    this.id = manufacturer.id;
-    this.salon_id = manufacturer.salon_id;
-    this.name = manufacturer.name;
+  constructor(row: Tables<'manufacturers'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.name = row.name;
   }
 
   static dataColumns: DataColumn[] = [

@@ -12,7 +12,8 @@ import { useClientsStore } from '@/lib/stores/clients';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { FicheStatus } from '@/lib/types/ficheStatus';
-import { Fiche } from '@/lib/types/Fiche';
+import type { Fiche } from '@/lib/types/Fiche';
+import { withPatch } from '@/lib/types/withPatch';
 
 type Tab = 'pending' | 'upcoming' | 'history';
 
@@ -198,7 +199,9 @@ function BookingRow({ fiche, tab }: { fiche: Fiche; tab: Tab }) {
       useFichesStore.setState((s) => ({
         fiches: s.fiches.map((f) =>
           f.id === fiche.id
-            ? new Fiche({ ...f, status: json.status as FicheStatus })
+            ? withPatch(f, {
+                status: json.status === 'created' ? FicheStatus.CREATED : FicheStatus.CANCELLED,
+              })
             : f,
         ),
       }));

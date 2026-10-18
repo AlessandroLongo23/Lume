@@ -15,6 +15,7 @@ interface AddOrderModalProps {
 }
 
 const emptyOrder = () => ({ supplier_id: '', datetime: '', status: 'pending' });
+type OrderDraft = ReturnType<typeof emptyOrder>;
 
 export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
   const addOrder = useOrdersStore((s) => s.addOrder);
@@ -22,8 +23,8 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
   const [order, setOrder] = useState(emptyOrder());
   const [errors, setErrors] = useState({ supplier_id: '', datetime: '' });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const set = (key: string, value: any) => setOrder((o) => ({ ...o, [key]: value }));
+  const set = <K extends keyof OrderDraft>(key: K, value: OrderDraft[K]) =>
+    setOrder((o) => ({ ...o, [key]: value }));
 
   const handleSubmit = async () => {
     const e = { supplier_id: '', datetime: '' };
@@ -33,8 +34,7 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
     if (Object.values(e).some(Boolean)) return;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await addOrder({ ...order, datetime: new Date(order.datetime) as any });
+      await addOrder({ ...order, datetime: new Date(order.datetime).toISOString() });
       emitTourEvent('order:created');
       messagePopup.getState().success('Ordine aggiunto con successo');
       setOrder(emptyOrder());

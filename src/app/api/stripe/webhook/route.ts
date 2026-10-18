@@ -50,7 +50,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const supabaseAdmin = createAdminClient();
 
   // Find salon by subscription ID if no metadata
-  let targetSalonId = salonId;
+  let targetSalonId: string | undefined = salonId;
   if (!targetSalonId) {
     const { data } = await supabaseAdmin
       .from('salons')

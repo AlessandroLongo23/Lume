@@ -89,7 +89,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     let data = services;
 
     if (selectedCategories.length > 0) {
-      data = data.filter((s) => selectedCategories.includes(s.category_id));
+      data = data.filter((s) => s.category_id !== null && selectedCategories.includes(s.category_id));
     }
 
     if (globalFilter.trim()) {

@@ -25,8 +25,8 @@ export function decorateLines(
   const svcMap = new Map(catalogServices.map((s) => [s.id, s]));
   const prdMap = new Map(catalogProducts.map((p) => [p.id, p]));
   return {
-    services: services.map((s) => ({ ...s, category_id: svcMap.get(s.service_id)?.category_id })),
-    products: products.map((p) => ({ ...p, product_category_id: prdMap.get(p.product_id)?.product_category_id })),
+    services: services.map((s) => ({ ...s, category_id: svcMap.get(s.service_id)?.category_id ?? undefined })),
+    products: products.map((p) => ({ ...p, product_category_id: prdMap.get(p.product_id)?.product_category_id ?? undefined })),
   };
 }
 

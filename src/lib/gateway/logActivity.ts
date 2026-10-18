@@ -1,7 +1,7 @@
 import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
-
-export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk';
+import type { Json } from '@/lib/supabase/types';
+import type { ActivityAction } from '@/lib/types/ActivityLog';
 
 export type LogActivityInput = {
   salonId: string;
@@ -51,7 +51,8 @@ export async function logActivity(input: LogActivityInput): Promise<void> {
       entity_type: input.entityType,
       entity_id: input.entityId ?? null,
       action: input.action,
-      changes: input.changes ?? null,
+      // Callers pass plain DB rows and diffs; supabase-js sends them through JSON.stringify.
+      changes: (input.changes ?? null) as Json,
       summary: input.summary ?? null,
     });
   } catch (err) {

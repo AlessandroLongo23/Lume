@@ -1,3 +1,5 @@
+import type { Tables } from '@/lib/supabase/types';
+
 export class FicheService {
   id: string;
   salon_id: string;
@@ -5,26 +7,29 @@ export class FicheService {
   service_id: string;
   name: string;
   operator_id: string;
-  start_time: Date;
-  end_time: Date;
+  /** ISO timestamp. */
+  start_time: string;
+  /** ISO timestamp. */
+  end_time: string;
+  /** Minutes. */
   duration: number;
   list_price: number;
   final_price: number;
   abbonamento_id: string | null;
 
-  constructor(ficheService: FicheService) {
-    this.id = ficheService.id;
-    this.salon_id = ficheService.salon_id;
-    this.fiche_id = ficheService.fiche_id;
-    this.service_id = ficheService.service_id;
-    this.name = ficheService.name ?? '';
-    this.operator_id = ficheService.operator_id;
-    this.start_time = ficheService.start_time;
-    this.end_time = ficheService.end_time;
-    this.duration = ficheService.duration;
-    this.list_price = ficheService.list_price ?? 0;
-    this.final_price = ficheService.final_price ?? 0;
-    this.abbonamento_id = ficheService.abbonamento_id ?? null;
+  constructor(row: Tables<'fiche_services'>) {
+    this.id = row.id;
+    this.salon_id = row.salon_id;
+    this.fiche_id = row.fiche_id;
+    this.service_id = row.service_id;
+    this.name = row.name;
+    this.operator_id = row.operator_id;
+    this.start_time = row.start_time;
+    this.end_time = row.end_time;
+    this.duration = row.duration;
+    this.list_price = row.list_price;
+    this.final_price = row.final_price;
+    this.abbonamento_id = row.abbonamento_id;
   }
 
   getDuration(): number {

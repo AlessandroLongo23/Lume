@@ -4,7 +4,7 @@ import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 
 interface CategoryBadgeProps {
-  category_id: string;
+  category_id: string | null;
 }
 
 export function CategoryBadge({ category_id }: CategoryBadgeProps) {

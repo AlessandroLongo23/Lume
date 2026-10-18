@@ -1,3 +1,6 @@
+import type { Tables } from '@/lib/supabase/types';
+import { isJsonObject } from '@/lib/supabase/json';
+
 export type FicheEditChanges = Record<string, { old: unknown; new: unknown }>;
 
 export class FicheEdit {
@@ -9,21 +12,14 @@ export class FicheEdit {
   changes: FicheEditChanges;
   reason: string | null;
 
-  constructor(fe: {
-    id: string;
-    fiche_id: string;
-    salon_id: string;
-    edited_by: string | null;
-    edited_at: string | Date;
-    changes: FicheEditChanges;
-    reason: string | null;
-  }) {
-    this.id = fe.id;
-    this.fiche_id = fe.fiche_id;
-    this.salon_id = fe.salon_id;
-    this.edited_by = fe.edited_by;
-    this.edited_at = fe.edited_at instanceof Date ? fe.edited_at : new Date(fe.edited_at);
-    this.changes = fe.changes;
-    this.reason = fe.reason;
+  constructor(row: Tables<'fiche_edits'>) {
+    this.id = row.id;
+    this.fiche_id = row.fiche_id;
+    this.salon_id = row.salon_id;
+    this.edited_by = row.edited_by;
+    this.edited_at = new Date(row.edited_at);
+    // Written only by update_fiche_with_audit, as { field: { old, new } }.
+    this.changes = isJsonObject(row.changes) ? (row.changes as FicheEditChanges) : {};
+    this.reason = row.reason;
   }
 }

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheService } from '@/lib/types/FicheService';
+import { withPatch } from '@/lib/types/withPatch';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
@@ -25,8 +27,8 @@ interface FicheServicesState {
   fetchFicheServices: () => Promise<void>;
   /** Loads the lines between `from` and `loadedFrom` if not loaded yet. */
   ensureLoadedFrom: (from: Date) => Promise<void>;
-  addFicheService: (ficheService: Partial<FicheService>) => Promise<FicheService>;
-  updateFicheService: (id: string, updated: Partial<FicheService>) => Promise<FicheService>;
+  addFicheService: (ficheService: Omit<TablesInsert<'fiche_services'>, 'salon_id'>) => Promise<FicheService>;
+  updateFicheService: (id: string, updated: TablesUpdate<'fiche_services'>) => Promise<FicheService>;
   deleteFicheService: (id: string) => Promise<void>;
   /**
    * Optimistically apply a planned set of segment updates and persist them.
@@ -57,7 +59,7 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
   fetchFicheServices: async () => {
     set((s) => ({ ...s, isLoading: true }));
     const since = get().loadedFrom;
-    const { data, error } = await fetchAllPages<FicheService>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('fiche_services')
@@ -82,7 +84,7 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
   ensureLoadedFrom: async (from) => {
     const until = get().loadedFrom;
     if (from >= until) return;
-    const { data, error } = await fetchAllPages<FicheService>(
+    const { data, error } = await fetchAllPages(
       (a, b) =>
         supabase
           .from('fiche_services')
@@ -154,13 +156,12 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
           1,
           Math.round((seg.end.getTime() - seg.start.getTime()) / 60000),
         );
-        return new FicheService({
-          ...fs,
-          start_time: seg.start,
-          end_time: seg.end,
+        return withPatch(fs, {
+          start_time: seg.start.toISOString(),
+          end_time: seg.end.toISOString(),
           operator_id: seg.operatorId,
           duration: durationMin,
-        } as unknown as FicheService);
+        });
       }),
       pendingMutationIds: new Set([
         ...s.pendingMutationIds,
@@ -200,9 +201,7 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
         fiches: s.fiches.map((f) => {
           const u = ficheDatetimeUpdates.find((x) => x.ficheId === f.id);
           if (!u) return f;
-          // Keep class identity by reusing the constructor.
-          const Cls = f.constructor as { new (data: unknown): typeof f };
-          return new Cls({ ...f, datetime: u.next });
+          return withPatch(f, { datetime: u.next.toISOString() });
         }),
         pendingMutationIds: new Set([
           ...s.pendingMutationIds,
@@ -240,7 +239,7 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
         // leaves no Cronologia entry — defeating the feature's promise.
         await Promise.all(
           ficheDatetimeUpdates.map((u) =>
-            useFichesStore.getState().updateFiche(u.ficheId, { datetime: u.next }),
+            useFichesStore.getState().updateFiche(u.ficheId, { datetime: u.next.toISOString() }),
           ),
         );
       }
@@ -257,8 +256,7 @@ export const useFicheServicesStore = create<FicheServicesState>((set, get) => ({
           fiches: s.fiches.map((f) => {
             const u = ficheDatetimeUpdates.find((x) => x.ficheId === f.id);
             if (!u) return f;
-            const Cls = f.constructor as { new (data: unknown): typeof f };
-            return new Cls({ ...f, datetime: u.previous });
+            return withPatch(f, { datetime: u.previous.toISOString() });
           }),
         }));
       }

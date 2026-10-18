@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { FicheProduct } from '@/lib/types/FicheProduct';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 
 interface FicheProductsState {
@@ -9,8 +10,8 @@ interface FicheProductsState {
   isLoading: boolean;
   error: string | null;
   fetchFicheProducts: () => Promise<void>;
-  addFicheProduct: (ficheProduct: Partial<FicheProduct>) => Promise<FicheProduct>;
-  updateFicheProduct: (id: string, updated: Partial<FicheProduct>) => Promise<FicheProduct>;
+  addFicheProduct: (ficheProduct: Omit<TablesInsert<'fiche_products'>, 'salon_id'>) => Promise<FicheProduct>;
+  updateFicheProduct: (id: string, updated: TablesUpdate<'fiche_products'>) => Promise<FicheProduct>;
   deleteFicheProduct: (id: string) => Promise<void>;
 }
 
@@ -21,7 +22,7 @@ export const useFicheProductsStore = create<FicheProductsState>((set) => ({
 
   fetchFicheProducts: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await fetchAllPages<FicheProduct>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('fiche_products')

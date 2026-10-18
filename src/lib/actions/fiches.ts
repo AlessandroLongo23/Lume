@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { FicheStatus } from '@/lib/types/ficheStatus';
+import type { Json, Tables } from '@/lib/supabase/types';
 
 /** Completed and cancelled fiches no longer hold their slot. */
 const INACTIVE_STATUSES = `(${FicheStatus.COMPLETED},${FicheStatus.CANCELLED})`;
@@ -116,15 +117,15 @@ export async function validateFicheConflicts(
  */
 export async function updateFicheWithAudit(
   ficheId: string,
-  patch: Record<string, unknown>,
+  patch: { [field: string]: Json | undefined },
   reason?: string | null,
-): Promise<{ data?: unknown; error?: string }> {
+): Promise<{ data?: Tables<'fiches'>; error?: string }> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc('update_fiche_with_audit', {
     p_fiche_id: ficheId,
     p_patch: patch,
-    p_reason: reason ?? null,
+    p_reason: reason ?? undefined,
   });
 
   if (error) {
@@ -143,5 +144,6 @@ export async function updateFicheWithAudit(
     }
   }
 
-  return { data };
+  // The function returns a public.fiches row, so the same narrowing as Tables<'fiches'> applies.
+  return { data: data as Tables<'fiches'> };
 }

@@ -69,7 +69,7 @@ export function FicheHistory({ clientId }: FicheHistoryProps) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error: fetchError } = await fetchAllPages<RawFicheRow>((from, to) =>
+      const { data, error: fetchError } = await fetchAllPages((from, to) =>
         supabase
           .from('fiches')
           // `fiche_services` has two FKs to fiches.id on the same column (a

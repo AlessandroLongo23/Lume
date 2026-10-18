@@ -2,14 +2,15 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Abbonamento } from '@/lib/types/Abbonamento';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 interface AbbonamentiState {
   abbonamenti: Abbonamento[];
   isLoading: boolean;
   error: string | null;
   fetchAbbonamenti: () => Promise<void>;
-  addAbbonamento: (abbonamento: Partial<Abbonamento>) => Promise<Abbonamento>;
-  updateAbbonamento: (id: string, updated: Partial<Abbonamento>) => Promise<Abbonamento>;
+  addAbbonamento: (abbonamento: Omit<TablesInsert<'abbonamenti'>, 'salon_id'>) => Promise<Abbonamento>;
+  updateAbbonamento: (id: string, updated: TablesUpdate<'abbonamenti'>) => Promise<Abbonamento>;
   deleteAbbonamento: (id: string) => Promise<void>;
   deleteAllAbbonamenti: () => Promise<void>;
 }
@@ -21,7 +22,7 @@ export const useAbbonamentiStore = create<AbbonamentiState>((set) => ({
 
   fetchAbbonamenti: async () => {
     set((s) => ({ ...s, isLoading: true }));
-    const { data, error } = await fetchAllPages<ConstructorParameters<typeof Abbonamento>[0]>(
+    const { data, error } = await fetchAllPages(
       (from, to) =>
         supabase
           .from('abbonamenti')

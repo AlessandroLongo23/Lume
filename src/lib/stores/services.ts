@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
 import { Service } from '@/lib/types/Service';
+import { withPatch } from '@/lib/types/withPatch';
+import type { TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 interface ServicesState {
   services: Service[];
@@ -8,8 +10,8 @@ interface ServicesState {
   isLoading: boolean;
   error: string | null;
   fetchServices: () => Promise<void>;
-  addService: (service: Partial<Service>) => Promise<Service>;
-  updateService: (id: string, updated: Partial<Service>) => Promise<Service>;
+  addService: (service: Omit<TablesInsert<'services'>, 'salon_id'>) => Promise<Service>;
+  updateService: (id: string, updated: TablesUpdate<'services'>) => Promise<Service>;
   archiveService: (id: string) => Promise<void>;
   restoreService: (id: string) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
@@ -112,7 +114,7 @@ export const useServicesStore = create<ServicesState>((set) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       services: s.services.map((sv) =>
-        ids.includes(sv.id) ? new Service({ ...sv, ...patch } as Service) : sv
+        ids.includes(sv.id) ? withPatch(sv, patch) : sv
       ),
     }));
   },
@@ -128,7 +130,7 @@ export const useServicesStore = create<ServicesState>((set) => ({
     const archived_at = new Date().toISOString();
     set((s) => ({
       services: s.services.map((sv) =>
-        ids.includes(sv.id) ? new Service({ ...sv, archived_at } as Service) : sv
+        ids.includes(sv.id) ? withPatch(sv, { archived_at }) : sv
       ),
     }));
   },
@@ -143,7 +145,7 @@ export const useServicesStore = create<ServicesState>((set) => ({
     if (!result.success) throw new Error(result.error);
     set((s) => ({
       services: s.services.map((sv) =>
-        ids.includes(sv.id) ? new Service({ ...sv, archived_at: null } as Service) : sv
+        ids.includes(sv.id) ? withPatch(sv, { archived_at: null }) : sv
       ),
     }));
   },
