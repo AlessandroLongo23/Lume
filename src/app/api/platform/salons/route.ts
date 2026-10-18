@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import type { BusinessType } from '@/lib/types/Salon';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Generate a random temporary password for the new owner account.
 // Actual access is via the password reset email the owner will receive separately.
@@ -29,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Campi mancanti' }, { status: 400 });
   }
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   let createdAuthUserId: string | null = null;
 
   try {

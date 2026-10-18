@@ -1,15 +1,8 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
 import type { createClient as createServerClient } from '@/lib/supabase/server';
 import type { ProfileRole } from '@/lib/auth/roles';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export type CallerProfile = {
   id:        string;
@@ -36,7 +29,7 @@ export async function getCallerProfile(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('is_platform_admin')

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // GDPR Art. 17 — Right to erasure ("right to be forgotten").
 // Self-service hard delete of the current user's auth identity + profile.
@@ -11,19 +11,12 @@ import { isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
 //
 // Logged in data_subject_requests for SLA proof.
 
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
 export async function DELETE() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   // Refuse if the user still owns or works at any salon. They must clean up
   // those bindings first, otherwise we'd silently orphan tenant data.

@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import { deleteSalonCascade, isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function PATCH(
   request: NextRequest,
@@ -33,7 +26,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Nessun campo da aggiornare' }, { status: 400 });
   }
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin.from('salons').update(patch).eq('id', id);
   if (error) {
     console.error('Platform salon update failed:', error);
@@ -51,7 +44,7 @@ export async function DELETE(
   if (guard.response) return guard.response;
 
   const { id } = await params;
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   try {
     const { data: salon, error: salonErr } = await admin

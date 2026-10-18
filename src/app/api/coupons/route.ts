@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity, diffRows } from '@/lib/gateway/logActivity';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 type IncomingCoupon = {
   kind: 'gift' | 'gift_card';
@@ -72,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: validationError }, { status: 400 });
     }
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
 
     const original = coupon.kind === 'gift_card' ? coupon.original_value! : null;
 
@@ -146,7 +139,7 @@ export async function PATCH(request: NextRequest) {
     const { id, coupon } = await request.json() as { id: string; coupon: Partial<IncomingCoupon> & { is_active?: boolean } };
     if (!id) return NextResponse.json({ success: false, error: 'id mancante' }, { status: 400 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
     // Operators can only flip is_active or update notes; structural changes are owner-only
     const updates: Record<string, unknown> = {};
     if (typeof coupon.is_active === 'boolean') updates.is_active = coupon.is_active;
@@ -216,7 +209,7 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json() as { id: string };
     if (!id) return NextResponse.json({ success: false, error: 'id mancante' }, { status: 400 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
     const { error } = await admin
       .from('coupons')
       .delete()

@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const PRODUCT_CATEGORY_WRITE_FIELDS = ['name', 'description', 'imageUrl', 'color'] as const;
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { category } = await request.json();
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data, error: dbError } = await supabaseAdmin
       .from('product_categories')
@@ -69,7 +62,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { id, action, category } = await request.json();
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     if (action === 'archive' || action === 'restore') {
       if (!id) {
@@ -149,7 +142,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Category ID is required' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data: categoryToDelete } = await supabaseAdmin
       .from('product_categories')

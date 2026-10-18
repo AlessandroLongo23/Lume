@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
 import { normalizeProfileRole } from '@/lib/auth/roles';
 import { getStripe } from '@/lib/stripe/client';
 import type Stripe from 'stripe';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET() {
   try {
@@ -21,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('salon_id, role, first_name, last_name, email')

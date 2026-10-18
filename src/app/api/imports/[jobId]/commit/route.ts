@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff } from '@/lib/auth/roles';
 import { runCommitImport } from '@/lib/imports/core/runCommit';
 import type { ColumnMapping } from '@/lib/imports/entities/types';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const maxDuration = 300; // covers per-row insert of up to ~10k rows
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 /**
  * POST /api/imports/[jobId]/commit  { mappings }
@@ -39,7 +32,7 @@ export async function POST(
     const mappings = Array.isArray(body?.mappings) ? body.mappings : null;
     if (!mappings) return NextResponse.json({ success: false, error: 'mappings mancante' }, { status: 400 });
 
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
     const { data: job, error } = await admin
       .from('import_jobs')
       .select('id, salon_id, entity, status, mapping_json')

@@ -1,17 +1,10 @@
 import Link from 'next/link';
 import { Building2, Plus } from 'lucide-react';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { SalonCard, type SalonCardRow } from '@/lib/components/platform/SalonCard';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 type SalonRow = {
   id:                   string;
@@ -29,7 +22,7 @@ type SalonRow = {
 type ProfileRow = { id: string; email: string; first_name: string; last_name: string };
 
 export default async function SalonsPage() {
-  const supabase = getAdminClient();
+  const supabase = createAdminClient();
 
   const { data: salons } = await supabase
     .from('salons')

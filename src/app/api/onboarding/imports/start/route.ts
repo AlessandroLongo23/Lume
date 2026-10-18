@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isOwner } from '@/lib/auth/roles';
 import { isWorkbook, listSheetNames } from '@/lib/imports/core/splitWorkbook';
 import { runOnboarding } from '@/lib/imports/onboarding/runOnboarding';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const maxDuration = 300;
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 interface ChildRow {
   id: string;
@@ -45,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'onboardingId mancante' }, { status: 400 });
     }
 
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
 
     // Auth-check the parent
     const { data: parent } = await admin

@@ -1,16 +1,9 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
 import type { GatewayResult, WorkspaceContext } from '@/lib/types/Workspace';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — mirrors /api/platform/enter-salon
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 type SalonJoin = { id: string; name: string; onboarded_at: string | null; logo_url: string | null };
 
@@ -21,7 +14,7 @@ type SalonJoin = { id: string; name: string; onboarded_at: string | null; logo_u
  * public.user_salon_memberships. Client contexts still come from clients.user_id.
  */
 export async function resolveWorkspace(userId: string): Promise<GatewayResult> {
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')

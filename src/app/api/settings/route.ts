@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
 import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
 import type { SalonFiscal, RegimeFiscale, BusinessType, SalonFormDefaults, SalonEmailNotifications, BookingConfig, BookingAccessMode, BookingApprovalScope } from '@/lib/types/Salon';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 async function getAuthContext() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data: profile } = await admin
     .from('profiles')
     .select('salon_id, role')

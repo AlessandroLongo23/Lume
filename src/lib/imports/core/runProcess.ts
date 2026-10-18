@@ -1,23 +1,15 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { loadParsedFile } from './loadParsedFile';
 import { mapColumns, type MappingResult } from './llmMapper';
 import { smartMapColumns } from './smartMapper';
 import { getEntityConfig } from '../entities/registry';
 import { evaluateAutoCommitEligibility } from '../onboarding/autoCommitEligibility';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const PREVIEW_ROW_COUNT = 20;
 
 export type SupabaseAdmin = ReturnType<typeof createAdminClient>;
-
-function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-}
 
 /**
  * Stage 1 of the import pipeline. Runs synchronously inside the API route

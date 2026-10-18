@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { addMonths } from 'date-fns';
 import { getStripe } from '@/lib/stripe/client';
 import Stripe from 'stripe';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const REFERRAL_CAP = 6;
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 function derivePlan(subscription: Stripe.Subscription): 'monthly' | 'yearly' | null {
   const item = subscription.items.data[0];
@@ -26,7 +20,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const salonId = session.metadata?.salon_id;
   if (!salonId || !session.subscription || !session.customer) return;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const subscriptionId = typeof session.subscription === 'string'
     ? session.subscription
     : session.subscription.id;
@@ -53,7 +47,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const salonId = subscription.metadata?.salon_id;
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
 
   // Find salon by subscription ID if no metadata
   let targetSalonId = salonId;
@@ -81,7 +75,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
 
   await supabaseAdmin
     .from('salons')
@@ -174,7 +168,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     : invoice.customer?.id;
   if (!customerId) return;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
 
   // Find the salon that just paid
   const { data: paidSalon } = await supabaseAdmin
@@ -240,7 +234,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     : invoice.customer?.id;
   if (!customerId) return;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   await supabaseAdmin
     .from('salons')
     .update({ subscription_status: 'past_due' })

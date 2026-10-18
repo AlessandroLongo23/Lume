@@ -1,5 +1,6 @@
 import 'server-only';
-import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Server-side notification fan-out used by the booking flow endpoints (and
 // later the client-cancel endpoint in sub-project I). All inserts go
@@ -17,13 +18,6 @@ import { createClient as createSupabaseClient, type SupabaseClient } from '@supa
 //
 // Failures are non-fatal: the caller logs and moves on. A missing
 // notification is a recoverable UX miss, not a booking failure.
-
-function getAdminClient(): SupabaseClient {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 type ApprovalScope = 'chosen_operator' | 'any_staff';
 
@@ -85,7 +79,7 @@ async function fanout(
   build: (recipient: string) => Omit<NotificationInsert, 'user_id' | 'salon_id'>,
   includeAllStaff: boolean,
 ): Promise<void> {
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const recipients = await recipientsForFanout(
     admin,
     ctx.salonId,

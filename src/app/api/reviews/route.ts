@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import type { ReviewWithAuthor } from '@/lib/types/Review';
 import { isSalonStaff } from '@/lib/auth/roles';
 import { sanitizeRichText } from '@/lib/utils/sanitizeRichText';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const MIN_RATING = 1;
 const MAX_RATING = 5;
@@ -51,7 +44,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function publicList() {
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data: rows, error } = await admin
     .from('reviews')
     .select('id, author_id, rating, message, created_at, updated_at')

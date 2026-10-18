@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { normalizeProfileRole, isSalonStaff } from '@/lib/auth/roles';
 import { sanitizeRichText } from '@/lib/utils/sanitizeRichText';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_IMAGES = 4;
 const BUCKET = 'feedback-attachments';
 
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
 async function getCallerProfile(supabase: Awaited<ReturnType<typeof createServerClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('id, role')
@@ -68,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: `Puoi allegare al massimo ${MAX_IMAGES} immagini.` }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data: entryExists } = await supabaseAdmin
       .from('feedback_entries')
@@ -120,7 +113,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'ID richiesto' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { data: existing } = await supabaseAdmin
       .from('feedback_comments')
       .select('id, author_id, created_at, image_paths')
@@ -203,7 +196,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'ID richiesto' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { data: existing } = await supabaseAdmin
       .from('feedback_comments')
       .select('id, author_id, image_paths')

@@ -1,14 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { ClaimInviteClient } from './ClaimInviteClient';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -17,7 +10,7 @@ interface Props {
 export default async function ClaimInvitePage({ params }: Props) {
   const { token } = await params;
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
 
   const { data: invite } = await supabaseAdmin
     .from('pending_membership_invites')

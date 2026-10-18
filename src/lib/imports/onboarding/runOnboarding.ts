@@ -1,5 +1,4 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
 import { loadParsedFile } from '../core/loadParsedFile';
 import { classifyFileOrSheet, type ClassifierEntity } from '../core/classifier';
 import { runProcessImport } from '../core/runProcess';
@@ -9,18 +8,11 @@ import { COMMIT_WAVES } from './types';
 import type { ImportEntity, ColumnMapping } from '../entities/types';
 import type { ImportJobMappingPayload } from '@/lib/types/ImportJob';
 import type { OnboardingSummary } from '@/lib/types/OnboardingImport';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const CLASSIFIER_SAMPLE_SIZE = 10;
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>;
-
-function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-}
 
 interface ChildRow {
   id: string;

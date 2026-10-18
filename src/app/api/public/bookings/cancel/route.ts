@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/server';
 import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
 import { emitBookingCancelled } from '@/lib/notifications/emit';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Public, anon-callable cancel endpoint hit by the "Sì, annulla" button on
 // `(public)/[slug]/prenotazione/[token]`. All access control happens inside
@@ -141,10 +141,7 @@ export async function POST(request: NextRequest) {
 // city/cap/etc by default), and using service-role for this one read is safe:
 // the response goes through the typed email template, not back to the caller.
 async function loadSalonForEmail(salonId: string) {
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const admin = createAdminClient();
   return admin
     .from('salons')
     .select('name, brand_color, logo_url, address, city, cap, province, phone')
@@ -162,10 +159,7 @@ async function loadSalonForEmail(salonId: string) {
 }
 
 async function loadOperatorUserId(operatorId: string): Promise<string | null> {
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const admin = createAdminClient();
   const { data, error } = await admin
     .from('operators')
     .select('user_id')

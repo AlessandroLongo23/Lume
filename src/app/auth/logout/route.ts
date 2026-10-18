@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST() {
   const supabase = await createClient();
@@ -20,7 +13,7 @@ export async function POST() {
   // Clear any lingering super-admin impersonation row so the next login
   // starts clean (no auto-resume of a prior impersonation session).
   if (user) {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { error } = await supabaseAdmin
       .from('super_admin_impersonation')
       .delete()

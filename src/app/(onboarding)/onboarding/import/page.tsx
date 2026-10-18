@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isOwner } from '@/lib/auth/roles';
 import OnboardingImportClient from './OnboardingImportClient';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +20,7 @@ export default async function OnboardingImportPage() {
   const profile = await getCallerProfile(supabase);
   if (!profile || !isOwner(profile.role)) redirect('/');
 
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const admin = createAdminClient();
 
   const [{ data: salon }, { data: openOnboarding }] = await Promise.all([
     admin

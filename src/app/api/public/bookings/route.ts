@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/server';
 import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
 import { emitBookingCreated, emitBookingRequested } from '@/lib/notifications/emit';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Public, anon-callable endpoint hit by the booking wizard's submit button.
 // All access control happens inside create_online_booking (SECURITY DEFINER):
@@ -245,10 +245,7 @@ function buildCancelUrl(request: NextRequest, slug: string, token: string): stri
 // chosen operator's auth user_id to route the staff notification. Service
 // role for one field is fine — no info leaks back to the anon caller.
 async function loadOperatorUserId(operatorId: string): Promise<string | null> {
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const admin = createAdminClient();
   const { data, error } = await admin
     .from('operators')
     .select('user_id')

@@ -1,17 +1,10 @@
 import { LineChart } from 'lucide-react';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { PLANS } from '@/lib/stripe/config';
 import { DashboardPage, type DashboardData } from './DashboardPage';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 type SalonRow = {
   id:                   string;
@@ -34,7 +27,7 @@ type FicheServiceRow = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default async function Page() {
-  const supabase = getAdminClient();
+  const supabase = createAdminClient();
 
   const now = new Date();
   const day60Ago = new Date(now.getTime() - 60 * DAY_MS);

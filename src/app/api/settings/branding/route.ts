@@ -1,26 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
 import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const BUCKET = 'salon-branding';
 const MAX_BYTES = 5 * 1024 * 1024;
 const LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']);
 const FAVICON_TYPES = new Set(['image/png', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/svg+xml']);
 
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
 async function getAuthContext() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data: profile } = await admin
     .from('profiles')
     .select('salon_id, role')

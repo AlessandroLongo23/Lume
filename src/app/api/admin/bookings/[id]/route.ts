@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff, canManageSalon } from '@/lib/auth/roles';
 import { sendBookingEmail } from '@/lib/email/bookingConfirmation';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Sub-project G: staff-side approve / decline for online bookings.
 //
@@ -31,13 +31,6 @@ function publicOriginFromRequest(request: NextRequest): string {
     return `${proto}://${fwdHost}`;
   }
   return new URL(request.url).origin;
-}
-
-function getAdminClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
 }
 
 type BookingConfig = {
@@ -107,7 +100,7 @@ export async function POST(
     return NextResponse.json({ success: false, error: 'Non autorizzato.' }, { status: 403 });
   }
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   // Pull fiche + fiche_services + salon + client in three small queries so
   // each one is a clear failure surface. Fiche has 1:N services but for

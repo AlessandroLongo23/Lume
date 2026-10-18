@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 import { getStripe } from '@/lib/stripe/client';
 import { canManageSalon } from '@/lib/auth/roles';
 import type { Invoice, InvoiceStatus } from '@/lib/types/Subscription';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Resolves an invoice to its underlying charge ID. Tries the deprecated
 // invoice.charge field first (still populated in API responses for back-compat
@@ -59,7 +52,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('salon_id, role')

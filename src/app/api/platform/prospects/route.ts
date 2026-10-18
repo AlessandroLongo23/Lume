@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import type { ProspectStatus } from '@/lib/types/Prospect';
 import { PROSPECT_STATUSES } from '@/lib/types/Prospect';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const TEXT_FIELDS = [
   'name', 'phone_shop', 'phone_personal', 'owner_name', 'google_maps_url',
@@ -32,7 +25,7 @@ export async function GET() {
   const guard = await requireAdmin();
   if (guard.response) return guard.response;
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data, error } = await admin
     .from('prospects')
     .select('*')
@@ -69,7 +62,7 @@ export async function POST(request: NextRequest) {
     insert.status = body.status;
   }
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data, error } = await admin
     .from('prospects')
     .insert(insert)

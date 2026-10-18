@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import type { ProfilePreferences } from '@/lib/types/Preferences';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 async function getUser() {
   const supabase = await createServerClient();
@@ -20,7 +13,7 @@ export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { data, error } = await admin
     .from('profiles')
     .select('first_name, last_name, email, avatar_url, phone_prefix, phone_number, preferences')
@@ -78,7 +71,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Dati non validi' }, { status: 400 });
   }
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   // ── Profile-level fields (first_name, last_name, avatar_url) ──────────────
   const profileUpdates: Record<string, unknown> = {};

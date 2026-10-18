@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { BusinessType, OriginType } from '@/lib/types/Salon';
 import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
+import { createAdminClient, type AdminClient } from '@/lib/supabase/admin';
 
 function getAnonClient() {
   return createClient(
@@ -12,13 +13,6 @@ function getAnonClient() {
 
 const VALID_BUSINESS_TYPES: BusinessType[] = ['barber', 'hair_salon', 'beauty_center', 'nails', 'other'];
 const VALID_ORIGINS: OriginType[] = ['word_of_mouth', 'social_media', 'google', 'event'];
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function POST(request: NextRequest) {
   let userId: string | null = null;
@@ -52,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Origine non valida.' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     // 1. Resolve auth identity — create new or reuse existing.
     //    A person may already have an account (client of another salon, or
@@ -281,7 +275,7 @@ export async function POST(request: NextRequest) {
     console.error('Unexpected registration error:', msg);
     // Best-effort rollback on unexpected errors
     if (salonId || (userId && createdAuthUser)) {
-      const supabaseAdmin = getAdminClient();
+      const supabaseAdmin = createAdminClient();
       if (salonId) await rollbackSalon(supabaseAdmin, salonId);
       if (userId && createdAuthUser) await rollbackUser(supabaseAdmin, userId);
     }
@@ -289,7 +283,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function rollbackUser(admin: ReturnType<typeof getAdminClient>, userId: string) {
+async function rollbackUser(admin: AdminClient, userId: string) {
   try {
     await admin.auth.admin.deleteUser(userId);
   } catch (e) {
@@ -297,7 +291,7 @@ async function rollbackUser(admin: ReturnType<typeof getAdminClient>, userId: st
   }
 }
 
-async function rollbackSalon(admin: ReturnType<typeof getAdminClient>, salonId: string) {
+async function rollbackSalon(admin: AdminClient, salonId: string) {
   try {
     await admin.from('salons').delete().eq('id', salonId);
   } catch (e) {
@@ -305,7 +299,7 @@ async function rollbackSalon(admin: ReturnType<typeof getAdminClient>, salonId: 
   }
 }
 
-async function rollbackProfile(admin: ReturnType<typeof getAdminClient>, userId: string) {
+async function rollbackProfile(admin: AdminClient, userId: string) {
   try {
     await admin.from('profiles').delete().eq('id', userId);
   } catch (e) {

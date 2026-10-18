@@ -1,13 +1,6 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
 import { normalizeProfileRole } from '@/lib/auth/roles';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * True when the auth user has platform-wide admin privileges
@@ -15,7 +8,7 @@ function getAdminClient() {
  */
 export async function isAdmin(userId: string | null | undefined): Promise<boolean> {
   if (!userId) return false;
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const { data } = await supabaseAdmin
     .from('profiles')
     .select('role')

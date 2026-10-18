@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
 import { randomBytes } from 'crypto';
 import { sendMembershipInviteEmail } from '@/lib/email/membershipInvite';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createAdminClient, type AdminClient } from '@/lib/supabase/admin';
 
 type ExistingUserLookup = {
   userId: string;
@@ -21,7 +14,7 @@ type ExistingUserLookup = {
 } | null;
 
 async function findExistingUser(
-  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  supabaseAdmin: AdminClient,
   email: string,
 ): Promise<ExistingUserLookup> {
   const { data: profile } = await supabaseAdmin
@@ -53,7 +46,7 @@ const NEUTRAL_INVITE_RESPONSE =
   "Se l'email è già registrata su Lume, l'operatore riceverà un invito a unirsi al tuo salone. Altrimenti, l'account è stato creato con la password indicata.";
 
 async function issueInvite(
-  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  supabaseAdmin: AdminClient,
   params: {
     salonId: string;
     email: string;
@@ -147,7 +140,7 @@ export async function POST(request: NextRequest) {
       ? operator.phoneNumber.trim()
       : null;
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const wantsAccount = !!email && !!password;
 
     // Branch 1: no-auth operator. Skip auth.users + profiles entirely.
@@ -293,7 +286,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (createdAuthUserId) {
       try {
-        const supabaseAdmin = getAdminClient();
+        const supabaseAdmin = createAdminClient();
         await supabaseAdmin.from('user_salon_memberships').delete().eq('user_id', createdAuthUserId);
         await supabaseAdmin.from('profiles').delete().eq('id', createdAuthUserId);
         await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
@@ -318,7 +311,7 @@ export async function PATCH(request: NextRequest) {
     const { id, action } = body;
     if (!id) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     if (action === 'archive' || action === 'restore') {
       const archived_at = action === 'archive' ? new Date().toISOString() : null;
@@ -505,7 +498,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Operator ID is required' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data: operatorData } = await supabaseAdmin
       .from('operators')

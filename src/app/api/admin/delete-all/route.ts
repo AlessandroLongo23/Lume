@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon } from '@/lib/auth/roles';
+import { createAdminClient, type AdminClient } from '@/lib/supabase/admin';
 
 const ENTITIES = [
   'clients',
@@ -29,21 +29,13 @@ const ENTITY_PLURAL_IT: Record<Entity, string> = {
   abbonamenti: 'gli abbonamenti',
 };
 
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
-type Admin = ReturnType<typeof getAdminClient>;
 
 /**
  * Cascade strategies per entity, derived from the FK graph in public.*.
  * Tables with ON DELETE CASCADE / SET NULL are handled by Postgres; any
  * NO ACTION FK pointing at the entity must be cleared manually first.
  */
-async function deleteAllForEntity(admin: Admin, entity: Entity, salonId: string): Promise<void> {
+async function deleteAllForEntity(admin: AdminClient, entity: Entity, salonId: string): Promise<void> {
   switch (entity) {
     case 'clients': {
       // fiches.client_id is NO ACTION; fiche_services.fiche_id is NO ACTION too.
@@ -236,7 +228,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid entity' }, { status: 400 });
     }
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
     await deleteAllForEntity(admin, entity, profile.salon_id);
 
     await logActivity({

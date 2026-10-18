@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import { LUME_LEGAL } from '@/lib/const/legal';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Platform-admin-only. Sends an Art. 33-style breach notification to one
 // affected salon owner or to all active salon owners (mass breach).
@@ -14,13 +14,6 @@ import { LUME_LEGAL } from '@/lib/const/legal';
 //   { all: true,     summary: string, incidentRef?: string }    — all salons
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 function escapeHtml(s: string): string {
   return s
@@ -93,7 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Specifica "salonId" oppure "all: true".' }, { status: 400 });
   }
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   // Resolve recipients via the salons.owner_id → profiles.email join. We email
   // the owner specifically, not every operator, because the owner is the

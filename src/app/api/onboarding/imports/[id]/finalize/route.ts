@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isOwner } from '@/lib/auth/roles';
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * POST /api/onboarding/imports/:id/finalize
@@ -34,7 +27,7 @@ export async function POST(
     }
 
     const { id } = await params;
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
 
     const { data: parent } = await admin
       .from('onboarding_imports')

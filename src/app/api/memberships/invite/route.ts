@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { canManageSalon } from '@/lib/auth/roles';
 import { sendMembershipInviteEmail } from '@/lib/email/membershipInvite';
 import { randomBytes } from 'crypto';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'operatorId mancante' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data: operator, error: opError } = await supabaseAdmin
       .from('operators')
@@ -140,7 +133,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'inviteId mancante' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     const { data: invite } = await supabaseAdmin
       .from('pending_membership_invites')

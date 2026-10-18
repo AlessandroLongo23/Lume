@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — admin impersonation sessions
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export async function POST(request: NextRequest) {
   const guard = await requireAdmin();
@@ -21,7 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'salonId mancante' }, { status: 400 });
   }
 
-  const supabaseAdmin = getAdminClient();
+  const supabaseAdmin = createAdminClient();
   const { data: salon } = await supabaseAdmin
     .from('salons')
     .select('id')

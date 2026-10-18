@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { deleteSalonCascade, isAuthUserOrphaned } from '@/lib/server/deleteSalonCascade';
 import { canManageSalon } from '@/lib/auth/roles';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -29,7 +22,7 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
 
     const { data: profile } = await admin
       .from('profiles')

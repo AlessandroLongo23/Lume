@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isOwner } from '@/lib/auth/roles';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB per file (matches storage bucket cap)
 const MAX_FILES = 20;
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 interface InboundFile {
   filename: string;
@@ -57,7 +50,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
 
     // Refuse to start a new onboarding if there's already an open one (the
     // partial unique index would catch this anyway, but a friendly error here

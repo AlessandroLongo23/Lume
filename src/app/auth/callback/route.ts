@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -62,7 +55,7 @@ export async function GET(request: NextRequest) {
         maxAge:   COOKIE_MAX_AGE,
       });
 
-      const supabaseAdmin = getAdminClient();
+      const supabaseAdmin = createAdminClient();
       await supabaseAdmin
         .from('user_active_salon')
         .upsert(

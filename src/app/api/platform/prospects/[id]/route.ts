@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/gateway/requireAdmin';
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/types/Prospect';
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const TEXT_FIELDS = [
   'name', 'phone_shop', 'phone_personal', 'owner_name', 'google_maps_url',
@@ -51,7 +44,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Corpo non valido' }, { status: 400 });
   }
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
 
   // Read current row to know whether transitions imply timestamps.
   const { data: current, error: fetchError } = await admin
@@ -143,7 +136,7 @@ export async function DELETE(
   const { id } = await params;
   if (!id) return NextResponse.json({ error: 'ID mancante' }, { status: 400 });
 
-  const admin = getAdminClient();
+  const admin = createAdminClient();
   const { error } = await admin.from('prospects').delete().eq('id', id);
 
   if (error) {

@@ -1,18 +1,15 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/lib/gateway/admins';
 import { PlatformShell } from '@/lib/components/platform/PlatformShell';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !(await isAdmin(user.id))) notFound();
 
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const admin = createAdminClient();
   const { data: profile } = await admin
     .from('profiles')
     .select('first_name, last_name, email')

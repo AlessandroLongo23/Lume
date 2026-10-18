@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
 import { normalizeProfileRole } from '@/lib/auth/roles';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Read profile to get the fallback salon_id
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
     const { data: profile } = await admin
       .from('profiles')
       .select('salon_id, role')

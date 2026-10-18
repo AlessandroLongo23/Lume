@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isSalonStaff } from '@/lib/auth/roles';
 import { isEntitySupported } from '@/lib/imports/entities/registry';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB (matches storage bucket limit)
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 /**
  * POST /api/imports/init
@@ -47,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'File troppo grande (max 50 MB)' }, { status: 400 });
     }
 
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
 
     // Insert the job row first so we have a stable id for the storage path
     const { data: job, error: insertError } = await admin

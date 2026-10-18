@@ -1,12 +1,5 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk';
 
@@ -43,7 +36,7 @@ export type LogActivityInput = {
  */
 export async function logActivity(input: LogActivityInput): Promise<void> {
   try {
-    const admin = getAdminClient();
+    const admin = createAdminClient();
 
     let actorName = input.actorName ?? null;
     if (!actorName) {

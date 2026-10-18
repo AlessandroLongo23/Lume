@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { toE164 } from '@/lib/utils/phone';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity } from '@/lib/gateway/logActivity';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
 import { pickAllowed } from '@/lib/utils/pickAllowed';
+import { createAdminClient, type AdminClient } from '@/lib/supabase/admin';
 
 const CLIENT_BULK_WRITE_FIELDS = ['gender', 'isTourist', 'can_book_online'] as const;
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 /**
  * Looks up an existing auth.users identity by email OR phone without creating
@@ -23,7 +16,7 @@ function getAdminClient() {
  * identifier. Returns the user_id if found, null otherwise.
  */
 async function findExistingUserId(
-  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  supabaseAdmin: AdminClient,
   params: { email: string | null; phonePrefix: string | null; phoneNumber: string | null },
 ): Promise<string | null> {
   const { email, phonePrefix, phoneNumber } = params;
@@ -96,7 +89,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     // 1. Resolve the auth identity. With no contact info OR when the caller
     //    explicitly opts out via createAccount=false, the client is a no-auth
@@ -182,7 +175,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (createdAuthUserId) {
       try {
-        const supabaseAdmin = getAdminClient();
+        const supabaseAdmin = createAdminClient();
         await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
       } catch { /* best-effort cleanup */ }
     }
@@ -208,7 +201,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { id, action } = body;
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     if (action === 'bulk-update') {
       if (!canManageSalon(profile.role)) {
@@ -447,7 +440,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Client ID is required' }, { status: 400 });
     }
 
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     // Look up user_ids for each target client (for orphan cleanup afterwards)
     const { data: clientsData, error: lookupError } = await supabaseAdmin

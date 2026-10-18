@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { resolveWorkspace } from '@/lib/gateway/resolveWorkspace';
 import { isAdmin } from '@/lib/gateway/admins';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // user_active_salon is the RLS-side truth (read by get_user_salon_id()).
     // The cookie is the UI hint that mirrors it.
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { error: dbError } = await supabaseAdmin
       .from('user_active_salon')
       .upsert(

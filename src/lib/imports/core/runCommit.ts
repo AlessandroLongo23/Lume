@@ -1,21 +1,13 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
 import { loadParsedFile } from './loadParsedFile';
 import { resolveFkColumns } from './fkResolver';
 import { getEntityConfig } from '../entities/registry';
 import type { ColumnMapping, DedupKeyConfig, FailedRow } from '../entities/types';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const PROGRESS_THROTTLE_MS = 250;
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>;
-
-function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-}
 
 /**
  * Stage 2 of the import pipeline. Runs synchronously inside the API route

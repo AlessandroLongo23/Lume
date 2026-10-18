@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { logActivity, diffRows } from '@/lib/gateway/logActivity';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 type IncomingAbbonamento = {
   client_id: string;
@@ -56,7 +49,7 @@ export async function POST(request: NextRequest) {
     const err = validateCreate(abbonamento);
     if (err) return NextResponse.json({ success: false, error: err }, { status: 400 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
 
     const insertRow = {
       salon_id: profile.salon_id,
@@ -114,7 +107,7 @@ export async function PATCH(request: NextRequest) {
     };
     if (!id) return NextResponse.json({ success: false, error: 'id mancante' }, { status: 400 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
 
     // Operators can flip is_active or edit notes; owners can adjust everything else.
     const updates: Record<string, unknown> = {};
@@ -202,7 +195,7 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json() as { id: string };
     if (!id) return NextResponse.json({ success: false, error: 'id mancante' }, { status: 400 });
 
-    const admin = getAdminClient();
+    const admin = createAdminClient();
     const { error } = await admin
       .from('abbonamenti')
       .delete()

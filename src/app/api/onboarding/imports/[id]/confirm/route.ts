@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { isOwner } from '@/lib/auth/roles';
 import { runOnboarding } from '@/lib/imports/onboarding/runOnboarding';
-
-function getAdminSupabase() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * POST /api/onboarding/imports/:id/confirm  { autoCommitOnly?: boolean }
@@ -38,7 +31,7 @@ export async function POST(
     // and commit deferred files" flow will diverge here.
     await request.json().catch(() => ({}));
 
-    const admin = getAdminSupabase();
+    const admin = createAdminClient();
     const { data: parent } = await admin
       .from('onboarding_imports')
       .select('id, salon_id, status')
