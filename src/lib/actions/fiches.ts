@@ -1,6 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { FicheStatus } from '@/lib/types/ficheStatus';
+
+/** Completed and cancelled fiches no longer hold their slot. */
+const INACTIVE_STATUSES = `(${FicheStatus.COMPLETED},${FicheStatus.CANCELLED})`;
 
 export interface ServiceConflictInput {
   operator_id: string;
@@ -34,67 +38,40 @@ export async function validateFicheConflicts(
   const totalEnd = new Date(Math.max(...timestamps)).toISOString();
 
   // ── 1. Client conflict ──────────────────────────────────────────────────────
-  // Find active fiches for this client (exclude 'completed')
-  let clientFichesQuery = supabase
-    .from('fiches')
-    .select('id')
-    .eq('client_id', clientId)
-    .neq('status', 'completed');
+  // Overlap: existing.start_time < newEnd AND existing.end_time > newStart.
+  // fiche_services has two foreign keys to fiches, so the embeds name the canonical one.
+  let clientConflictsQuery = supabase
+    .from('fiche_services')
+    .select('id, fiches!fiche_services_fiche_id_fkey!inner(client_id, status)')
+    .eq('fiches.client_id', clientId)
+    .not('fiches.status', 'in', INACTIVE_STATUSES)
+    .lt('start_time', totalEnd)
+    .gt('end_time', totalStart)
+    .limit(1);
+  if (excludeFicheId) clientConflictsQuery = clientConflictsQuery.neq('fiche_id', excludeFicheId);
 
-  if (excludeFicheId) {
-    clientFichesQuery = clientFichesQuery.neq('id', excludeFicheId);
-  }
+  const { data: clientConflicts, error: clientConflictsErr } = await clientConflictsQuery;
+  if (clientConflictsErr) throw new Error(clientConflictsErr.message);
 
-  const { data: clientFiches, error: clientFichesErr } = await clientFichesQuery;
-  if (clientFichesErr) throw new Error(clientFichesErr.message);
-
-  if (clientFiches && clientFiches.length > 0) {
-    const ficheIds = clientFiches.map((f) => f.id);
-
-    const { data: clientConflicts, error: clientConflictsErr } = await supabase
-      .from('fiche_services')
-      .select('id')
-      .in('fiche_id', ficheIds)
-      // Overlap: existing.start_time < newEnd AND existing.end_time > newStart
-      .lt('start_time', totalEnd)
-      .gt('end_time', totalStart)
-      .limit(1);
-
-    if (clientConflictsErr) throw new Error(clientConflictsErr.message);
-
-    if (clientConflicts && clientConflicts.length > 0) {
-      return { error: 'Il cliente ha già un appuntamento in questo orario.' };
-    }
+  if (clientConflicts.length > 0) {
+    return { error: 'Il cliente ha già un appuntamento in questo orario.' };
   }
 
   // ── 2. Operator conflicts (per service) ─────────────────────────────────────
-  // Gather all active fiche IDs once, then check each operator slot
-  let activeFichesQuery = supabase
-    .from('fiches')
-    .select('id')
-    .neq('status', 'completed');
-
-  if (excludeFicheId) {
-    activeFichesQuery = activeFichesQuery.neq('id', excludeFicheId);
-  }
-
-  const { data: activeFiches, error: activeFichesErr } = await activeFichesQuery;
-  if (activeFichesErr) throw new Error(activeFichesErr.message);
-
-  const activeFicheIds = activeFiches?.map((f) => f.id) ?? [];
-  if (activeFicheIds.length === 0) return {};
-
   for (const service of services) {
     if (!service.operator_id) continue;
 
-    const { data: opConflicts, error: opErr } = await supabase
+    let opConflictsQuery = supabase
       .from('fiche_services')
-      .select('id, start_time, end_time')
+      .select('id, start_time, end_time, fiches!fiche_services_fiche_id_fkey!inner(status)')
       .eq('operator_id', service.operator_id)
-      .in('fiche_id', activeFicheIds)
+      .not('fiches.status', 'in', INACTIVE_STATUSES)
       .lt('start_time', service.end_time)
       .gt('end_time', service.start_time)
       .limit(1);
+    if (excludeFicheId) opConflictsQuery = opConflictsQuery.neq('fiche_id', excludeFicheId);
+
+    const { data: opConflicts, error: opErr } = await opConflictsQuery;
 
     if (opErr) throw new Error(opErr.message);
 
