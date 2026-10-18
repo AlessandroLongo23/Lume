@@ -1,29 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
-import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { canManageSalon } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = await createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
-
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('salon_id, role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile) return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
-    const effectiveRole = normalizeProfileRole(profile);
-    if (!canManageSalon(effectiveRole)) {
+    const caller = await getCallerProfile(supabase);
+    if (!caller) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+    if (!canManageSalon(caller.role)) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 });
     }
 
-    const salonId = await getActiveSalonId(profile.salon_id, effectiveRole === 'admin');
+    const admin = createAdminClient();
+    const salonId = caller.salon_id;
     const { logoUrl } = await req.json();
 
     if (typeof logoUrl !== 'string' && logoUrl !== null) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
-import { normalizeProfileRole, canManageSalon } from '@/lib/auth/roles';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
+import { canManageSalon } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const BUCKET = 'salon-branding';
@@ -11,18 +11,9 @@ const FAVICON_TYPES = new Set(['image/png', 'image/x-icon', 'image/vnd.microsoft
 
 async function getAuthContext() {
   const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('salon_id, role')
-    .eq('id', user.id)
-    .single();
-  if (!profile) return null;
-  const role = normalizeProfileRole(profile);
-  const salonId = await getActiveSalonId(profile.salon_id, role === 'admin');
-  return { user, role, salonId, admin };
+  const caller = await getCallerProfile(supabase);
+  if (!caller) return null;
+  return { role: caller.role, salonId: caller.salon_id, admin: createAdminClient() };
 }
 
 function extFromMime(mime: string): string {

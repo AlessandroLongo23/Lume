@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
-import { normalizeProfileRole } from '@/lib/auth/roles';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 import { getStripe } from '@/lib/stripe/client';
 import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -17,7 +16,7 @@ export async function GET() {
     const supabaseAdmin = createAdminClient();
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('salon_id, role, first_name, last_name, email')
+      .select('first_name, last_name, email')
       .eq('id', user.id)
       .single();
 
@@ -25,11 +24,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
     }
 
-    const effectiveRole = normalizeProfileRole(profile);
-    const isAdmin = effectiveRole === 'admin';
-
-    // Prefer the cookie-selected salon (multi-salon owners), fall back to profile default
-    const salonId = await getActiveSalonId(profile.salon_id, isAdmin);
+    // Active salon and the role held there, resolved the same way RLS does.
+    const caller = await getCallerProfile(supabase);
+    if (!caller) {
+      return NextResponse.json({ error: 'Salone non trovato' }, { status: 404 });
+    }
+    const salonId = caller.salon_id;
+    const isAdmin = caller.role === 'admin';
 
     const { data: salon } = await supabaseAdmin
       .from('salons')
@@ -168,7 +169,7 @@ export async function GET() {
       referrals,
       salonName: salon.name,
       logoUrl: salon.logo_url ?? null,
-      role: effectiveRole ?? profile.role,
+      role: caller.role,
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
-import { getActiveSalonId } from '@/lib/utils/getActiveSalonId';
-import { normalizeProfileRole } from '@/lib/auth/roles';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { getCallerProfile } from '@/lib/gateway/getCallerProfile';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -23,18 +21,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Read profile to get the fallback salon_id
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('salon_id, role')
-      .eq('id', user.id)
-      .single();
-
-    const salonId = await getActiveSalonId(
-      profile?.salon_id ?? 'N/A',
-      normalizeProfileRole(profile) === 'admin',
-    );
+    const caller = await getCallerProfile(supabase);
+    const salonId = caller?.salon_id ?? 'N/A';
     const timestamp = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
 
     const html = `
