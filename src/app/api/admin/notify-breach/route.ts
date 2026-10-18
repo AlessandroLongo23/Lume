@@ -88,12 +88,11 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Resolve recipients via the salons.owner_id → profiles.email join. We email
-  // the owner specifically, not every operator, because the owner is the
-  // Titolare for GDPR purposes.
-  let query = admin
-    .from('salons')
-    .select('id, name, owner_id, profiles:profiles!salons_owner_id_fkey(email)');
+  // Resolve recipients: salons.owner_id is the owner's auth user id, which is
+  // also their profiles.id. There is no foreign key between the two tables, so
+  // this takes two queries instead of an embed. We email the owner specifically,
+  // not every operator, because the owner is the Titolare for GDPR purposes.
+  let query = admin.from('salons').select('id, name, owner_id');
   if (!all && salonId) query = query.eq('id', salonId);
 
   const { data: salons, error } = await query;
@@ -101,14 +100,23 @@ export async function POST(request: NextRequest) {
     console.error('notify-breach salon lookup failed:', error);
     return NextResponse.json({ error: 'Impossibile recuperare i destinatari.' }, { status: 500 });
   }
-  if (!salons || salons.length === 0) {
+  if (salons.length === 0) {
     return NextResponse.json({ error: 'Nessun salone trovato per i criteri indicati.' }, { status: 404 });
   }
 
+  const { data: owners, error: ownersError } = await admin
+    .from('profiles')
+    .select('id, email')
+    .in('id', [...new Set(salons.map((s) => s.owner_id))]);
+  if (ownersError) {
+    console.error('notify-breach owner lookup failed:', ownersError);
+    return NextResponse.json({ error: 'Impossibile recuperare i destinatari.' }, { status: 500 });
+  }
+  const ownerEmail = new Map(owners.map((o) => [o.id, o.email]));
+
   const results = await Promise.all(
-    salons.map(async (s: { id: string; name: string; profiles: { email: string } | { email: string }[] | null }) => {
-      const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
-      const email = profile?.email;
+    salons.map(async (s) => {
+      const email = ownerEmail.get(s.owner_id);
       if (!email) return { salonId: s.id, ok: false, error: 'no owner email' };
       const sent = await sendOne(email, s.name ?? 'Salone', summary, incidentRef);
       return { salonId: s.id, ...sent };
