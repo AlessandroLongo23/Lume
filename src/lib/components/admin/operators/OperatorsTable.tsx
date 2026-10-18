@@ -121,19 +121,22 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
     {
       id: 'phone',
       header: 'Telefono',
-      cell: ({ row }) => (
-        <span
-          data-no-row-click
-          className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            const phone = row.original.phonePrefix.concat(row.original.phoneNumber).replace(/[^0-9]/g, '');
-            window.open(`https://wa.me/${phone}`, '_blank');
-          }}
-        >
-          {row.original.phonePrefix} {row.original.phoneNumber}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const url = row.original.getWhatsAppUrl();
+        if (!url) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span
+            data-no-row-click
+            className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(url, '_blank');
+            }}
+          >
+            {row.original.getPhoneNumber()}
+          </span>
+        );
+      },
       enableSorting: false,
     },
   ], [pendingEmailSet]);

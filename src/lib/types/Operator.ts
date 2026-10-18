@@ -41,7 +41,14 @@ export class Operator {
   }
 
   getPhoneNumber(): string {
+    if (!this.phonePrefix || !this.phoneNumber) return '';
     return `${this.phonePrefix} ${this.phoneNumber}`;
+  }
+
+  /** WhatsApp chat link, or null when the operator has no phone number. */
+  getWhatsAppUrl(): string | null {
+    if (!this.phonePrefix || !this.phoneNumber) return null;
+    return `https://wa.me/${(this.phonePrefix + this.phoneNumber).replace(/[^0-9]/g, '')}`;
   }
 
   static dataColumns: DataColumn[] = [
@@ -77,8 +84,8 @@ export class Operator {
       icon: Phone,
       display: (operator: Operator) => operator.getPhoneNumber(),
       onclick: (operator: Operator) => {
-        const phone = operator.phonePrefix.concat(operator.phoneNumber).replace(/[^0-9]/g, '');
-        window.open(`https://wa.me/${phone}`, '_blank');
+        const url = operator.getWhatsAppUrl();
+        if (url) window.open(url, '_blank');
       },
     },
   ];

@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
   const stockDenom = Math.max(stock, minThreshold, 1);
   const stockRatio = stock / stockDenom;
 
-  const margin = product.is_for_retail && product.sell_price !== null ? product.sell_price - product.price : null;
+  const margin = product.is_for_retail && product.sell_price !== null && product.price !== null ? product.sell_price - product.price : null;
   const marginPct = margin !== null && product.sell_price ? Math.round((margin / product.sell_price) * 100) : null;
   const marginTone = marginPct === null ? 'neutral' : marginPct >= 50 ? 'emerald' : marginPct >= 25 ? 'sky' : marginPct >= 0 ? 'amber' : 'red';
 

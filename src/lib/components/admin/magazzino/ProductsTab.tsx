@@ -401,7 +401,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       header: () => <span className="block w-full text-right">Margine</span>,
       cell: ({ row }) => {
         const { sell_price, price, is_for_retail } = row.original;
-        if (!is_for_retail || sell_price == null) {
+        if (!is_for_retail || sell_price == null || price == null) {
           return <span className="block text-right text-zinc-400">—</span>;
         }
         const margin = sell_price - price;

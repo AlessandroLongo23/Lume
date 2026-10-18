@@ -13,8 +13,9 @@ export function ProductCategoryCard({ category }: ProductCategoryCardProps) {
   const router = useRouter();
   const products = useProductsStore((s) => s.products);
   const categoryProducts = products.filter((p) => p.product_category_id === category.id);
-  const totalValue = categoryProducts.reduce((sum, p) => sum + p.price, 0);
-  const avgPrice = categoryProducts.length > 0 ? totalValue / categoryProducts.length : 0;
+  const prices = categoryProducts.flatMap((p) => (p.price === null ? [] : [p.price]));
+  const totalValue = prices.reduce((sum, price) => sum + price, 0);
+  const avgPrice = prices.length > 0 ? totalValue / prices.length : 0;
 
   // Simple hash-based color
   const hue = (category.id.charCodeAt(0) * 37) % 360;

@@ -13,8 +13,9 @@ export function ServiceCategoryCard({ category }: ServiceCategoryCardProps) {
   const router = useRouter();
   const services = useServicesStore((s) => s.services);
   const categoryServices = services.filter((s) => s.category_id === category.id);
-  const avgDuration = categoryServices.length > 0
-    ? Math.round(categoryServices.reduce((sum, s) => sum + s.duration, 0) / categoryServices.length)
+  const durations = categoryServices.flatMap((s) => (s.duration === null ? [] : [s.duration]));
+  const avgDuration = durations.length > 0
+    ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
     : 0;
   const avgPrice = categoryServices.length > 0
     ? categoryServices.reduce((sum, s) => sum + s.price, 0) / categoryServices.length

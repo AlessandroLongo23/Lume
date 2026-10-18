@@ -92,7 +92,7 @@ export class Product {
       key: 'price',
       sortable: true,
       icon: Euro,
-      display: (product: Product) => product.price.toFixed(2) + ' €',
+      display: (product: Product) => (product.price === null ? '—' : product.price.toFixed(2) + ' €'),
     },
   ];
 }
