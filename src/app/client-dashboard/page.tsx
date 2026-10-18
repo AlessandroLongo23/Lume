@@ -7,25 +7,32 @@ import { CalendarDays, MapPin, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FicheStatus } from '@/lib/types/ficheStatus';
 
+/** Shape returned by GET /api/client-dashboard. */
 type Appointment = {
   id:        string;
-  date:      string;
-  total:     number;
-  status:    string;
+  /** ISO timestamp. */
+  datetime:  string;
+  status:    FicheStatus;
   salonId:   string | null;
   salonName: string;
 };
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  completed:  { label: 'Completata',  className: 'bg-green-50 text-green-700 border border-green-200' },
-  confirmed:  { label: 'Confermata',  className: 'bg-primary/10 text-primary-active border border-primary/25' },
-  pending:    { label: 'In attesa',   className: 'bg-amber-50 text-amber-700 border border-amber-200' },
-  cancelled:  { label: 'Cancellata',  className: 'bg-red-50 text-red-700 border border-red-200' },
+const SUCCESS = 'bg-[var(--lume-success-bg)] text-[var(--lume-success-fg)] border border-[var(--lume-success-border)]';
+const WARNING = 'bg-[var(--lume-warning-bg)] text-[var(--lume-warning-fg)] border border-[var(--lume-warning-border)]';
+
+// Same wording as the public booking page.
+const STATUS_LABELS: Record<FicheStatus, { label: string; className: string }> = {
+  [FicheStatus.CREATED]:          { label: 'Confermata',             className: SUCCESS },
+  [FicheStatus.PENDING]:          { label: 'In attesa',              className: WARNING },
+  [FicheStatus.PENDING_APPROVAL]: { label: 'In attesa di conferma',  className: WARNING },
+  [FicheStatus.COMPLETED]:        { label: 'Completata',             className: 'bg-[var(--lume-surface)] text-[var(--lume-text-secondary)] border border-[var(--lume-border)]' },
+  [FicheStatus.CANCELLED]:        { label: 'Annullata',              className: 'bg-[var(--lume-danger-bg)] text-[var(--lume-danger-fg)] border border-[var(--lume-danger-border)]' },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_LABELS[status] ?? { label: status, className: 'bg-zinc-100 text-zinc-600' };
+function StatusBadge({ status }: { status: FicheStatus }) {
+  const s = STATUS_LABELS[status];
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.className}`}>
       {s.label}
@@ -108,9 +115,9 @@ export default function ClientDashboardPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-primary-hover uppercase tracking-wide mb-1">
-                      {format(parseISO(appt.date), "EEEE d MMMM", { locale: it })}
+                      {format(parseISO(appt.datetime), "EEEE d MMMM", { locale: it })}
                       {' · '}
-                      {format(parseISO(appt.date), "HH:mm")}
+                      {format(parseISO(appt.datetime), "HH:mm")}
                     </p>
                     <div className="flex items-center gap-1.5 text-sm text-zinc-600 mt-1">
                       <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -119,11 +126,6 @@ export default function ClientDashboardPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <StatusBadge status={appt.status} />
-                    {appt.total > 0 && (
-                      <span className="text-sm font-semibold text-zinc-900">
-                        €{appt.total.toFixed(2)}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>

@@ -5,15 +5,11 @@ import { createClient } from '@/lib/supabase/server';
  * Returns all upcoming fiches for the authenticated user across ALL salons.
  *
  * Uses the authenticated client (not admin) so Supabase RLS is respected.
- *
- * REQUIRED RLS POLICY on `fiches`:
- *   CREATE POLICY "clients_can_view_own_fiches"
- *   ON fiches FOR SELECT
- *   USING (
- *     client_id IN (
- *       SELECT id FROM clients WHERE user_id = auth.uid()
- *     )
- *   );
+ * Needs two RLS policies:
+ *   - fiches: "clients_can_view_own_fiches" (exists), client_id in the
+ *     caller's clients rows;
+ *   - clients: a SELECT policy for `user_id = auth.uid()` (missing as of
+ *     2026-10-18; without it step 1 returns no rows for a pure client).
  */
 export async function GET() {
   try {
@@ -53,10 +49,10 @@ export async function GET() {
     // Step 2: fetch upcoming fiches for all client IDs (RLS enforces ownership)
     const { data: fiches, error: fichesError } = await supabase
       .from('fiches')
-      .select('id, date, total, status, client_id')
+      .select('id, datetime, status, client_id')
       .in('client_id', clientIds)
-      .gte('date', new Date().toISOString())
-      .order('date', { ascending: true });
+      .gte('datetime', new Date().toISOString())
+      .order('datetime', { ascending: true });
 
     if (fichesError) {
       console.error('client-dashboard fiches query error:', fichesError);
@@ -68,8 +64,7 @@ export async function GET() {
       const salon = clientSalonMap.get(f.client_id);
       return {
         id:        f.id,
-        date:      f.date,
-        total:     f.total,
+        datetime:  f.datetime,
         status:    f.status,
         salonId:   salon?.id   ?? null,
         salonName: salon?.name ?? 'Salone',
