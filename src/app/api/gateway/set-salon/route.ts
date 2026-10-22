@@ -32,12 +32,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Only salons where the user is staff. user_active_salon feeds
+    // get_user_salon_id(), which every staff RLS policy trusts, so a salon
+    // where the user is merely a client must never land there.
     const workspace = await resolveWorkspace(user.id);
-    const allSalonIds = [
-      ...workspace.businessContexts.map((c) => c.salonId),
-      ...workspace.clientContexts.map((c) => c.salonId),
-    ];
-    if (!allSalonIds.includes(salonId)) {
+    const staffSalonIds = workspace.businessContexts.map((c) => c.salonId);
+    if (!staffSalonIds.includes(salonId)) {
       return NextResponse.json({ error: 'Accesso negato' }, { status: 403 });
     }
 
