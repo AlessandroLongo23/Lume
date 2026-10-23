@@ -356,7 +356,7 @@ export default function ClientDetailPage() {
           }
           aside={
             !isEditing && (
-              <div className="flex flex-col gap-1 max-w-[280px]">
+              <div className="flex flex-col gap-1 max-w-70">
                 <ContactRow
                   icon={Mail}
                   value={client.email}
@@ -549,7 +549,7 @@ function ClientCouponsList({
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {isCard ? 'Gift card' : 'Coupon'} · {c.displayDiscount()}
                 </span>
-                <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                <span className="text-2xs uppercase tracking-wider text-zinc-400">
                   {isAsRecipient ? 'destinatario' : 'acquirente'}
                 </span>
               </div>

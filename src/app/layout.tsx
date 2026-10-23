@@ -7,6 +7,7 @@ import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/M
 import { CookieConsentBanner } from '@/lib/components/shared/cookieConsent/CookieConsentBanner';
 import { PostHogProvider } from '@/lib/posthog/PostHogProvider';
 import { cn } from "@/lib/utils";
+import { UI_SCALE_BOOT_SCRIPT } from '@/lib/utils/uiScale';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -35,7 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className={cn(jetbrainsMono.variable, "font-sans", geist.variable)}>
+    // suppressHydrationWarning: the boot script sets data-ui-scale before React hydrates.
+    <html lang="it" className={cn(jetbrainsMono.variable, "font-sans", geist.variable)} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: UI_SCALE_BOOT_SCRIPT }} />
+      </head>
       <body>
         <PostHogProvider>
           <ThemeProvider>

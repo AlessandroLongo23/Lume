@@ -90,7 +90,7 @@ export function ExportMenu<T>({
             className="fixed w-64 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown py-1"
             style={{ top: pos.top, right: pos.right }}
           >
-            <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-700/50">
+            <div className="px-4 py-2 text-2xs uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-700/50">
               {rows.length} righe
             </div>
             {items.map((item) => (
@@ -106,7 +106,7 @@ export function ExportMenu<T>({
                 <item.icon className="size-4 mt-0.5 text-zinc-400 shrink-0" />
                 <div className="flex flex-col">
                   <span className="text-sm">{item.label}</span>
-                  <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{item.hint}</span>
+                  <span className="text-2xs text-zinc-400 dark:text-zinc-500">{item.hint}</span>
                 </div>
               </button>
             ))}

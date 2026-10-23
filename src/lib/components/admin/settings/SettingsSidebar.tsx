@@ -90,7 +90,7 @@ export function SettingsSidebar() {
           .filter((g) => !g.gated)
           .map((group) => (
             <li key={group.title}>
-              <p className="px-3 mb-1.5 text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              <p className="px-3 mb-1.5 text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                 {group.title}
                 {group.hint && (
                   <span className="ml-1.5 normal-case tracking-normal text-zinc-400 dark:text-zinc-500/80 font-normal">

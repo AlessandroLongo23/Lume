@@ -259,7 +259,7 @@ function KpiCard({
 
         {trendPct != null && (
           <span
-            className={`flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${
+            className={`flex items-center gap-0.5 text-2xs font-semibold px-1.5 py-0.5 rounded-md ${
               up
                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                 : 'bg-red-500/10 text-red-600 dark:text-red-400'
@@ -325,7 +325,7 @@ function SignupsCard({ data }: { data: DashboardData }) {
             Ultimi 6 mesi · {total6m} {total6m === 1 ? 'nuovo salone' : 'nuovi saloni'}
           </p>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-3 text-2xs text-zinc-500 dark:text-zinc-400">
           <LegendDot color="#6366F1" label="Mensile" />
           <LegendDot color="#10b981" label="Annuale" />
         </div>
@@ -467,7 +467,7 @@ function StatusCard({ data }: { data: DashboardData }) {
               <span className="text-xl font-semibold tabular-nums text-zinc-900 dark:text-white leading-none">
                 {total}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <span className="text-2xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mt-0.5">
                 saloni
               </span>
             </div>
@@ -636,7 +636,7 @@ function TopSalonsCard({ data }: { data: DashboardData }) {
             const pct = (s.revenue / max) * 100;
             return (
               <li key={s.id} className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 tabular-nums shrink-0">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-2xs font-semibold text-zinc-600 dark:text-zinc-300 tabular-nums shrink-0">
                   {i + 1}
                 </span>
                 <SalonAvatar name={s.name} logoUrl={s.logoUrl} />
@@ -718,7 +718,7 @@ function RecentSignupsCard({ data }: { data: DashboardData }) {
                   </span>
                   <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">{plan}</span>
                 </div>
-                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">
+                <p className="text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums">
                   {formatDate(s.createdAt)}
                 </p>
               </li>
@@ -764,7 +764,7 @@ function SalonAvatar({
       className="rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0"
       style={{ width: dim, height: dim }}
     >
-      <span className="text-[10px] font-semibold text-primary-hover dark:text-primary/80 leading-none">
+      <span className="text-2xs font-semibold text-primary-hover dark:text-primary/80 leading-none">
         {getInitials(name)}
       </span>
     </div>

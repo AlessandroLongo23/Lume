@@ -64,7 +64,7 @@ export function TreatmentHistory({ clientId }: TreatmentHistoryProps) {
                 {f.tecnica?.trim() || <span className="text-zinc-400">—</span>}
               </td>
               <Tooltip label={f.note || undefined}>
-                <td className="py-2 text-zinc-600 dark:text-zinc-300 max-w-[260px] truncate">
+                <td className="py-2 text-zinc-600 dark:text-zinc-300 max-w-65 truncate">
                   {f.note?.trim() || <span className="text-zinc-400">—</span>}
                 </td>
               </Tooltip>

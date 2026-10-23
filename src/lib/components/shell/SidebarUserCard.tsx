@@ -98,8 +98,8 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
                 transition={{ duration: 0.18, ease: 'easeOut' }}
                 className="flex flex-col items-start min-w-0 leading-tight overflow-hidden whitespace-nowrap"
               >
-                <span className="text-sm font-medium text-zinc-900 dark:text-white truncate max-w-[140px]">{name}</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">{role}</span>
+                <span className="text-sm font-medium text-zinc-900 dark:text-white truncate max-w-35">{name}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-35">{role}</span>
               </motion.span>
             )}
           </AnimatePresence>

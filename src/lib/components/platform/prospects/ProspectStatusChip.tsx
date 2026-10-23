@@ -26,7 +26,7 @@ export function ProspectStatusChip({ status, size = 'sm', className }: ProspectS
     <span
       className={cn(
         'inline-flex items-center rounded-full border font-medium whitespace-nowrap',
-        size === 'xs' ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-0.5',
+        size === 'xs' ? 'text-2xs px-2 py-0.5' : 'text-xs px-2.5 py-0.5',
         TONE_CLASS[tone],
         className,
       )}

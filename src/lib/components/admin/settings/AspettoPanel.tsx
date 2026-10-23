@@ -1,6 +1,7 @@
 'use client';
 
-import { Palette, Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
+import { Palette, Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, ALargeSmall, AArrowUp, AArrowDown, Wand2, Type } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -9,6 +10,7 @@ import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import type { Density, SidebarDefault } from '@/lib/types/Preferences';
+import { applyUiScale, readUiScale, subscribeUiScale, type UiScale } from '@/lib/utils/uiScale';
 
 type Option<T extends string> = { value: T; label: string; icon: React.ElementType; hint?: string };
 
@@ -21,6 +23,14 @@ const THEME_OPTIONS: Option<Theme>[] = [
 const DENSITY_OPTIONS: Option<Density>[] = [
   { value: 'comfortable', label: 'Comoda', icon: Monitor, hint: 'Spaziatura predefinita' },
   { value: 'compact', label: 'Compatta', icon: Monitor, hint: 'Più contenuto, meno spazio' },
+];
+
+const UI_SCALE_OPTIONS: Option<UiScale>[] = [
+  { value: 'auto', label: 'Automatica', icon: Wand2, hint: 'Compatta sugli schermi bassi, normale sugli altri' },
+  { value: 'large', label: 'Grande', icon: AArrowUp, hint: 'Testo e pulsanti più grandi' },
+  { value: 'normal', label: 'Normale', icon: Type },
+  { value: 'compact', label: 'Compatta', icon: AArrowDown, hint: 'Per schermi piccoli, come 1366×768' },
+  { value: 'extra-compact', label: 'Molto compatta', icon: AArrowDown, hint: 'Mostra più contenuto possibile' },
 ];
 
 const SIDEBAR_OPTIONS: Option<SidebarDefault>[] = [
@@ -69,6 +79,8 @@ function SegmentedRow<T extends string>({
 export function AspettoPanel() {
   const { theme, setTheme } = useTheme();
   const preferences = usePreferencesStore((s) => s.preferences);
+  // Per-device, so it comes from localStorage, not from the preferences store.
+  const uiScale = useSyncExternalStore(subscribeUiScale, readUiScale, () => 'auto' as const);
   const updatePreferences = usePreferencesStore((s) => s.updatePreferences);
 
   const density: Density = preferences.appearance?.density ?? FACTORY_PREFERENCES.appearance.density;
@@ -101,6 +113,7 @@ export function AspettoPanel() {
     const fac = FACTORY_PREFERENCES.appearance;
     setTheme(fac.theme);
     document.documentElement.setAttribute('data-density', fac.density);
+    applyUiScale('auto');
     void persist({ appearance: { theme: fac.theme, density: fac.density, sidebarDefault: fac.sidebarDefault } });
   };
 
@@ -112,6 +125,19 @@ export function AspettoPanel() {
         description="Scegli tra chiaro, scuro o segui le impostazioni di sistema."
       >
         <SegmentedRow value={theme} options={THEME_OPTIONS} onChange={onThemeChange} ariaLabel="Tema" />
+      </SettingsCard>
+
+      <SettingsCard
+        icon={ALargeSmall}
+        title="Dimensione interfaccia"
+        description="Rimpicciolisci tutta l'interfaccia per vedere più contenuto sugli schermi piccoli, o ingrandiscila per leggere meglio. Vale solo per questo dispositivo."
+      >
+        <SegmentedRow
+          value={uiScale}
+          options={UI_SCALE_OPTIONS}
+          onChange={applyUiScale}
+          ariaLabel="Dimensione interfaccia"
+        />
       </SettingsCard>
 
       <SettingsCard

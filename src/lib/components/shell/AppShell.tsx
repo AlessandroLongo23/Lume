@@ -38,13 +38,15 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
   }, [toggle]);
 
   const hasBanner = Boolean(impersonationBanner);
-  const bannerH = hasBanner ? 36 : 0;
+  const bannerH = hasBanner ? 2.25 : 0;
 
-  const sidebarW = useMotionValue(collapsed ? 64 : 240);
-  const sidebarWPx = useTransform(sidebarW, (v) => `${v}px`);
+  // In rem, so the rail scales with "Dimensione interfaccia" along with its
+  // contents. Collapsed = 0.75rem padding + 2.5rem icon box + 0.75rem padding.
+  const sidebarW = useMotionValue(collapsed ? 4 : 15);
+  const sidebarWRem = useTransform(sidebarW, (v) => `${v}rem`);
 
   useEffect(() => {
-    const controls = animate(sidebarW, collapsed ? 64 : 240, {
+    const controls = animate(sidebarW, collapsed ? 4 : 15, {
       duration: 0.22,
       ease: 'easeOut',
     });
@@ -52,7 +54,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
   }, [collapsed, sidebarW]);
 
   const staticVars: CSSProperties = {
-    ['--shell-banner-h' as string]: `${bannerH}px`,
+    ['--shell-banner-h' as string]: `${bannerH}rem`,
   };
 
   const pageAnimationKey = pathname.startsWith('/admin/impostazioni')
@@ -79,7 +81,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
       <MobileMenuContext.Provider value={{ open: mobileOpen, setOpen: setMobileOpen }}>
         <motion.div
           className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-foreground dark:text-white font-sans"
-          style={{ ...staticVars, ['--shell-sidebar-w' as string]: sidebarWPx }}
+          style={{ ...staticVars, ['--shell-sidebar-w' as string]: sidebarWRem }}
         >
           {hasBanner && (
             <div className="fixed top-0 left-0 right-0 z-header h-[var(--shell-banner-h)]">

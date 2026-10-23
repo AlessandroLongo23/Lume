@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useMobileMenu, useSidebarForceExpanded } from './sidebarContext';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { useScrollEdges, scrollEdgeMask } from '@/lib/hooks/useScrollEdges';
 
 export type SidebarNavItem = {
   name: string;
@@ -48,7 +49,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
             : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
         }`}
       >
-        <span className="flex items-center justify-center w-9 h-9 shrink-0">
+        <span className="flex items-center justify-center w-10 h-9 short:h-8 shorter:h-7 shrink-0">
           <Icon className="w-5 h-5" strokeWidth={1.5} />
         </span>
         <AnimatePresence initial={false}>
@@ -56,7 +57,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
             <motion.span
               key="label"
               initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-              animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
+              animate={{ opacity: 1, width: 'auto', marginLeft: '0.75rem' }}
               exit={{ opacity: 0, width: 0, marginLeft: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="truncate whitespace-nowrap"
@@ -76,12 +77,21 @@ export function Sidebar({ identity, navGroups, pinnedLinks, userCard }: SidebarP
   const forceExpanded = useSidebarForceExpanded();
   const effectiveCollapsed = forceExpanded ? false : collapsed;
   const onNavigate = forceExpanded ? () => setMobileOpen(false) : undefined;
+  const { ref: navRef, above, below } = useScrollEdges<HTMLElement>();
+  const navMask = scrollEdgeMask({ above, below });
 
+  // Same padding collapsed and expanded, so icons don't shift while the rail
+  // animates. Every row starts with a 2.5rem icon box (w-10), matching AppShell's
+  // 4rem collapsed width: 0.75 + 2.5 + 0.75.
   return (
-    <div className={`flex flex-col flex-1 min-h-0 pt-3 pb-2 gap-2 pl-4 ${effectiveCollapsed ? 'pr-2' : 'pr-3'}`}>
+    <div className="flex flex-col flex-1 min-h-0 pt-3 pb-2 gap-2 shorter:pt-2 shorter:gap-1.5 px-3">
       {identity && <div className="shrink-0">{identity}</div>}
 
-      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col gap-4">
+      <nav
+        ref={navRef}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col gap-4 short:gap-3 shorter:gap-2"
+        style={{ maskImage: navMask, WebkitMaskImage: navMask }}
+      >
         {navGroups.map((group, gi) => (
           <div
             key={group.title ?? `group-${gi}`}
@@ -121,7 +131,7 @@ export function Sidebar({ identity, navGroups, pinnedLinks, userCard }: SidebarP
                 </AnimatePresence>
               </div>
             )}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 shorter:gap-0">
               {group.items.map((item) => (
                 <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
               ))}
@@ -131,7 +141,7 @@ export function Sidebar({ identity, navGroups, pinnedLinks, userCard }: SidebarP
       </nav>
 
       {pinnedLinks && pinnedLinks.length > 0 && (
-        <div className="flex flex-col gap-0.5 shrink-0">
+        <div className="flex flex-col gap-0.5 shorter:gap-0 shrink-0">
           {pinnedLinks.map((item) => (
             <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
           ))}

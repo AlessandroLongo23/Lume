@@ -380,7 +380,7 @@ function ReviewRow({
 }) {
   return (
     <div className={fullWidth ? 'sm:col-span-2' : undefined}>
-      <dt className="text-[11px] uppercase tracking-wider text-[var(--lume-text-muted)] font-medium">{label}</dt>
+      <dt className="text-2xs uppercase tracking-wider text-[var(--lume-text-muted)] font-medium">{label}</dt>
       <dd className="mt-0.5 text-[var(--lume-text)]">{value}</dd>
     </div>
   );

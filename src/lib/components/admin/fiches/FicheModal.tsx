@@ -82,7 +82,7 @@ function toDatetimeLocal(date: Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 28px 56px 32px';
+const TABLE_COLS = '1fr 1.5fr 6rem 3.75rem 3.75rem 6rem 1.75rem 3.5rem 2rem';
 
 interface CategoryGroup<T> {
   categoryId: string;
@@ -1092,7 +1092,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         hideCancel={hideCancel}
         footerContent={
           showFooterTotals ? (
-            <div className="flex flex-col gap-1 min-w-[200px]">
+            <div className="flex flex-col gap-1 min-w-50">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">Subtotale</span>
                 <span className={`text-xs font-mono ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-700 dark:text-zinc-300'}`}>
@@ -1771,7 +1771,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               id="fiche-panel-payment"
               aria-labelledby="fiche-tab-payment"
               className="grid gap-8 flex-1 min-h-0"
-              style={{ gridTemplateColumns: '320px 1fr' }}
+              style={{ gridTemplateColumns: '20rem 1fr' }}
             >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt
@@ -1860,7 +1860,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               id="fiche-panel-payment"
               aria-labelledby="fiche-tab-payment"
               className="grid gap-8 flex-1 min-h-0"
-              style={{ gridTemplateColumns: '320px 1fr' }}
+              style={{ gridTemplateColumns: '20rem 1fr' }}
             >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt

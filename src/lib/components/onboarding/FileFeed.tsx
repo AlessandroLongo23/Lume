@@ -96,7 +96,7 @@ function FeedRow({ job, reduceMotion }: FeedRowProps) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-3" title={failureDetail || undefined}>
-      <FileIcon filename={job.source_filename} className="size-[18px] shrink-0 text-muted-foreground" />
+      <FileIcon filename={job.source_filename} className="size-4.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="truncate text-sm text-foreground">{job.source_filename}</span>
@@ -143,7 +143,7 @@ function FeedRow({ job, reduceMotion }: FeedRowProps) {
 }
 
 function StatusIcon({ status, reduceMotion }: { status: string; reduceMotion: boolean }) {
-  const iconClass = 'size-[14px] shrink-0';
+  const iconClass = 'size-3.5 shrink-0';
   switch (status) {
     case 'completed':
       return <Check className={`${iconClass} text-success`} strokeWidth={2.5} />;

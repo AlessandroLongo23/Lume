@@ -35,17 +35,17 @@ export function UnavailabilityBlock({ item, totalMinutes, timeStep, onSelect }: 
           backgroundColor: 'rgba(244,244,245,0.55)',
         }}
       >
-        <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide">
+        <div className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide">
           <Ban className="size-3 shrink-0" />
           {!compact && <span>Non disponibile</span>}
         </div>
         {!compact && (
-          <div className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
+          <div className="text-2xs tabular-nums text-zinc-500 dark:text-zinc-400">
             {format(item.start_at, 'HH:mm')}–{format(item.end_at, 'HH:mm')}
           </div>
         )}
         {!compact && item.note && (
-          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-tight">
+          <div className="text-2xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-tight">
             {item.note}
           </div>
         )}

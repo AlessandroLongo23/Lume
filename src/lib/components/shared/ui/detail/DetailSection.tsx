@@ -23,7 +23,7 @@ export function DetailSection({ label, index = 0, id, trailing, children, dataTo
       transition={{ type: 'spring', duration: 0.5, bounce: 0, delay: 0.08 + index * 0.06 }}
     >
       <div className="flex items-baseline justify-between mb-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-2xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
           {label}
         </h2>
         {trailing}

@@ -144,7 +144,7 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
                     {resolveLabel(id)}
                   </span>
                   {info.requiredVisible && (
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
+                    <span className="text-2xs uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
                       sempre
                     </span>
                   )}

@@ -150,7 +150,7 @@ export function FichePaymentPanel({
         </div>
       </div>
 
-      <div className="min-h-[100px]">
+      <div className="min-h-25">
         {view === FichePaymentMethod.CASH && (
           <div data-tour="fiche-payment-cash" className="flex flex-col gap-3">
             <div>

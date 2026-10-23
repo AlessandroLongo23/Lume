@@ -63,7 +63,7 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
           {formatInvoiceDate(invoice.createdAt)}
         </div>
         {invoice.number && (
-          <div className="font-mono text-[11px] text-muted-foreground mt-0.5">
+          <div className="font-mono text-2xs text-muted-foreground mt-0.5">
             {invoice.number}
           </div>
         )}
@@ -74,14 +74,14 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
           {formatAmount(invoice.amount, invoice.currency)}
         </div>
         {status === 'partially_refunded' && (
-          <div className="text-[11px] text-muted-foreground mt-0.5 no-underline">
+          <div className="text-2xs text-muted-foreground mt-0.5 no-underline">
             −{formatAmount(invoice.refundedAmount, invoice.currency)}
           </div>
         )}
       </div>
 
       <div className="w-40 flex justify-center">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses(status)}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium ${statusClasses(status)}`}>
           {STATUS_LABEL[status]}
         </span>
       </div>
@@ -129,7 +129,7 @@ export function InvoiceList() {
           <FileText className="size-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">Fatture</h3>
         </div>
-        <span className="text-[11px] text-muted-foreground">Ultime 12</span>
+        <span className="text-2xs text-muted-foreground">Ultime 12</span>
       </header>
 
       {isLoading && invoices.length === 0 ? (

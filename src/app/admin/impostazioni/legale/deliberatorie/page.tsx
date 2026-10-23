@@ -39,11 +39,11 @@ export default function DeliberatoriePage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-medium text-foreground">{d.title}</p>
                   {d.required && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                    <span className="text-2xs font-semibold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                       Obbligatoria
                     </span>
                   )}
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span className="text-2xs uppercase tracking-wider text-muted-foreground">
                     · {d.legalBasis}
                   </span>
                 </div>

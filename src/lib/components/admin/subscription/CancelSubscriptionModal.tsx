@@ -129,7 +129,7 @@ function CancelDialogShell({ isOpen, onClose, cancel, subscriptionEndsAt, reduce
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <label className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
                   Perché annulli? (facoltativo)
                 </label>
                 <div className="flex flex-wrap gap-1.5">

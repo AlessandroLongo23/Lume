@@ -32,7 +32,7 @@ export function Tooltip({
           <BaseTooltip.Popup className="flex items-center gap-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 shadow-md z-tooltip">
             <span>{label}</span>
             {shortcut && (
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500 font-sans">
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-2xs text-zinc-500 font-sans">
                 {shortcut}
               </kbd>
             )}

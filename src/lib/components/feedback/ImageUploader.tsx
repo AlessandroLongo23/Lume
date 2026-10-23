@@ -154,7 +154,7 @@ export function ImageUploader({ kind, paths, onChange, disabled = false }: Image
             className="flex flex-col items-center justify-center gap-1 size-20 rounded-lg border border-dashed border-zinc-500/40 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-500/70 transition-colors disabled:opacity-40"
           >
             {isUploading ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
-            <span className="text-[10px]">{isUploading ? 'Carico…' : `${paths.length}/${MAX_IMAGES}`}</span>
+            <span className="text-2xs">{isUploading ? 'Carico…' : `${paths.length}/${MAX_IMAGES}`}</span>
           </button>
         )}
       </div>

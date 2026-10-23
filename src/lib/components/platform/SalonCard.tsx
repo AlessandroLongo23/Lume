@@ -146,7 +146,7 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
                   {row.name}
                 </p>
                 {row.isTest && (
-                  <span className="shrink-0 flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  <span className="shrink-0 flex items-center gap-1 text-2xs font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                     <FlaskConical className="size-2.5" />
                     Test
                   </span>
@@ -248,21 +248,21 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
             <Users className="size-3.5" strokeWidth={1.75} />
-            <span className="text-[10px] uppercase tracking-wider">Clienti</span>
+            <span className="text-2xs uppercase tracking-wider">Clienti</span>
           </div>
           <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.clientsCount}</p>
         </div>
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
             <Ticket className="size-3.5" strokeWidth={1.75} />
-            <span className="text-[10px] uppercase tracking-wider">Fiches/m</span>
+            <span className="text-2xs uppercase tracking-wider">Fiches/m</span>
           </div>
           <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.fichesThisMonth}</p>
         </div>
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
             <Euro className="size-3.5" strokeWidth={1.75} />
-            <span className="text-[10px] uppercase tracking-wider">Ricavi/m</span>
+            <span className="text-2xs uppercase tracking-wider">Ricavi/m</span>
           </div>
           <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white truncate">{formatEur(row.revenueThisMonth)}</p>
         </div>

@@ -37,17 +37,17 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
 
       {/* Header */}
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+        <span className="text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Traguardi
         </span>
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">
+        <span className="text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums">
           {count.toLocaleString('it-IT')} {count === 1 ? 'salone' : 'saloni'} · obiettivo 1.000
         </span>
       </div>
 
       {/* Ring + next-milestone info */}
       <div className="flex items-center gap-6">
-        <div className="relative w-[88px] h-[88px] shrink-0">
+        <div className="relative w-22 h-22 shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88" aria-hidden>
             <circle
               cx="44" cy="44" r="40"
@@ -75,7 +75,7 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
         </div>
 
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">
+          <p className="text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">
             {isComplete ? 'Obiettivo raggiunto' : 'Prossimo traguardo'}
           </p>
           <p className="text-xl font-semibold tabular-nums text-zinc-900 dark:text-white leading-none">
@@ -107,7 +107,7 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
             <span
               key={m}
               className={[
-                'inline-flex items-center gap-1.5 text-[11px] tabular-nums rounded-md px-2.5 py-1 border',
+                'inline-flex items-center gap-1.5 text-2xs tabular-nums rounded-md px-2.5 py-1 border',
                 done
                   ? 'border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400'
                   : current

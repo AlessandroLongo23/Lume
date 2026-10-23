@@ -14,7 +14,7 @@ interface SidePanelProps {
   width?: string;
 }
 
-export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm:w-[480px]' }: SidePanelProps) {
+export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm:w-120' }: SidePanelProps) {
   const [mounted, setMounted] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);

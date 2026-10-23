@@ -66,7 +66,7 @@ export function TourWelcome({
               role="dialog"
               aria-modal="true"
               aria-label={title}
-              className="relative w-[360px] max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
+              className="relative w-90 max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
               animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}

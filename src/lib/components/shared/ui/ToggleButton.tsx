@@ -54,7 +54,7 @@ export function ToggleButton({
       role="radiogroup"
       data-tour={dataTour}
       className={[
-        'inline-flex flex-row items-center rounded-lg p-[3px] gap-[2px]',
+        'inline-flex flex-row items-center rounded-lg p-[0.1875rem] gap-0.5',
         'h-[var(--lume-control-h-md)] border border-[var(--lume-border)]',
         'bg-[var(--lume-button-secondary-bg)]',
         style === 'elevated' ? 'shadow-[var(--shadow-sm)]' : '',

@@ -108,7 +108,7 @@ export function DatePicker({
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--lume-text-muted)]">
+      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-2xs font-medium uppercase tracking-wider text-[var(--lume-text-muted)]">
         {WEEK_LABELS.map((label) => (
           <div key={label} className="py-1">{label}</div>
         ))}

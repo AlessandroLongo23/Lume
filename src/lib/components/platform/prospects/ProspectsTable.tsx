@@ -49,7 +49,7 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
           <span className="inline-flex items-center gap-1.5">
             <span>{p.city}</span>
             {p.province && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                 {p.province}
               </span>
             )}

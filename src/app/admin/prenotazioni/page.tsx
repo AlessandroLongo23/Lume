@@ -116,7 +116,7 @@ export default function PrenotazioniPage() {
               {TAB_LABELS[t]}
               {counts[t] > 0 && (
                 <span
-                  className={`ml-2 inline-flex items-center justify-center rounded-full px-1.5 min-w-5 h-5 text-[11px] font-semibold ${
+                  className={`ml-2 inline-flex items-center justify-center rounded-full px-1.5 min-w-5 h-5 text-2xs font-semibold ${
                     active
                       ? 'bg-primary text-white'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'

@@ -29,7 +29,7 @@ export function IncompleteContactBadge({ variant = 'pill' }: IncompleteContactBa
   return (
     <Tooltip label={TOOLTIP_LABEL}>
       <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium"
+        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium"
         style={{
           background: 'var(--lume-warning-bg)',
           color: 'var(--lume-warning-fg)',

@@ -18,7 +18,7 @@ export function BirthdayBadge({ daysLeft }: BirthdayBadgeProps) {
   return (
     <Tooltip label={label}>
       <span
-        className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.6875rem] font-medium tabular-nums"
+        className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-medium tabular-nums"
         style={{
           background: 'var(--lume-warning-bg)',
           color: 'var(--lume-warning-fg)',

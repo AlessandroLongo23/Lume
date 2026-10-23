@@ -207,7 +207,7 @@ function Field({
         {required && <span className="text-[var(--lume-danger-fg)] ml-0.5">*</span>}
       </span>
       {children}
-      {hint && <span className="text-[11px] text-[var(--lume-text-muted)]">{hint}</span>}
+      {hint && <span className="text-2xs text-[var(--lume-text-muted)]">{hint}</span>}
     </label>
   );
 }

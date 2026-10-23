@@ -325,10 +325,10 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                         style={{ backgroundColor: group.color }}
                       />
                     )}
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    <p className="text-2xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                       {group.name}
                     </p>
-                    <span className="text-[11px] text-zinc-400 tabular-nums">
+                    <span className="text-2xs text-zinc-400 tabular-nums">
                       {groupOn}/{groupTotal}
                     </span>
                   </div>
@@ -369,7 +369,7 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                               <p className="mt-0.5 text-xs text-zinc-500 truncate">
                                 {svc.duration} min · {svc.price.toFixed(2)} €
                                 {isBookable && (
-                                  <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+                                  <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-2xs font-medium text-zinc-600 dark:text-zinc-300">
                                     {isUnrestricted
                                       ? 'Tutti'
                                       : `${allowedCount} ${allowedCount === 1 ? 'operatore' : 'operatori'}`}
@@ -380,7 +380,7 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {isBookable && (
-                              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                              <span className="hidden sm:inline-flex items-center gap-1 text-2xs font-medium text-primary">
                                 <Globe className="size-3" /> online
                               </span>
                             )}
@@ -398,7 +398,7 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                               style={{ overflow: 'hidden' }}
                             >
                               <div className="mb-2.5 ml-8 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800 px-3 py-2">
-                                <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+                                <p className="text-2xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
                                   Chi può svolgerlo
                                 </p>
                                 <ul className="flex flex-col gap-1.5">

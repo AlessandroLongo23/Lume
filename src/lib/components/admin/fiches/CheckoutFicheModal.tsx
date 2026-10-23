@@ -180,7 +180,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
           </div>
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Chiudi Fiche</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[220px]">{clientName}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-55">{clientName}</p>
           </div>
         </div>
         <Button variant="ghost" iconOnly aria-label="Chiudi" onClick={onClose}>
@@ -335,7 +335,7 @@ function CheckoutContent({ fiche, onClose }: { fiche: Fiche; onClose: () => void
           </div>
 
           {/* Dynamic view */}
-          <div className="min-h-[100px]">
+          <div className="min-h-25">
             {/* View A: Contanti */}
             {view === FichePaymentMethod.CASH && (
               <div className="flex flex-col gap-3">
