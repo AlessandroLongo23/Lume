@@ -759,9 +759,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     const newErrors: Record<string, string> = {};
     if (!clientId) newErrors.client_id = 'Seleziona un cliente';
     if (!datetimeStr) newErrors.datetime = 'Inserisci data e ora';
-    if (!ficheServices.length) newErrors.services = 'Aggiungi almeno un servizio';
+    // A shop sale with no treatment is a fiche with products only.
+    if (!ficheServices.length && !ficheProducts.length) newErrors.services = 'Aggiungi almeno un servizio o un prodotto';
     else if (ficheServices.some((s) => !s.operator_id)) newErrors.services = 'Scegli un operatore per ogni servizio';
     setErrors(newErrors);
+    // The message renders in the Servizi tab: show it, or Aggiungi looks like it did nothing.
+    if (newErrors.services) setActiveTab('services');
     return !Object.values(newErrors).some(Boolean);
   }
 
