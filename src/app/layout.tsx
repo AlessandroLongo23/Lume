@@ -5,6 +5,7 @@ import '@/lib/types/tableMeta';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/MessagePopupContainer';
 import { CookieConsentBanner } from '@/lib/components/shared/cookieConsent/CookieConsentBanner';
+import { UiProviders } from '@/lib/components/shared/ui/UiProviders';
 import { PostHogProvider } from '@/lib/posthog/PostHogProvider';
 import { cn } from "@/lib/utils";
 import { UI_SCALE_BOOT_SCRIPT } from '@/lib/utils/uiScale';
@@ -44,9 +45,11 @@ export default function RootLayout({
       <body>
         <PostHogProvider>
           <ThemeProvider>
-            {children}
-            <MessagePopupContainer />
-            <CookieConsentBanner />
+            <UiProviders>
+              {children}
+              <MessagePopupContainer />
+              <CookieConsentBanner />
+            </UiProviders>
           </ThemeProvider>
         </PostHogProvider>
       </body>

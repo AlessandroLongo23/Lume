@@ -192,18 +192,38 @@ button, a {
 
 /* Page-content entrance on route change in AppShell */
 @keyframes shellPageEnter {
-	from { opacity: 0; transform: translateY(14px); }
+	from { opacity: 0; transform: translateY(6px); }
 	to   { opacity: 1; transform: translateY(0); }
 }
 
 .shell-page-enter {
-	animation: shellPageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation: shellPageEnter var(--duration-slow) var(--ease-out) both;
 	will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.shell-page-enter {
 		animation: none;
+	}
+}
+
+/* Icon swap (<SwapIcon>): the new glyph pops in from a small blur when the
+ * icon changes. Reduced motion keeps the fade and drops the scale. */
+@keyframes iconPop {
+	from { opacity: 0; scale: 0.5; filter: blur(2px); }
+}
+
+@keyframes iconFade {
+	from { opacity: 0; }
+}
+
+.icon-pop {
+	animation: iconPop var(--duration-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.icon-pop {
+		animation-name: iconFade;
 	}
 }
 

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2, Palette } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
@@ -250,7 +251,7 @@ export function ClientForm({
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
                 onClick={() => setPasswordVisible((v) => !v)}
               >
-                {passwordVisible ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+                <SwapIcon icon={passwordVisible ? Eye : EyeOff} className="size-5" />
               </button>
             </div>
             {errors?.password && <p className="text-xs text-red-500">{errors.password}</p>}

@@ -162,7 +162,7 @@ export function PhoneNumber({
           aria-haspopup="listbox"
           aria-expanded={showDropdown}
           disabled={disabled}
-          className={`h-full px-3 flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-500/25 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`h-full px-3 flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-500/25 hover:border-zinc-300 dark:hover:border-zinc-600 transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           onClick={openDropdown}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
@@ -229,7 +229,7 @@ export function PhoneNumber({
         type="text"
         placeholder={selectedPrefix.placeholder || '000 000 0000'}
         disabled={disabled}
-        className={`flex flex-1 min-w-0 p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`flex flex-1 min-w-0 p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-500/25 transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         value={phoneNumber}
         onChange={(e) => onPhoneChange(formatNumber(e.target.value))}
       />

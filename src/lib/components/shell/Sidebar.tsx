@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarCollapseContext, useMobileMenu, useSidebarForceExpanded } from './sidebarContext';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
@@ -43,13 +44,24 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
         href={item.url}
         onClick={onNavigate}
         data-tour={item.dataTour}
-        className={`flex items-center text-sm rounded-md overflow-hidden transition-colors ${
+        aria-current={isActive ? 'page' : undefined}
+        className={`relative flex items-center text-sm rounded-md transition-colors ${
           isActive
-            ? 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20'
+            ? 'text-primary dark:text-primary'
             : 'text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:text-muted-foreground dark:hover:text-white dark:hover:bg-zinc-900'
         }`}
       >
-        <span className="flex items-center justify-center w-10 h-9 short:h-8 shorter:h-7 shrink-0">
+        {/* One highlight per sidebar, sliding to the new page on navigation. The
+            link must not clip it (no overflow-hidden), or it vanishes in transit. */}
+        {isActive && (
+          <motion.span
+            layoutId="sidebar-active"
+            aria-hidden
+            className="absolute inset-0 rounded-md bg-primary/10 dark:bg-primary/20"
+            transition={{ duration: DURATION.base, ease: EASE_OUT }}
+          />
+        )}
+        <span className="relative flex items-center justify-center w-10 h-9 short:h-8 shorter:h-7 shrink-0">
           <Icon className="w-5 h-5" strokeWidth={1.5} />
         </span>
         <AnimatePresence initial={false}>
@@ -60,7 +72,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: SidebarNavItem; collap
               animate={{ opacity: 1, width: 'auto', marginLeft: '0.75rem' }}
               exit={{ opacity: 0, width: 0, marginLeft: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="truncate whitespace-nowrap"
+              className="relative truncate whitespace-nowrap"
             >
               {item.name}
             </motion.span>
@@ -80,79 +92,83 @@ export function Sidebar({ identity, navGroups, pinnedLinks, userCard }: SidebarP
   const { ref: navRef, above, below } = useScrollEdges<HTMLElement>();
   const navMask = scrollEdgeMask({ above, below });
 
-  // Same padding collapsed and expanded, so icons don't shift while the rail
-  // animates. Every row starts with a 2.5rem icon box (w-10), matching AppShell's
-  // 4rem collapsed width: 0.75 + 2.5 + 0.75.
+  // AppShell renders this sidebar twice (desktop rail, mobile drawer); the group
+  // keeps each copy's active highlight to itself.
   return (
-    <div className="flex flex-col flex-1 min-h-0 pt-3 pb-2 gap-2 shorter:pt-2 shorter:gap-1.5 px-3">
-      {identity && <div className="shrink-0">{identity}</div>}
+    <LayoutGroup id={forceExpanded ? 'sidebar-mobile' : 'sidebar-desktop'}>
+      {/* Same padding collapsed and expanded, so icons don't shift while the rail
+          animates. Every row starts with a 2.5rem icon box (w-10), matching AppShell's
+          4rem collapsed width: 0.75 + 2.5 + 0.75. */}
+      <div className="flex flex-col flex-1 min-h-0 pt-3 pb-2 gap-2 shorter:pt-2 shorter:gap-1.5 px-3">
+        {identity && <div className="shrink-0">{identity}</div>}
 
-      <nav
-        ref={navRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col gap-4 short:gap-3 shorter:gap-2"
-        style={{ maskImage: navMask, WebkitMaskImage: navMask }}
-      >
-        {navGroups.map((group, gi) => (
-          <div
-            key={group.title ?? `group-${gi}`}
-            className="flex flex-col gap-1"
-            role="group"
-            aria-label={group.title}
-          >
-            {group.title && (
-              <div className="relative h-3.5 mx-1">
-                <AnimatePresence initial={false}>
-                  {effectiveCollapsed
-                    ? gi > 0 && (
-                        <motion.div
-                          key="sep"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15, delay: 0.2 }}
-                          className="absolute inset-0 flex items-center"
-                          aria-hidden="true"
-                        >
-                          <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800" />
-                        </motion.div>
-                      )
-                    : (
-                        <motion.p
-                          key="title"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15, delay: 0.2 }}
-                          className="absolute inset-0 flex items-center text-xs font-regular uppercase tracking-wide text-zinc-500 leading-none whitespace-nowrap"
-                        >
-                          {group.title}
-                        </motion.p>
-                      )}
-                </AnimatePresence>
+        <nav
+          ref={navRef}
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col gap-4 short:gap-3 shorter:gap-2"
+          style={{ maskImage: navMask, WebkitMaskImage: navMask }}
+        >
+          {navGroups.map((group, gi) => (
+            <div
+              key={group.title ?? `group-${gi}`}
+              className="flex flex-col gap-1"
+              role="group"
+              aria-label={group.title}
+            >
+              {group.title && (
+                <div className="relative h-3.5 mx-1">
+                  <AnimatePresence initial={false}>
+                    {effectiveCollapsed
+                      ? gi > 0 && (
+                          <motion.div
+                            key="sep"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15, delay: 0.2 }}
+                            className="absolute inset-0 flex items-center"
+                            aria-hidden="true"
+                          >
+                            <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800" />
+                          </motion.div>
+                        )
+                      : (
+                          <motion.p
+                            key="title"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15, delay: 0.2 }}
+                            className="absolute inset-0 flex items-center text-xs font-regular uppercase tracking-wide text-zinc-500 leading-none whitespace-nowrap"
+                          >
+                            {group.title}
+                          </motion.p>
+                        )}
+                  </AnimatePresence>
+                </div>
+              )}
+              <div className="flex flex-col gap-0.5 shorter:gap-0">
+                {group.items.map((item) => (
+                  <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
+                ))}
               </div>
-            )}
-            <div className="flex flex-col gap-0.5 shorter:gap-0">
-              {group.items.map((item) => (
-                <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
-              ))}
             </div>
-          </div>
-        ))}
-      </nav>
-
-      {pinnedLinks && pinnedLinks.length > 0 && (
-        <div className="flex flex-col gap-0.5 shorter:gap-0 shrink-0">
-          {pinnedLinks.map((item) => (
-            <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
           ))}
-        </div>
-      )}
+        </nav>
 
-      {userCard && (
-        <div className="shrink-0 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-          {userCard}
-        </div>
-      )}
-    </div>
+        {pinnedLinks && pinnedLinks.length > 0 && (
+          <div className="flex flex-col gap-0.5 shorter:gap-0 shrink-0">
+            {pinnedLinks.map((item) => (
+              <NavLink key={item.url} item={item} collapsed={effectiveCollapsed} onNavigate={onNavigate} />
+            ))}
+          </div>
+        )}
+
+        {userCard && (
+          <div className="shrink-0 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            {userCard}
+          </div>
+        )}
+      </div>
+    </LayoutGroup>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 
 interface ModalProps {
   isOpen: boolean;
@@ -69,18 +70,18 @@ export function Modal({
           onClick={handleBackdropClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          exit={{ opacity: 0, transition: { duration: DURATION.fast } }}
+          transition={{ duration: DURATION.base }}
         >
           <motion.div
             role="dialog"
             aria-modal="true"
             className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full ${classes}`}
             onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            initial={{ opacity: 0, scale: 0.97, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.97, y: 6, transition: { duration: DURATION.fast, ease: EASE_OUT } }}
+            transition={{ duration: DURATION.base, ease: EASE_OUT }}
             // Only the open animation settles to y:0/scale:1 while open; the exit
             // runs with isOpen already false, so this guard fires once, on enter.
             onAnimationComplete={() => { if (isOpen) onEnterComplete?.(); }}

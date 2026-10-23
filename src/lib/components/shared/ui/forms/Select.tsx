@@ -2,8 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react';
-import { createPortal } from 'react-dom';
 import { ChevronDown, X, Check, Plus } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
+import { Portal } from '../Portal';
 
 type ControlSize = 'sm' | 'md' | 'lg';
 
@@ -185,6 +187,9 @@ export function Select({
         break;
       }
       case 'Escape': {
+        // Escape closes the list only; without this a surrounding Modal, which
+        // listens on window, closes too.
+        e.stopPropagation();
         closeDropdown();
         break;
       }
@@ -203,7 +208,7 @@ export function Select({
         tabIndex={disabled ? -1 : 0}
         className={`w-full text-left bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md
           ${triggerSizeClasses[size]}
-          transition-all flex items-center justify-between
+          transition-[background-color,border-color,box-shadow] duration-[var(--duration-fast)] flex items-center justify-between
           focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}
         onClick={openDropdown}
@@ -231,97 +236,105 @@ export function Select({
               <X className="h-4 w-4 text-zinc-500" />
             </button>
           )}
-          <ChevronDown className={`h-5 w-5 text-zinc-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`h-5 w-5 text-zinc-400 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
-      {isOpen && dropdownPos && createPortal(
-        <div
-          ref={portalRef}
-          style={{
-            position: 'fixed',
-            top: dropdownPos.top,
-            left: dropdownPos.left,
-            width: dropdownPos.width,
-          }}
-          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden z-popover"
-        >
-          {(searchable || createAction) && (
-            <div className="p-2 border-b border-zinc-500/25 flex items-center gap-2">
-              {searchable && (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                  className="flex-1 min-w-0 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
-                  placeholder="Cerca..."
-                  onKeyDown={handleKeyNavigation}
-                />
+      <Portal>
+        <AnimatePresence>
+          {isOpen && dropdownPos && (
+            <motion.div
+              ref={portalRef}
+              style={{
+                position: 'fixed',
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+                transformOrigin: '50% 0%',
+              }}
+              className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden z-popover"
+              initial={{ opacity: 0, scale: 0.97, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: -4, transition: { duration: DURATION.fast, ease: EASE_OUT } }}
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
+            >
+              {(searchable || createAction) && (
+                <div className="p-2 border-b border-zinc-500/25 flex items-center gap-2">
+                  {searchable && (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
+                      className="flex-1 min-w-0 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
+                      placeholder="Cerca..."
+                      onKeyDown={handleKeyNavigation}
+                    />
+                  )}
+                  {createAction && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeDropdown();
+                        createAction.onClick();
+                      }}
+                      className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary-hover dark:text-primary/80 hover:bg-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors"
+                    >
+                      <Plus className="size-4" />
+                      {createAction.label}
+                    </button>
+                  )}
+                </div>
               )}
-              {createAction && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeDropdown();
-                    createAction.onClick();
-                  }}
-                  className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary-hover dark:text-primary/80 hover:bg-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors"
-                >
-                  <Plus className="size-4" />
-                  {createAction.label}
-                </button>
-              )}
-            </div>
+              <div ref={optionsRef} id={listboxId} role="listbox" className={`${maxHeight} overflow-y-auto`}>
+                {filteredOptions.length === 0 ? (
+                  onCreateFromSearch && searchQuery.trim() ? (
+                    <button
+                      type="button"
+                      className="w-full p-2 cursor-pointer transition-colors text-left flex items-center gap-2 text-primary-hover dark:text-primary/80 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                      onClick={() => {
+                        const trimmed = searchQuery.trim();
+                        closeDropdown();
+                        onCreateFromSearch(trimmed);
+                      }}
+                    >
+                      <Plus className="size-4 shrink-0" />
+                      <span className="truncate">Crea «{searchQuery.trim()}»</span>
+                    </button>
+                  ) : (
+                    <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
+                  )
+                ) : (
+                  filteredOptions.map((option, i) => {
+                    const isSelected = value === option[valueKey];
+                    const isHighlighted = highlightedIndex === i;
+                    return (
+                      <button
+                        key={option[valueKey] ?? i}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`w-full p-2 cursor-pointer transition-colors text-left flex items-center justify-between
+                          ${isSelected
+                            ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
+                            : isHighlighted
+                              ? 'bg-zinc-100 dark:bg-zinc-700'
+                              : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                          }`}
+                        onClick={() => handleOptionClick(option)}
+                        onMouseEnter={() => setHighlightedIndex(i)}
+                      >
+                        <span>{getLabel(option)}</span>
+                        {isSelected && <Check className="size-4 text-primary" />}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
           )}
-          <div ref={optionsRef} id={listboxId} role="listbox" className={`${maxHeight} overflow-y-auto`}>
-            {filteredOptions.length === 0 ? (
-              onCreateFromSearch && searchQuery.trim() ? (
-                <button
-                  type="button"
-                  className="w-full p-2 cursor-pointer transition-colors text-left flex items-center gap-2 text-primary-hover dark:text-primary/80 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                  onClick={() => {
-                    const trimmed = searchQuery.trim();
-                    closeDropdown();
-                    onCreateFromSearch(trimmed);
-                  }}
-                >
-                  <Plus className="size-4 shrink-0" />
-                  <span className="truncate">Crea «{searchQuery.trim()}»</span>
-                </button>
-              ) : (
-                <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
-              )
-            ) : (
-              filteredOptions.map((option, i) => {
-                const isSelected = value === option[valueKey];
-                const isHighlighted = highlightedIndex === i;
-                return (
-                  <button
-                    key={option[valueKey] ?? i}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    className={`w-full p-2 cursor-pointer transition-colors text-left flex items-center justify-between
-                      ${isSelected
-                        ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                        : isHighlighted
-                          ? 'bg-zinc-100 dark:bg-zinc-700'
-                          : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                      }`}
-                    onClick={() => handleOptionClick(option)}
-                    onMouseEnter={() => setHighlightedIndex(i)}
-                  >
-                    <span>{getLabel(option)}</span>
-                    {isSelected && <Check className="size-4 text-primary" />}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
+        </AnimatePresence>
+      </Portal>
     </div>
   );
 }

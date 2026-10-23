@@ -2,6 +2,7 @@
 
 import { useId, useState, type InputHTMLAttributes } from 'react';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { cn } from '@/lib/utils';
 
 type ControlSize = 'sm' | 'md' | 'lg';
@@ -93,7 +94,7 @@ export function FormInput({
             aria-label={isVisible ? 'Nascondi password' : 'Mostra password'}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
           >
-            {isVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+            <SwapIcon icon={isVisible ? Eye : EyeOff} className="size-4" />
           </button>
         )}
       </div>

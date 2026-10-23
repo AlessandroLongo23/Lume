@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 import { Button } from '@/lib/components/shared/ui/Button';
 
 interface SidePanelProps {
@@ -42,8 +43,10 @@ export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          // The panel is a child of the backdrop, so the backdrop's fade must last
+          // as long as the panel's slide or the panel vanishes mid-exit.
+          exit={{ opacity: 0, transition: { duration: DURATION.base } }}
+          transition={{ duration: DURATION.base }}
         >
           <motion.aside
             role="dialog"
@@ -53,8 +56,8 @@ export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm
             onClick={(e) => e.stopPropagation()}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ x: '100%', transition: { duration: DURATION.base, ease: EASE_OUT } }}
+            transition={{ duration: DURATION.slow, ease: EASE_OUT }}
           >
             <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-500/25 shrink-0">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
@@ -62,7 +65,7 @@ export function SidePanel({ isOpen, onClose, title, children, width = 'w-full sm
                 <X />
               </Button>
             </header>
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-6">
               {children}
             </div>
           </motion.aside>
