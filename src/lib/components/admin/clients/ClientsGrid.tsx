@@ -140,9 +140,9 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Searchbar
-          className="flex-1 max-w-sm"
+          className="flex-1 min-w-48 max-w-sm"
           placeholder="Cerca cliente..."
           value={globalFilter}
           onChange={setGlobalFilter}

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { EllipsisVertical } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 import { Button } from './Button';
 import { Portal } from './Portal';
 import { NumberBadge } from './NumberBadge';
@@ -94,10 +95,13 @@ export function DropdownMenu({ items, width = 'w-64', ariaLabel = 'Altre azioni'
               style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
+              exit={{
+                ...(reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }),
+                transition: { duration: DURATION.fast, ease: EASE_OUT },
+              }}
               transition={{
-                duration: reduceMotion ? 0.12 : 0.18,
-                ease: [0.22, 1, 0.36, 1],
+                duration: reduceMotion ? DURATION.fast : DURATION.base,
+                ease: EASE_OUT,
               }}
             >
               {items.flatMap<DropdownMenuItem>((item, i) => {

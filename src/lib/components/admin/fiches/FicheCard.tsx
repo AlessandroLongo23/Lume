@@ -92,7 +92,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
 
       {/* Body — services rendered as a thread; each service is a node connected
           by a thin line that morphs between adjacent category colors. */}
-      <div className="px-4 py-3 flex-1 min-h-[80px] border-t border-zinc-100 dark:border-zinc-800/60">
+      <div className="px-4 py-3 flex-1 min-h-20 border-t border-zinc-100 dark:border-zinc-800/60">
         {ficheServices.length === 0 ? (
           <p className="text-xs text-zinc-400 italic flex items-center gap-1.5">
             <Sparkles className="size-3" />
@@ -128,7 +128,7 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
                   {!isLast && (
                     <span
                       aria-hidden
-                      className="absolute left-[5px] -translate-x-1/2 top-[18px] bottom-0 w-px pointer-events-none"
+                      className="absolute left-[0.3125rem] -translate-x-1/2 top-4.5 bottom-0 w-px pointer-events-none"
                       style={{
                         background: `linear-gradient(to bottom, ${withOpacity(color, 0.8)}, ${withOpacity(nextColor, 0.8)})`,
                       }}

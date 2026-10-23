@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Mail, Key, Shield, ShieldCheck, ShieldOff, LogOut, Eye, EyeOff, Loader2, Save, type LucideIcon } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
@@ -297,7 +298,7 @@ export function SicurezzaPanel() {
               aria-label={showPwd ? 'Nascondi' : 'Mostra'}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
             >
-              {showPwd ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              <SwapIcon icon={showPwd ? EyeOff : Eye} className="size-4" />
             </button>
           </div>
           <input

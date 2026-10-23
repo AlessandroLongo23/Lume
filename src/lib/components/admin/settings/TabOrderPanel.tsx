@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Reorder } from 'motion/react';
 import { LayoutList, GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { usePreferencesStore } from '@/lib/stores/preferences';
@@ -106,7 +107,7 @@ function PageReorder({ page }: { page: TabsPageKey }) {
                 aria-label={isHidden ? 'Mostra' : 'Nascondi'}
                 className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
               >
-                {isHidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                <SwapIcon icon={isHidden ? EyeOff : Eye} className="size-4" />
               </button>
             </Reorder.Item>
           );

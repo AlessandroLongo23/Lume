@@ -9,8 +9,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, icon: Icon, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-row items-center justify-between gap-4 w-full">
-      <div className="flex items-center gap-4 min-w-0">
+    // Phones stack the actions under the title: side by side, the actions
+    // (which never shrink) squeeze the title to nothing and overflow the page.
+    <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-4 w-full">
+      <div className="flex items-center gap-4 min-w-0 max-w-full">
         {Icon && (
           <span className="flex items-center justify-center shrink-0 size-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800">
             <Icon className="size-5 text-zinc-900 dark:text-zinc-50" />
@@ -23,7 +25,9 @@ export function PageHeader({ title, subtitle, icon: Icon, actions }: PageHeaderP
           )}
         </div>
       </div>
-      {actions && <div className="flex flex-row items-center gap-2 shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex flex-row flex-wrap items-center gap-2 max-sm:w-full sm:shrink-0">{actions}</div>
+      )}
     </div>
   );
 }

@@ -127,7 +127,7 @@ export function FicheHistory({ clientId }: FicheHistoryProps) {
   }
 
   return (
-    <div className="max-h-[420px] overflow-auto">
+    <div className="max-h-105 overflow-auto">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-[var(--lume-bg)]">
           <tr className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 border-b border-zinc-500/25">
@@ -147,7 +147,7 @@ export function FicheHistory({ clientId }: FicheHistoryProps) {
               <td className="py-2 pr-3 text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
                 {format(e.datetime, 'd MMM yyyy', { locale: it })}
               </td>
-              <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100 max-w-[280px] truncate">
+              <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100 max-w-70 truncate">
                 {e.services || <span className="text-zinc-400">—</span>}
               </td>
               <td className="py-2 pr-3 text-right text-zinc-800 dark:text-zinc-100 whitespace-nowrap tabular-nums">

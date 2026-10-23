@@ -73,7 +73,7 @@ function ActivityRow({ entry }: { entry: ActivityLog }) {
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 px-4 pb-3.5 pl-9 text-[13px] leading-relaxed">
+            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 px-4 pb-3.5 pl-9 text-[0.8125rem] leading-relaxed">
               {changes.map((ch, i) => (
                 <Fragment key={i}>
                   <dt className="text-muted-foreground">{ch.label}</dt>

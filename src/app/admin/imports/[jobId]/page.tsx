@@ -149,7 +149,7 @@ function JobIdBadge({ id }: { id: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="text-[11px] text-muted-foreground/70 font-mono hover:text-muted-foreground transition-colors"
+        className="text-2xs text-muted-foreground/70 font-mono hover:text-muted-foreground transition-colors"
       >
         {id.slice(0, 8)}
       </button>
@@ -302,7 +302,7 @@ function ReviewPanel({ job, jobId, config }: { job: ImportJob; jobId: string; co
 
       {/* Mapping editor */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.04em]">
+        <h2 className="text-2xs font-semibold text-muted-foreground uppercase tracking-[0.04em]">
           Mappatura colonne
         </h2>
         <div className="rounded-lg border border-border bg-card divide-y divide-border">
@@ -325,7 +325,7 @@ function ReviewPanel({ job, jobId, config }: { job: ImportJob; jobId: string; co
 
       {/* Preview table */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.04em]">
+        <h2 className="text-2xs font-semibold text-muted-foreground uppercase tracking-[0.04em]">
           Anteprima righe trasformate
         </h2>
         <PreviewTable sample={sample} columns={config.previewColumns} />
@@ -411,7 +411,7 @@ function MappingRow({
         </div>
         {smart && (
           <div className="flex flex-col gap-1">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary w-fit">
+            <span className="inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary w-fit">
               <Sparkles className="size-3" />
               Scrive in: {smart.outputs.map((o) => destFieldLabels[o] ?? o).join(' + ')}
             </span>
@@ -420,7 +420,7 @@ function MappingRow({
             )}
             <button
               type="button"
-              className="text-[11px] text-muted-foreground hover:text-foreground underline w-fit"
+              className="text-2xs text-muted-foreground hover:text-foreground underline w-fit"
               onClick={() => onChange(mapping.destField, true)}
             >
               Usa mappatura semplice
@@ -442,7 +442,7 @@ function ConfidencePill({ confidence }: { confidence: number }) {
         : 'bg-[var(--lume-danger-bg)] text-[var(--lume-danger-fg)] border border-[var(--lume-danger-border)]';
   return (
     <span
-      className={`text-[11px] font-medium px-2 py-0.5 rounded ${tone}`}
+      className={`text-2xs font-medium px-2 py-0.5 rounded ${tone}`}
       title={`Confidence: ${(confidence * 100).toFixed(0)}%`}
     >
       {label}
@@ -465,9 +465,9 @@ function PreviewTable({
       <table className="w-full text-sm">
         <thead className="bg-muted/40">
           <tr>
-            <th className="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-[0.04em]">#</th>
+            <th className="px-3 py-2 text-left text-2xs font-medium text-muted-foreground uppercase tracking-[0.04em]">#</th>
             {columns.map((c) => (
-              <th key={c.key} className="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-[0.04em]">{c.label}</th>
+              <th key={c.key} className="px-3 py-2 text-left text-2xs font-medium text-muted-foreground uppercase tracking-[0.04em]">{c.label}</th>
             ))}
             <th className="w-8 px-3 py-2" aria-label="Stato" />
           </tr>
@@ -487,7 +487,7 @@ function PreviewTable({
                   const raw = rowData[c.key];
                   const value = raw == null ? '' : String(raw);
                   return (
-                    <td key={c.key} className="px-3 py-2 text-foreground/80 max-w-[200px] truncate">
+                    <td key={c.key} className="px-3 py-2 text-foreground/80 max-w-50 truncate">
                       {value || <span className="text-muted-foreground/60">—</span>}
                     </td>
                   );
@@ -578,7 +578,7 @@ function CommittingPanel({
           </p>
         </div>
         {eta && (
-          <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/25 bg-primary/5 text-[11px] font-medium text-primary">
+          <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/25 bg-primary/5 text-2xs font-medium text-primary">
             <span className="relative flex size-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping motion-reduce:hidden" />
               <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
@@ -851,13 +851,13 @@ function Stat({
       {valueEl}
       {hint ? (
         <Tooltip label={hint}>
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-[0.04em] cursor-help">
+          <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground uppercase tracking-[0.04em] cursor-help">
             {label}
             <Info className="size-3 text-muted-foreground/60" />
           </span>
         </Tooltip>
       ) : (
-        <span className="text-[11px] text-muted-foreground uppercase tracking-[0.04em]">{label}</span>
+        <span className="text-2xs text-muted-foreground uppercase tracking-[0.04em]">{label}</span>
       )}
     </div>
   );

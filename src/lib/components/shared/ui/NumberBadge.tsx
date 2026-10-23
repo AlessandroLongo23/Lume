@@ -8,7 +8,7 @@ const variantClasses: Record<Variant, string> = {
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'min-w-4 h-4 px-1 text-[10px]',
+  sm: 'min-w-4 h-4 px-1 text-2xs',
   md: 'min-w-5 h-5 px-1.5 text-xs',
 };
 

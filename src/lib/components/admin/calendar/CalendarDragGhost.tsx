@@ -135,7 +135,7 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
         }}
       >
         <div
-          className="absolute -top-7 left-0 px-2 py-1 rounded text-[11px] font-semibold whitespace-nowrap shadow"
+          className="absolute -top-7 left-0 px-2 py-1 rounded text-2xs font-semibold whitespace-nowrap shadow"
           style={{
             background: accent,
             color: 'white',

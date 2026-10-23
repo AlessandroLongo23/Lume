@@ -60,18 +60,18 @@ export function SubscriptionSummaryCard() {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
         <div className="px-5 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
             Piano
           </div>
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-base font-semibold text-foreground">{planLabel}</span>
             {!isCanceling && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success-strong">
+              <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-2xs font-medium text-success-strong">
                 Attivo
               </span>
             )}
             {isCanceling && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-medium text-warning-strong">
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-2xs font-medium text-warning-strong">
                 In annullamento
               </span>
             )}
@@ -79,7 +79,7 @@ export function SubscriptionSummaryCard() {
         </div>
 
         <div className="px-5 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
             {isCanceling ? 'Si chiuderà il' : 'Prossimo addebito'}
           </div>
           <div className="mt-1.5 flex items-baseline gap-2">
@@ -93,7 +93,7 @@ export function SubscriptionSummaryCard() {
             )}
           </div>
           {isOnReferralCredit && !isCanceling && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success-strong">
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-0.5 text-2xs font-medium text-success-strong">
               <Gift className="size-3" />
               Credito referral · 1 mese gratuito
             </div>
@@ -101,7 +101,7 @@ export function SubscriptionSummaryCard() {
         </div>
 
         <div className="px-5 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
             Metodo di pagamento
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-2">

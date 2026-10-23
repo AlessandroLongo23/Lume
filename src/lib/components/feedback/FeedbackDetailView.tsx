@@ -152,18 +152,18 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
         <div className="flex flex-col gap-8 min-w-0">
           {/* Header */}
           <header className="flex flex-col gap-3">
-            <div className={`flex flex-row items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${typeColor}`}>
+            <div className={`flex flex-row items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.12em] ${typeColor}`}>
               <typeMeta.icon className="size-3.5" strokeWidth={2.25} />
               <span>{typeMeta.label}</span>
             </div>
 
-            <h1 className="text-[32px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 break-words leading-[1.15]">
+            <h1 className="text-[2rem] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 break-words leading-[1.15]">
               {entry.title}
             </h1>
 
             <div className="flex flex-row items-center flex-wrap gap-x-2.5 gap-y-1.5 text-sm text-zinc-500 dark:text-zinc-400">
               <div className="flex flex-row items-center gap-2">
-                <div className="flex items-center justify-center size-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
+                <div className="flex items-center justify-center size-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-2xs font-semibold text-zinc-600 dark:text-zinc-300">
                   {initials(entry.getAuthorName())}
                 </div>
                 <span className="text-zinc-700 dark:text-zinc-200">{entry.getAuthorName()}</span>
@@ -182,7 +182,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           </header>
 
           {/* Description */}
-          <div className="flex flex-col gap-5 text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-200">
+          <div className="flex flex-col gap-5 text-[0.9375rem] leading-relaxed text-zinc-700 dark:text-zinc-200">
             <MarkdownBody content={entry.description} />
             {entry.image_paths.length > 0 && <ImageGallery paths={entry.image_paths} />}
           </div>
@@ -229,7 +229,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
                 <span className="text-2xl font-semibold tabular-nums leading-none">
                   {entry.upvote_count}
                 </span>
-                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                   {hasVoted ? 'Votato' : 'Vota'}
                 </span>
               </button>
@@ -239,7 +239,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
                 <span className="text-2xl font-semibold tabular-nums leading-none">
                   {entry.upvote_count}
                 </span>
-                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                   {entry.upvote_count === 1 ? 'voto' : 'voti'}
                 </span>
               </div>
@@ -249,7 +249,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
               <span className="text-2xl font-semibold tabular-nums leading-none">
                 {entry.comment_count}
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+              <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                 {entry.comment_count === 1 ? 'commento' : 'commenti'}
               </span>
             </div>
@@ -316,7 +316,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
                 <div className="flex items-center justify-center rounded-md bg-primary/10 p-1">
                   <Settings2 className="size-3.5 text-primary-hover dark:text-primary/80" strokeWidth={2.25} />
                 </div>
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-hover dark:text-primary/80">
+                <h3 className="text-2xs font-semibold uppercase tracking-[0.12em] text-primary-hover dark:text-primary/80">
                   Stato · Admin
                 </h3>
               </div>
@@ -417,7 +417,7 @@ function CardHeader({
       <div className="flex items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800 p-1">
         <Icon className="size-3.5 text-zinc-500 dark:text-zinc-400" strokeWidth={2.25} />
       </div>
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-700 dark:text-zinc-200">
+      <h3 className="text-2xs font-semibold uppercase tracking-[0.12em] text-zinc-700 dark:text-zinc-200">
         {title}
       </h3>
     </div>

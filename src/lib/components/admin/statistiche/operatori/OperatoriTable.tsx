@@ -26,7 +26,7 @@ export function OperatoriTable({ rows }: Props) {
             <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.ficheCount}</td>
             <td className="px-3 py-2.5 text-sm text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">{formatCurrency(row.incasso)}</td>
             <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{formatCurrency(row.avgTicket)}</td>
-            <td className="px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400 max-w-[140px] truncate">{row.topService}</td>
+            <td className="px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400 max-w-35 truncate">{row.topService}</td>
             <td className="px-5 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.clientCount}</td>
           </tr>
         ))}

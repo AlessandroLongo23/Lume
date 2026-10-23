@@ -347,7 +347,7 @@ export function FicheBlock({
 
       {/* Cascade-mode badge */}
       {isThisFicheDragging && useCalendarDragStore.getState().cascade && (
-        <div className="absolute top-1 right-1 z-content-floating text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary text-white shadow">
+        <div className="absolute top-1 right-1 z-content-floating text-2xs font-medium px-1.5 py-0.5 rounded bg-primary text-white shadow">
           Sposta successivi
         </div>
       )}

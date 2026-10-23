@@ -38,14 +38,14 @@ export function FullscreenToggle() {
       <span className="relative size-5 flex items-center justify-center">
         <Maximize
           strokeWidth={1.5}
-          className={`absolute size-5 transition-all duration-500 text-zinc-950 dark:text-zinc-50 ${
-            isFullscreen ? 'rotate-90 scale-0' : 'rotate-0 scale-100'
+          className={`absolute size-5 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] text-zinc-950 dark:text-zinc-50 ${
+            isFullscreen ? 'rotate-90 scale-50 opacity-0' : 'rotate-0 scale-100 opacity-100'
           }`}
         />
         <Minimize
           strokeWidth={1.5}
-          className={`absolute size-5 transition-all duration-500 text-zinc-950 dark:text-zinc-50 ${
-            isFullscreen ? 'rotate-0 scale-100' : '-rotate-90 scale-0'
+          className={`absolute size-5 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] text-zinc-950 dark:text-zinc-50 ${
+            isFullscreen ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-50 opacity-0'
           }`}
         />
       </span>

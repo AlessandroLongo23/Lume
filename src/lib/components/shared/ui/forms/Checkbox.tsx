@@ -57,6 +57,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   const isActive = isChecked || !!indeterminate;
   const boxClass = size === 'sm' ? 'h-5 w-5 rounded' : 'h-10 w-10 rounded-md';
   const iconClass = size === 'sm' ? 'size-2.5' : 'size-4';
+  const markClass = (shown: boolean) => [
+    iconClass,
+    'absolute text-primary transition-[opacity,scale] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+    shown ? 'opacity-100 scale-100' : 'opacity-0 motion-safe:scale-50',
+  ].join(' ');
 
   return (
     <div className={className}>
@@ -83,15 +88,17 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           aria-hidden
           className={[
             boxClass,
-            'inline-flex align-middle items-center justify-center border transition-all duration-200',
+            'relative inline-flex align-middle items-center justify-center border',
+            'transition-[background-color,border-color] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
             isActive
               ? 'border-primary/50 bg-primary/10'
               : 'border-zinc-500/25 bg-white dark:bg-zinc-800',
             disabled ? 'opacity-50' : 'hover:border-primary/30',
           ].join(' ')}
         >
-          {isChecked && !indeterminate && <Check className={`${iconClass} text-primary`} strokeWidth={2} />}
-          {indeterminate && <Minus className={`${iconClass} text-primary`} strokeWidth={2} />}
+          {/* Both marks stay mounted so the tick can scale in and out. */}
+          <Check className={markClass(isChecked && !indeterminate)} strokeWidth={2} />
+          <Minus className={markClass(!!indeterminate)} strokeWidth={2} />
         </div>
       </label>
     </div>

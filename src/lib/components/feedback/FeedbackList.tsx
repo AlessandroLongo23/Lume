@@ -190,7 +190,7 @@ export function FeedbackList({ mode }: FeedbackListProps) {
 
         {/* Toolbar */}
         <div className="flex items-center flex-wrap gap-2">
-          <div className="relative flex items-center flex-1 max-w-sm min-w-[200px]">
+          <div className="relative flex items-center flex-1 max-w-sm min-w-50">
             <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
             <input
               type="text"

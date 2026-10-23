@@ -36,7 +36,7 @@ export function StatTile({ label, value, hint, accent, children }: StatTileProps
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
         {accent && (
-          <span className={`text-[11px] font-medium ${accentTextClasses[accent.tone]}`}>
+          <span className={`text-2xs font-medium ${accentTextClasses[accent.tone]}`}>
             {accent.text}
           </span>
         )}

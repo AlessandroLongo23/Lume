@@ -265,7 +265,7 @@ export function CommandMenu({
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-5 text-[11px] text-zinc-500">
+        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-5 text-2xs text-zinc-500">
           <span className="flex items-center gap-1.5">
             <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">↑↓</kbd>
             Naviga
@@ -344,7 +344,7 @@ function FlatRow({ result, nested, active, pendingConfirm, onMouseEnter, onClick
       onClick={onClick}
       className={[
         'flex items-center gap-3 rounded-md text-left transition-colors',
-        nested ? 'pl-9 pr-3 py-1.5 text-[13px]' : 'px-3 py-2 text-sm',
+        nested ? 'pl-9 pr-3 py-1.5 text-[0.8125rem]' : 'px-3 py-2 text-sm',
         danger
           ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
           : active
@@ -371,7 +371,7 @@ function FlatRow({ result, nested, active, pendingConfirm, onMouseEnter, onClick
         <span className="text-xs text-zinc-400 shrink-0 truncate max-w-[40%]">{subtitle}</span>
       )}
       {kbd && (
-        <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500">
+        <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-2xs text-zinc-500">
           {kbd}
         </kbd>
       )}

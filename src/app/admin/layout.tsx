@@ -63,7 +63,7 @@ function LumeLogoBlock() {
             <span className="text-lg font-semibold tracking-tight text-foreground dark:text-white">
               Lume<span className="text-primary">.</span>
             </span>
-            <span className="text-[10px] font-medium tabular-nums text-muted-foreground tracking-tight">
+            <span className="text-2xs font-medium tabular-nums text-muted-foreground tracking-tight">
               v{appVersion}
             </span>
           </motion.span>

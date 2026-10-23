@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AtSign, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
@@ -106,7 +107,7 @@ export function AddOperatorCredentialsModal({ isOpen, onClose, operator }: AddOp
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
             >
-              {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+              <SwapIcon icon={showPassword ? Eye : EyeOff} className="size-5" />
             </button>
           </div>
           {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}

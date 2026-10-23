@@ -31,7 +31,7 @@ export function CookieConsentBanner() {
               role="dialog"
               aria-modal="false"
               aria-labelledby="cookie-consent-title"
-              className="pointer-events-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_8px_16px_-4px_var(--shadow-color),0_20px_40px_-8px_var(--shadow-color)] p-5 md:p-6"
+              className="pointer-events-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_8px_16px_-4px_var(--shadow-color),0_20px_40px_-8px_var(--shadow-color)] p-4 md:p-6"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
@@ -77,18 +77,28 @@ function DefaultView() {
             >
               Cookie policy
             </Link>
+            {/* Phones only: Personalizza moves here so the banner stays short
+                enough not to cover the page's own primary action. */}
+            <button
+              type="button"
+              onClick={openCustomize}
+              className="underline underline-offset-2 hover:text-foreground sm:hidden"
+            >
+              Personalizza
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button variant="secondary" onClick={openCustomize} className="order-3 sm:order-1">
+      {/* Rifiuta and Accetta sit side by side at equal size on every width. */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <Button variant="secondary" onClick={openCustomize} className="hidden sm:inline-flex">
           Personalizza
         </Button>
-        <Button variant="secondary" onClick={reject} className="order-2">
+        <Button variant="secondary" onClick={reject}>
           Rifiuta
         </Button>
-        <Button variant="primary" onClick={accept} className="order-1 sm:order-3">
+        <Button variant="primary" onClick={accept}>
           Accetta
         </Button>
       </div>

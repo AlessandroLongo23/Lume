@@ -81,7 +81,7 @@ export function NotificationBell() {
       >
         <Bell className="size-4" />
         {unread.length > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-primary text-white text-[10px] font-semibold leading-none">
+          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-primary text-white text-2xs font-semibold leading-none">
             {unread.length > 9 ? '9+' : unread.length}
           </span>
         )}
@@ -177,7 +177,7 @@ function NotificationItem({
         {n.body && (
           <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">{n.body}</p>
         )}
-        <p className="mt-1 text-[11px] text-zinc-400">
+        <p className="mt-1 text-2xs text-zinc-400">
           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: it })}
         </p>
       </button>

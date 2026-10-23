@@ -44,7 +44,8 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-[var(--lume-button-accent-bg)] text-[var(--lume-button-accent-fg)]',
     'hover:bg-[var(--lume-button-accent-bg-hover)] active:bg-[var(--lume-button-accent-bg-active)]',
     'hover:-translate-y-px hover:shadow-[0_8px_24px_-8px_var(--lume-accent-muted)]',
-    'max-md:active:translate-y-0',
+    // Pressing drops the hover lift: the press reads as the button going down.
+    'active:translate-y-0',
   ),
   secondary: cn(
     'bg-[var(--lume-button-secondary-bg)] text-[var(--lume-button-secondary-fg)]',
@@ -59,7 +60,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-[var(--lume-button-destructive-bg)] text-[var(--lume-button-destructive-fg)]',
     'hover:bg-[var(--lume-button-destructive-bg-hover)]',
     'hover:-translate-y-px',
-    'max-md:active:translate-y-0',
+    'active:translate-y-0',
   ),
   // Outlined destructive: same card shape as `secondary` (so it sits naturally
   // beside neutral actions) but carries the danger identity — red text/icon,
@@ -105,7 +106,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
   const classes = cn(
     'relative inline-flex items-center justify-center rounded-lg font-medium whitespace-nowrap',
-    'transition-[background-color,border-color,color,transform,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
+    'transition-[background-color,border-color,color,translate,transform,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
     // Disabled: dim, denied cursor, and no hover lift/shadow. The `disabled:hover:`
     // resets are two pseudo-classes, so they outrank the variant's `hover:` lift

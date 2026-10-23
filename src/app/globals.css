@@ -13,6 +13,10 @@
 @import "../styles/tokens/semantic.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Short windows: a 1366×768 screen leaves ~650px of viewport, a 1080p laptop
+   at 125% scaling ~750px. Used where vertical space runs out first (sidebar). */
+@custom-variant short (@media (max-height: 820px));
+@custom-variant shorter (@media (max-height: 700px));
 
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
@@ -119,6 +123,18 @@ html, body {
 	padding: 0;
 }
 
+/* "Dimensione interfaccia" (src/lib/utils/uiScale.ts). Nearly every size is in
+   rem, so the root font-size scales the whole UI. Percentages keep the
+   browser's own font-size setting in the calculation. No attribute = auto:
+   short desktop windows (a 1366×768 screen leaves ~650px of viewport) get the
+   compact size, everything else stays at 100%. */
+html[data-ui-scale="large"]         { font-size: 112.5%; }
+html[data-ui-scale="compact"]       { font-size: 87.5%; }
+html[data-ui-scale="extra-compact"] { font-size: 75%; }
+@media (min-width: 1024px) and (max-height: 760px) {
+	html:not([data-ui-scale]) { font-size: 87.5%; }
+}
+
 body {
 	overflow-x: hidden;
 	background-color: var(--lume-bg);
@@ -176,18 +192,38 @@ button, a {
 
 /* Page-content entrance on route change in AppShell */
 @keyframes shellPageEnter {
-	from { opacity: 0; transform: translateY(14px); }
+	from { opacity: 0; transform: translateY(6px); }
 	to   { opacity: 1; transform: translateY(0); }
 }
 
 .shell-page-enter {
-	animation: shellPageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation: shellPageEnter var(--duration-slow) var(--ease-out) both;
 	will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.shell-page-enter {
 		animation: none;
+	}
+}
+
+/* Icon swap (<SwapIcon>): the new glyph pops in from a small blur when the
+ * icon changes. Reduced motion keeps the fade and drops the scale. */
+@keyframes iconPop {
+	from { opacity: 0; scale: 0.5; filter: blur(2px); }
+}
+
+@keyframes iconFade {
+	from { opacity: 0; }
+}
+
+.icon-pop {
+	animation: iconPop var(--duration-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.icon-pop {
+		animation-name: iconFade;
 	}
 }
 

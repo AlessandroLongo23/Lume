@@ -60,10 +60,10 @@ function PlatformIdentity() {
           <motion.span
             key="badge"
             initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-            animate={{ opacity: 1, width: 'auto', marginLeft: 8 }}
+            animate={{ opacity: 1, width: 'auto', marginLeft: '0.5rem' }}
             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-hover dark:bg-primary/20 dark:text-primary/70 uppercase tracking-wider shrink-0 whitespace-nowrap"
+            className="text-2xs font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-hover dark:bg-primary/20 dark:text-primary/70 uppercase tracking-wider shrink-0 whitespace-nowrap"
           >
             Platform
           </motion.span>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { generateTimeSlots, formatTimeSlot, CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
+import { remToPx } from '@/lib/utils/uiScale';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 export interface TimeGridColumn {
@@ -61,13 +62,13 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
   useEffect(() => {
     if (!showNowLine || !scrollRef.current) return;
     const container = scrollRef.current;
-    const nowTopPx = nowTopRem * 16; // rem → px (assumes 16px root)
+    const nowTopPx = remToPx(nowTopRem);
     const center = nowTopPx - container.clientHeight / 2;
     container.scrollTop = Math.max(0, center);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  const gridCols = { gridTemplateColumns: `64px repeat(${columns.length}, minmax(96px, 1fr))` };
+  const gridCols = { gridTemplateColumns: `4rem repeat(${columns.length}, minmax(6rem, 1fr))` };
 
   return (
     <div className="border border-zinc-500/25 rounded-lg overflow-hidden flex-1 min-h-0 flex flex-col">

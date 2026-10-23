@@ -313,7 +313,7 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
                 >
                   <a.icon className="size-5" />
                   <span>{a.label}</span>
-                  <span className="text-[10px] opacity-60 font-mono tabular-nums">{a.key}</span>
+                  <span className="text-2xs opacity-60 font-mono tabular-nums">{a.key}</span>
                 </button>
               ))}
             </div>
@@ -395,17 +395,17 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
             <span>Tasti rapidi:</span>
             {ACTION_BUTTONS.map((a) => (
               <span key={a.key} className="inline-flex items-center gap-1">
-                <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border">{a.key}</kbd>
+                <kbd className="font-mono text-2xs px-1.5 py-0.5 rounded bg-muted border border-border">{a.key}</kbd>
                 <span>{a.label}</span>
               </span>
             ))}
             <span className="ml-auto inline-flex items-center gap-1">
-              <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border">→</kbd>
+              <kbd className="font-mono text-2xs px-1.5 py-0.5 rounded bg-muted border border-border">→</kbd>
               salta
             </span>
           </div>
 
-          <div className="text-[10px] text-muted-foreground/70 italic">
+          <div className="text-2xs text-muted-foreground/70 italic">
             Stato attuale: {STATUS_LABEL[current.status]}
           </div>
         </div>
@@ -419,7 +419,7 @@ function ContactRow({ icon: Icon, label, value, whatsapp }: { icon: React.Compon
     <div className="rounded-md border border-border bg-card px-3 py-2 flex items-center gap-2.5">
       <Icon className="size-4 text-muted-foreground shrink-0" />
       <div className="flex-1 min-w-0">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</div>
         <div className="text-sm text-foreground tabular-nums truncate">
           {value ?? <span className="italic text-muted-foreground">—</span>}
         </div>
@@ -441,7 +441,7 @@ function ContactRow({ icon: Icon, label, value, whatsapp }: { icon: React.Compon
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-card px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="text-sm text-foreground truncate">{value}</div>
     </div>
   );

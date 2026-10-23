@@ -25,6 +25,7 @@ import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
+import { callServerAction } from '@/lib/utils/serverAction';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
@@ -82,7 +83,7 @@ function toDatetimeLocal(date: Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const TABLE_COLS = '1fr 1.5fr 96px 60px 60px 96px 28px 56px 32px';
+const TABLE_COLS = '1fr 1.5fr 6rem 3.75rem 3.75rem 6rem 1.75rem 3.5rem 2rem';
 
 interface CategoryGroup<T> {
   categoryId: string;
@@ -665,7 +666,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
    *  `reason` is forwarded to the audit log and only consumed by the RPC when the patch
    *  contains whitelisted fiche-table fields (see `updateFiche` in the store). */
   async function persistFiche(reason?: string): Promise<string> {
-    const validation = await validateFicheConflicts(
+    const validation = await callServerAction(() => validateFicheConflicts(
       clientId,
       servicesWithTimes.map((svc) => ({
         operator_id: svc.operator_id,
@@ -674,7 +675,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         end_time: svc.end_time.toISOString(),
       })),
       mode === 'edit' ? fiche?.id : undefined,
-    );
+    ));
     if (validation.error) throw new Error(validation.error);
 
     if (mode === 'add') {
@@ -1092,7 +1093,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         hideCancel={hideCancel}
         footerContent={
           showFooterTotals ? (
-            <div className="flex flex-col gap-1 min-w-[200px]">
+            <div className="flex flex-col gap-1 min-w-50">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">Subtotale</span>
                 <span className={`text-xs font-mono ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-700 dark:text-zinc-300'}`}>
@@ -1771,7 +1772,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               id="fiche-panel-payment"
               aria-labelledby="fiche-tab-payment"
               className="grid gap-8 flex-1 min-h-0"
-              style={{ gridTemplateColumns: '320px 1fr' }}
+              style={{ gridTemplateColumns: '20rem 1fr' }}
             >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt
@@ -1860,7 +1861,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               id="fiche-panel-payment"
               aria-labelledby="fiche-tab-payment"
               className="grid gap-8 flex-1 min-h-0"
-              style={{ gridTemplateColumns: '320px 1fr' }}
+              style={{ gridTemplateColumns: '20rem 1fr' }}
             >
               <div className="overflow-y-auto min-h-0">
                 <FicheReceipt

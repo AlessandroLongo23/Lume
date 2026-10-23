@@ -7,6 +7,7 @@ import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { useUnavailabilityCreateStore } from '@/lib/stores/unavailabilityCreate';
 import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
+import { remToPx } from '@/lib/utils/uiScale';
 import { FicheBlock } from './FicheBlock';
 import { UnavailabilityBlock } from './UnavailabilityBlock';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
@@ -16,7 +17,7 @@ import type { Operator } from '@/lib/types/Operator';
 import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 
 const DRAG_THRESHOLD = 4;
-const PIXELS_PER_SLOT = 32; // h-8 in CSS
+const SLOT_HEIGHT_REM = 2; // h-8 in CSS
 
 interface DayViewSlotProps {
   operator: Operator;
@@ -232,6 +233,8 @@ export function DayViewSlot({
     const startClientY = e.clientY;
     const startMs = datetime.getTime();
     const slotMs = timeStep * 60_000;
+    // The UI scale changes the root font-size, so measure the slot in px now.
+    const slotHeightPx = remToPx(SLOT_HEIGHT_REM);
     let dragged = false;
     draggedRef.current = false;
 
@@ -243,7 +246,7 @@ export function DayViewSlot({
       if (!dragged) return;
 
       // Snap the cursor delta to whole slots. Negative delta = drag upwards.
-      const slotsDelta = Math.round(deltaY / PIXELS_PER_SLOT);
+      const slotsDelta = Math.round(deltaY / slotHeightPx);
       let startTs = startMs;
       let endTs = startMs + slotMs;
       if (slotsDelta >= 0) {

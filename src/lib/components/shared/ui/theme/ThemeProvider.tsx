@@ -70,7 +70,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    document.startViewTransition(apply);
+    // A transition the browser skips (tab hidden, a second toggle mid-curtain)
+    // rejects these promises. The theme is still applied, so there is nothing
+    // to handle; without the catch it surfaces as an unhandled page error.
+    const transition = document.startViewTransition(apply);
+    transition.ready.catch(() => {});
+    transition.finished.catch(() => {});
   };
 
   // Initial paint from localStorage (fast, no flash)

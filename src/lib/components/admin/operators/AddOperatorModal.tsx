@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, AtSign, Phone, Lock, Eye, EyeOff, Info } from 'lucide-react';
+import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
@@ -114,7 +115,7 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} className={inputClass} value={op.password} onChange={(e) => set('password', e.target.value)} />
                 <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setShowPassword((v) => !v)}>
-                  {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+                  <SwapIcon icon={showPassword ? Eye : EyeOff} className="size-5" />
                 </button>
               </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}

@@ -85,12 +85,12 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
             {comment.getAuthorName()}
           </span>
           {isAgent && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary-hover dark:text-primary/70">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70">
               <Bot className="size-3" /> Team Lume
             </span>
           )}
           {comment.author_salon_name && !isAgent && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
               {comment.author_salon_name}
             </span>
           )}
@@ -101,7 +101,7 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
             </span>
           </Tooltip>
           {wasEdited && (
-            <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">(modificato)</span>
+            <span className="text-zinc-400 dark:text-zinc-500 text-2xs">(modificato)</span>
           )}
 
           {(canEdit || canDelete) && (

@@ -66,7 +66,7 @@ export function TourCard({
   return (
     <div
       className={cn(
-        'relative w-[320px] max-w-[calc(100vw-2rem)] rounded-xl p-4',
+        'relative w-80 max-w-[calc(100vw-2rem)] rounded-xl p-4',
         'border border-zinc-200 bg-white shadow-xl',
         'dark:border-zinc-800 dark:bg-zinc-900',
       )}
@@ -82,7 +82,7 @@ export function TourCard({
           {step.icon && <span className="shrink-0 text-primary">{step.icon}</span>}
           <h3 className="truncate text-sm font-semibold text-foreground">{step.title}</h3>
           {optional && (
-            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Facoltativo
             </span>
           )}
