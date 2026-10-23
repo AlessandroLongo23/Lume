@@ -7,6 +7,7 @@ import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { updateFicheWithAudit } from '@/lib/actions/fiches';
+import { callServerAction } from '@/lib/utils/serverAction';
 import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
 import type { Json, TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
@@ -150,7 +151,10 @@ export const useFichesStore = create<FichesState>((set, get) => ({
       pendingMutationIds: new Set([...s.pendingMutationIds, ficheId]),
     }));
 
-    const result = await updateFicheWithAudit(ficheId, patch, reason ?? null);
+    // A thrown action (e.g. stale deployment) takes the same path as an error result,
+    // so the pending id is cleared either way.
+    const result = await callServerAction(() => updateFicheWithAudit(ficheId, patch, reason ?? null))
+      .catch((err: unknown) => ({ error: err instanceof Error ? err.message : String(err), data: undefined }));
 
     if (result.error || !result.data) {
       set((s) => {

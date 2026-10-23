@@ -25,6 +25,7 @@ import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
+import { callServerAction } from '@/lib/utils/serverAction';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
@@ -665,7 +666,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
    *  `reason` is forwarded to the audit log and only consumed by the RPC when the patch
    *  contains whitelisted fiche-table fields (see `updateFiche` in the store). */
   async function persistFiche(reason?: string): Promise<string> {
-    const validation = await validateFicheConflicts(
+    const validation = await callServerAction(() => validateFicheConflicts(
       clientId,
       servicesWithTimes.map((svc) => ({
         operator_id: svc.operator_id,
@@ -674,7 +675,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         end_time: svc.end_time.toISOString(),
       })),
       mode === 'edit' ? fiche?.id : undefined,
-    );
+    ));
     if (validation.error) throw new Error(validation.error);
 
     if (mode === 'add') {
