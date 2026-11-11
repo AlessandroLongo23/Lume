@@ -1,7 +1,10 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
+import { useHoverGlide } from '@/lib/hooks/useHoverGlide';
 import { motion, useReducedMotion } from 'motion/react';
+import { DURATION_GLIDE, EASE_GLIDE } from '@/lib/const/motion';
+import { cn } from '@/lib/utils';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ToggleButtonProps {
@@ -10,10 +13,11 @@ interface ToggleButtonProps {
   onChange: (value: any) => void;
   labels?: string[];
   icons?: React.ComponentType<any>[];
-  style?: 'flat' | 'elevated';
   className?: string;
   /** Optional stable anchor for guided tours (rendered on the radiogroup root). */
   dataTour?: string;
+  /** Accessible name of the group. */
+  ariaLabel?: string;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -23,14 +27,18 @@ export function ToggleButton({
   onChange,
   labels,
   icons,
-  style = 'flat',
-  className = '',
+  className,
   dataTour,
+  ariaLabel,
 }: ToggleButtonProps) {
   const currentValue = value ?? options[0];
   const isIconOnly = !!icons && !labels;
   const pillId = useId();
   const reduceMotion = useReducedMotion();
+  // Hover preview: a fainter pill born at the selected segment that travels
+  // to the one under the pointer (EDL's toggle group).
+  const groupRef = useRef<HTMLDivElement>(null);
+  const glowRef = useHoverGlide(groupRef, '[role="radio"]', { originSelector: '[aria-checked="true"]' });
 
   const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
     let nextIdx: number | null = null;
@@ -51,16 +59,20 @@ export function ToggleButton({
 
   return (
     <div
+      ref={groupRef}
       role="radiogroup"
+      aria-label={ariaLabel}
       data-tour={dataTour}
-      className={[
-        'inline-flex flex-row items-center rounded-lg p-[0.1875rem] gap-0.5',
-        'h-[var(--lume-control-h-md)] border border-[var(--lume-border)]',
+      // A md control: 44px on touch screens, like Button md and `control-md`.
+      className={cn(
+        // ds-ignore: 3px inset = the 1px inset edge plus 2px clear, the same 2px as the gap-0.5 between segments
+        'relative inline-flex flex-row items-center rounded-lg p-[0.1875rem] gap-0.5',
+        'h-[var(--lume-control-h-md)] pointer-coarse:h-[var(--lume-control-h-lg)] shadow-[inset_0_0_0_1px_var(--lume-edge)]',
         'bg-[var(--lume-button-secondary-bg)]',
-        style === 'elevated' ? 'shadow-[var(--shadow-sm)]' : '',
         className,
-      ].filter(Boolean).join(' ')}
+      )}
     >
+      <span ref={glowRef} className="hover-glide hover-glide--preview rounded-md" aria-hidden />
       {options.map((opt, i) => {
         const isActive = currentValue === opt;
         const Icon = icons?.[i];
@@ -84,20 +96,22 @@ export function ToggleButton({
               isIconOnly
                 ? 'aspect-square p-0'
                 : 'flex-1 px-[var(--lume-control-px-md)]',
+              // Selected is a neutral fill and full-strength text: indigo is
+              // kept for actions, not for "this one is chosen".
               isActive
-                ? 'text-[var(--lume-accent)]'
-                : 'text-[var(--lume-text-secondary)] hover:bg-[var(--lume-button-secondary-bg-hover)]',
+                ? 'text-[var(--lume-text)]'
+                : 'text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)]',
             ].join(' ')}
           >
             {isActive && (
               <motion.span
                 layoutId={`toggle-pill-${pillId}`}
                 aria-hidden
-                className="absolute inset-0 rounded-md bg-[var(--lume-accent-muted)]"
+                className="absolute inset-0 rounded-md bg-active"
                 transition={
                   reduceMotion
                     ? { duration: 0 }
-                    : { type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }
+                    : { duration: DURATION_GLIDE, ease: EASE_GLIDE }
                 }
               />
             )}

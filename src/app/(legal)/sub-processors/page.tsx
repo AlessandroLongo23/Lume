@@ -5,6 +5,7 @@ import {
   SUB_PROCESSORS,
   SUB_PROCESSORS_LAST_UPDATED,
 } from '@/lib/const/subProcessors';
+import { LegalPageHeader } from '../_components/LegalPageHeader';
 
 export const metadata: Metadata = {
   title: 'Sub-processors — Lume',
@@ -15,10 +16,7 @@ export const metadata: Metadata = {
 export default function SubProcessorsPage() {
   return (
     <>
-      <h1>Sub-processors</h1>
-      <p>
-        <em>Ultimo aggiornamento: {SUB_PROCESSORS_LAST_UPDATED}.</em>
-      </p>
+      <LegalPageHeader title="Sub-processors" meta={<>Ultimo aggiornamento: {SUB_PROCESSORS_LAST_UPDATED}.</>} />
       <p>
         Lume si avvale dei seguenti sub-responsabili del trattamento (sub-processors) per
         erogare il Servizio. Ciascun sub-responsabile &egrave; vincolato da contratto a

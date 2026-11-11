@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Tag, Gift, CreditCard, Plus, Trash2 } from 'lucide-react';
+import { Gift, CreditCard, Plus, Trash2 } from 'lucide-react';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
@@ -93,7 +93,6 @@ export default function CouponsPage() {
         <PageHeader
           title="Coupon e gift card"
           subtitle="Sconti da attivare, regali da stampare."
-          icon={Tag}
           actions={
             <>
               {activeTab === 'gift' ? (
@@ -115,36 +114,29 @@ export default function CouponsPage() {
         />
 
         {/* Tab nav */}
-        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <TabBar label="Tipi di coupon">
           {visible.map((id) => {
             const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
             const count = coupons.filter((c) => c.kind === id).length;
             return (
-              <button
+              <TabButton
                 key={id}
-                type="button"
+                active={isActive}
+                count={count > 0 ? count : undefined}
                 data-tour={id === 'gift_card' ? 'tab-gift-card' : undefined}
                 onClick={() => {
                   setActiveTab(id);
                   // Advances an interactive guide's "open the Gift card tab" step.
                   if (id === 'gift_card') emitTourEvent('gift-card:tab-open');
                 }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  isActive
-                    ? 'border-primary text-primary-hover dark:text-primary/70'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                }`}
               >
-                <Icon className="size-4" />
+                <Icon />
                 {label}
-                {count > 0 && (
-                  <NumberBadge value={count} variant={isActive ? 'primary' : 'neutral'} size="md" />
-                )}
-              </button>
+              </TabButton>
             );
           })}
-        </div>
+        </TabBar>
 
         {isLoading ? (
           <TableSkeleton />

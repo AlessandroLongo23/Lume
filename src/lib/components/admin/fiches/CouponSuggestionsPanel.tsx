@@ -14,6 +14,8 @@ import {
 } from '@/lib/utils/coupon-eligibility';
 import type { Coupon } from '@/lib/types/Coupon';
 import type { FicheServiceDraft, FicheProductDraft } from '@/lib/types/FicheDraft';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 
 export interface SelectedCoupon {
   coupon: Coupon;
@@ -125,23 +127,22 @@ export function CouponSuggestionsPanel({
 
   if (eligibleCoupons.length === 0) {
     return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-500/20 text-xs text-zinc-400">
-        <Sparkles className="size-3.5" />
+      <Callout icon={Sparkles}>
         Nessun coupon disponibile per questo cliente sui servizi/prodotti selezionati.
-      </div>
+      </Callout>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="size-3.5 text-primary" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        <Sparkles className="size-3.5 text-[var(--lume-text-muted)]" />
+        <span className="text-xs font-medium text-[var(--lume-text-secondary)]">
           Coupon disponibili
         </span>
       </div>
 
-      <div className="grid gap-2">
+      <ListBox role="list" aria-label="Coupon disponibili" className="surface-card">
         {eligibleCoupons.map((c) => {
           const isPromo = c.kind === 'gift';
           const isSelected =
@@ -156,40 +157,37 @@ export function CouponSuggestionsPanel({
           const blocked = previewAmount <= 0;
 
           const Icon = isPromo ? Gift : CreditCard;
-          const accent = isPromo
-            ? 'border-primary/30 bg-primary/5'
-            : 'border-emerald-500/30 bg-emerald-500/5';
-          const accentSelected = isPromo
-            ? 'border-primary bg-primary/10'
-            : 'border-emerald-500 bg-emerald-500/10';
-
           return (
-            <button
+            <ListRow
               key={c.id}
-              type="button"
+              asChild
+              selected={isSelected}
+              aria-pressed={isSelected}
               disabled={blocked && !isSelected}
               onClick={() => toggleCoupon(c)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
-                isSelected ? accentSelected : accent
-              } ${blocked && !isSelected ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}`}
             >
-              <Icon className={`size-4 shrink-0 ${isPromo ? 'text-primary' : 'text-emerald-500'}`} />
+              <button
+                // ds-ignore: the row element ListRow renders through asChild; ListRow's own slots would mute the coloured icon and truncate this two-column layout
+                type="button"
+                className="gap-3 py-2.5"
+              >
+              <Icon className={`size-4 shrink-0 ${isPromo ? 'text-info-strong' : 'text-success-strong'}`} />
               <div className="flex flex-col min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <span className="text-sm font-medium text-[var(--lume-text)]">
                     {isPromo ? 'Coupon' : 'Gift card'} · {c.displayDiscount()}
                   </span>
                   {c.hasUnlimitedScope ? (
-                    <span className="text-2xs uppercase tracking-wider text-zinc-400">tutto</span>
+                    <span className="text-2xs text-[var(--lume-text-muted)]">tutto</span>
                   ) : (
-                    <span className="text-2xs uppercase tracking-wider text-zinc-400">scoped</span>
+                    <span className="text-2xs text-[var(--lume-text-muted)]">scoped</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="flex items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
                   <Calendar className="size-3" />
                   <span>fino al {new Date(c.valid_until).toLocaleDateString('it-IT')}</span>
                   {blocked && (
-                    <span className="flex items-center gap-1 text-amber-500">
+                    <span className="flex items-center gap-1 text-warning-strong">
                       <Ban className="size-3" />
                       saldo o ambito a zero su questa fiche
                     </span>
@@ -197,21 +195,22 @@ export function CouponSuggestionsPanel({
                 </div>
               </div>
               <div className="flex flex-col items-end gap-0.5 shrink-0">
-                <span className={`text-sm font-mono font-semibold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-200'}`}>
+                <span className={`text-sm tabular-nums font-medium ${isSelected ? 'text-success-strong' : 'text-[var(--lume-text)]'}`}>
                   {previewAmount > 0 ? `− € ${previewAmount.toFixed(2)}` : '€ 0,00'}
                 </span>
                 {isSelected && (
-                  <span className="flex items-center gap-1 text-2xs text-emerald-600 dark:text-emerald-400">
+                  <span className="flex items-center gap-1 text-2xs text-success-strong">
                     <Check className="size-3" /> applicato
                   </span>
                 )}
               </div>
-            </button>
+              </button>
+            </ListRow>
           );
         })}
-      </div>
+      </ListBox>
 
-      <p className="text-2xs text-zinc-400">
+      <p className="text-2xs text-[var(--lume-text-muted)]">
         Massimo un coupon regalo + una gift card per fiche. Le gift card vengono applicate dopo gli altri sconti.
       </p>
     </div>

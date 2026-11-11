@@ -32,21 +32,21 @@ typography:
   display:
     fontFamily: "'Geist', 'Helvetica Neue', sans-serif"
     fontSize: "3.75rem"
-    fontWeight: 600
-    lineHeight: 1.2
-    letterSpacing: "-0.02em"
+    fontWeight: 500
+    lineHeight: 1.1
+    letterSpacing: "-0.03em"
   headline:
     fontFamily: "'Geist', 'Helvetica Neue', sans-serif"
-    fontSize: "2.25rem"
-    fontWeight: 600
+    fontSize: "1.75rem"
+    fontWeight: 500
     lineHeight: 1.2
     letterSpacing: "-0.02em"
   title:
     fontFamily: "'Geist', 'Helvetica Neue', sans-serif"
-    fontSize: "1.5rem"
-    fontWeight: 600
-    lineHeight: 1.35
-    letterSpacing: "normal"
+    fontSize: "1.25rem"
+    fontWeight: 500
+    lineHeight: 1.3
+    letterSpacing: "-0.02em"
   body:
     fontFamily: "'Geist', 'Helvetica Neue', sans-serif"
     fontSize: "1rem"
@@ -60,7 +60,7 @@ typography:
     lineHeight: 1.35
     letterSpacing: "0.04em"
   mono:
-    fontFamily: "'JetBrains Mono', 'Menlo', monospace"
+    fontFamily: "'Geist Mono', 'Menlo', monospace"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -166,21 +166,26 @@ proof, out-of-box shadcn-card-on-cream).
 
 **Key Characteristics:**
 
-- **Quietly tactile.** Buttons lift one pixel on hover, cards glow at the
-  border with `--lume-accent-muted`. Every interaction confirms itself
-  without theatrics. No bouncy elastic, no scale-115 zooms, no shimmer
-  passes.
-- **Indigo as a rare event.** Lamplight Indigo carries primary actions, the
-  one selected appointment, the focused field, the one active alert.
-  Everywhere else lives in graphite neutrals. A screen with three indigo
-  elements is a screen with a bug.
+- **Quietly exact.** Borrowed from EDL's tool work (edl.dk, edl-docs):
+  control edges are 1px shadow rings, hover and selection are translucent
+  overlays of the text colour, one highlight glides between items, a press
+  shrinks the control a hair. Every interaction confirms itself without
+  theatrics. No lift, no glow, no bouncy elastic, no shimmer passes.
+- **Indigo means "act", not "chosen".** Lamplight Indigo carries primary
+  actions, the focus ring, the one selected appointment, the one active
+  alert. Selected nav items, tabs, segments and chips are a neutral
+  overlay with full-strength text. Everywhere else lives in graphite
+  neutrals. A screen with three indigo elements is a screen with a bug.
+- **Type carries hierarchy, not weight.** Headings are weight 500 with
+  tight tracking; size and space do the rest. Numbers are mono and
+  tabular wherever they appear.
 - **Two themes, both first-class.** Light mode is the default for daytime
   reception PCs. Dark mode is built deliberately, not as a tinted inversion:
   a four-tier elevation ramp lifted off pure black, hue 265 carried through
   for "indigo-tinted graphite", chromatic feedback borders, shadow alpha
   pushed to 0.55 so depth stays visible.
-- **Italian throughout.** Geist Sans (Western Latin glyph set), JetBrains
-  Mono for prices and IDs, dates and currencies in Italian formatting. No
+- **Italian throughout.** Geist Sans (Western Latin glyph set), with
+  tabular figures for prices and IDs, dates and currencies in Italian formatting. No
   English borrowings where Italian works.
 
 ## 2. Colors: The Lamplight Palette
@@ -291,9 +296,11 @@ sizes on dense calendar grids and stay refined at hero scale. There is no
 serif in this system; the previous Cormorant Garamond display type is
 fully retired.
 
-**Mono Font:** JetBrains Mono. Used for currency amounts (1.234,56 €), IDs,
-booking codes, time stamps in the calendar gutter, and any tabular numerics
-where alignment matters more than texture.
+**Numbers:** Geist with tabular figures (`tabular-nums`), never a monospaced
+font. Currency amounts (1.234,56 €), IDs, booking codes, time stamps in the
+calendar gutter and table figures stay in the UI font; fixed-width digits keep
+columns aligned. **Mono Font:** Geist Mono, for code only (secrets, branch
+names, inline code in articles).
 
 **Character:** the pairing is one calm sans for everything that reads as
 language, and one disciplined mono for everything that reads as data. No
@@ -306,21 +313,24 @@ operator's actual task.
 Scale ratio ≥1.25 between adjacent steps so the hierarchy is felt, not
 guessed.
 
-- **Display** (Geist 600, `3.75rem` / 60px, line-height 1.2, tracking
-  -0.02em): landing page heroes only. Never inside the admin app.
-- **Headline** (Geist 600, `2.25rem` / 36px, line-height 1.2, tracking
-  -0.02em): top-of-page titles in the admin (Calendar, Clienti, Fiches).
-- **Title** (Geist 600, `1.5rem` / 24px, line-height 1.35): section
-  headings inside a page (a panel, a modal title, a settings tab).
+- **Display** (Geist 500, `3.75rem`+ / 60px+, line-height 1.1, tracking
+  -0.03em): landing page heroes only. Never inside the admin app.
+- **Headline** (Geist 500, `1.75rem` / 28px, line-height 1.2, tracking
+  -0.02em): top-of-page titles in the admin (`<PageHeader>`). No icon
+  tile beside it.
+- **Title** (Geist 500, `1.25rem` / 20px, line-height 1.3, tracking
+  -0.02em): section headings inside a page (a panel, a modal title, a
+  settings tab).
 - **Body** (Geist 400, `1rem` / 16px, line-height 1.5): default running
   text. Cap line length at 65–75ch on prose surfaces (legal, marketing,
   long-form settings copy). Tables and dashboards exempt.
-- **Label** (Geist 500, `0.6875rem` / 11px, line-height 1.35, tracking
-  0.04em): metadata, table column headers, badge text. The smallest
+- **Label** (Geist 400–500, `0.75rem` / 12px, line-height 1.35, sentence
+  case, no letter-spacing): metadata, table column headers, sidebar group
+  titles, badge text. Uppercase tracked labels are retired. The smallest
   permitted size; arbitrary `text-[9px]`/`text-[10px]` are rejected on
   accessibility grounds and removed on contact.
-- **Mono Body** (JetBrains Mono 400, `0.875rem` / 14px): currency, IDs,
-  time gutters, anything tabular.
+- **Numeric** (Geist 400 with `tabular-nums`, the size of its context):
+  currency, IDs, time gutters, anything tabular. Geist Mono only for code.
 
 ### Named Rules
 
@@ -346,7 +356,7 @@ behind a thing, not from a shadow under it. Light mode lifts surfaces by
 walking up the graphite ramp (50 → 100 → white); dark mode lifts surfaces
 by walking up the midnight ramp (148 → 192 → 232 → 295 for borders).
 Shadows exist as a secondary signal, applied only to elements that float
-above the page (popovers, dropdowns, modals, the hover-glow on `.btn-primary`).
+above the page (popovers, dropdowns, modals, the command palette).
 Cards at rest are flat, separated from the surface behind them by tone and
 border alone.
 
@@ -362,7 +372,7 @@ near-white as heavy.
 - **sm** (`var(--shadow-sm)`): cards that need to feel one tier above the
   page (`.shadow-elegant`).
 - **md** (`var(--shadow-md)`): popovers, dropdowns,
-  `.shadow-elegant-lg`, the on-hover lift of `.feature-card`.
+  `.shadow-elegant-lg`.
 - **lg** / **xl** (`var(--shadow-lg)` / `var(--shadow-xl)`): modals,
   side panels, the featured pricing card. Reserved for things that demand
   attention.
@@ -386,10 +396,76 @@ will be invisible.
 
 ## 5. Components
 
-Component philosophy in one phrase: **quietly tactile.** Every interactive
-element confirms itself with one frame of feedback (a 1px lift, a border
-shift, a soft accent-muted glow), never with a bouncy curve, never with a
-shimmer pass, never with a scale transform that pushes past 1.02.
+Component philosophy in one phrase: **quietly exact.** Every interactive
+element confirms itself with one frame of feedback (an overlay fill, an
+edge that darkens, a 0.98 press), never with a lift or glow, never with a
+bouncy curve, never with a shimmer pass, never with a scale transform that
+pushes past 1.02.
+
+### Surfaces, edges and overlays
+
+Tokens in [semantic.css](src/styles/tokens/semantic.css), exposed as
+Tailwind utilities in [globals.css](src/app/globals.css). Each rule below is
+implemented ONCE, as a recipe in
+[components.css](src/styles/components.css) (`control`, `surface-card`,
+`surface-float`, `selected`, `marker-current`, `list-row`) and in the
+components of [shared/ui](src/lib/components/shared/ui/README.md). Screens
+are built from those components; a screen that hand-writes one of these
+looks is a bug. The README is the catalog of which component does which
+job.
+
+- **The Overlay Ladder.** `--lume-hover` (pointer is here), `--lume-active`
+  (selected or pressed), `--lume-strong` (hover on selected) are the text
+  colour at 4/7/10% (light) or 6/10/14% (dark). Because they are
+  translucent they read on every surface step. Use them for every hover
+  and selection fill instead of a fixed grey.
+- **The Edge Rule.** A control's outline is an INSET ring, `box-shadow:
+  inset 0 0 0 1px var(--lume-edge)`, never a CSS border and never an outer
+  ring: an outer ring is clipped by any scrolling parent (modal bodies), and
+  a border changes the box. Hover darkens it to `--lume-edge-hover`; focus
+  turns it indigo with a 3px inner `--lume-accent-muted` halo. Fields get
+  all of this from the `control` recipe.
+- **The One-Selected Rule.** "This one is chosen" has one look everywhere:
+  the `selected` recipe (`--lume-active` fill, full-strength text, weight
+  500) on nav rows, tabs, segments, list options, date cells and chips.
+  "Today / current" without being chosen is `marker-current` (a ring, no
+  fill). Checkboxes and switches fill with the text colour. Inverted dark
+  chips and indigo washes as selection are retired.
+- **The Hairline Rule.** Dividers between rows and sections are 1px
+  `--lume-line` (text at 8%). Cards at rest sit on a `--lume-line` shadow
+  ring, no drop shadow.
+- **The Float Rule.** Menus, popovers, selects, dialogs and the command
+  palette use `--lume-surface-raised` plus `shadow-float` (a faint ring
+  and a soft drop), no CSS border. Tooltips are inverted chips (text
+  colour as the fill).
+- **The Glide Rule.** Segmented toggles (`<ToggleButton>`), tabs
+  (`<TabBar>`/`<TabButton>`) and the sidebar share one selected fill that
+  slides to the new item: `--duration-glide` 180ms, `--ease-glide`
+  `cubic-bezier(0.2, 0, 0, 1)` (the sidebar uses the spring below).
+  Reduced motion snaps.
+- **The Hover-Glide Rule.** In any list of rows (sidebar, menus, selects,
+  the command palette, toggles, tabs) hover is ONE highlight that follows
+  the pointer from row to row, fading in where the pointer enters, not a
+  fill on each row. It also follows keyboard focus and arrow-key
+  highlight. Built once in
+  [useHoverGlide.ts](src/lib/hooks/useHoverGlide.ts) plus the
+  `.hover-glide` class; rows drop their own hover background. In toggles
+  and tabs it is born at the selected item and hides over it. Motion is
+  `--ease-spring` over `--duration-spring` (500ms): EDL's measured spring
+  (stiffness 500, damping 36), 1.4% overshoot. It is the only spring in
+  the system and is reserved for this highlight and the sidebar's
+  selected fill; never for layout, entrances or the calendar grid.
+  Reduced motion keeps only the fade.
+- **The State-Dot Rule.** Success, warning and danger appear as a small
+  dot or icon beside a neutral word, not as pastel-tinted pills or
+  coloured text blocks. Colour is never the only signal.
+- **The Identity-Colour Rule.** Quiet is not colourless. Colour that helps
+  recognition stays, as soft tokenised tints: per-client and per-operator
+  avatar tints, service and category hues on appointments, chart series,
+  coloured icons where they speed up scanning. Product previews on the
+  landing page show the app in full colour, never as grey wireframes.
+  What the rules above restrict is indigo (actions and focus only) and
+  status colour (dots beside words).
 
 ### Control Sizing (the toolbar baseline)
 
@@ -448,12 +524,10 @@ off-spec; migrate on contact.
   in lock-step.
 - **Primary** (`<Button variant="primary">`): solid Lamplight Indigo
   background, white text, weight 500. Hover: shifts to
-  `--lume-button-accent-bg-hover`, lifts 1px, soft accent-muted shadow at
-  8px blur. Active: returns to baseline Y, shifts to
-  `--lume-button-accent-bg-active`. Mobile (≤768px): no Y-translate on
-  active (touch devices can't see a 1px lift).
-- **Secondary** (`<Button variant="secondary">`): white background,
-  graphite-950 text, 1px graphite-200 border. Hover: graphite-100
+  `--lume-button-accent-bg-hover`. Press: `--lume-button-accent-bg-active`
+  and scale 0.98. No lift, no glow.
+- **Secondary** (`<Button variant="secondary">`): control background,
+  graphite-950 text, `--lume-edge` shadow ring. Hover: graphite-100
   background. The default for toolbar tertiary actions, three-dots
   triggers, theme toggles.
 - **Destructive** (`<Button variant="destructive">`):
@@ -461,8 +535,8 @@ off-spec; migrate on contact.
   as Primary. Used for deletions only; destructive actions must always
   offer undo, never confirm-modal-to-final.
 - **Ghost** (`<Button variant="ghost">`): transparent background,
-  graphite-950 text, no border. Hover background: graphite-100. Used for
-  tertiary toolbar actions inside a panel.
+  secondary text, no edge. Hover: `--lume-hover` fill and full-strength
+  text. Used for tertiary toolbar actions inside a panel.
 
 ### Inputs / Fields
 
@@ -476,11 +550,11 @@ component ([FormInput.tsx](src/lib/components/shared/ui/forms/FormInput.tsx))
 uses gradient borders, `border-2`, and `font-thin` labels — all off-spec
 and to be migrated.
 
-- **Style:** `rounded-md` (8px), 1px Graphite 200 border, white background.
-  Padding 0.5rem / 0.75rem.
+- **Style:** `rounded-lg` (8px), `--lume-edge` shadow ring (no border),
+  control background. Padding 0.5rem / 0.75rem. Hover darkens the edge.
 - **Placeholder:** Graphite 400.
-- **Focus:** border shifts to Lamplight Indigo (`--lume-ring-focus`),
-  inset focus ring (`--tw-ring-inset: inset` is forced in
+- **Focus:** the edge turns Lamplight Indigo (`--lume-ring-focus`) with a
+  4px `--lume-accent-muted` halo. Native rings stay inset (`--tw-ring-inset: inset` is forced in
   [globals.css:480](src/app/globals.css#L480) so the ring never gets
   clipped by an `overflow: hidden` parent like a modal).
 - **Error:** border shifts to Danger Red 500. The error message renders
@@ -495,10 +569,10 @@ and to be migrated.
   panels.
 - **Background:** white in light mode (`--lume-surface-raised`),
   Midnight Surface in dark.
-- **Border:** 1px Graphite 200 in light, Midnight Border in dark.
-- **Shadow Strategy:** none at rest. `.feature-card`'s hover lift adds a
-  soft accent-muted glow plus `var(--shadow-md)`. Pricing card "featured"
-  variant adds `var(--shadow-xl)` and an indigo border ring.
+- **Edge:** a `--lume-line` shadow ring (see The Hairline Rule), no CSS
+  border. Clickable cards darken the ring to `--lume-edge-hover` on hover.
+- **Shadow Strategy:** none at rest, no hover lift. The featured pricing
+  card is marked by an indigo ring and the only indigo button.
 - **Internal Padding:** 1.5rem default; 2rem for pricing cards. Match the
   card's importance.
 - **Nested cards are forbidden.** A card inside a card is always a layout
@@ -509,18 +583,19 @@ and to be migrated.
 - **Style:** Graphite 100 background, Graphite 700 text, `rounded-sm`
   (4px), label typography (11px, tracking 0.04em), `0.125rem 0.5rem`
   padding.
-- **State:** selected chips swap background to Lamplight Indigo Soft,
-  text to Lamplight Indigo. No border.
+- **State:** selected chips swap to `--lume-active` with full-strength
+  text. No border, no indigo.
 - **Used for:** tag filters, table column toggles, calendar service
   category labels.
 
 ### Navigation
 
 - **Sidebar** (`--sidebar`): Graphite 50 in light, Midnight Surface in
-  dark. Items use body typography (16px, weight 400). Active item
-  background: Graphite 100 (light) / accent-muted (dark). Active item
-  text: Graphite 950 (light) / Lamplight Indigo (dark). The active
-  marker is a tonal background shift, never a side-stripe border.
+  dark. Items use 14px, weight 400, secondary text. The active item is
+  `--lume-active` with full-strength text and a 2px icon stroke (1.5 at
+  rest), the same in both themes; the fill glides to the new page. Group
+  titles are 12px sentence case in muted text. The active marker is a
+  tonal background shift, never a side-stripe border or an indigo wash.
 - **Mobile:** the sidebar collapses to a bottom-anchored sheet on
   ≤768px, never a hamburger drawer that hides primary navigation.
 
@@ -529,7 +604,7 @@ and to be migrated.
 The calendar is the home. Its visual treatment defines the system more
 than any other surface.
 
-- **Time gutter:** JetBrains Mono labels, Graphite 600 in light,
+- **Time gutter:** Geist labels with tabular figures, Graphite 600 in light,
   Midnight Text Secondary in dark. Right-aligned; trailing edge sits 12px
   from the grid line.
 - **Hour rows:** 1px Graphite 200 / Midnight Border separators. Half-hour
@@ -559,9 +634,9 @@ primary action button below. **It currently uses raw `bg-zinc-*` and
 
 ### Do:
 
-- **Do** use `.btn-primary` and `.btn-secondary` from
-  [globals.css](src/app/globals.css) for every button in the admin app.
-  They are the source of truth.
+- **Do** use `<Button>` ([Button.tsx](src/lib/components/shared/ui/Button.tsx))
+  for every button in the admin app, `<TabBar>` for tabs and
+  `<ToggleButton>` for segmented choices. They are the source of truth.
 - **Do** route every color, surface, border, and text decision through
   the `--lume-*` semantic layer. Components must never reference
   `--color-brand-primary-500` or `oklch(...)` directly.
@@ -610,8 +685,9 @@ primary action button below. **It currently uses raw `bg-zinc-*` and
 - **Don't** use `--text-[9px]`, `--text-[10px]`, or arbitrary
   pixel-sized text utilities below 11px. The 11-pixel floor is
   non-negotiable.
-- **Don't** ship with a bouncy spring or elastic easing. Use
-  `--ease-out` (quartic) or `--ease-in-out` from
+- **Don't** ship with a bouncy spring or elastic easing (the single
+  exception is the near-critical `--ease-spring` of the Hover-Glide Rule).
+  Use `--ease-out` (quartic) or `--ease-in-out` from
   [primitives.css:96](src/styles/tokens/primitives.css#L96). No
   `cubic-bezier(...)` literals in component files.
 - **Don't** reproduce any of the Anti-references named in

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AtSign, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
-import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
+import { AtSign, Lock } from 'lucide-react';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
@@ -26,7 +26,6 @@ export function AddOperatorCredentialsModal({ isOpen, onClose, operator }: AddOp
   const addCredentials = useOperatorsStore((s) => s.addCredentials);
   const [form, setForm] = useState(emptyForm());
   const [errors, setErrors] = useState(emptyErrors());
-  const [showPassword, setShowPassword] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -59,8 +58,6 @@ export function AddOperatorCredentialsModal({ isOpen, onClose, operator }: AddOp
     }
   };
 
-  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
-  const labelClass = 'flex flex-row items-center gap-2';
 
   return (
     <AddModal
@@ -69,49 +66,39 @@ export function AddOperatorCredentialsModal({ isOpen, onClose, operator }: AddOp
       onSubmit={handleSubmit}
       title="Aggiungi credenziali"
       subtitle={`Crea l'accesso per ${operator.firstName} ${operator.lastName}`}
-      icon={KeyRound}
       classes="max-w-lg"
       confirmText="Crea accesso"
       confirmDisabled={submitting}
     >
       <div className="flex flex-col gap-6">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-[var(--lume-text-secondary)]">
           L&apos;operatore potrà accedere al gestionale con questa email e password. Alla prima
           autenticazione gli verrà chiesto di cambiare la password.
         </p>
 
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email *</span></label>
-          <input
-            type="email"
-            className={inputClass}
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            autoComplete="off"
-          />
-          {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-        </div>
+        <FormInput
+          label="Email"
+          labelIcon={AtSign}
+          required
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          autoComplete="off"
+          error={errors.email || undefined}
+        />
 
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><Lock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Password *</span></label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className={inputClass}
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-            <button
-              type="button"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
-            >
-              <SwapIcon icon={showPassword ? Eye : EyeOff} className="size-5" />
-            </button>
-          </div>
-          {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-        </div>
+        {/* Shown in clear: the owner reads the generated password to hand it over. */}
+        <FormInput
+          label="Password"
+          labelIcon={Lock}
+          required
+          type="text"
+          autoComplete="off"
+          spellCheck={false}
+          value={form.password}
+          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+          error={errors.password || undefined}
+        />
       </div>
     </AddModal>
   );

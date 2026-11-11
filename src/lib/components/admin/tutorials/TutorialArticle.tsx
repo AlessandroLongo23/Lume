@@ -5,6 +5,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { Loader2 } from 'lucide-react';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import { ArticleImage, ImageLightbox, type LightboxImage } from './ImageLightbox';
 
 /**
@@ -18,21 +19,22 @@ import { ArticleImage, ImageLightbox, type LightboxImage } from './ImageLightbox
  * file falls back to the quiet "coming soon" placeholder.
  */
 const baseComponents: Components = {
-  h1: ({ children }) => <h2 className="mt-8 mb-3 text-lg font-semibold text-foreground">{children}</h2>,
-  h2: ({ children }) => <h2 className="mt-8 mb-3 text-base font-semibold text-foreground">{children}</h2>,
-  h3: ({ children }) => <h3 className="mt-6 mb-2 text-sm font-semibold text-foreground">{children}</h3>,
-  p: ({ children }) => <p className="my-3 text-sm leading-relaxed text-muted-foreground">{children}</p>,
-  ul: ({ children }) => <ul className="my-3 flex list-disc flex-col gap-1 pl-5 text-sm text-muted-foreground">{children}</ul>,
-  ol: ({ children }) => <ol className="my-3 flex list-decimal flex-col gap-1 pl-5 text-sm text-muted-foreground">{children}</ol>,
+  h1: ({ children }) => <h2 className="mt-8 mb-3 text-lg font-medium text-[var(--lume-text)]">{children}</h2>,
+  h2: ({ children }) => <h2 className="mt-8 mb-3 text-base font-medium text-[var(--lume-text)]">{children}</h2>,
+  h3: ({ children }) => <h3 className="mt-6 mb-2 text-sm font-medium text-[var(--lume-text)]">{children}</h3>,
+  p: ({ children }) => <p className="my-3 text-sm leading-relaxed text-[var(--lume-text-secondary)]">{children}</p>,
+  ul: ({ children }) => <ul className="my-3 flex list-disc flex-col gap-1 pl-5 text-sm text-[var(--lume-text-secondary)]">{children}</ul>,
+  ol: ({ children }) => <ol className="my-3 flex list-decimal flex-col gap-1 pl-5 text-sm text-[var(--lume-text-secondary)]">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   a: ({ href, children }) => (
-    <a href={href} className="text-primary underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+    <TextLink href={href ?? '#'} target="_blank" rel="noreferrer">
       {children}
-    </a>
+    </TextLink>
   ),
-  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+  strong: ({ children }) => <strong className="font-medium text-[var(--lume-text)]">{children}</strong>,
   code: ({ children }) => (
-    <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] text-foreground dark:bg-zinc-800">
+    // ds-ignore: inline code sized relative to the text around it (paragraph, list item or heading), so it needs em, not a fixed step
+    <code className="rounded-sm bg-active px-1 py-0.5 font-mono text-[0.85em] text-[var(--lume-text)]">
       {children}
     </code>
   ),
@@ -80,7 +82,7 @@ export function TutorialArticle({ slug }: { slug: string }) {
 
   if (state === 'loading') {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-[var(--lume-text-secondary)]">
         <Loader2 className="size-4 animate-spin" />
         Carico la guida…
       </div>
@@ -89,7 +91,7 @@ export function TutorialArticle({ slug }: { slug: string }) {
 
   if (state === 'missing' || !content) {
     return (
-      <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-3xl text-sm leading-relaxed text-[var(--lume-text-secondary)]">
         L’articolo con le istruzioni passo passo arriverà presto. Nel frattempo puoi seguire la guida
         interattiva qui sopra.
       </p>

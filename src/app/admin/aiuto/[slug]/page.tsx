@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, GraduationCap, PlayCircle } from 'lucide-react';
+import { PlayCircle } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { getTutorialBySlug } from '@/lib/tutorials/registry';
 import { StartGuideButton } from '@/lib/components/admin/tutorials/StartGuideButton';
@@ -14,33 +13,18 @@ export default function TutorialPage() {
   const params = useParams<{ slug: string }>();
   const tutorial = getTutorialBySlug(params.slug);
 
-  const back = (
-    <Link
-      href="/admin/aiuto"
-      className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="size-4" />
-      Torna all’aiuto
-    </Link>
-  );
+  const back = { href: '/admin/aiuto', label: 'Torna all’aiuto' };
 
   if (!tutorial) {
-    return (
-      <div className="flex flex-col gap-6">
-        {back}
-        <p className="text-muted-foreground">Tutorial non trovato.</p>
-      </div>
-    );
+    return <PageHeader back={back} title="Tutorial non trovato" />;
   }
 
   return (
     <div className="flex flex-col gap-8">
-      {back}
-
       <PageHeader
+        back={back}
         title={tutorial.title}
         subtitle={tutorial.summary}
-        icon={GraduationCap}
         actions={
           tutorial.tourId ? (
             <StartGuideButton tutorialId={tutorial.id} welcome={tutorial.welcome} />
@@ -58,7 +42,8 @@ export default function TutorialPage() {
       {tutorial.videoPath ? (
         <TutorialVideo key={tutorial.videoPath} videoPath={tutorial.videoPath} title={tutorial.title} />
       ) : (
-        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-xl border border-dashed border-[var(--lume-border)] bg-[var(--lume-surface-raised)] text-muted-foreground">
+        // ds-ignore: a dashed placeholder holding the video's spot, not a card; surface-card would swap the dashed edge for a solid hairline
+        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-xl border border-dashed border-[var(--lume-border)] bg-[var(--lume-surface-raised)] text-[var(--lume-text-secondary)]">
           <div className="flex flex-col items-center gap-2 text-sm">
             <PlayCircle className="size-8 opacity-60" />
             Video in arrivo
@@ -71,7 +56,7 @@ export default function TutorialPage() {
       {tutorial.articleSlug ? (
         <TutorialArticle key={tutorial.articleSlug} slug={tutorial.articleSlug} />
       ) : (
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+        <p className="max-w-3xl text-sm leading-relaxed text-[var(--lume-text-secondary)]">
           L’articolo con le istruzioni passo passo arriverà presto. Nel frattempo puoi seguire la guida
           interattiva qui sopra.
         </p>

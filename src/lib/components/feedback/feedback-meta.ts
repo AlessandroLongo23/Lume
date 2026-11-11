@@ -1,42 +1,34 @@
 import { Lightbulb, Bug, Sparkles, type LucideIcon } from 'lucide-react';
 import type { FeedbackStatus, FeedbackType } from '@/lib/types/FeedbackEntry';
+import type { StatusTone } from '@/lib/components/shared/ui/StatusDot';
 
+// Type is a category, not a state: icon + word in neutral text. `badge` is the
+// icon colour, kept faintly tinted so the three types stay tellable at a glance.
 export const TYPE_META: Record<FeedbackType, { label: string; icon: LucideIcon; badge: string; dot: string }> = {
   suggestion: {
     label: 'Suggerimento',
     icon: Lightbulb,
-    badge: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-    dot: 'bg-indigo-500',
+    badge: 'text-info-strong',
+    dot: 'bg-info-strong',
   },
   bug: {
     label: 'Problema',
     icon: Bug,
-    badge: 'bg-red-500/10 text-red-600 dark:text-red-400',
-    dot: 'bg-red-500',
+    badge: 'text-danger-strong',
+    dot: 'bg-danger-strong',
   },
   idea: {
     label: 'Idea',
     icon: Sparkles,
-    badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    dot: 'bg-amber-500',
+    badge: 'text-warning-strong',
+    dot: 'bg-warning-strong',
   },
 };
 
-export const STATUS_META: Record<FeedbackStatus, { label: string; badge: string }> = {
-  open: {
-    label: 'Aperto',
-    badge: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-300',
-  },
-  in_progress: {
-    label: 'In lavorazione',
-    badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  },
-  completed: {
-    label: 'Completato',
-    badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  },
-  closed: {
-    label: 'Chiuso',
-    badge: 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400',
-  },
+// Status: a dot beside a neutral word, drawn by <StatusDot tone>.
+export const STATUS_META: Record<FeedbackStatus, { label: string; tone: StatusTone }> = {
+  open: { label: 'Aperto', tone: 'neutral' },
+  in_progress: { label: 'In lavorazione', tone: 'info' },
+  completed: { label: 'Completato', tone: 'success' },
+  closed: { label: 'Chiuso', tone: 'neutral' },
 };

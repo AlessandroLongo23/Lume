@@ -2,41 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-type ControlSize = 'sm' | 'md' | 'lg';
+type ControlSize = 'sm' | 'md';
 
-const sizeConfig: Record<ControlSize, {
-  containerHeight: string;
-  arrowWidth: string;
-  iconClass: string;
-  textClass: string;
-  suffixClass: string;
-  inputPadding: string;
-}> = {
-  sm: {
-    containerHeight: 'h-[var(--lume-control-h-sm)]',
-    arrowWidth: 'w-5',
-    iconClass: 'size-3',
-    textClass: 'text-[length:var(--lume-control-text-sm)]',
-    suffixClass: 'text-xs pr-2',
-    inputPadding: 'px-[var(--lume-control-px-sm)]',
-  },
-  md: {
-    containerHeight: 'h-[var(--lume-control-h-md)]',
-    arrowWidth: 'w-6',
-    iconClass: 'size-3.5',
-    textClass: 'text-[length:var(--lume-control-text-md)]',
-    suffixClass: 'text-sm pr-2',
-    inputPadding: 'px-[var(--lume-control-px-md)]',
-  },
-  lg: {
-    containerHeight: 'h-[var(--lume-control-h-lg)]',
-    arrowWidth: 'w-7',
-    iconClass: 'size-4',
-    textClass: 'text-[length:var(--lume-control-text-lg)]',
-    suffixClass: 'text-sm pr-2',
-    inputPadding: 'px-[var(--lume-control-px-lg)]',
-  },
+const sizeConfig: Record<ControlSize, { control: string; arrowWidth: string; iconClass: string }> = {
+  sm: { control: 'control-sm', arrowWidth: 'w-5', iconClass: 'size-3' },
+  md: { control: 'control-md', arrowWidth: 'w-6', iconClass: 'size-3.5' },
 };
 
 interface NumberInputProps {
@@ -47,19 +19,27 @@ interface NumberInputProps {
   step?: number;
   min?: number;
   max?: number;
-  arrowPlacement?: 'left' | 'right';
   suffix?: string;
+  /** Wrapper classes (width); full width by default. */
   className?: string;
-  width?: string;
-  /** Number of decimal places allowed. 0 (default) = integers only. */
+  /** Fixed decimal places, shown Italian style ("35,00"). 0 (default) = integers only. */
   decimals?: number;
   size?: ControlSize;
+  /** Wired by <Field>: the label's target and its hint/error. */
+  id?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
+  'aria-label'?: string;
   /** Hide the up/down stepper arrows. Useful for money fields where stepping
    *  isn't a natural interaction (the user types the value). */
   hideSteppers?: boolean;
 }
 
 export function NumberInput({
+  id,
+  'aria-describedby': ariaDescribedBy,
+  'aria-invalid': ariaInvalid,
+  'aria-label': ariaLabel,
   value,
   onChange,
   placeholder = '',
@@ -67,24 +47,22 @@ export function NumberInput({
   step = 1,
   min,
   max,
-  arrowPlacement = 'right',
   suffix,
-  className = '',
-  width = 'w-full',
+  className,
   decimals = 0,
   size = 'md',
   hideSteppers = false,
 }: NumberInputProps) {
   const sc = sizeConfig[size];
-  const [displayValue, setDisplayValue] = useState(value?.toString() ?? '');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isFocusedRef = useRef(false);
-
+  // Italian display: comma separator, and always `decimals` places ("35,00").
   const formatValue = (v: number | null): string => {
     if (v === null || v === undefined) return '';
-    if (decimals > 0) return parseFloat(v.toFixed(decimals)).toString();
+    if (decimals > 0) return v.toFixed(decimals).replace('.', ',');
     return v.toString();
   };
+  const [displayValue, setDisplayValue] = useState(() => formatValue(value));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFocusedRef = useRef(false);
 
   useEffect(() => {
     // Don't fight the user mid-typing: a partial entry (e.g. "4" toward "45")
@@ -125,15 +103,15 @@ export function NumberInput({
     const normalised = raw.replace(',', '.');
 
     if (decimals > 0) {
-      // Allow partial decimal input (e.g. "1." while still typing)
+      // Allow partial decimal input ("1," or "1." while still typing)
       const pattern = new RegExp(`^-?\\d*(\\.\\d{0,${decimals}})?$`);
       if (!pattern.test(normalised)) return;
       const num = Number(normalised);
-      if (isNaN(num) || normalised === '.') { setDisplayValue(normalised); onChange(null); return; }
+      if (isNaN(num) || normalised === '.') { setDisplayValue(raw); onChange(null); return; }
       let final = num;
       if (min !== undefined && final < min) final = min;
       if (max !== undefined && final > max) final = max;
-      setDisplayValue(normalised); // keep raw so "1." doesn't snap while typing
+      setDisplayValue(raw); // keep what was typed so "1," doesn't snap while typing
       onChange(final);
     } else {
       if (!/^-?\d*$/.test(normalised)) return;
@@ -147,54 +125,51 @@ export function NumberInput({
     }
   };
 
-  const arrows = (
-    <div className={`flex flex-col border-zinc-500/25 items-stretch ${sc.arrowWidth} ${arrowPlacement === 'left' ? 'border-r rounded-l-md' : 'border-l rounded-r-md'}`}>
-      <button
-        type="button"
-        onClick={increment}
-        disabled={disabled}
-        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors ${arrowPlacement === 'left' ? 'rounded-tl-md' : 'rounded-tr-md'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <ChevronUp className={`${sc.iconClass} text-zinc-500 dark:text-zinc-400`} />
-      </button>
-      <button
-        type="button"
-        onClick={decrement}
-        disabled={disabled}
-        className={`flex-1 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors border-t border-zinc-500/25 ${arrowPlacement === 'left' ? 'rounded-bl-md' : 'rounded-br-md'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <ChevronDown className={`${sc.iconClass} text-zinc-500 dark:text-zinc-400`} />
-      </button>
-    </div>
-  );
+  const stepButton = 'flex-1 flex items-center justify-center hover:bg-hover active:bg-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
-    <div className={`relative ${width} ${className}`}>
-      <div className={`w-full ${sc.containerHeight} bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors flex items-stretch ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-        {!hideSteppers && arrowPlacement === 'left' && arrows}
-        <input
-          ref={inputRef}
-          type="text"
-          inputMode={decimals > 0 ? 'decimal' : 'numeric'}
-          value={displayValue}
-          placeholder={placeholder}
-          disabled={disabled}
-          onChange={handleInput}
-          onFocus={() => { isFocusedRef.current = true; }}
-          onBlur={() => { isFocusedRef.current = false; setDisplayValue(formatValue(value)); }}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowUp') { e.preventDefault(); increment(); }
-            if (e.key === 'ArrowDown') { e.preventDefault(); decrement(); }
-          }}
-          className={`text-end flex-1 min-w-0 bg-transparent border-none outline-none font-mono ${sc.textClass} ${sc.inputPadding} text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:ring-0 ${disabled ? 'cursor-not-allowed' : ''}`}
-        />
-        {suffix && (
-          <span className={`shrink-0 ${sc.suffixClass} text-zinc-400 dark:text-zinc-500 select-none self-center`} aria-hidden="true">
-            {suffix}
-          </span>
-        )}
-        {!hideSteppers && arrowPlacement === 'right' && arrows}
-      </div>
+    // The shared field surface: edge, hover, focus, invalid and the touch
+    // height come from `control`. The steppers sit flush in the right edge,
+    // 1px in so the edge stays visible on hover.
+    <div
+      aria-disabled={disabled || undefined}
+      className={cn('control flex w-full items-stretch gap-1.5', sc.control, !hideSteppers && 'pr-0!', className)}
+    >
+      <input
+        id={id}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid || undefined}
+        aria-label={ariaLabel}
+        ref={inputRef}
+        type="text"
+        inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+        value={displayValue}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={handleInput}
+        onFocus={() => { isFocusedRef.current = true; }}
+        onBlur={() => { isFocusedRef.current = false; setDisplayValue(formatValue(value)); }}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowUp') { e.preventDefault(); increment(); }
+          if (e.key === 'ArrowDown') { e.preventDefault(); decrement(); }
+        }}
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 text-end tabular-nums text-[length:inherit] text-[var(--lume-text)] outline-none placeholder:text-[var(--lume-text-muted)] focus:ring-0 shadow-none! disabled:cursor-not-allowed"
+      />
+      {suffix && (
+        <span className="shrink-0 self-center text-[var(--lume-text-muted)] select-none" aria-hidden="true">
+          {suffix}
+        </span>
+      )}
+      {!hideSteppers && (
+        <div className={cn('my-px mr-px ml-1.5 flex flex-col overflow-hidden rounded-r-[inherit] border-l border-line', sc.arrowWidth)}>
+          <button type="button" tabIndex={-1} aria-label="Aumenta" onClick={increment} disabled={disabled} className={stepButton}>
+            <ChevronUp className={cn(sc.iconClass, 'text-[var(--lume-text-muted)]')} />
+          </button>
+          <button type="button" tabIndex={-1} aria-label="Diminuisci" onClick={decrement} disabled={disabled} className={cn(stepButton, 'border-t border-line')}>
+            <ChevronDown className={cn(sc.iconClass, 'text-[var(--lume-text-muted)]')} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

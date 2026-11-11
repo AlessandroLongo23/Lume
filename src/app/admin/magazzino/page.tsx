@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Warehouse, Package, Tags, Truck, Factory, Plus, Archive, ArrowDownToLine, Trash2 } from 'lucide-react';
+import { Package, Tags, Truck, Factory, Plus, Archive, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -14,7 +14,7 @@ import { ProductModal } from '@/lib/components/admin/magazzino/ProductModal';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
 import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/DropdownMenu';
@@ -162,7 +162,6 @@ export default function MagazzinoPage() {
         <PageHeader
           title="Magazzino"
           subtitle="Sai sempre cosa c'è in scorta, e cosa sta finendo."
-          icon={Warehouse}
           actions={
             <>
               {activeTab === 'prodotti' ? (
@@ -188,7 +187,7 @@ export default function MagazzinoPage() {
         />
 
         {/* Tab nav */}
-        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <TabBar label="Sezioni del magazzino">
           {visible.map((id) => {
             const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
@@ -205,31 +204,19 @@ export default function MagazzinoPage() {
               manufacturers.length;
             const displayLabel = archivedForTab ? `${label} archiviati` : label;
             return (
-              <button
+              <TabButton
                 key={id}
-                type="button"
+                active={isActive}
                 data-tour={`tab-magazzino-${id}`}
+                count={archivedForTab ? (archivedCountForTab > 0 ? archivedCountForTab : undefined) : totalForTab}
                 onClick={() => { setActiveTab(id); emitTourEvent(`magazzino:tab-${id}`); }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  isActive
-                    ? 'border-primary text-primary-hover dark:text-primary/70'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                }`}
               >
-                <Icon className="size-4" />
+                <Icon />
                 {displayLabel}
-                {archivedForTab
-                  ? archivedCountForTab > 0 && (
-                      <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                        {archivedCountForTab}
-                      </span>
-                    )
-                  : <NumberBadge value={totalForTab} variant={isActive ? 'primary' : 'neutral'} size="md" />
-                }
-              </button>
+              </TabButton>
             );
           })}
-        </div>
+        </TabBar>
 
         {/* Tab content */}
         {activeTab === 'prodotti' && (

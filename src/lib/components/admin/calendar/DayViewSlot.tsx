@@ -222,6 +222,14 @@ export function DayViewSlot({
     if (!isOccupied) onSlotSelected({ operator, datetime });
   }
 
+  // An empty slot is a focusable button: Enter and Space book it, like a click.
+  function handleSlotKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    onSlotSelected({ operator, datetime });
+  }
+  const slotLabel = `Nuova fiche: ${operator.firstName}, ${datetime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     // Only the empty-cell area handles the create-unavailability gesture.
     if (isOccupied || !onCreateUnavailability) return;
@@ -286,23 +294,31 @@ export function DayViewSlot({
     window.addEventListener('pointerup', onUp);
   }
 
+  // Closed time reads as a faint diagonal hatch drawn in the hairline colour;
+  // hours outside the salon schedule use the same hatch tinted with warning.
   const closedHoursStyle = isDisabled && !isPast
     ? {
         backgroundImage: isExtendedHours
-          ? 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(245,158,11,0.12) 3px, rgba(245,158,11,0.12) 5px)'
-          : 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 5px)',
+          ? 'repeating-linear-gradient(-45deg, color-mix(in oklab, var(--lume-warning-fg) 16%, transparent) 0 1px, transparent 1px 6px)'
+          : 'repeating-linear-gradient(-45deg, var(--lume-line) 0 1px, transparent 1px 6px)',
       }
     : undefined;
 
+  // Past time gets the faintest possible tint; the now-line already marks the boundary.
   const baseBg = isPast
-    ? 'bg-zinc-100 dark:bg-zinc-800/80'
+    ? 'bg-[color-mix(in_oklab,var(--lume-text)_2.5%,transparent)]'
     : isExtendedHours
-      ? 'bg-amber-500/5 dark:bg-amber-500/10'
-      : isDisabled
-        ? 'bg-zinc-50 dark:bg-zinc-800/40'
-        : isOccupied && !hasBlocksHere
-          ? 'bg-zinc-50 dark:bg-zinc-800/50'
-          : 'bg-white dark:bg-zinc-900';
+      ? 'bg-[color-mix(in_oklab,var(--lume-warning-fg)_4%,transparent)]'
+      : '';
+
+  // Hour lines are hairlines, half hours a faint dash, other steps almost invisible.
+  const minutes = datetime.getMinutes();
+  const rowLine =
+    minutes === 0
+      ? 'border-line'
+      : minutes === 30
+        ? 'border-dashed border-line'
+        : 'border-[color-mix(in_oklab,var(--lume-text)_3.5%,transparent)]';
 
   const slotTooltip = isPast
     ? 'Slot passato — clicca per registrare retroattivamente'
@@ -316,17 +332,20 @@ export function DayViewSlot({
       data-cal-slot
       data-cal-operator={operator.id}
       data-cal-time={datetime.toISOString()}
-      className={`flex items-center relative w-full h-8 border-t ${
-        datetime.getMinutes() === 0 ? 'border-zinc-500/50' : 'border-zinc-500/25'
-      } ${baseBg}`}
+      className={`flex items-center relative w-full h-8 border-t ${rowLine} ${baseBg} ${
+        isOccupied
+          ? ''
+          // ds-ignore: an empty calendar grid cell, not a list row; the fill marks the slot a click will book
+          : 'hover:bg-hover focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--lume-ring-focus)]'
+      }`}
       style={closedHoursStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      {...(!isOccupied && { role: 'button', tabIndex: 0 })}
+      {...(!isOccupied && { role: 'button', tabIndex: 0, 'aria-label': slotLabel, onKeyDown: handleSlotKeyDown })}
     >
       {/* Invalid drop highlight overlay */}
       {isInvalidPreviewZone && (
-        <div className="absolute inset-0 bg-red-500/15 pointer-events-none z-content-floating" />
+        <div className="absolute inset-0 bg-[color-mix(in_oklab,var(--lume-danger-fg)_14%,transparent)] pointer-events-none z-content-floating" />
       )}
 
       {/* Live preview band while the user click-drags an unavailability */}
@@ -335,12 +354,13 @@ export function DayViewSlot({
           className="absolute inset-0 pointer-events-none z-content-floating"
           style={{
             backgroundImage:
-              'repeating-linear-gradient(-45deg, rgba(99,102,241,0.18), rgba(99,102,241,0.18) 4px, transparent 4px, transparent 8px)',
+              'repeating-linear-gradient(-45deg, color-mix(in oklab, var(--lume-accent) 22%, transparent) 0 4px, transparent 4px 8px)',
           }}
         />
       )}
 
       <div
+        // ds-ignore: calendar slot cell, a click-and-drag surface that also hosts fiche blocks, so it cannot be a button; keyboard users create a fiche with Nuova fiche in the command menu (Cmd+K) or on the Fiches page
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
           isOccupied ? '' : 'cursor-pointer'
         }`}
@@ -370,7 +390,7 @@ export function DayViewSlot({
           />
         ))}
         {isOccupied && !hasBlocksHere && unavailStartingHere.length === 0 && <div className="w-full h-full" />}
-        {!isOccupied && isHovered && <Plus size={16} className="text-zinc-400" />}
+        {!isOccupied && isHovered && <Plus size={14} aria-hidden className="text-[var(--lume-text-muted)]" />}
       </div>
     </div>
     </Tooltip>

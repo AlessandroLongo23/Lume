@@ -2,7 +2,11 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { Button } from '@/lib/components/shared/ui/Button';
+import './globals.css';
 
+// Replaces the root layout when it fails, so it loads the global styles itself
+// (tokens included). Geist is not loaded here: the system sans stands in.
 export default function GlobalError({
   error,
   reset,
@@ -17,82 +21,29 @@ export default function GlobalError({
   return (
     <html lang="it">
       <body
-        style={{
-          margin: 0,
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '3rem 1.5rem',
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          background: '#fafafa',
-          color: '#18181b',
-        }}
+        className="min-h-dvh flex items-center justify-center px-4 py-12 bg-[var(--lume-bg)] text-[var(--lume-text)]"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
       >
-        <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
-          <div
-            style={{
-              fontSize: '3rem',
-              fontWeight: 600,
-              color: '#6366F1',
-              marginBottom: '0.5rem',
-            }}
-          >
-            500
+        <title>Qualcosa è andato storto · Lume</title>
+        <main className="w-full max-w-lg flex flex-col gap-8">
+          <div className="flex flex-col gap-3">
+            <span className="tabular-nums text-sm text-[var(--lume-text-muted)]">Errore 500</span>
+            <h1 className="text-3xl sm:text-4xl leading-tight font-medium tracking-tight text-balance">
+              Qualcosa è andato storto
+            </h1>
+            <p className="text-base leading-relaxed text-[var(--lume-text-secondary)]">
+              Si è verificato un errore critico. Prova a ricaricare la pagina o torna alla homepage.
+            </p>
           </div>
-          <h1
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: 600,
-              margin: '0 0 0.75rem',
-            }}
-          >
-            Qualcosa è andato storto
-          </h1>
-          <p style={{ color: '#52525b', margin: '0 0 2rem' }}>
-            Si è verificato un errore critico. Prova a ricaricare la pagina o
-            torna alla homepage.
-          </p>
-          <div
-            style={{
-              display: 'flex',
-              gap: '0.75rem',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <button
-              type="button"
-              onClick={reset}
-              style={{
-                border: 'none',
-                borderRadius: '0.5rem',
-                padding: '0.625rem 1.25rem',
-                background: '#6366F1',
-                color: 'white',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
-            >
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="primary" size="lg" onClick={reset}>
               Ricarica
-            </button>
-            <Link
-              href="/"
-              style={{
-                borderRadius: '0.5rem',
-                padding: '0.625rem 1.25rem',
-                background: 'white',
-                color: '#18181b',
-                fontWeight: 500,
-                textDecoration: 'none',
-                border: '1px solid #e4e4e7',
-              }}
-            >
-              Torna alla homepage
-            </Link>
+            </Button>
+            <Button variant="secondary" size="lg" asChild>
+              <Link href="/">Torna alla homepage</Link>
+            </Button>
           </div>
-        </div>
+        </main>
       </body>
     </html>
   );

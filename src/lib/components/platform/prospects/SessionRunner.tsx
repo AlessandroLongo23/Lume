@@ -23,6 +23,12 @@ import {
 import Link from 'next/link';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
+import { DateTimeField } from '@/lib/components/shared/ui/forms/DateTimeField';
+import { Kbd } from '@/lib/components/shared/ui/Kbd';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProspectsStore } from '@/lib/stores/prospects';
 import { Prospect, type ProspectStatus, STATUS_LABEL } from '@/lib/types/Prospect';
@@ -43,13 +49,16 @@ const ACTION_BUTTONS: { key: string; label: string; status: ProspectStatus | 'ca
   { key: '7', label: 'Cliente',          status: 'signed_up',          icon: Trophy,       tone: 'success' },
 ];
 
-const TONE_CLASSES: Record<'neutral' | 'warning' | 'danger' | 'accent' | 'success', string> = {
-  neutral: 'border-border bg-card hover:bg-muted/60 text-foreground',
-  warning: 'border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)] hover:brightness-95 text-[var(--lume-warning-fg)]',
-  danger:  'border-[var(--lume-danger-border)]  bg-[var(--lume-danger-bg)]  hover:brightness-95 text-[var(--lume-danger-fg)]',
-  accent:  'border-[var(--lume-accent-light)]   bg-[var(--lume-accent-light)] hover:brightness-95 text-[var(--lume-accent-dark)]',
-  success: 'border-[var(--lume-success-border)] bg-[var(--lume-success-bg)] hover:brightness-95 text-[var(--lume-success-fg)]',
+// Every action button is the same neutral control; the tone only tints the
+// icon, so the grid reads as a set of choices and not a wall of colour.
+const TONE_ICON: Record<'neutral' | 'warning' | 'danger' | 'accent' | 'success', string> = {
+  neutral: 'text-[var(--lume-text-secondary)]',
+  warning: 'text-warning-strong',
+  danger:  'text-danger-strong',
+  accent:  'text-[var(--lume-accent)]',
+  success: 'text-success-strong',
 };
+
 
 export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
   const update = useProspectsStore((s) => s.update);
@@ -177,16 +186,17 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
   if (!current || index >= queue.length) {
     return (
       <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-4 py-20 text-center">
-        <Trophy className="size-12 text-[var(--lume-success-fg)]" />
-        <h2 className="text-xl font-semibold text-foreground">Sessione completata</h2>
-        <p className="text-sm text-muted-foreground">
+        <Trophy className="size-12 text-success-strong" />
+        <h2 className="text-xl font-medium tracking-tight text-[var(--lume-text)]">Sessione completata</h2>
+        <p className="text-sm text-[var(--lume-text-secondary)]">
           Hai chiamato {queue.length} prospect{queue.length === 1 ? '' : ''}. Buon lavoro.
         </p>
-        <Link href="/platform/prospects" className="mt-2">
-          <Button variant="primary" leadingIcon={PanelsTopLeft}>
+        <Button asChild variant="primary" className="mt-2">
+          <Link href="/platform/prospects">
+            <PanelsTopLeft aria-hidden />
             Torna alla lista
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -200,20 +210,23 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/platform/prospects">
-          <Button variant="ghost" size="sm" leadingIcon={PanelsTopLeft}>Lista</Button>
-        </Link>
+        <Button asChild variant="ghost" size="sm" className="max-md:h-11">
+          <Link href="/platform/prospects">
+            <PanelsTopLeft aria-hidden />
+            Lista
+          </Link>
+        </Button>
         <div className="flex-1 max-w-xs">
-          <div className="text-xs text-muted-foreground tabular-nums text-center mb-1">
+          <div className="text-xs text-[var(--lume-text-secondary)] tabular-nums text-center mb-1">
             {index + 1} di {queue.length}
             {queue.length > 0 && (
               <span className="mx-2">·</span>
             )}
             <span>{Math.round(progress)}%</span>
           </div>
-          <div className="h-1 rounded-full bg-muted overflow-hidden">
+          <div className="h-1 rounded-full bg-active overflow-hidden">
             <div
-              className="h-full bg-[var(--lume-accent)] transition-all"
+              className="h-full bg-[var(--lume-text)] transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -229,38 +242,28 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="mx-auto max-w-3xl rounded-xl border border-border bg-card shadow-sm p-6 md:p-8 space-y-6">
+        <div className="surface-card mx-auto max-w-3xl p-5 md:p-8 space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl font-semibold text-foreground truncate">
-                {current.name}
-              </h1>
-              {current.cityProvince && (
-                <div className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="size-4" />
-                  <span>{current.cityProvince}</span>
-                  {current.region && <span>· {current.region}</span>}
-                </div>
-              )}
-            </div>
-            <ProspectStatusChip status={current.status} />
-          </div>
+          <PageHeader
+            title={current.name}
+            subtitle={current.cityProvince ? (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="size-4" aria-hidden />
+                <span>{current.cityProvince}</span>
+                {current.region && <span>· {current.region}</span>}
+              </span>
+            ) : undefined}
+            actions={<ProspectStatusChip status={current.status} />}
+          />
 
           {/* Callback indicator */}
           {current.callback_at && (
-            <div className={cn(
-              'rounded-lg border px-4 py-3 text-sm flex items-center gap-2',
-              callbackOverdue
-                ? 'border-[var(--lume-danger-border)] bg-[var(--lume-danger-bg)] text-[var(--lume-danger-fg)]'
-                : 'border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)] text-[var(--lume-warning-fg)]',
-            )}>
-              <CalendarClock className="size-4" />
-              <span>
-                Da richiamare il <strong className="tabular-nums">{new Date(current.callback_at).toLocaleString('it-IT')}</strong>
+            <Callout tone={callbackOverdue ? 'danger' : 'warning'} icon={CalendarClock}>
+              <span className="text-[var(--lume-text)]">
+                Da richiamare il <strong className="tabular-nums font-medium">{new Date(current.callback_at).toLocaleString('it-IT')}</strong>
                 {callbackOverdue && ' (scaduto)'}
               </span>
-            </div>
+            </Callout>
           )}
 
           {/* Contact grid */}
@@ -276,20 +279,20 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
           </div>
 
           {current.google_maps_url && (
-            <a
+            <TextLink
               href={current.google_maps_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-[var(--lume-accent)] hover:text-[var(--lume-accent-dark)] transition-colors"
+              className="inline-flex items-center gap-2 min-h-11 md:min-h-0 text-sm"
             >
-              <ExternalLink className="size-4" />
+              <ExternalLink className="size-4" aria-hidden />
               Apri su Google Maps
-            </a>
+            </TextLink>
           )}
 
           {current.notes && (
-            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide mb-1">
+            <div className="rounded-lg bg-hover p-3 text-sm text-[var(--lume-text)]">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)] mb-1">
                 <StickyNote className="size-3.5" />
                 Note
               </div>
@@ -302,18 +305,21 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
               {ACTION_BUTTONS.map((a) => (
                 <button
+                  // ds-ignore: call-outcome tile, a tall stacked choice (icon, label, shortcut key) on the control recipe; Button is a fixed-height single row
+                  type="button"
                   key={a.label}
                   onClick={() => handleAction(a.status)}
                   disabled={working}
                   className={cn(
-                    'flex flex-col items-center gap-1.5 px-3 py-3 rounded-lg border text-sm font-medium transition-all',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                    TONE_CLASSES[a.tone],
+                    // A big choice tile on the field surface: edge, hover and
+                    // focus come from the control recipe.
+                    'control flex flex-col items-center gap-1.5 px-3 py-3 text-sm font-medium',
+                    'active:scale-[0.98] motion-reduce:active:scale-100',
                   )}
                 >
-                  <a.icon className="size-5" />
+                  <a.icon className={cn('size-5', TONE_ICON[a.tone])} />
                   <span>{a.label}</span>
-                  <span className="text-2xs opacity-60 font-mono tabular-nums">{a.key}</span>
+                  <Kbd className="tabular-nums">{a.key}</Kbd>
                 </button>
               ))}
             </div>
@@ -321,21 +327,20 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
 
           {/* Inline callback form */}
           {callbackOpen && (
-            <div className="rounded-lg border border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)]/40 p-4 space-y-3">
+            <div className="rounded-lg bg-hover p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground inline-flex items-center gap-2">
-                  <CalendarClock className="size-4 text-[var(--lume-warning-fg)]" />
+                <h3 className="text-sm font-medium tracking-tight text-[var(--lume-text)] inline-flex items-center gap-2">
+                  <CalendarClock className="size-4 text-warning-strong" />
                   Programma richiamo
                 </h3>
                 <Button variant="ghost" size="sm" iconOnly aria-label="Chiudi" onClick={() => setCallbackOpen(false)}>
                   <X />
                 </Button>
               </div>
-              <input
-                type="datetime-local"
+              <DateTimeField
                 value={callbackAt}
-                onChange={(e) => setCallbackAt(e.target.value)}
-                className="w-full rounded-md border bg-card text-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm"
+                onChange={setCallbackAt}
+                aria-label="Data e ora del richiamo"
               />
               <div className="flex justify-end gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setCallbackOpen(false)}>Annulla</Button>
@@ -348,10 +353,10 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
 
           {/* Inline interested form */}
           {interestedOpen && (
-            <div className="rounded-lg border border-[var(--lume-accent-light)] bg-[var(--lume-accent-light)]/40 p-4 space-y-3">
+            <div className="rounded-lg bg-hover p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground inline-flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-[var(--lume-accent)]" />
+                <h3 className="text-sm font-medium tracking-tight text-[var(--lume-text)] inline-flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-success-strong" />
                   Marcalo come interessato
                 </h3>
                 <Button variant="ghost" size="sm" iconOnly aria-label="Chiudi" onClick={() => setInterestedOpen(false)}>
@@ -372,16 +377,14 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
                 onChange={(e) => setOwnerName(e.target.value)}
                 placeholder="Mario Rossi"
               />
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">Nota rapida</label>
-                <textarea
-                  value={interestedNote}
-                  onChange={(e) => setInterestedNote(e.target.value)}
-                  placeholder="Cosa hai concordato?"
-                  rows={2}
-                  className="w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm"
-                />
-              </div>
+              <TextArea
+                id="interested-note"
+                label="Nota rapida"
+                value={interestedNote}
+                onChange={(e) => setInterestedNote(e.target.value)}
+                placeholder="Cosa hai concordato?"
+                rows={2}
+              />
               <div className="flex justify-end gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setInterestedOpen(false)}>Annulla</Button>
                 <Button variant="primary" size="sm" leadingIcon={Check} onClick={submitInterested} disabled={working}>
@@ -391,21 +394,21 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
             </div>
           )}
 
-          <div className="border-t border-border pt-4 text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+          <div className="border-t border-line pt-4 text-xs text-[var(--lume-text-secondary)] hidden md:flex items-center gap-3 flex-wrap">
             <span>Tasti rapidi:</span>
             {ACTION_BUTTONS.map((a) => (
               <span key={a.key} className="inline-flex items-center gap-1">
-                <kbd className="font-mono text-2xs px-1.5 py-0.5 rounded bg-muted border border-border">{a.key}</kbd>
+                <Kbd className="tabular-nums">{a.key}</Kbd>
                 <span>{a.label}</span>
               </span>
             ))}
             <span className="ml-auto inline-flex items-center gap-1">
-              <kbd className="font-mono text-2xs px-1.5 py-0.5 rounded bg-muted border border-border">→</kbd>
+              <Kbd>→</Kbd>
               salta
             </span>
           </div>
 
-          <div className="text-2xs text-muted-foreground/70 italic">
+          <div className="text-xs text-[var(--lume-text-muted)]">
             Stato attuale: {STATUS_LABEL[current.status]}
           </div>
         </div>
@@ -416,23 +419,23 @@ export function SessionRunner({ queue: initialQueue }: SessionRunnerProps) {
 
 function ContactRow({ icon: Icon, label, value, whatsapp }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string | null; whatsapp: string | null }) {
   return (
-    <div className="rounded-md border border-border bg-card px-3 py-2 flex items-center gap-2.5">
-      <Icon className="size-4 text-muted-foreground shrink-0" />
+    <div className="surface-card rounded-lg px-3 py-2 flex items-center gap-2.5">
+      <Icon className="size-4 text-[var(--lume-text-muted)] shrink-0" />
       <div className="flex-1 min-w-0">
-        <div className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</div>
-        <div className="text-sm text-foreground tabular-nums truncate">
-          {value ?? <span className="italic text-muted-foreground">—</span>}
+        <div className="text-xs text-[var(--lume-text-secondary)]">{label}</div>
+        <div className="text-sm text-[var(--lume-text)] tabular-nums truncate">
+          {value ?? <span className="text-[var(--lume-text-muted)]">—</span>}
         </div>
       </div>
       {whatsapp && (
-        <a
+        <TextLink
           href={whatsapp}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-[var(--lume-success-fg)] hover:underline shrink-0"
+          className="inline-flex items-center min-h-11 md:min-h-0 text-xs shrink-0"
         >
           WhatsApp
-        </a>
+        </TextLink>
       )}
     </div>
   );
@@ -440,9 +443,9 @@ function ContactRow({ icon: Icon, label, value, whatsapp }: { icon: React.Compon
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border bg-card px-3 py-2">
-      <div className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm text-foreground truncate">{value}</div>
+    <div className="surface-card rounded-lg px-3 py-2">
+      <div className="text-xs text-[var(--lume-text-secondary)]">{label}</div>
+      <div className="text-sm text-[var(--lume-text)] truncate">{value}</div>
     </div>
   );
 }

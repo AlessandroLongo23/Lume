@@ -4,6 +4,9 @@ import { ALargeSmall, Tag, Clock, Euro, FileText, ShoppingCart } from 'lucide-re
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import type { Service } from '@/lib/types/Service';
 
 export type ServiceFormValue = Partial<Service>;
@@ -16,8 +19,6 @@ interface ServiceFormProps {
   errors?: ServiceFormErrors;
 }
 
-const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
-const labelClass = 'flex flex-row items-center gap-2';
 
 export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
   const categories = useServiceCategoriesStore((s) => s.service_categories);
@@ -26,44 +27,57 @@ export function ServiceForm({ value, onChange, errors }: ServiceFormProps) {
   return (
     <div className="flex flex-col gap-4" data-tour="service-form">
       <div className="flex flex-row gap-4 flex-wrap">
-        <div className="flex flex-1 min-w-48 flex-col gap-2">
-          <label className={labelClass}><ALargeSmall className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-          <input type="text" className={inputClass} value={value.name ?? ''} onChange={(e) => set('name', e.target.value)} data-tour="field-service-name" />
-          {errors?.name && <p className="text-xs text-red-500">{errors.name}</p>}
-        </div>
-        <div className="flex flex-1 min-w-48 flex-col gap-2">
-          <label className={labelClass}><Tag className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Categoria *</span></label>
-          <Select
-            options={categories}
-            labelKey="name"
-            valueKey="id"
-            value={value.category_id ?? ''}
-            onChange={(v) => set('category_id', v ?? '')}
-            placeholder="Seleziona categoria"
-          />
-          {errors?.category_id && <p className="text-xs text-red-500">{errors.category_id}</p>}
-        </div>
+        <FormInput
+          fieldClassName="flex-1 min-w-48"
+          label="Nome"
+          labelIcon={ALargeSmall}
+          required
+          value={value.name ?? ''}
+          onChange={(e) => set('name', e.target.value)}
+          data-tour="field-service-name"
+          error={errors?.name || undefined}
+        />
+        <Field label="Categoria" labelIcon={Tag} required className="flex-1 min-w-48" error={errors?.category_id || undefined}>
+          {({ id }) => (
+            <Select
+              id={id}
+              options={categories}
+              labelKey="name"
+              valueKey="id"
+              value={value.category_id ?? ''}
+              onChange={(v) => set('category_id', v ?? '')}
+              placeholder="Seleziona categoria"
+            />
+          )}
+        </Field>
       </div>
 
       <div className="flex flex-row gap-4 flex-wrap">
-        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-duration">
-          <label className={labelClass}><Clock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Durata (min)</span></label>
-          <NumberInput value={value.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
+        <div className="flex-1 min-w-32" data-tour="field-service-duration">
+          <Field label="Durata (min)" labelIcon={Clock}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.duration ?? 30} onChange={(v) => set('duration', v ?? 30)} min={1} step={5} />
+            )}
+          </Field>
         </div>
-        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-price">
-          <label className={labelClass}><Euro className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Prezzo</span></label>
-          <NumberInput value={value.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
-          {errors?.price && <p className="text-xs text-red-500">{errors.price}</p>}
+        <div className="flex-1 min-w-32" data-tour="field-service-price">
+          <Field label="Prezzo" labelIcon={Euro} error={errors?.price || undefined}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.price ?? 0} onChange={(v) => set('price', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
+            )}
+          </Field>
         </div>
-        <div className="flex flex-1 min-w-32 flex-col gap-2" data-tour="field-service-product_cost">
-          <label className={labelClass}><ShoppingCart className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Costo prodotti</span></label>
-          <NumberInput value={value.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
+        <div className="flex-1 min-w-32" data-tour="field-service-product_cost">
+          <Field label="Costo prodotti" labelIcon={ShoppingCart}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.product_cost ?? 0} onChange={(v) => set('product_cost', v ?? 0)} min={0} step={0.01} suffix="€" decimals={2} />
+            )}
+          </Field>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2" data-tour="field-service-description">
-        <label className={labelClass}><FileText className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Descrizione</span></label>
-        <textarea className={inputClass} rows={3} value={value.description ?? ''} onChange={(e) => set('description', e.target.value)} />
+      <div data-tour="field-service-description">
+        <TextArea label="Descrizione" labelIcon={FileText} rows={3} value={value.description ?? ''} onChange={(e) => set('description', e.target.value)} />
       </div>
     </div>
   );

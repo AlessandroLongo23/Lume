@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { useListNavigation } from '@/lib/hooks/useListNavigation';
+import { DURATION } from '@/lib/const/motion';
 import {
   useSidebarCollapseContext,
   useSidebarForceExpanded,
@@ -20,38 +25,30 @@ function getInitials(name: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-function SalonAvatar({
-  name,
-  logoUrl,
-  size = 32,
-}: {
-  name: string;
-  logoUrl: string | null;
-  size?: number;
-}) {
+// 32px square: the logo, or the initials on the neutral fill (same as HeroAvatar;
+// indigo is for actions).
+function SalonAvatar({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   if (logoUrl) {
     return (
       <Image
         src={logoUrl}
         alt={name}
-        width={size}
-        height={size}
-        className="rounded-md object-cover border border-zinc-200 dark:border-zinc-700"
-        style={{ width: size, height: size }}
+        width={32}
+        height={32}
+        className="size-8 shrink-0 rounded-md object-cover"
       />
     );
   }
   return (
-    <span
-      className="rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0"
-      style={{ width: size, height: size }}
-    >
-      <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
+    <span className="size-8 rounded-md bg-active flex items-center justify-center shrink-0">
+      <span className="text-xs font-medium text-[var(--lume-text-secondary)] leading-none">
         {getInitials(name)}
       </span>
     </span>
   );
 }
+
+const PANEL_MIN_WIDTH = 240;
 
 function roleLabel(role: WorkspaceContext['role']): string {
   if (role === 'owner') return 'Titolare';
@@ -73,10 +70,8 @@ export function SalonSwitcher() {
   const effectiveCollapsed = forceExpanded ? false : collapsed;
 
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<string | null>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const hasSwitcher = !isAdmin && businessContexts.length > 1;
 
@@ -87,50 +82,24 @@ export function SalonSwitcher() {
   const displayName = active?.salonName ?? fallbackSalonName ?? '';
   const displayLogoUrl = active?.logoUrl ?? fallbackLogoUrl ?? null;
 
-  useLayoutEffect(() => {
-    if (!open || !hasSwitcher || !triggerRef.current) return;
-    const update = () => {
-      const rect = triggerRef.current!.getBoundingClientRect();
-      if (effectiveCollapsed) {
-        setPos({ top: rect.top, left: rect.right + 8, width: 260 });
-      } else {
-        setPos({ top: rect.bottom + 6, left: rect.left, width: Math.max(rect.width, 240) });
-      }
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [open, hasSwitcher, effectiveCollapsed]);
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: businessContexts.length * 48 + 16,
+    offset: 6,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    function handleMouseDown(e: MouseEvent) {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
-      setOpen(false);
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [open]);
+  const nav = useListNavigation({
+    count: businessContexts.length,
+    onPick: (i) => void handleSelect(businessContexts[i].salonId),
+    onEscape: hide,
+    listRef,
+  });
 
   if (!displayName) return null;
 
   async function handleSelect(salonId: string) {
     if (pending) return;
     if (salonId === activeSalonId) {
-      setOpen(false);
+      hide();
       return;
     }
     setPending(salonId);
@@ -157,8 +126,8 @@ export function SalonSwitcher() {
             initial={{ opacity: 0, width: 0, marginLeft: 0 }}
             animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate whitespace-nowrap flex-1 min-w-0 text-left"
+            transition={{ duration: DURATION.base, ease: 'easeOut' }}
+            className="text-sm font-medium tracking-tight text-[var(--lume-text)] truncate whitespace-nowrap flex-1 min-w-0 text-left"
           >
             {displayName}
           </motion.span>
@@ -172,10 +141,10 @@ export function SalonSwitcher() {
               initial={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
               animate={{ opacity: 1, width: 'auto', marginLeft: 8, marginRight: 4 }}
               exit={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              transition={{ duration: DURATION.base, ease: 'easeOut' }}
               className="shrink-0 overflow-hidden"
             >
-              <ChevronsUpDown className="w-4 h-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+              <ChevronsUpDown className="size-4 text-[var(--lume-text-muted)]" strokeWidth={1.5} aria-hidden />
             </motion.span>
           )}
         </AnimatePresence>
@@ -194,64 +163,75 @@ export function SalonSwitcher() {
   return (
     <>
       <button
+        // ds-ignore: a sidebar rail row (salon logo and name); the rail's hover glide paints its hover, where Button would paint its own fill and control height
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { nav.setActive(-1); toggle(); }}
+        onKeyDown={open ? nav.onKeyDown : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Cambia salone, attualmente ${displayName}`}
-        className="w-full flex items-center justify-start min-w-0 overflow-hidden rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        // A row of the sidebar rail: its hover glide paints the hover (data-nav-row).
+        data-nav-row=""
+        className="relative w-full flex items-center justify-start min-w-0 overflow-hidden rounded-lg cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]"
       >
         {identityRow}
       </button>
-      {open && pos && (
-        <Portal>
-          <div
-            ref={panelRef}
-            role="listbox"
-            aria-label="Seleziona un salone"
-            className="fixed rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-dropdown py-1"
-            style={{ top: pos.top, left: pos.left, width: pos.width }}
-          >
-            {businessContexts.map((ctx) => {
-              const isActive = ctx.salonId === activeSalonId;
-              const isPending = pending === ctx.salonId;
-              return (
-                <button
-                  key={ctx.salonId}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  disabled={!!pending}
-                  onClick={() => handleSelect(ctx.salonId)}
-                  className={`flex items-center gap-3 w-full px-3 py-2 text-left transition-colors cursor-pointer disabled:cursor-default ${
-                    isActive
-                      ? 'bg-primary/10 dark:bg-primary/15'
-                      : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <SalonAvatar name={ctx.salonName} logoUrl={ctx.logoUrl} />
-                  <div className="flex flex-col items-start min-w-0 flex-1 leading-tight">
-                    <span className="text-sm font-medium text-zinc-900 dark:text-white truncate w-full">
-                      {ctx.salonName}
-                    </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {roleLabel(ctx.role)}
-                    </span>
-                  </div>
-                  <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                    {isPending
-                      ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      : isActive
-                        ? <Check className="w-4 h-4 text-primary" strokeWidth={2} />
-                        : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </Portal>
-      )}
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              layer="dropdown"
+              style={{
+                position: 'fixed',
+                left: position.left,
+                top: position.top,
+                bottom: position.bottom,
+                // The collapsed trigger is 40px wide: the list keeps a readable width.
+                width: effectiveCollapsed ? PANEL_MIN_WIDTH + 20 : Math.max(position.width, PANEL_MIN_WIDTH),
+              }}
+            >
+              <ListBox ref={listRef} role="listbox" aria-label="Seleziona un salone" onKeyDown={nav.onKeyDown}>
+                {businessContexts.map((ctx, i) => {
+                  const isActive = ctx.salonId === activeSalonId;
+                  const isPending = pending === ctx.salonId;
+                  return (
+                    <ListRow
+                      key={ctx.salonId}
+                      selected={isActive}
+                      highlighted={nav.active === i}
+                      disabled={!!pending && !isPending}
+                      aria-busy={isPending || undefined}
+                      onMouseEnter={() => nav.setActive(i)}
+                      onClick={() => handleSelect(ctx.salonId)}
+                      trailing={
+                        <span className="size-4 flex items-center justify-center shrink-0">
+                          {isPending
+                            ? <Loader2 className="size-4 animate-spin text-[var(--lume-text-muted)]" aria-hidden />
+                            : isActive
+                              ? <Check className="size-4 text-[var(--lume-text)]" strokeWidth={2} aria-hidden />
+                              : null}
+                        </span>
+                      }
+                      className="min-h-11 px-2"
+                    >
+                      <span className="flex items-center gap-3">
+                        <SalonAvatar name={ctx.salonName} logoUrl={ctx.logoUrl} />
+                        <span className="flex flex-col min-w-0 leading-tight">
+                          <span className="truncate">{ctx.salonName}</span>
+                          <span className="text-xs font-normal text-[var(--lume-text-muted)]">{roleLabel(ctx.role)}</span>
+                        </span>
+                      </span>
+                    </ListRow>
+                  );
+                })}
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </>
   );
 }

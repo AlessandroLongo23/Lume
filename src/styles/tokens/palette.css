@@ -17,9 +17,13 @@
      500  anchor — the "true" brand value
      600  hover / pressed
      700  deeper emphasis
+     750  dark-mode feedback borders (status hues only)
      800  dense surfaces (dark mode)
      900  dark surfaces
      950  near-black
+
+   Named families (midnight, pure, receipt, aqua) hold single roles that
+   no numbered scale covers; DESIGN.md names most of them.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
@@ -35,6 +39,36 @@
   --color-neutral-800: oklch(0.234 0.007 265);
   --color-neutral-900: oklch(0.171 0.005 265);
   --color-neutral-950: oklch(0.106 0.004 265);
+
+  /* ── Midnight (dark-mode neutrals, DESIGN.md "The Midnight Layer") ────── */
+  /* An elevation ramp lifted off pure black, hue 265, chroma nudged up so  */
+  /* surfaces read as indigo-tinted graphite. Named, not numbered: each step */
+  /* is one role of the dark theme, bound in semantic.css.                  */
+  --color-midnight-shell:          oklch(0.148 0.007 265);
+  --color-midnight-surface:        oklch(0.192 0.008 265);
+  /* The content panel (AppShell). Tailwind's zinc-900, kept exact when the
+     panel moved off the stock palette; free to move onto hue 265. */
+  --color-midnight-panel:          oklch(0.210 0.006 285.885);
+  --color-midnight-raised:         oklch(0.232 0.009 265);
+  --color-midnight-hover:          oklch(0.285 0.010 265);
+  --color-midnight-border:         oklch(0.295 0.010 265);
+  --color-midnight-text:           oklch(0.965 0.004 265);
+  --color-midnight-text-secondary: oklch(0.780 0.010 265);
+  --color-midnight-text-muted:     oklch(0.605 0.012 265);
+  /* The scrim under dialogs in dark mode, used at 72%. */
+  --color-midnight-overlay:        oklch(0.050 0 0);
+
+  /* ── Pure white and black (DESIGN.md "pure-white") ────────────────────── */
+  --color-pure-white: #FFFFFF;
+  --color-pure-black: oklch(0 0 0);
+
+  /* ── Receipt paper (DESIGN.md "Aesthetic Surface") ────────────────────── */
+  /* Warmer than neutral-50 on purpose: thermal-receipt paper for fiches.   */
+  --color-receipt-paper: oklch(0.985 0.005 95);
+
+  /* ── Aqua: the third chart series, one step per theme ─────────────────── */
+  --color-aqua-light: oklch(0.669 0.141 162);
+  --color-aqua-dark:  oklch(0.621 0.128 163);
 
   /* ── Brand primary — Indigo (hue 275) ─────────────────────────────────── */
   /* 500 anchored at #6366F1 (the existing Lume accent). */
@@ -73,6 +107,7 @@
   --color-info-500: oklch(0.600 0.180 245);
   --color-info-600: oklch(0.520 0.190 245);
   --color-info-700: oklch(0.440 0.170 245);
+  --color-info-750: oklch(0.400 0.150 245); /* dark-mode feedback border */
   --color-info-800: oklch(0.370 0.140 245);
   --color-info-900: oklch(0.300 0.110 245);
   --color-info-950: oklch(0.210 0.075 245);
@@ -86,6 +121,7 @@
   --color-success-500: oklch(0.650 0.170 148);
   --color-success-600: oklch(0.560 0.160 148);
   --color-success-700: oklch(0.480 0.140 148);
+  --color-success-750: oklch(0.430 0.130 148); /* dark-mode feedback border */
   --color-success-800: oklch(0.400 0.110 148);
   --color-success-900: oklch(0.330 0.090 148);
   --color-success-950: oklch(0.220 0.060 148);
@@ -100,6 +136,7 @@
   --color-warning-500: oklch(0.820 0.165 95);
   --color-warning-600: oklch(0.700 0.150 88);
   --color-warning-700: oklch(0.580 0.130 82);
+  --color-warning-750: oklch(0.490 0.110 78);  /* dark-mode feedback border */
   --color-warning-800: oklch(0.470 0.105 78);
   --color-warning-900: oklch(0.370 0.075 72);
   --color-warning-950: oklch(0.250 0.050 65);
@@ -114,6 +151,7 @@
   --color-danger-500: oklch(0.640 0.200 25);
   --color-danger-600: oklch(0.560 0.210 25);
   --color-danger-700: oklch(0.480 0.190 25);
+  --color-danger-750: oklch(0.430 0.170 25);  /* dark-mode feedback border */
   --color-danger-800: oklch(0.400 0.160 25);
   --color-danger-900: oklch(0.330 0.130 25);
   --color-danger-950: oklch(0.220 0.090 25);

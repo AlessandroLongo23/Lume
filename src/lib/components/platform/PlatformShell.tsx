@@ -30,6 +30,7 @@ import { useSidebarCollapseContext, useSidebarForceExpanded } from '@/lib/compon
 import { useSidebarCollapse } from '@/lib/components/shell/useSidebarCollapse';
 import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { usePreferencesStore } from '@/lib/stores/preferences';
+import { DURATION_GLIDE, EASE_GLIDE } from '@/lib/const/motion';
 
 type PlatformLink = { href: string; label: string; icon: LucideIcon; keywords?: string[] };
 
@@ -48,7 +49,7 @@ function PlatformIdentity() {
     <div className="flex items-center justify-start min-w-0 overflow-hidden">
       {effectiveCollapsed ? (
         <span className="flex items-center justify-center w-10 h-10 shrink-0">
-          <Lightbulb size={20} className="text-primary" strokeWidth={2.25} />
+          <Lightbulb size={20} className="text-[var(--lume-accent)]" strokeWidth={2.25} />
         </span>
       ) : (
         <span className="flex items-center justify-center h-10 shrink-0 pl-2.5">
@@ -62,8 +63,8 @@ function PlatformIdentity() {
             initial={{ opacity: 0, width: 0, marginLeft: 0 }}
             animate={{ opacity: 1, width: 'auto', marginLeft: '0.5rem' }}
             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="text-2xs font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary-hover dark:bg-primary/20 dark:text-primary/70 uppercase tracking-wider shrink-0 whitespace-nowrap"
+            transition={{ duration: DURATION_GLIDE, ease: EASE_GLIDE }}
+            className="text-2xs font-medium px-1.5 h-5 inline-flex items-center rounded-md bg-active text-[var(--lume-text-secondary)] shrink-0 whitespace-nowrap"
           >
             Platform
           </motion.span>

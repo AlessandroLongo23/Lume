@@ -92,13 +92,13 @@ export function FicheReceipt({
     >
       <TornEdge kind="top" />
 
-      <div className="bg-receipt font-mono text-sm">
+      <div className="bg-receipt tabular-nums text-sm">
         {/* Salon name */}
         <div className="px-5 pt-5 pb-4 text-center">
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest leading-tight">
+          <p className="text-sm font-medium text-[var(--lume-text)] uppercase tracking-widest leading-tight">
             {salonName}
           </p>
-          <p className="text-2xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+          <p className="text-2xs text-[var(--lume-text-muted)] mt-1.5">
             {datetime.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
             {' · '}
             {datetime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
@@ -106,14 +106,14 @@ export function FicheReceipt({
         </div>
 
         {/* Client + receipt ID */}
-        <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans grid grid-cols-2 gap-x-2">
+        <div className="mx-4 border-t border-dashed border-line pt-3 pb-3 font-sans grid grid-cols-2 gap-x-2">
           <div>
-            <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Cliente</p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 truncate">{clientName}</p>
+            <p className="text-2xs font-medium text-[var(--lume-text-muted)]">Cliente</p>
+            <p className="text-xs text-[var(--lume-text)] mt-0.5 truncate">{clientName}</p>
           </div>
           <div className="text-right">
-            <p className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">N. scontrino</p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 font-mono">
+            <p className="text-2xs font-medium text-[var(--lume-text-muted)]">N. scontrino</p>
+            <p className="text-xs text-[var(--lume-text)] mt-0.5 tabular-nums">
               {ficheId ? ficheId.slice(-8).toUpperCase() : '—'}
             </p>
           </div>
@@ -121,10 +121,10 @@ export function FicheReceipt({
 
         {/* Services */}
         {services.length > 0 && (
-          <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
+          <div className="mx-4 border-t border-dashed border-line pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
-              <Scissors className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Servizi</span>
+              <Scissors className="size-3 text-[var(--lume-text-muted)]" />
+              <span className="text-2xs font-medium text-[var(--lume-text-muted)] font-sans">Servizi</span>
             </div>
             {services.map((fs, i) => {
               const service = serviceMap.get(fs.service_id);
@@ -133,26 +133,26 @@ export function FicheReceipt({
               const isGift = !isAbbonamento && fs.final_price === 0 && fs.list_price > 0;
               return (
                 <div key={fs.id ?? `svc-${i}`} className="flex items-baseline justify-between gap-2 py-0.5">
-                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">{fs.name || service?.name || 'Servizio'}</span>
+                  <span className="text-xs text-[var(--lume-text)] truncate font-sans">{fs.name || service?.name || 'Servizio'}</span>
                   <span className="flex items-baseline gap-1.5 shrink-0">
                     {isDiscounted && (
-                      <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(fs.list_price)}</span>
+                      <span className="text-2xs text-[var(--lume-text-muted)] line-through">€ {fmt(fs.list_price)}</span>
                     )}
                     {isAbbonamento ? (
                       <Tooltip label="Coperto da abbonamento">
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" aria-label="Coperto da abbonamento">
+                        <span className="inline-flex items-center gap-1 text-success-strong" aria-label="Coperto da abbonamento">
                           <BadgePercent className="size-3.5" />
-                          <span className="text-2xs font-semibold uppercase tracking-wide">Abb.</span>
+                          <span className="text-2xs font-medium uppercase tracking-wide">Abb.</span>
                         </span>
                       </Tooltip>
                     ) : isGift ? (
                       <Tooltip label="Omaggio">
-                        <span className="inline-flex items-center text-pink-500 dark:text-pink-400" aria-label="Omaggio">
+                        <span className="inline-flex items-center text-warning-strong" aria-label="Omaggio">
                           <Gift className="size-3.5" />
                         </span>
                       </Tooltip>
                     ) : (
-                      <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-success-strong' : 'text-[var(--lume-text)]'}`}>
                         € {fmt(fs.final_price)}
                       </span>
                     )}
@@ -165,10 +165,10 @@ export function FicheReceipt({
 
         {/* Products */}
         {products.length > 0 && (
-          <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
+          <div className="mx-4 border-t border-dashed border-line pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
-              <Package className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Prodotti</span>
+              <Package className="size-3 text-[var(--lume-text-muted)]" />
+              <span className="text-2xs font-medium text-[var(--lume-text-muted)] font-sans">Prodotti</span>
             </div>
             {products.map((fp, i) => {
               const product = productMap.get(fp.product_id);
@@ -178,24 +178,24 @@ export function FicheReceipt({
               const isGift = fp.final_price === 0 && fp.list_price > 0;
               return (
                 <div key={fp.id ?? `prod-${i}`} className="flex items-baseline justify-between gap-2 py-0.5">
-                  <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">
+                  <span className="text-xs text-[var(--lume-text)] truncate font-sans">
                     {product?.name ?? fp.name ?? 'Prodotto'}
                     {fp.quantity > 1 && (
-                      <span className="text-zinc-400 dark:text-zinc-500 ml-1">×{fp.quantity}</span>
+                      <span className="text-[var(--lume-text-muted)] ml-1">×{fp.quantity}</span>
                     )}
                   </span>
                   <span className="flex items-baseline gap-1.5 shrink-0">
                     {isDiscounted && (
-                      <span className="text-2xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(listTotal)}</span>
+                      <span className="text-2xs text-[var(--lume-text-muted)] line-through">€ {fmt(listTotal)}</span>
                     )}
                     {isGift ? (
                       <Tooltip label="Omaggio">
-                        <span className="inline-flex items-center text-pink-500 dark:text-pink-400" aria-label="Omaggio">
+                        <span className="inline-flex items-center text-warning-strong" aria-label="Omaggio">
                           <Gift className="size-3.5" />
                         </span>
                       </Tooltip>
                     ) : (
-                      <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      <span className={`text-xs font-medium shrink-0 ${isDiscounted ? 'text-success-strong' : 'text-[var(--lume-text)]'}`}>
                         € {fmt(finalTotalLine)}
                       </span>
                     )}
@@ -208,18 +208,18 @@ export function FicheReceipt({
 
         {/* Coupons */}
         {couponDiscounts.length > 0 && (
-          <div className="mx-4 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-3 pb-3">
+          <div className="mx-4 border-t border-dashed border-line pt-3 pb-3">
             <div className="flex items-center gap-1.5 mb-2">
-              <Tag className="size-3 text-zinc-400 dark:text-zinc-500" />
-              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-sans">Coupon</span>
+              <Tag className="size-3 text-[var(--lume-text-muted)]" />
+              <span className="text-2xs font-medium text-[var(--lume-text-muted)] font-sans">Coupon</span>
             </div>
             {couponDiscounts.map((c, i) => (
               <div key={i} className="flex items-baseline justify-between gap-2 py-0.5">
-                <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate font-sans">
+                <span className="text-xs text-[var(--lume-text)] truncate font-sans">
                   {c.label}
-                  <span className="text-zinc-400 dark:text-zinc-500 ml-1">({c.detail})</span>
+                  <span className="text-[var(--lume-text-muted)] ml-1">({c.detail})</span>
                 </span>
-                <span className="text-xs font-medium shrink-0 text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-medium shrink-0 text-success-strong">
                   − € {fmt(c.amount)}
                 </span>
               </div>
@@ -228,26 +228,26 @@ export function FicheReceipt({
         )}
 
         {/* Total section */}
-        <div className="mx-4 border-t border-zinc-200 dark:border-zinc-700 pt-3 pb-3 font-sans">
+        <div className="mx-4 border-t border-line pt-3 pb-3 font-sans">
           {(hasOverride || couponsTotal > 0) && (
             <div className="flex items-baseline justify-between py-0.5">
-              <span className="text-2xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Subtotale</span>
-              <span className="text-xs text-zinc-400 dark:text-zinc-500 line-through">€ {fmt(subtotal)}</span>
+              <span className="text-2xs font-medium text-[var(--lume-text-muted)]">Subtotale</span>
+              <span className="text-xs text-[var(--lume-text-muted)] line-through">€ {fmt(subtotal)}</span>
             </div>
           )}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-2xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Totale</span>
-            <span className={`text-base font-bold ${(hasOverride || couponsTotal > 0) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
+            <span className="text-2xs font-medium text-[var(--lume-text-secondary)]">Totale</span>
+            <span className={`text-base font-medium ${(hasOverride || couponsTotal > 0) ? 'text-success-strong' : 'text-[var(--lume-text)]'}`}>
               € {fmt(finalTotal)}
             </span>
           </div>
         </div>
 
         {/* Lume branding footer */}
-        <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 py-3 flex items-center justify-center gap-1.5 font-sans">
-          <Lightbulb className="size-3 text-primary" strokeWidth={2.25} />
-          <span className="text-2xs text-zinc-400 dark:text-zinc-500">
-            Gestito con <span className="text-primary font-semibold">Lume.</span>
+        <div className="border-t border-dashed border-line py-3 flex items-center justify-center gap-1.5 font-sans">
+          <Lightbulb className="size-3 text-[var(--lume-accent)]" strokeWidth={2.25} />
+          <span className="text-2xs text-[var(--lume-text-muted)]">
+            Gestito con <span className="text-[var(--lume-accent)] font-medium">Lume.</span>
           </span>
         </div>
       </div>

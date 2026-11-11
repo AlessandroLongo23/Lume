@@ -10,7 +10,18 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Trash2, Tags, Plus, ArrowDownToLine, ChevronUp, ChevronDown, Pencil, ArchiveRestore } from 'lucide-react';
+import { Trash2, Tags, Plus, ArrowDownToLine, Pencil, ArchiveRestore } from 'lucide-react';
+import {
+  tableCardClass,
+  tableClass,
+  theadClass,
+  thClass,
+  trClass,
+  tdClass,
+  cellStrongClass,
+  tableMessageClass,
+  SortIndicator,
+} from '@/lib/components/shared/ui/table/tableStyles';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
@@ -26,13 +37,12 @@ import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
 import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
-import { cardStyle } from '@/lib/const/appearance';
 
 function ColorNameCell({ color, name }: { color: string; name: string }) {
   return (
     <div className="flex items-center gap-2">
       <span className="size-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-      <span className="font-medium text-zinc-900 dark:text-zinc-100">{name}</span>
+      <span className={cellStrongClass}>{name}</span>
     </div>
   );
 }
@@ -94,7 +104,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
         accessorKey: 'description',
         header: 'Descrizione',
         cell: ({ getValue }) => (
-          <span className="text-zinc-500 dark:text-zinc-400">{(getValue() as string) || '—'}</span>
+          <span className="text-[var(--lume-text-secondary)]">{(getValue() as string) || '—'}</span>
         ),
       },
     ],
@@ -200,9 +210,9 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
           </div>
 
           <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-            <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+            <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+            <table className={tableClass}>
+              <thead className={theadClass}>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
@@ -212,39 +222,31 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                         <th
                           key={header.id}
                           onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                          className={[
-                            'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
-                            canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                          ].join(' ')}
+                          className={thClass({ sortable: canSort })}
                         >
                           <span className="inline-flex items-center gap-1">
                             {flexRender(header.column.columnDef.header, header.getContext())}
-                            {canSort && (
-                              <span className="flex flex-col">
-                                <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                                <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              </span>
-                            )}
+                            {canSort && <SortIndicator direction={sorted} />}
                           </span>
                         </th>
                       );
                     })}
-                    <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-20">
+                    <th className={`${thClass({ align: 'right' })} w-20`}>
                       Azioni
                     </th>
                   </tr>
                 ))}
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                    <td colSpan={columns.length + 1} className={tableMessageClass}>
                       Caricando categorie...
                     </td>
                   </tr>
                 ) : table.getRowModel().rows.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                    <td colSpan={columns.length + 1} className={tableMessageClass}>
                       Nessuna categoria trovata.
                     </td>
                   </tr>
@@ -252,14 +254,14 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                      className={trClass({ interactive: false })}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                        <td key={cell.id} className={tdClass}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className={tdClass}>
                         <div className="flex flex-row items-center justify-end gap-1">
                           {showArchived ? (
                             <Button
@@ -267,9 +269,7 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                               size="sm"
                               iconOnly
                               aria-label="Ripristina"
-                              title="Ripristina"
                               onClick={(e) => handleRestore(e, row.original)}
-                              className="text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             >
                               <ArchiveRestore />
                             </Button>
@@ -279,21 +279,17 @@ export function CategorieTab({ addTrigger, categories: categoriesProp, showArchi
                               size="sm"
                               iconOnly
                               aria-label="Modifica"
-                              title="Modifica"
                               onClick={(e) => handleEditClick(e, row.original)}
-                              className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             >
                               <Pencil />
                             </Button>
                           )}
                           <Button
-                            variant="ghost"
+                            variant="ghost-destructive"
                             size="sm"
                             iconOnly
                             aria-label="Elimina"
-                            title="Elimina"
                             onClick={(e) => handleDeleteClick(e, row.original)}
-                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 />
                           </Button>

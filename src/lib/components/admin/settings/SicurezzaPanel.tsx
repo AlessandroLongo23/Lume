@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { Mail, Key, Shield, ShieldCheck, ShieldOff, LogOut, Eye, EyeOff, Loader2, Save, type LucideIcon } from 'lucide-react';
-import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
+import { Shield, ShieldCheck, ShieldOff, LogOut, Loader2, Save, type LucideIcon } from 'lucide-react';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
@@ -67,7 +68,6 @@ export function SicurezzaPanel() {
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
   const [pwdSaving, setPwdSaving] = useState(false);
 
   const onChangePassword = async () => {
@@ -247,23 +247,23 @@ export function SicurezzaPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Mail}
         title="Email"
         description="Cambia l'indirizzo email associato al tuo account."
       >
-        <p className="text-xs text-zinc-500 mb-3">
-          Email attuale: <span className="font-mono text-zinc-700 dark:text-zinc-300">{email || '—'}</span>
+        <p className="text-sm text-[var(--lume-text-secondary)] mb-3">
+          Email attuale: <span className="tabular-nums text-[var(--lume-text)]">{email || '—'}</span>
         </p>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <input
+          <FormInput
+            fieldClassName="flex-1"
             type="email"
+            aria-label="Nuova email"
             placeholder="nuova@email.it"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
           />
           <Button
-            variant="primary"
+            variant="secondary"
             leadingIcon={Save}
             loading={emailSaving}
             disabled={!newEmail.trim()}
@@ -272,50 +272,39 @@ export function SicurezzaPanel() {
             {emailSaving ? 'Invio…' : 'Cambia email'}
           </Button>
         </div>
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-[var(--lume-text-secondary)]">
           {"Riceverai un'email di conferma al nuovo indirizzo."}
         </p>
       </SettingsCard>
 
       <SettingsCard
-        icon={Key}
         title="Password"
         description="Aggiorna la password del tuo account."
       >
         <div className="grid gap-3">
-          <div className="relative">
-            <input
-              type={showPwd ? 'text' : 'password'}
-              placeholder="Password attuale"
-              autoComplete="current-password"
-              value={currentPwd}
-              onChange={(e) => setCurrentPwd(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPwd((v) => !v)}
-              aria-label={showPwd ? 'Nascondi' : 'Mostra'}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
-            >
-              <SwapIcon icon={showPwd ? EyeOff : Eye} className="size-4" />
-            </button>
-          </div>
-          <input
-            type={showPwd ? 'text' : 'password'}
+          <FormInput
+            type="password"
+            aria-label="Password attuale"
+            placeholder="Password attuale"
+            autoComplete="current-password"
+            value={currentPwd}
+            onChange={(e) => setCurrentPwd(e.target.value)}
+          />
+          <FormInput
+            type="password"
+            aria-label="Nuova password"
             placeholder="Nuova password (almeno 8 caratteri)"
             autoComplete="new-password"
             value={newPwd}
             onChange={(e) => setNewPwd(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
           />
-          <input
-            type={showPwd ? 'text' : 'password'}
+          <FormInput
+            type="password"
+            aria-label="Conferma nuova password"
             placeholder="Conferma nuova password"
             autoComplete="new-password"
             value={confirmPwd}
             onChange={(e) => setConfirmPwd(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
           />
         </div>
         <div className="mt-3 flex justify-end">
@@ -331,12 +320,11 @@ export function SicurezzaPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={mfa.status === 'verified' ? ShieldCheck : Shield}
         title="Autenticazione a due fattori"
         description="Aggiungi un secondo livello di sicurezza con un'app authenticator."
       >
         {mfa.status === 'unknown' && (
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
+          <div className="flex items-center gap-2 text-sm text-[var(--lume-text-secondary)]">
             <Loader2 className="size-4 animate-spin" />
             Caricamento…
           </div>
@@ -344,11 +332,12 @@ export function SicurezzaPanel() {
 
         {mfa.status === 'none' && (
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Stato: <span className="font-medium text-zinc-900 dark:text-zinc-100">non attiva</span>
+            <p className="text-sm text-[var(--lume-text-secondary)]">
+              Stato:{' '}
+              <StatusDot tone="neutral" className="font-medium">non attiva</StatusDot>
             </p>
             <Button
-              variant="primary"
+              variant="secondary"
               leadingIcon={Shield}
               loading={mfaBusy}
               onClick={onEnrollMfa}
@@ -360,33 +349,32 @@ export function SicurezzaPanel() {
 
         {mfa.status === 'enrolling' && (
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="text-sm text-[var(--lume-text-secondary)]">
               Scansiona il QR code con la tua app authenticator (Google Authenticator, 1Password, Authy…)
               e inserisci il codice a 6 cifre per confermare.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
-              <div className="bg-white p-3 rounded-lg border border-zinc-200">
+              {/* ds-ignore: a QR code needs a white quiet zone to scan, in either theme */}
+              <div className="bg-white p-3 rounded-lg shadow-[inset_0_0_0_1px_var(--lume-line)]">
                 <Image src={mfa.qr} alt="QR code 2FA" width={180} height={180} unoptimized />
               </div>
               <div className="flex flex-col gap-2 flex-1 min-w-0">
-                <label htmlFor="mfa-code" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Codice a 6 cifre
-                </label>
-                <input
+                <FormInput
                   id="mfa-code"
-                  type="text"
+                  label="Codice a 6 cifre"
                   inputMode="numeric"
                   maxLength={6}
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="w-40 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm font-mono tracking-widest text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+                  fieldClassName="w-40"
+                  className="tabular-nums tracking-widest"
                 />
-                <details className="text-xs text-zinc-500">
-                  <summary className="cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300">
+                <details className="text-xs text-[var(--lume-text-secondary)]">
+                  <summary className="cursor-pointer hover:text-[var(--lume-text)]">
                     Inserimento manuale della chiave
                   </summary>
-                  <code className="mt-2 block break-all bg-zinc-50 dark:bg-zinc-800 p-2 rounded text-zinc-700 dark:text-zinc-300">
+                  <code className="mt-2 block break-all bg-hover p-2 rounded-md font-mono text-[var(--lume-text)]">
                     {mfa.uri}
                   </code>
                 </details>
@@ -411,15 +399,15 @@ export function SicurezzaPanel() {
 
         {mfa.status === 'verified' && (
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-2">
-              <ShieldCheck className="size-4" />
-              Attiva
+            <p className="text-sm text-[var(--lume-text-secondary)] flex items-center gap-1.5">
+              Stato:
+              <StatusDot tone="success" className="font-medium">attiva</StatusDot>
             </p>
             <Button
               variant="ghost"
               loading={mfaBusy}
               onClick={onDisableMfa}
-              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+              className="text-danger-strong"
             >
               {mfaBusy ? 'Disattivazione…' : 'Disattiva'}
             </Button>
@@ -428,12 +416,11 @@ export function SicurezzaPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={LogOut}
         title="Sessioni"
         description="Disconnetti il tuo account da tutti i dispositivi."
       >
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="text-sm text-[var(--lume-text-secondary)]">
             Termina tutte le sessioni attive, incluso questo dispositivo.
           </p>
           <Button

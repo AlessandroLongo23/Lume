@@ -1,8 +1,9 @@
 'use client';
 
+// ds-ignore: stays local, the bug-report floating action button with its screenshot flow; its corner button has a look Button lacks (see below)
 import { useEffect, useRef, useState } from 'react';
 import { Bug, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -19,6 +20,7 @@ export function BugButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const handleClick = async () => {
     if (isWorking || isModalOpen) return;
@@ -84,13 +86,15 @@ export function BugButton() {
       <Portal>
         <Tooltip label="Segnala un problema" shortcut={bugReportLabel()} side="left">
           <button
+            // ds-ignore: floating action button pinned to the corner (float surface, 44px, rounded-xl, its own hover tint); Button has no floating variant
             type="button"
             data-bug-button=""
             data-capture-hide=""
             onClick={handleClick}
             disabled={isWorking}
             aria-label="Segnala un problema"
-            className="fixed bottom-6 right-6 z-fab flex items-center justify-center size-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 shadow-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors disabled:cursor-not-allowed cursor-pointer"
+            // ds-ignore: the floating action button's own hover, not a row in a list
+            className="surface-float fixed bottom-6 right-6 z-fab flex items-center justify-center size-11 rounded-xl text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] hover:bg-[color-mix(in_oklab,var(--lume-text)_4%,var(--lume-surface-raised))] active:scale-[0.97] motion-reduce:active:scale-100 transition-[background-color,color,scale] duration-[var(--duration-fast)] ease-[var(--ease-out)] disabled:cursor-not-allowed cursor-pointer"
           >
             {isWorking
               ? <Loader2 className="size-5 animate-spin" strokeWidth={1.5} />
@@ -99,7 +103,7 @@ export function BugButton() {
         </Tooltip>
 
         <AnimatePresence>
-          {showFlash && (
+          {showFlash && !reduceMotion && (
             <motion.div
               key="capture-flash"
               aria-hidden
@@ -107,7 +111,7 @@ export function BugButton() {
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: FLASH_DURATION_MS / 1000, ease: 'easeOut' }}
-              className="fixed inset-0 z-toast bg-white pointer-events-none"
+              className="fixed inset-0 z-toast bg-[var(--lume-text-on-accent)] pointer-events-none"
             />
           )}
         </AnimatePresence>

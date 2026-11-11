@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mail, Save, Loader2, Bell, Cake, Receipt, Eye, Globe } from 'lucide-react';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Save, Loader2, Eye } from 'lucide-react';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { SettingsCard } from './SettingsCard';
 import { BookingEmailPreviewModal } from './BookingEmailPreviewModal';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
@@ -91,7 +92,7 @@ export function NotificheEmailPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -99,12 +100,11 @@ export function NotificheEmailPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Globe}
         title="Email prenotazioni online"
         description="Le email automatiche inviate ai clienti quando prenotano, vengono approvati o rifiutati. Usano i colori e il logo del tuo salone."
       >
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[var(--lume-text-secondary)]">
             Anteprima delle 6 varianti (conferma, in attesa, approvata, rifiutata, annullata, promemoria).
           </p>
           <Button
@@ -119,121 +119,87 @@ export function NotificheEmailPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Mail}
         title="Mittente"
         description="Nome e indirizzo email mostrati come mittente delle email transazionali."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="sender-name" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Nome mittente
-            </label>
-            <input
-              id="sender-name"
-              type="text"
-              maxLength={80}
-              value={form.sender_name}
-              onChange={(e) => setField('sender_name', e.target.value)}
-              placeholder="Salone Mario"
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            />
-          </div>
-          <div>
-            <label htmlFor="reply-to" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Email di risposta
-            </label>
-            <input
-              id="reply-to"
-              type="email"
-              maxLength={200}
-              value={form.reply_to}
-              onChange={(e) => setField('reply_to', e.target.value)}
-              placeholder="info@ilmiosalone.it"
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-            />
-          </div>
+          <FormInput
+            id="sender-name"
+            label="Nome mittente"
+            maxLength={80}
+            value={form.sender_name}
+            onChange={(e) => setField('sender_name', e.target.value)}
+            placeholder="Salone Mario"
+          />
+          <FormInput
+            id="reply-to"
+            label="Email di risposta"
+            type="email"
+            maxLength={200}
+            value={form.reply_to}
+            onChange={(e) => setField('reply_to', e.target.value)}
+            placeholder="info@ilmiosalone.it"
+          />
         </div>
       </SettingsCard>
 
       <SettingsCard
-        icon={Bell}
         title="Promemoria appuntamento"
         description="Inviato al cliente prima dell'appuntamento."
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Attiva promemoria</p>
-            <p className="text-xs text-zinc-500 mt-0.5">Configura sotto le ore di anticipo.</p>
-          </div>
-          <Switch
-            checked={form.appointment_reminder_enabled}
-            onChange={() => setField('appointment_reminder_enabled', !form.appointment_reminder_enabled)}
-          />
-        </div>
+        <SwitchRow
+          label="Attiva promemoria"
+          description="Configura sotto le ore di anticipo."
+          checked={form.appointment_reminder_enabled}
+          onChange={() => setField('appointment_reminder_enabled', !form.appointment_reminder_enabled)}
+        />
         <div className={`mt-4 transition-opacity ${form.appointment_reminder_enabled ? '' : 'opacity-50 pointer-events-none'}`}>
-          <label htmlFor="reminder-hours" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-            Ore di anticipo
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              id="reminder-hours"
-              type="number"
-              min={1}
-              max={168}
-              value={form.appointment_reminder_hours}
-              onChange={(e) =>
-                setField(
-                  'appointment_reminder_hours',
-                  Math.max(1, Math.min(168, Number(e.target.value) || 1)),
-                )
-              }
-              disabled={!form.appointment_reminder_enabled}
-              className="w-24 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
-            />
-            <span className="text-sm text-zinc-500">ore prima</span>
-          </div>
+          <FormInput
+            id="reminder-hours"
+            label="Ore di anticipo"
+            suffix="ore prima"
+            type="number"
+            min={1}
+            max={168}
+            value={form.appointment_reminder_hours}
+            onChange={(e) =>
+              setField(
+                'appointment_reminder_hours',
+                Math.max(1, Math.min(168, Number(e.target.value) || 1)),
+              )
+            }
+            disabled={!form.appointment_reminder_enabled}
+            fieldClassName="w-44"
+            className="tabular-nums"
+          />
         </div>
       </SettingsCard>
 
       <SettingsCard
-        icon={Cake}
         title="Auguri di compleanno"
         description="Email automatica al cliente nel giorno del compleanno."
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Attiva auguri</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Inviata al mattino del giorno del compleanno se presente la data sulla scheda cliente.
-            </p>
-          </div>
-          <Switch
-            checked={form.birthday_wishes_enabled}
-            onChange={() => setField('birthday_wishes_enabled', !form.birthday_wishes_enabled)}
-          />
-        </div>
+        <SwitchRow
+          label="Attiva auguri"
+          description="Inviata al mattino del giorno del compleanno se presente la data sulla scheda cliente."
+          checked={form.birthday_wishes_enabled}
+          onChange={() => setField('birthday_wishes_enabled', !form.birthday_wishes_enabled)}
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Receipt}
         title="Fiche per email"
         description="Invia automaticamente la fiche al cliente al completamento del servizio."
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Invia fiche</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Solo se il cliente ha un indirizzo email registrato.
-            </p>
-          </div>
-          <Switch
-            checked={form.fiche_by_email_enabled}
-            onChange={() => setField('fiche_by_email_enabled', !form.fiche_by_email_enabled)}
-          />
-        </div>
+        <SwitchRow
+          label="Invia fiche"
+          description="Solo se il cliente ha un indirizzo email registrato."
+          checked={form.fiche_by_email_enabled}
+          onChange={() => setField('fiche_by_email_enabled', !form.fiche_by_email_enabled)}
+        />
       </SettingsCard>
 
-      {error && <p className="px-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="px-1 text-xs text-danger-strong">{error}</p>}
 
       <div className="flex justify-end">
         <Button variant="primary" leadingIcon={Save} loading={saving} onClick={onSave}>

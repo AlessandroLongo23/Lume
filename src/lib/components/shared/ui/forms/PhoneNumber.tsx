@@ -1,86 +1,86 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useRef } from 'react';
 import { prefixes } from '@/lib/const/prefixes';
-import { Portal } from '@/lib/components/shared/ui/Portal';
-
-// Matches the panel's max-h-72; used to decide whether it fits below the trigger.
-const PANEL_MAX_HEIGHT = 288;
+import { cn } from '@/lib/utils';
+import { Select } from './Select';
 
 interface PhoneNumberProps {
   prefixCode: string;
   phoneNumber: string;
   onPrefixChange: (code: string) => void;
   onPhoneChange: (number: string) => void;
-  className?: string;
   disabled?: boolean;
+  id?: string;
+  invalid?: boolean;
+  /** Control height: md (36px, 44px on touch) or lg (44px everywhere, e.g. the booking page). */
+  size?: 'md' | 'lg';
 }
 
+// Countries sorted once; the prefix list is static.
+const sortedPrefixes = [...prefixes].sort((a, b) => a.country.localeCompare(b.country));
+
+/** Just the country prefix picker (searchable by country), for forms that store it apart. */
+export function PhonePrefixSelect({
+  value,
+  onChange,
+  disabled,
+  className = 'w-auto shrink-0',
+  id,
+  invalid,
+  size = 'md',
+}: {
+  value: string;
+  onChange: (code: string) => void;
+  disabled?: boolean;
+  /** Wrapper classes; sized to its content by default. */
+  className?: string;
+  /** Wired by <Field> so its label names the picker. */
+  id?: string;
+  invalid?: boolean;
+  size?: 'md' | 'lg';
+}) {
+  return (
+    <Select
+      value={value}
+      onChange={onChange}
+      options={sortedPrefixes}
+      // Country names repeat across prefixes (+1 is shared), so the value stays
+      // the prefix code; search runs on the country.
+      valueKey="code"
+      labelKey="country"
+      searchPlaceholder="Cerca paese…"
+      ariaLabel={id ? undefined : 'Prefisso telefonico'}
+      id={id}
+      invalid={invalid}
+      className={className}
+      size={size}
+      panelWidth={240}
+      disabled={disabled}
+      renderValue={(p) => <span className="tabular-nums">{p.code}</span>}
+      renderOption={(p) => (
+        <span className="flex items-baseline gap-2.5">
+          <span className="tabular-nums text-[var(--lume-text)] w-10 shrink-0">{p.code}</span>
+          <span className="truncate">{p.country}</span>
+        </span>
+      )}
+    />
+  );
+}
+
+/** Country prefix (a searchable <Select>) beside the number, both on the field surface. */
 export function PhoneNumber({
   prefixCode,
   phoneNumber,
   onPrefixChange,
   onPhoneChange,
-  className = '',
   disabled = false,
+  id,
+  invalid,
+  size = 'md',
 }: PhoneNumberProps) {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [dropdownPos, setDropdownPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const optionsRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
-
   const selectedPrefix = prefixes.find((p) => p.code === prefixCode) ?? prefixes[0];
-
-  const filteredPrefixes = prefixes
-    .filter((p) => p.country.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => a.country.localeCompare(b.country));
-
-  // Close on outside click — must check both the trigger and the portal dropdown
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        dropdownRef.current && !dropdownRef.current.contains(target) &&
-        (!portalRef.current || !portalRef.current.contains(target))
-      ) {
-        setShowDropdown(false);
-        setSearchQuery('');
-        setHighlightedIndex(-1);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  // Close on any scroll so the fixed dropdown doesn't drift from its trigger.
-  // Scrolls inside the dropdown itself (the options list) don't move the trigger.
-  useEffect(() => {
-    if (!showDropdown) return;
-    const handleScroll = (e: Event) => {
-      const target = e.target as Node | null;
-      if (target && portalRef.current?.contains(target)) return;
-      setShowDropdown(false);
-      setSearchQuery('');
-      setHighlightedIndex(-1);
-    };
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [showDropdown]);
-
-  // Scroll highlighted option into view
-  useEffect(() => {
-    if (highlightedIndex >= 0 && optionsRef.current) {
-      const buttons = optionsRef.current.querySelectorAll<HTMLButtonElement>('button');
-      buttons[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [highlightedIndex]);
 
   const formatNumber = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
@@ -89,147 +89,23 @@ export function PhoneNumber({
     return matches.slice(1).filter(Boolean).join(' ');
   };
 
-  const handleSelect = (code: string) => {
-    onPrefixChange(code);
-    setShowDropdown(false);
-    setSearchQuery('');
-    setHighlightedIndex(-1);
-    inputRef.current?.focus();
-  };
-
-  const openDropdown = () => {
-    if (disabled) return;
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      // Open upward when the panel wouldn't fit below and there's more room above.
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openUp = spaceBelow < PANEL_MAX_HEIGHT + 8 && rect.top > spaceBelow;
-      setDropdownPos(
-        openUp
-          ? { left: rect.left, bottom: window.innerHeight - rect.top + 4 }
-          : { left: rect.left, top: rect.bottom + 4 },
-      );
-    }
-    setShowDropdown(true);
-    setSearchQuery('');
-    setHighlightedIndex(-1);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
-  };
-
-  const handleKeyNavigation = (e: React.KeyboardEvent) => {
-    if (!showDropdown) return;
-
-    switch (e.key) {
-      case 'ArrowDown': {
-        e.preventDefault();
-        setHighlightedIndex((prev) => Math.min(prev + 1, filteredPrefixes.length - 1));
-        break;
-      }
-      case 'ArrowUp': {
-        e.preventDefault();
-        setHighlightedIndex((prev) => Math.max(prev - 1, 0));
-        break;
-      }
-      case 'Enter': {
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredPrefixes.length) {
-          handleSelect(filteredPrefixes[highlightedIndex].code);
-        }
-        break;
-      }
-      case 'Escape': {
-        setShowDropdown(false);
-        setSearchQuery('');
-        setHighlightedIndex(-1);
-        break;
-      }
-      case 'Tab': {
-        setShowDropdown(false);
-        setSearchQuery('');
-        setHighlightedIndex(-1);
-        break;
-      }
-    }
-  };
-
   return (
-    <div className={`flex flex-row gap-2 ${className}`}>
-      <div ref={dropdownRef} className="relative">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-label="Seleziona prefisso telefonico"
-          aria-haspopup="listbox"
-          aria-expanded={showDropdown}
-          disabled={disabled}
-          className={`h-full px-3 flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-500/25 hover:border-zinc-300 dark:hover:border-zinc-600 transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-          onClick={openDropdown}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-              e.preventDefault();
-              openDropdown();
-            }
-          }}
-        >
-          <span className="text-zinc-900 dark:text-zinc-100">{selectedPrefix.code}</span>
-          <ChevronDown className={`size-4 text-zinc-500 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
-        </button>
-
-        {showDropdown && dropdownPos && (
-          <Portal>
-            <div
-              ref={portalRef}
-              style={{ position: 'fixed', ...dropdownPos }}
-              className="max-h-72 overflow-hidden w-60 bg-white dark:bg-zinc-900 border border-zinc-500/25 rounded-lg shadow-lg z-popover"
-            >
-              <div className="p-2 border-b border-zinc-500/25">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                  placeholder="Cerca paese..."
-                  className="w-full px-2 py-1 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-500/25 rounded focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
-                  onKeyDown={handleKeyNavigation}
-                />
-              </div>
-              <div ref={optionsRef} role="listbox" className="max-h-56 overflow-y-auto py-1">
-                {filteredPrefixes.map((p, i) => {
-                  const isHighlighted = highlightedIndex === i;
-                  const isSelected = p.code === prefixCode;
-                  return (
-                    <button
-                      key={p.code + p.country}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={`w-full px-3 py-2 text-left transition-colors
-                        ${isSelected
-                          ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                          : isHighlighted
-                            ? 'bg-zinc-100 dark:bg-zinc-800'
-                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                        }`}
-                      onClick={() => handleSelect(p.code)}
-                      onMouseEnter={() => setHighlightedIndex(i)}
-                    >
-                      <span className={isSelected ? '' : 'text-zinc-900 dark:text-zinc-100'}>{p.code}</span>
-                      <span className={`text-sm ml-2 ${isSelected ? 'text-primary/70' : 'text-zinc-500'}`}>{p.country}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </Portal>
-        )}
-      </div>
-
+    <div className="flex flex-row gap-2">
+      <PhonePrefixSelect
+        value={prefixCode}
+        onChange={(code) => { onPrefixChange(code); inputRef.current?.focus(); }}
+        disabled={disabled}
+        size={size}
+      />
       <input
         ref={inputRef}
-        type="text"
+        id={id}
+        type="tel"
+        inputMode="tel"
         placeholder={selectedPrefix.placeholder || '000 000 0000'}
         disabled={disabled}
-        className={`flex flex-1 min-w-0 p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-500/25 transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+        aria-invalid={invalid || undefined}
+        className={cn('control flex-1 min-w-0', size === 'lg' ? 'control-lg' : 'control-md')}
         value={phoneNumber}
         onChange={(e) => onPhoneChange(formatNumber(e.target.value))}
       />

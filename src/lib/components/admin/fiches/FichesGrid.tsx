@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Calendar } from 'lucide-react';
 import { FicheCard } from './FicheCard';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -89,10 +90,7 @@ export function FichesGrid({ fiches, emptyText }: FichesGridProps) {
     <>
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {isEmpty ? (
-          <div className="min-h-[18.75rem] flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-            <Calendar className="w-16 h-16 text-zinc-300 dark:text-zinc-600 mb-3" />
-            <h3 className="text-lg font-medium text-zinc-600 dark:text-zinc-400">{emptyText ?? 'Nessuna fiche trovata'}</h3>
-          </div>
+          <EmptyState icon={Calendar} title={emptyText ?? 'Nessuna fiche trovata'} />
         ) : (
           <div
             ref={scrollRef}

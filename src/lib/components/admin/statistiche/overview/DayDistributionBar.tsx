@@ -1,43 +1,29 @@
 'use client';
 
-import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
-import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
+import { AXIS_TICK, CURSOR_FILL, GRID_STROKE, SERIES_PRIMARY } from '@/lib/components/graphs/chartTheme';
 import type { DayCount } from '../statHelpers';
 
-const readVar = (name: string, fallback: string) => {
-  if (typeof window === 'undefined') return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
-};
-
-const tooltip = makeRechartsTooltip((v) => [`${v} fiches`, '']);
+const tooltip = makeRechartsTooltip((v) => [`${v} ${Number(v) === 1 ? 'fiche' : 'fiches'}`, '']);
 
 interface Props { data: DayCount[] }
 
+/** The busiest day at full strength, the others lighter: one hue, emphasis by tone. */
 export function DayDistributionBar({ data }: Props) {
-  const { resolvedTheme: theme } = useTheme();
-  const colors = useMemo(() => ({
-    primary: readVar('--color-brand-primary-500', '#6366F1'),
-    dim:     readVar('--color-brand-primary-300', '#A5B4FC'),
-    muted:   readVar('--lume-text-muted', '#A1A1AA'),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [theme]);
-
   const max = Math.max(...data.map((d) => d.count), 1);
 
   return (
     <div className="px-5 pb-5">
-      <ResponsiveContainer width="100%" height={140}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: -24 }}>
-          <XAxis dataKey="day" axisLine={false} tickLine={false}
-            tick={{ fontSize: 11, fill: colors.muted }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: colors.muted }} />
-          <Tooltip content={tooltip} cursor={{ fill: 'transparent' }} />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+      <ResponsiveContainer width="100%" height={160}>
+        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+          <CartesianGrid vertical={false} stroke={GRID_STROKE} />
+          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+          <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} width={28} />
+          <Tooltip content={tooltip} cursor={CURSOR_FILL} />
+          <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={28}>
             {data.map((d, i) => (
-              <Cell key={i} fill={d.count === max ? colors.primary : colors.dim} />
+              <Cell key={i} fill={SERIES_PRIMARY} fillOpacity={d.count === max ? 1 : 0.4} />
             ))}
           </Bar>
         </BarChart>

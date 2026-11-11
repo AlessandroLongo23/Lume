@@ -1,16 +1,22 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Trash2 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Portal } from '@/lib/components/shared/ui/Portal';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
 import { useNotificationsStore } from '@/lib/stores/notifications';
 import type { Notification } from '@/lib/types/Notification';
 
 const MAX_DISPLAYED = 20;
+const PANEL_WIDTH = 352;
 
 export function NotificationBell() {
   const router = useRouter();
@@ -21,49 +27,17 @@ export function NotificationBell() {
   const unread = notifications.filter((n) => !n.read_at);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
-  const reduceMotion = useReducedMotion();
-
-  useLayoutEffect(() => {
-    if (!open || !triggerRef.current) return;
-    const update = () => {
-      const rect = triggerRef.current!.getBoundingClientRect();
-      setPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleMouseDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t)) return;
-      if (panelRef.current?.contains(t)) return;
-      setOpen(false);
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [open]);
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 440,
+    offset: 8,
+    align: 'end',
+    panelWidth: PANEL_WIDTH,
+  });
 
   const handleClickItem = (n: Notification) => {
     if (!n.read_at) void markAsRead(n.id);
     if (n.link) {
-      setOpen(false);
+      hide();
       router.push(n.link);
     }
   };
@@ -72,74 +46,76 @@ export function NotificationBell() {
 
   return (
     <>
-      <button
+      <Button
         ref={triggerRef}
-        type="button"
-        aria-label="Notifiche"
-        onClick={() => setOpen((o) => !o)}
-        className="relative inline-flex items-center justify-center size-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        variant="secondary"
+        size="md"
+        iconOnly
+        aria-label={unread.length > 0 ? `Notifiche, ${unread.length} non lette` : 'Notifiche'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={toggle}
       >
-        <Bell className="size-4" />
+        <Bell />
         {unread.length > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-primary text-white text-2xs font-semibold leading-none">
-            {unread.length > 9 ? '9+' : unread.length}
-          </span>
+          <NumberBadge
+            value={unread.length}
+            max={9}
+            variant="accent"
+            size="sm"
+            className="absolute -top-1 -right-1 ring-2 ring-[var(--lume-bg)]"
+          />
         )}
-      </button>
+      </Button>
 
-      <AnimatePresence>
-        {open && pos && (
-          <Portal>
-            <motion.div
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
               ref={panelRef}
+              side={side}
               role="dialog"
               aria-label="Notifiche"
-              className="fixed z-popover w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden"
-              style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              transition={{
-                duration: reduceMotion ? 0.12 : 0.18,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              className="max-w-[calc(100vw-1rem)]"
+              style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom, width: PANEL_WIDTH }}
             >
-            <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Notifiche</p>
-              {unread.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => void markAllAsRead()}
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  <Check className="size-3" />
-                  Segna tutte come lette
-                </button>
-              )}
-            </header>
+              <header className="flex items-center justify-between gap-3 h-12 pl-4 pr-2 border-b border-line">
+                <p className="text-sm font-medium text-[var(--lume-text)]">Notifiche</p>
+                {unread.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon={Check}
+                    onClick={() => void markAllAsRead()}
+                    // ds-ignore: a labelled sm Button keeps 32px on touch (only md and icon-only grow to 44px), so the panel header action adds the touch height itself
+                    className="pointer-coarse:h-11"
+                  >
+                    Segna tutte come lette
+                  </Button>
+                )}
+              </header>
 
-            {displayed.length === 0 ? (
-              <div className="px-4 py-12 text-center">
-                <Bell className="mx-auto size-6 text-zinc-300 dark:text-zinc-600" />
-                <p className="mt-3 text-sm text-zinc-500">Nessuna notifica.</p>
-              </div>
-            ) : (
-              <ul className="max-h-96 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
-                {displayed.map((n) => (
-                  <li key={n.id}>
+              {displayed.length === 0 ? (
+                <div className="px-4 py-12 text-center">
+                  <Bell className="mx-auto size-5 text-[var(--lume-text-muted)]" strokeWidth={1.5} aria-hidden />
+                  <p className="mt-3 text-sm text-[var(--lume-text-secondary)]">Nessuna notifica.</p>
+                </div>
+              ) : (
+                <ListBox role="list" className="max-h-96 overflow-y-auto overscroll-contain">
+                  {displayed.map((n) => (
                     <NotificationItem
+                      key={n.id}
                       notification={n}
                       onClick={() => handleClickItem(n)}
                       onDelete={() => void remove(n.id)}
                     />
-                  </li>
-                ))}
-              </ul>
-            )}
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+                  ))}
+                </ListBox>
+              )}
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </>
   );
 }
@@ -155,43 +131,45 @@ function NotificationItem({
 }) {
   const unread = !n.read_at;
   return (
-    <div
-      className={`group relative flex items-start gap-3 px-4 py-3 ${
-        unread ? 'bg-primary/5' : ''
-      } hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors`}
-    >
+    // Two actions per row (open, delete), so the row is a recipe-styled
+    // element holding two buttons, not a <ListRow> button.
+    <div role="listitem" data-list-row="" className="list-row group items-start gap-2 pl-3 pr-1 py-2.5 cursor-default">
       <button
+        // ds-ignore: the open half of a two-action notification row, an unstyled text block inside the list-row; Button would add its control height, padding and fill
         type="button"
         onClick={onClick}
         className="flex-1 min-w-0 text-left focus:outline-none"
       >
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-          {n.title}
+        <p className={`flex items-center gap-2 text-sm ${unread ? 'font-medium text-[var(--lume-text)]' : 'text-[var(--lume-text-secondary)]'}`}>
+          <span className="truncate">{n.title}</span>
           {unread && (
             <span
+              role="img"
               aria-label="Non letta"
-              className="ml-2 inline-block size-1.5 rounded-full bg-primary align-middle"
+              className="inline-block size-1.5 shrink-0 rounded-full bg-[var(--lume-accent)]"
             />
           )}
         </p>
         {n.body && (
-          <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">{n.body}</p>
+          <p className="mt-0.5 text-xs text-[var(--lume-text-secondary)] line-clamp-2">{n.body}</p>
         )}
-        <p className="mt-1 text-2xs text-zinc-400">
+        <p className="mt-1 text-xs text-[var(--lume-text-muted)]">
           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: it })}
         </p>
       </button>
-      <button
-        type="button"
+      <Button
+        variant="ghost-destructive"
+        size="sm"
+        iconOnly
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
         aria-label="Elimina notifica"
-        className="shrink-0 size-7 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
       >
-        <Trash2 className="size-3.5" />
-      </button>
+        <Trash2 aria-hidden />
+      </Button>
     </div>
   );
 }

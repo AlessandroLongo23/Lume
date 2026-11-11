@@ -5,13 +5,14 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parse, isValid } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, AlertCircle, KeyRound, Globe } from 'lucide-react';
+import { DURATION, EASE_GLIDE, EASE_OUT } from '@/lib/const/motion';
+import { Trash2, Mail, Phone, UserX, Archive, ArchiveRestore, Gift, CreditCard, Plane, KeyRound, Globe } from 'lucide-react';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { trackRecent } from '@/lib/components/shell/commandMenu/recents';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
@@ -22,14 +23,13 @@ import {
   DetailChip,
   HeroAvatar,
   ContactRow,
-  StatTile,
-  SegmentedBar,
 } from '@/lib/components/shared/ui/detail';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { DeleteClientModal } from '@/lib/components/admin/clients/DeleteClientModal';
 import { ClientForm, validateBirthDate, type ClientFormValue, type ClientFormErrors } from '@/lib/components/admin/clients/ClientForm';
 import { TreatmentHistory } from '@/lib/components/admin/clients/TreatmentHistory';
 import { FicheHistory } from '@/lib/components/admin/clients/FicheHistory';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import type { Client } from '@/lib/types/Client';
 
 const STAR_TO_PERCENTILE: Record<number, string> = {
@@ -256,26 +256,21 @@ export default function ClientDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+        <div className="size-8 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
+        <p className="mt-4 text-sm text-[var(--lume-text-secondary)]">Caricamento...</p>
       </div>
     );
   }
 
   if (error || !client) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
-        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Cliente non trovato</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il cliente non esiste o è stato rimosso.'}</p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push('/admin/clienti')}
-          className="mt-6"
-        >
-          Torna alla lista clienti
-        </Button>
+      <div className="p-6">
+        <EmptyState
+          icon={UserX}
+          title="Cliente non trovato"
+          description="Il cliente non esiste o è stato rimosso."
+          secondaryAction={{ label: 'Torna alla lista clienti', onClick: () => router.push('/admin/clienti') }}
+        />
       </div>
     );
   }
@@ -319,15 +314,15 @@ export default function ClientDetailPage() {
           title={`${client.firstName} ${client.lastName}`}
           chips={
             <>
-              {client.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
+              {client.isArchived && <StatusDot tone="warning" className="text-xs">Archiviato</StatusDot>}
               {client.isTourist && (
-                <DetailChip tone="sky" icon={Plane}>
+                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--lume-text)]">
+                  <Plane className="size-3.5 text-[var(--lume-text-muted)]" aria-hidden />
                   Turista
-                </DetailChip>
+                </span>
               )}
               {client.user_id === null && !isEditing && !client.isArchived && (
                 <DetailChip
-                  tone="zinc"
                   icon={KeyRound}
                   onClick={handleEnterEdit}
                   title="Aggiungi email o telefono per creare l'accesso"
@@ -336,14 +331,13 @@ export default function ClientDetailPage() {
                 </DetailChip>
               )}
               {client.user_id === null && (isEditing || client.isArchived) && (
-                <DetailChip tone="zinc" icon={KeyRound}>
+                <span className="inline-flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+                  <KeyRound className="size-3.5 text-[var(--lume-text-muted)]" aria-hidden />
                   Senza account
-                </DetailChip>
+                </span>
               )}
               {client.hasIncompleteContact && client.user_id !== null && (
-                <DetailChip tone="amber" icon={AlertCircle}>
-                  Dati incompleti
-                </DetailChip>
+                <StatusDot tone="warning" className="text-xs">Dati incompleti</StatusDot>
               )}
             </>
           }
@@ -408,7 +402,7 @@ export default function ClientDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: EASE_OUT }}
               >
                 <DetailSection label="Modifica dati">
                   <ClientForm
@@ -428,28 +422,29 @@ export default function ClientDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: EASE_OUT }}
                 className="flex flex-col gap-12"
               >
                 <DetailSection index={0} label="Valutazione · ultimi 12 mesi">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <StatTile
+                  <div className="grid grid-cols-1 sm:grid-cols-2 shadow-[inset_0_1px_0_var(--lume-line),inset_0_-1px_0_var(--lume-line)]">
+                    <RatingStat
                       label="Spesa totale"
                       value={rating ? formatEur(rating.total_spent) : '—'}
-                      accent={rating ? { tone: 'emerald', text: STAR_TO_PERCENTILE[rating.spend_stars] } : undefined}
-                    >
-                      <SegmentedBar filled={rating?.spend_stars ?? 0} tone="emerald" groupDelay={0} />
-                    </StatTile>
-                    <StatTile
+                      stars={rating?.spend_stars ?? 0}
+                      tone="success"
+                      percentile={rating ? STAR_TO_PERCENTILE[rating.spend_stars] : undefined}
+                    />
+                    <RatingStat
                       label="Visite"
                       value={rating ? String(rating.visit_count) : '—'}
-                      accent={rating ? { tone: 'sky', text: STAR_TO_PERCENTILE[rating.visit_stars] } : undefined}
-                    >
-                      <SegmentedBar filled={rating?.visit_stars ?? 0} tone="sky" groupDelay={0.08} />
-                    </StatTile>
+                      stars={rating?.visit_stars ?? 0}
+                      tone="info"
+                      percentile={rating ? STAR_TO_PERCENTILE[rating.visit_stars] : undefined}
+                      className="sm:shadow-[inset_1px_0_0_var(--lume-line)] max-sm:shadow-[inset_0_1px_0_var(--lume-line)] sm:pl-6"
+                    />
                   </div>
                   {!rating && (
-                    <p className="mt-4 text-sm text-zinc-400 dark:text-zinc-500 italic">
+                    <p className="mt-4 text-sm text-[var(--lume-text-muted)]">
                       Nessuna visita negli ultimi 12 mesi.
                     </p>
                   )}
@@ -473,11 +468,11 @@ export default function ClientDetailPage() {
 
                 <DetailSection index={5} label="Note" dataTour="cliente-note">
                   {client.note ? (
-                    <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-[var(--lume-text)] whitespace-pre-wrap leading-relaxed max-w-prose">
                       {client.note}
                     </p>
                   ) : (
-                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+                    <p className="text-sm text-[var(--lume-text-muted)]">
                       Nessuna nota
                     </p>
                   )}
@@ -516,24 +511,20 @@ function ClientCouponsList({
 
   if (coupons.length === 0) {
     return (
-      <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+      <p className="text-sm text-[var(--lume-text-muted)]">
         Nessun coupon o gift card.
       </p>
     );
   }
 
   return (
-    <ul className="divide-y divide-zinc-500/10 border-y border-zinc-500/10">
+    <ul className="divide-y divide-line shadow-[inset_0_1px_0_var(--lume-line),inset_0_-1px_0_var(--lume-line)]">
       {coupons.map((c, i) => {
         const isCard = c.kind === 'gift_card';
         const Icon = isCard ? CreditCard : Gift;
         const status = c.displayStatus();
-        const statusColor =
-          status === 'attivo'
-            ? 'text-emerald-600 dark:text-emerald-400'
-            : status === 'esaurito'
-              ? 'text-amber-600 dark:text-amber-400'
-              : 'text-zinc-400';
+        const statusTone =
+          status === 'attivo' ? 'success' : status === 'esaurito' ? 'warning' : 'neutral';
         const isAsRecipient = c.recipient_client_id === clientId;
         return (
           <motion.li
@@ -541,23 +532,23 @@ function ClientCouponsList({
             className="py-3 flex items-center gap-3"
             initial={reduceMotion ? false : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut', delay: i * 0.03 }}
+            transition={{ duration: DURATION.base, ease: EASE_GLIDE, delay: i * 0.03 }}
           >
-            <Icon className={`size-4 shrink-0 ${isCard ? 'text-emerald-500' : 'text-primary'}`} />
+            <Icon className={`size-4 shrink-0 ${isCard ? 'text-success-strong' : 'text-info-strong'}`} aria-hidden />
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                <span className="text-sm font-medium text-[var(--lume-text)]">
                   {isCard ? 'Gift card' : 'Coupon'} · {c.displayDiscount()}
                 </span>
-                <span className="text-2xs uppercase tracking-wider text-zinc-400">
+                <span className="text-xs text-[var(--lume-text-muted)]">
                   {isAsRecipient ? 'destinatario' : 'acquirente'}
                 </span>
               </div>
-              <span className="text-xs text-zinc-500">
-                Valido fino al {new Date(c.valid_until).toLocaleDateString('it-IT')}
+              <span className="text-xs text-[var(--lume-text-secondary)]">
+                Valido fino al <span className="tabular-nums">{new Date(c.valid_until).toLocaleDateString('it-IT')}</span>
               </span>
             </div>
-            <span className={`text-xs font-medium ${statusColor}`}>{status}</span>
+            <StatusDot tone={statusTone} className="text-xs">{status}</StatusDot>
           </motion.li>
         );
       })}
@@ -612,19 +603,59 @@ function OnlineBookingToggle({
   }
 
   return (
-    <div className="flex items-start justify-between gap-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 px-4 py-3">
-      <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-          <Globe className="size-3.5 text-primary" />
+    <SwitchRow
+      label={
+        <span className="inline-flex items-center gap-2">
+          <Globe className="size-3.5 text-[var(--lume-text-muted)]" aria-hidden />
           Può prenotare online
-        </p>
-        <p className="mt-1 text-xs text-zinc-500 leading-relaxed">{helperText}</p>
+        </span>
+      }
+      description={helperText}
+      checked={client.can_book_online}
+      onChange={handleToggle}
+      disabled={saving || client.isArchived}
+      className="surface-card gap-6 px-4 py-3"
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rating stat: big number, small label, one quiet five-step meter
+// ---------------------------------------------------------------------------
+
+function RatingStat({
+  label,
+  value,
+  stars,
+  percentile,
+  tone,
+  className = '',
+}: {
+  label: string;
+  value: string;
+  stars: number;
+  percentile?: string;
+  tone: 'success' | 'info';
+  className?: string;
+}) {
+  const filled = tone === 'success' ? 'bg-success-strong' : 'bg-info-strong';
+  return (
+    <div className={`flex flex-col gap-2 py-5 ${className}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs text-[var(--lume-text-secondary)]">{label}</span>
+        {percentile && (
+          <span className="text-xs text-[var(--lume-text-muted)] sm:pr-6">{percentile}</span>
+        )}
       </div>
-      <Switch
-        checked={client.can_book_online}
-        onChange={handleToggle}
-        disabled={saving || client.isArchived}
-      />
+      <p className="text-headline font-normal leading-tight tracking-tight tabular-nums text-[var(--lume-text)]">{value}</p>
+      <div className="flex items-center gap-1 max-w-48" role="img" aria-label={`${stars} su 5`}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span
+            key={i}
+            className={`h-1 flex-1 rounded-full ${i <= stars ? filled : 'bg-active'}`}
+          />
+        ))}
+      </div>
     </div>
   );
 }

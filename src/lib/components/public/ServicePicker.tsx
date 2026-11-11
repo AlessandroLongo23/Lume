@@ -3,6 +3,10 @@
 import Image from 'next/image';
 import { Clock, ChevronRight } from 'lucide-react';
 import type { BookableService } from '@/lib/booking/publicTypes';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+
+// Tall rows with a thumbnail: the list-row recipe at booking-page scale.
+export const PICKER_ROW = 'min-h-16 gap-3.5 px-2 py-3 text-base';
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
@@ -31,16 +35,17 @@ export function ServicePicker({
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ListBox className="-mx-1 p-0 gap-1">
       {services.map((service) => (
-        <li key={service.id}>
+        <ListRow key={service.id} asChild>
           <button
+            // ds-ignore: booking picker row, styled by ListRow asChild; ListRow's own button wraps children in a truncating span that breaks the thumbnail + text layout
             type="button"
             onClick={() => onSelect(service)}
-            className="group w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] hover:border-[var(--lume-accent)] hover:bg-[var(--lume-accent-muted)] transition-colors text-left"
+            className={PICKER_ROW}
           >
             {service.image_url ? (
-              <div className="size-14 shrink-0 rounded-lg overflow-hidden bg-[var(--lume-surface)]">
+              <div className="size-11 shrink-0 rounded-lg overflow-hidden bg-[var(--lume-surface)]">
                 <Image
                   src={service.image_url}
                   alt={service.name}
@@ -51,7 +56,7 @@ export function ServicePicker({
                 />
               </div>
             ) : (
-              <div className="size-14 shrink-0 rounded-lg bg-[var(--lume-accent-muted)] flex items-center justify-center text-[var(--lume-accent)] font-semibold">
+              <div className="size-11 shrink-0 rounded-lg bg-active flex items-center justify-center text-[var(--lume-text-secondary)] font-medium">
                 {service.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -67,13 +72,13 @@ export function ServicePicker({
                   <Clock className="size-3" />
                   {formatDuration(service.duration)}
                 </span>
-                <span className="font-medium text-[var(--lume-text)]">{formatPrice(service.price)}</span>
+                <span className="tabular-nums text-[var(--lume-text)]">{formatPrice(service.price)}</span>
               </p>
             </div>
-            <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover:text-[var(--lume-accent)] shrink-0" />
+            <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover/row:text-[var(--lume-text)] shrink-0" />
           </button>
-        </li>
+        </ListRow>
       ))}
-    </ul>
+    </ListBox>
   );
 }

@@ -26,12 +26,18 @@ export function SidebarEdgeToggle() {
   const label = collapsed ? 'Espandi menu' : 'Comprimi menu';
 
   return (
-    <Tooltip label={label} shortcut={sidebarToggleLabel()} side="right" sideOffset={8}>
+    <Tooltip label={label} shortcut={sidebarToggleLabel()} side="right">
       <button
+        // ds-ignore: a 20px round chip pinned to the sidebar edge with an enlarged invisible hit area; Button's smallest size is a 32px rounded square
         type="button"
         onClick={handleClick}
         aria-label={label}
-        className="hidden md:flex items-center justify-center w-5 h-5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 shadow-sm transition-colors"
+        className={[
+          // A floating chip on the sidebar edge: the float surface, made round.
+          'surface-float hidden md:flex items-center justify-center size-5 rounded-full text-[var(--lume-text-muted)]',
+          'hover:text-[var(--lume-text)] transition-colors duration-[var(--duration-fast)]',
+          "relative before:absolute before:-inset-2 before:content-['']",
+        ].join(' ')}
       >
         {collapsed ? (
           <ChevronRight className="w-3 h-3" strokeWidth={2} />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
@@ -51,7 +52,6 @@ export function AddMarchioModal({ isOpen, onClose, selectedManufacturer }: AddMa
     }
   };
 
-  const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
 
   return (
     <AddModal
@@ -66,18 +66,15 @@ export function AddMarchioModal({ isOpen, onClose, selectedManufacturer }: AddMa
       onEnterComplete={() => emitTourEvent('manufacturer:modal-open')}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
-          <input
-            type="text"
-            data-tour="field-manufacturer-name"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className={inputClass}
-            placeholder="es. L'Oréal, Wella, Schwarzkopf..."
-          />
-          {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-        </div>
+        <FormInput
+          label="Nome"
+          required
+          data-tour="field-manufacturer-name"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          placeholder="es. L'Oréal, Wella, Schwarzkopf..."
+          error={nameError || undefined}
+        />
       </div>
     </AddModal>
   );

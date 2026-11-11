@@ -12,7 +12,7 @@ export function SalonePanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <div className="text-sm text-zinc-400">Caricamento impostazioni...</div>
+        <div className="text-sm text-[var(--lume-text-muted)]">Caricamento impostazioni...</div>
       </div>
     );
   }

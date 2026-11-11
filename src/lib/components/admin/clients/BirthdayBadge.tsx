@@ -7,6 +7,8 @@ interface BirthdayBadgeProps {
   daysLeft: number;
 }
 
+// ds-ignore: a brass cake icon beside a plain word with no fill; Tag and DetailChip add a grey pill and StatusDot a dot, so each would change the look
+/** Upcoming birthday: a brass cake beside a neutral word, no tinted pill. */
 export function BirthdayBadge({ daysLeft }: BirthdayBadgeProps) {
   const label =
     daysLeft === 0
@@ -15,19 +17,16 @@ export function BirthdayBadge({ daysLeft }: BirthdayBadgeProps) {
         ? 'Compleanno domani'
         : `Compleanno fra ${daysLeft} giorni`;
 
+  const short = daysLeft === 0 ? 'oggi' : daysLeft === 1 ? 'domani' : `fra ${daysLeft} giorni`;
+
   return (
     <Tooltip label={label}>
       <span
-        className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-medium tabular-nums"
-        style={{
-          background: 'var(--lume-warning-bg)',
-          color: 'var(--lume-warning-fg)',
-          border: '1px solid var(--lume-warning-border)',
-        }}
+        className="inline-flex items-center gap-1 text-xs font-sans text-[var(--lume-text)] whitespace-nowrap"
         aria-label={label}
       >
-        <Cake className="size-3" />
-        {daysLeft === 0 ? 'oggi' : `${daysLeft}g`}
+        <Cake className="size-3.5 shrink-0 text-[var(--lume-brass-fg)]" aria-hidden />
+        {short}
       </span>
     </Tooltip>
   );

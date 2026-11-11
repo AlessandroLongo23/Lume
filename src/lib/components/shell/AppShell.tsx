@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { animate, motion, useMotionValue, useTransform } from 'motion/react';
@@ -10,6 +10,8 @@ import { SidebarEdgeToggle } from './SidebarCollapseToggle';
 import { SidebarShortcutHint } from './SidebarShortcutHint';
 import { BugButton } from './BugButton';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { DURATION } from '@/lib/const/motion';
 
 interface AppShellProps {
   impersonationBanner?: React.ReactNode;
@@ -23,6 +25,19 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
   const { collapsed, toggle } = collapseState;
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const drawerRef = useRef<HTMLElement>(null);
+
+  // The phone drawer is portaled to the end of <body>, after the page in tab
+  // order: move focus into it on open so Tab walks the menu, and hand focus
+  // back to whatever opened it on close.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    drawerRef.current?.focus();
+    return () => {
+      if (opener && document.contains(opener)) opener.focus();
+    };
+  }, [mobileOpen]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -47,7 +62,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
 
   useEffect(() => {
     const controls = animate(sidebarW, collapsed ? 4 : 15, {
-      duration: 0.22,
+      duration: DURATION.base,
       ease: 'easeOut',
     });
     return () => controls.stop();
@@ -80,7 +95,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
     <SidebarCollapseContext.Provider value={collapseState}>
       <MobileMenuContext.Provider value={{ open: mobileOpen, setOpen: setMobileOpen }}>
         <motion.div
-          className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-foreground dark:text-white font-sans"
+          className="h-screen overflow-hidden bg-[var(--lume-bg)] text-[var(--lume-text)] font-sans"
           style={{ ...staticVars, ['--shell-sidebar-w' as string]: sidebarWRem }}
         >
           {hasBanner && (
@@ -89,7 +104,7 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             </div>
           )}
 
-          <aside className="hidden md:flex fixed left-0 bottom-0 z-sidebar top-[var(--shell-banner-h)] w-[var(--shell-sidebar-w)] bg-zinc-50 dark:bg-zinc-950 flex-col overflow-y-auto overflow-x-hidden">
+          <aside className="hidden md:flex fixed left-0 bottom-0 z-sidebar top-[var(--shell-banner-h)] w-[var(--shell-sidebar-w)] bg-[var(--lume-bg)] flex-col overflow-y-auto overflow-x-hidden">
             <SidebarForceExpandedContext.Provider value={false}>
               {sidebar}
             </SidebarForceExpandedContext.Provider>
@@ -101,41 +116,59 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
             <SidebarEdgeToggle />
           </div>
 
-          {mobileOpen && (
-            <>
-              <aside className="md:hidden fixed left-0 bottom-0 z-drawer top-[var(--shell-banner-h)] w-72 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
-                <div className="flex justify-end p-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    aria-label="Chiudi menu"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <X />
-                  </Button>
-                </div>
-                <SidebarForceExpandedContext.Provider value={true}>
-                  {sidebar}
-                </SidebarForceExpandedContext.Provider>
-              </aside>
-              <button
-                type="button"
-                className="md:hidden fixed inset-0 z-drawer-backdrop bg-black/40"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Chiudi menu"
-              />
-            </>
-          )}
+          {/* Left nav drawer on phones. SidePanel only opens from the right
+              with a title bar, so the drawer keeps its own surface. It is
+              portaled to <body> and so no longer inherits this wrapper's
+              --shell-banner-h: it carries the same value (staticVars) to open
+              right under the impersonation banner. */}
+          <Portal>
+            {mobileOpen && (
+              <>
+                <aside
+                  ref={drawerRef}
+                  tabIndex={-1}
+                  aria-label="Menu"
+                  // ds-ignore: mobile nav drawer docked to the left edge, full height under the banner, not a panel floating over content
+                  className="md:hidden fixed left-0 bottom-0 z-drawer top-[var(--shell-banner-h)] w-72 bg-[var(--lume-bg)] flex flex-col shadow-float overflow-y-auto outline-none"
+                  style={staticVars}
+                >
+                  <div className="flex justify-end p-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      aria-label="Chiudi menu"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <X />
+                    </Button>
+                  </div>
+                  <SidebarForceExpandedContext.Provider value={true}>
+                    {sidebar}
+                  </SidebarForceExpandedContext.Provider>
+                </aside>
+                {/* ds-ignore: drawer backdrop, a full-screen scrim that closes the menu on tap, not a visible button */}
+                <button
+                  type="button"
+                  className="md:hidden fixed inset-0 z-drawer-backdrop bg-[color-mix(in_oklab,var(--lume-overlay)_70%,transparent)]"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Chiudi menu"
+                />
+              </>
+            )}
+          </Portal>
 
           <main className="h-screen flex flex-col pt-[var(--shell-banner-h)] pl-0 md:pl-[var(--shell-sidebar-w)]">
-            <div className="flex-1 min-h-0 flex flex-col p-2">
+            <div className="relative flex-1 min-h-0 flex flex-col p-2">
+              {/* The content panel: card radius on the panel fill. Its hairline
+                  is the overlay below: an inset shadow on the scroll container
+                  would paint under the sticky top bar and the fade. */}
               <div
-                className={`flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 ${
+                className={`flex-1 min-h-0 rounded-xl bg-[var(--lume-panel)] ${
                   isViewportFit ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
                 }`}
               >
-                <div className="sticky top-0 z-sticky h-16 bg-white dark:bg-zinc-900 rounded-t-xl">
+                <div className="sticky top-0 z-sticky h-16 bg-[var(--lume-panel)] rounded-t-xl">
                   {topBar}
                   {!isViewportFit && (
                     <div
@@ -148,13 +181,17 @@ export function AppShell({ impersonationBanner, sidebar, topBar, children }: App
                   key={pageAnimationKey}
                   className={`shell-page-enter ${
                     isViewportFit
-                      ? `flex-1 min-h-0 flex flex-col px-8 md:px-[4.125rem] ${isFullBleed ? 'pt-6 pb-6' : 'pt-10 pb-12'}`
-                      : 'px-8 md:px-[4.125rem] pt-10 pb-12'
+                      ? `flex-1 min-h-0 flex flex-col px-8 md:px-16.5 ${isFullBleed ? 'pt-6 pb-6' : 'pt-10 pb-12'}`
+                      : 'px-8 md:px-16.5 pt-10 pb-12'
                   }`}
                 >
                   {children}
                 </div>
               </div>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-2 z-sticky rounded-xl shadow-[inset_0_0_0_1px_var(--lume-line)]"
+              />
             </div>
           </main>
 

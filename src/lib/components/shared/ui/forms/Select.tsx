@@ -1,42 +1,61 @@
 'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react';
-import { ChevronDown, X, Check, Plus } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { DURATION, EASE_OUT } from '@/lib/const/motion';
+import { useState, useRef, useMemo, useCallback, useId, type ReactNode } from 'react';
+import { ChevronDown, X, Plus } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { Portal } from '../Portal';
+import { FloatingPanel } from '../FloatingPanel';
+import { ListBox, ListRow, ListEmpty, ListGroupLabel } from '../list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { useListNavigation } from '@/lib/hooks/useListNavigation';
+import { cn } from '@/lib/utils';
 
 type ControlSize = 'sm' | 'md' | 'lg';
-
-const triggerSizeClasses: Record<ControlSize, string> = {
-  sm: 'h-[var(--lume-control-h-sm)] px-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)]',
-  md: 'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)]',
-  lg: 'h-[var(--lume-control-h-lg)] px-[var(--lume-control-px-lg)] text-[length:var(--lume-control-text-lg)]',
-};
+const sizeClass: Record<ControlSize, string> = { sm: 'control-sm', md: 'control-md', lg: 'control-lg' };
 
 interface SelectProps {
   value: any;
   onChange: (value: any) => void;
   options: any[];
-  labelKey: string | ((option: any) => string);
+  labelKey: string;
   valueKey: string;
   placeholder?: string;
   isNullable?: boolean;
   disabled?: boolean;
   searchable?: boolean;
+  searchPlaceholder?: string;
+  /** Tailwind max-height class for the option list. */
   maxHeight?: string;
-  classes?: string;
-  width?: string;
+  /** Classes on the wrapper (width, flex); full width by default. */
+  className?: string;
   size?: ControlSize;
+  /** Panel width in px; defaults to the trigger's width. */
+  panelWidth?: number;
+  /** Row content; defaults to the label. */
+  renderOption?: (option: any) => ReactNode;
+  /** Trigger content for the chosen option; defaults to the label. */
+  renderValue?: (option: any) => ReactNode;
+  /** Group heading for an option; consecutive options with the same group share one heading. */
+  groupBy?: (option: any) => string | undefined;
+  /** Accessible name when there is no visible label. */
+  ariaLabel?: string;
+  id?: string;
+  invalid?: boolean;
   /** Generic "create new" affordance rendered in the search row. Closes the
-   *  dropdown when clicked — the consumer typically opens a modal next. */
+   *  dropdown when clicked; the consumer typically opens a modal next. */
   createAction?: { label: string; onClick: () => void };
   /** When set, an empty-result state is replaced by a "+ Crea «query»" row.
    *  Fires with the trimmed search text and closes the dropdown. */
   onCreateFromSearch?: (typedText: string) => void;
 }
 
+/**
+ * The one picker in Lume. A `control` trigger, a <FloatingPanel> with an
+ * optional search row, and a <ListBox> of <ListRow>s, so it looks, moves and
+ * responds to the keyboard exactly like every other list. Build pickers from
+ * this (PhoneNumber's prefix is one) instead of a new dropdown.
+ */
 export function Select({
   value,
   onChange,
@@ -47,238 +66,144 @@ export function Select({
   isNullable = false,
   disabled = false,
   searchable = true,
-  maxHeight = 'max-h-40',
-  classes = '',
-  width = 'w-full',
+  searchPlaceholder = 'Cerca…',
+  maxHeight = 'max-h-56',
+  className,
   size = 'md',
+  panelWidth,
+  renderOption,
+  renderValue,
+  groupBy,
+  ariaLabel,
+  id,
+  invalid,
   createAction,
   onCreateFromSearch,
 }: SelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [query, setQuery] = useState('');
   const listboxId = useId();
-  const ref = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
-  const optionsRef = useRef<HTMLDivElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const { open: isOpen, show, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, { panelMaxHeight: 300, panelWidth });
 
-  const getLabel = useCallback((option: any): string => {
-    if (typeof labelKey === 'function') return labelKey(option);
-    return option[labelKey] ?? '';
-  }, [labelKey]);
+  const getLabel = useCallback((option: any): string => option[labelKey] ?? '', [labelKey]);
 
-  const selectedLabel = useMemo(() => {
-    const found = options.find((o) => o[valueKey] === value);
-    return found ? getLabel(found) : placeholder;
-  }, [value, options, valueKey, placeholder, getLabel]);
+  const selected = useMemo(() => options.find((o) => o[valueKey] === value), [options, valueKey, value]);
 
-  const filteredOptions = useMemo(() => {
-    if (searchable && searchQuery) {
-      return options.filter((o) => getLabel(o).toLowerCase().includes(searchQuery.toLowerCase()));
-    }
-    return options;
-  }, [options, searchQuery, searchable, getLabel]);
+  const filtered = useMemo(() => {
+    if (!searchable || !query) return options;
+    const q = query.toLowerCase();
+    return options.filter((o) => getLabel(o).toLowerCase().includes(q));
+  }, [options, query, searchable, getLabel]);
 
-  // Close on outside click — must check both the trigger and the portal dropdown
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        ref.current && !ref.current.contains(target) &&
-        (!portalRef.current || !portalRef.current.contains(target))
-      ) {
-        setIsOpen(false);
-        setSearchQuery('');
-        setHighlightedIndex(-1);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  // Close on any scroll so the fixed dropdown doesn't drift from its trigger.
-  // Ignore scrolls originating inside the dropdown itself (the options list
-  // scrolling, or scrollIntoView from hover/keyboard navigation) — those don't
-  // move the trigger and shouldn't close the dropdown.
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleScroll = (e: Event) => {
-      const target = e.target as Node | null;
-      if (target && portalRef.current?.contains(target)) return;
-      setIsOpen(false);
-      setSearchQuery('');
-      setHighlightedIndex(-1);
-    };
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [isOpen]);
-
-  // Scroll highlighted option into view
-  useEffect(() => {
-    if (highlightedIndex >= 0 && optionsRef.current) {
-      const buttons = optionsRef.current.querySelectorAll<HTMLButtonElement>('[role="option"]');
-      buttons[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [highlightedIndex]);
-
-  const handleOptionClick = (option: any) => {
-    if (value === option[valueKey] && isNullable) {
-      onChange(null);
-    } else {
-      onChange(option[valueKey]);
-    }
-    setIsOpen(false);
-    setSearchQuery('');
-    setHighlightedIndex(-1);
+  const close = useCallback(() => {
+    hide();
+    setQuery('');
     triggerRef.current?.focus();
-  };
+  }, [hide]);
 
-  const openDropdown = () => {
-    if (!disabled) {
-      if (isOpen) {
-        closeDropdown();
-        return;
-      }
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDropdownPos({
-          top: rect.bottom + 4,
-          left: rect.left,
-          width: rect.width,
-        });
-      }
-      setIsOpen(true);
-      setHighlightedIndex(-1);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
+  const pick = useCallback((option: any) => {
+    onChange(value === option[valueKey] && isNullable ? null : option[valueKey]);
+    close();
+  }, [onChange, value, valueKey, isNullable, close]);
 
-  const closeDropdown = () => {
-    setIsOpen(false);
-    setSearchQuery('');
-    setHighlightedIndex(-1);
-    triggerRef.current?.focus();
-  };
+  const nav = useListNavigation({
+    count: filtered.length,
+    onPick: (i) => pick(filtered[i]),
+    onEscape: close,
+    listRef,
+    pickFirstOnEnter: true,
+  });
 
-  const handleKeyNavigation = (e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-
-    switch (e.key) {
-      case 'ArrowDown': {
-        e.preventDefault();
-        setHighlightedIndex((prev) => Math.min(prev + 1, filteredOptions.length - 1));
-        break;
-      }
-      case 'ArrowUp': {
-        e.preventDefault();
-        setHighlightedIndex((prev) => Math.max(prev - 1, 0));
-        break;
-      }
-      case 'Enter': {
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
-          handleOptionClick(filteredOptions[highlightedIndex]);
-        } else if (filteredOptions.length > 0) {
-          handleOptionClick(filteredOptions[0]);
-        }
-        break;
-      }
-      case 'Escape': {
-        // Escape closes the list only; without this a surrounding Modal, which
-        // listens on window, closes too.
-        e.stopPropagation();
-        closeDropdown();
-        break;
-      }
-      case 'Tab': {
-        closeDropdown();
-        break;
-      }
-    }
+  const open = () => {
+    if (disabled) return;
+    if (isOpen) return close();
+    nav.setActive(-1);
+    show();
+    setTimeout(() => {
+      (searchable ? searchRef.current : listRef.current)?.focus();
+      // Open on the chosen option, not at the top of a long list.
+      listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+    }, 30);
   };
 
   return (
-    <div ref={ref} className={`relative ${classes} ${width}`}>
+    <div className={cn('relative w-full', className)}>
       <div
         ref={triggerRef}
+        id={id}
         role="combobox"
         tabIndex={disabled ? -1 : 0}
-        className={`w-full text-left bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-md
-          ${triggerSizeClasses[size]}
-          transition-[background-color,border-color,box-shadow] duration-[var(--duration-fast)] flex items-center justify-between
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}
-        onClick={openDropdown}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-            e.preventDefault();
-            openDropdown();
-          }
-        }}
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={listboxId}
+        aria-invalid={invalid || undefined}
+        aria-disabled={disabled || undefined}
+        className={cn('control w-full flex items-center justify-between gap-2 cursor-pointer select-none', sizeClass[size])}
+        onClick={open}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); open(); }
+        }}
       >
-        <span className={`block truncate ${selectedLabel === placeholder ? 'text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
-          {selectedLabel}
+        <span className={cn('block truncate', !selected && 'text-[var(--lume-text-muted)]')}>
+          {selected ? (renderValue ? renderValue(selected) : getLabel(selected)) : placeholder}
         </span>
-        <div className="flex items-center gap-2">
-          {value !== null && value !== undefined && isNullable && (
+        <span className="flex items-center gap-1 shrink-0">
+          {selected && isNullable && (
             <button
               type="button"
               aria-label="Rimuovi selezione"
-              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="p-1 rounded-md text-[var(--lume-text-muted)] hover:text-[var(--lume-text)] hover:bg-hover transition-colors"
               onClick={(e) => { e.stopPropagation(); onChange(null); }}
             >
-              <X className="h-4 w-4 text-zinc-500" />
+              <X className="size-4" />
             </button>
           )}
-          <ChevronDown className={`h-5 w-5 text-zinc-400 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] ${isOpen ? 'rotate-180' : ''}`} />
-        </div>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              'size-4 text-[var(--lume-text-muted)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none',
+              isOpen && 'rotate-180',
+            )}
+          />
+        </span>
       </div>
 
       <Portal>
         <AnimatePresence>
-          {isOpen && dropdownPos && (
-            <motion.div
-              ref={portalRef}
+          {isOpen && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
               style={{
                 position: 'fixed',
-                top: dropdownPos.top,
-                left: dropdownPos.left,
-                width: dropdownPos.width,
-                transformOrigin: '50% 0%',
+                left: position.left,
+                top: position.top,
+                bottom: position.bottom,
+                width: panelWidth ?? position.width,
               }}
-              className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg overflow-hidden z-popover"
-              initial={{ opacity: 0, scale: 0.97, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: -4, transition: { duration: DURATION.fast, ease: EASE_OUT } }}
-              transition={{ duration: DURATION.base, ease: EASE_OUT }}
             >
               {(searchable || createAction) && (
-                <div className="p-2 border-b border-zinc-500/25 flex items-center gap-2">
+                <div className="flex items-center gap-2 p-1.5 border-b border-line">
                   {searchable && (
                     <input
-                      ref={inputRef}
+                      ref={searchRef}
                       type="text"
-                      value={searchQuery}
-                      onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                      className="flex-1 min-w-0 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 border border-zinc-500/25 rounded-md text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow"
-                      placeholder="Cerca..."
-                      onKeyDown={handleKeyNavigation}
+                      value={query}
+                      onChange={(e) => { setQuery(e.target.value); nav.setActive(-1); }}
+                      onKeyDown={nav.onKeyDown}
+                      placeholder={searchPlaceholder}
+                      aria-controls={listboxId}
+                      className="flex-1 min-w-0 h-8 pointer-coarse:h-11 pointer-coarse:text-base px-2 text-sm bg-transparent border-0 rounded-md text-[var(--lume-text)] placeholder:text-[var(--lume-text-muted)] outline-none focus:ring-0"
                     />
                   )}
                   {createAction && (
                     <button
                       type="button"
-                      onClick={() => {
-                        closeDropdown();
-                        createAction.onClick();
-                      }}
-                      className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary-hover dark:text-primary/80 hover:bg-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors"
+                      onClick={() => { close(); createAction.onClick(); }}
+                      className="shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-sm font-medium bg-active text-[var(--lume-text)] hover:bg-strong transition-colors"
                     >
                       <Plus className="size-4" />
                       {createAction.label}
@@ -286,52 +211,43 @@ export function Select({
                   )}
                 </div>
               )}
-              <div ref={optionsRef} id={listboxId} role="listbox" className={`${maxHeight} overflow-y-auto`}>
-                {filteredOptions.length === 0 ? (
-                  onCreateFromSearch && searchQuery.trim() ? (
-                    <button
-                      type="button"
-                      className="w-full p-2 cursor-pointer transition-colors text-left flex items-center gap-2 text-primary-hover dark:text-primary/80 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                      onClick={() => {
-                        const trimmed = searchQuery.trim();
-                        closeDropdown();
-                        onCreateFromSearch(trimmed);
-                      }}
-                    >
-                      <Plus className="size-4 shrink-0" />
-                      <span className="truncate">Crea «{searchQuery.trim()}»</span>
-                    </button>
+              <ListBox
+                ref={listRef}
+                id={listboxId}
+                role="listbox"
+                tabIndex={-1}
+                onKeyDown={searchable ? undefined : nav.onKeyDown}
+                className={cn('overflow-y-auto outline-none', maxHeight)}
+              >
+                {filtered.length === 0 ? (
+                  onCreateFromSearch && query.trim() ? (
+                    <ListRow icon={Plus} onClick={() => { const t = query.trim(); close(); onCreateFromSearch(t); }}>
+                      Crea «{query.trim()}»
+                    </ListRow>
                   ) : (
-                    <div className="p-2 text-sm text-zinc-500 dark:text-zinc-400 text-center">Nessun risultato</div>
+                    <ListEmpty>Nessun risultato</ListEmpty>
                   )
                 ) : (
-                  filteredOptions.map((option, i) => {
-                    const isSelected = value === option[valueKey];
-                    const isHighlighted = highlightedIndex === i;
-                    return (
-                      <button
-                        key={option[valueKey] ?? i}
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        className={`w-full p-2 cursor-pointer transition-colors text-left flex items-center justify-between
-                          ${isSelected
-                            ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-                            : isHighlighted
-                              ? 'bg-zinc-100 dark:bg-zinc-700'
-                              : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                          }`}
-                        onClick={() => handleOptionClick(option)}
-                        onMouseEnter={() => setHighlightedIndex(i)}
-                      >
-                        <span>{getLabel(option)}</span>
-                        {isSelected && <Check className="size-4 text-primary" />}
-                      </button>
-                    );
+                  filtered.map((option, i) => {
+                    const group = groupBy?.(option);
+                    const newGroup = group && (i === 0 || group !== groupBy?.(filtered[i - 1]));
+                    return [
+                    newGroup ? <ListGroupLabel key={`g-${group}`}>{group}</ListGroupLabel> : null,
+                    <ListRow
+                      key={option[valueKey] ?? i}
+                      selected={value === option[valueKey]}
+                      highlighted={nav.active === i}
+                      check
+                      onClick={() => pick(option)}
+                      onMouseEnter={() => nav.setActive(i)}
+                    >
+                      {renderOption ? renderOption(option) : getLabel(option)}
+                    </ListRow>,
+                    ];
                   })
                 )}
-              </div>
-            </motion.div>
+              </ListBox>
+            </FloatingPanel>
           )}
         </AnimatePresence>
       </Portal>

@@ -16,8 +16,9 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { EditOrderModal } from '@/lib/components/admin/orders/EditOrderModal';
 import { DeleteOrderModal } from '@/lib/components/admin/orders/DeleteOrderModal';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import type { Order } from '@/lib/types/Order';
+import type { StatusTone } from '@/lib/components/shared/ui/StatusDot';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
@@ -26,11 +27,11 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Annullato',
 };
 
-const STATUS_TONE: Record<string, 'amber' | 'sky' | 'emerald' | 'zinc' | 'red'> = {
-  pending: 'amber',
-  confirmed: 'sky',
-  delivered: 'emerald',
-  cancelled: 'red',
+const STATUS_TONE: Record<string, StatusTone> = {
+  pending: 'warning',
+  confirmed: 'info',
+  delivered: 'success',
+  cancelled: 'danger',
 };
 
 export default function OrderDetailPage() {
@@ -63,26 +64,21 @@ export default function OrderDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+        <div className="size-8 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
+        <p className="mt-4 text-[var(--lume-text-secondary)]">Caricamento...</p>
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <FileX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
-        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Ordine non trovato</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? "L'ordine non esiste o è stato rimosso."}</p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push('/admin/ordini')}
-          className="mt-6"
-        >
-          Torna agli ordini
-        </Button>
+      <div className="p-6">
+        <EmptyState
+          icon={FileX}
+          title="Ordine non trovato"
+          description="L'ordine non esiste o è stato rimosso."
+          secondaryAction={{ label: 'Torna agli ordini', onClick: () => router.push('/admin/ordini') }}
+        />
       </div>
     );
   }
@@ -90,7 +86,7 @@ export default function OrderDetailPage() {
   const supplier = suppliers.find((s) => s.id === order.supplier_id);
   const statusKey = order.status?.toLowerCase() ?? 'pending';
   const statusLabel = STATUS_LABEL[statusKey] ?? order.status;
-  const statusTone = STATUS_TONE[statusKey] ?? 'zinc';
+  const statusTone = STATUS_TONE[statusKey] ?? 'neutral';
   const orderDate = order.datetime ? new Date(order.datetime) : null;
 
   return (
@@ -107,7 +103,7 @@ export default function OrderDetailPage() {
       <div className="flex flex-col">
         <DetailHero
           onBack={() => router.push('/admin/ordini')}
-          avatar={<HeroIconTile icon={ShoppingCart} tone="primary" />}
+          avatar={<HeroIconTile icon={ShoppingCart} />}
           title={`Ordine #${order.id.slice(0, 8)}`}
           chips={<DetailChip tone={statusTone}>{statusLabel}</DetailChip>}
           meta={
@@ -132,21 +128,21 @@ export default function OrderDetailPage() {
 
         <div className="px-6 lg:px-10 py-8 max-w-5xl w-full mx-auto flex flex-col gap-12">
           <DetailSection index={0} label="Dettagli">
-            <dl className="divide-y divide-zinc-500/10 border-y border-zinc-500/10">
+            <dl className="divide-y divide-line shadow-[inset_0_1px_0_var(--lume-line),inset_0_-1px_0_var(--lume-line)]">
               <div className="flex items-center justify-between py-3">
-                <dt className="text-sm text-zinc-500 dark:text-zinc-400">Fornitore</dt>
-                <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                <dt className="text-sm text-[var(--lume-text-secondary)]">Fornitore</dt>
+                <dd className="text-sm font-medium text-[var(--lume-text)]">
                   {supplier?.name ?? '—'}
                 </dd>
               </div>
               <div className="flex items-center justify-between py-3">
-                <dt className="text-sm text-zinc-500 dark:text-zinc-400">Data e ora</dt>
-                <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                <dt className="text-sm text-[var(--lume-text-secondary)]">Data e ora</dt>
+                <dd className="text-sm font-medium text-[var(--lume-text)]">
                   {orderDate ? format(orderDate, "d MMM yyyy 'alle' HH:mm", { locale: it }) : '—'}
                 </dd>
               </div>
               <div className="flex items-center justify-between py-3">
-                <dt className="text-sm text-zinc-500 dark:text-zinc-400">Stato</dt>
+                <dt className="text-sm text-[var(--lume-text-secondary)]">Stato</dt>
                 <dd>
                   <DetailChip tone={statusTone}>{statusLabel}</DetailChip>
                 </dd>

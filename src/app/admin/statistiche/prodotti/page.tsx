@@ -7,6 +7,7 @@ import { TopProductsBarChart } from '@/lib/components/admin/statistiche/prodotti
 import { ProductsByCategoryDonut } from '@/lib/components/admin/statistiche/prodotti/ProductsByCategoryDonut';
 import { toProductLeaderboard, toCategoryBreakdown } from '@/lib/components/admin/statistiche/statHelpers';
 import { formatCurrency } from '@/lib/utils/format';
+import { cellNumClass, cellStrongClass, tableClass, tbodyClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 
 export default function ProdottiPage() {
   const data      = useStatisticheStore((s) => s.data);
@@ -16,37 +17,39 @@ export default function ProdottiPage() {
   const byCategory  = useMemo(() => toCategoryBreakdown(data?.prodotti_categorie), [data]);
 
   if (isLoading) {
-    return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;
+    return <div className="h-64 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />;
   }
 
   return (
     <div className="space-y-4">
       <StatSectionCard title="Top prodotti venduti" subtitle="Per incasso nel periodo">
         <TopProductsBarChart rows={leaderboard} />
-        <div className="border-t border-zinc-100 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                <th className="text-left px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">#</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Prodotto</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Categoria</th>
-                <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Qtà</th>
-                <th className="text-right px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Incasso</th>
+        {leaderboard.length > 0 && (
+        <div className="border-t border-line">
+          <table className={`${tableClass} min-w-128`}>
+            <thead className={theadClass}>
+              <tr>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>#</th>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>Prodotto</th>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>Categoria</th>
+                <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Quantità</th>
+                <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Incasso</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className={tbodyClass}>
               {leaderboard.map((row, i) => (
-                <tr key={row.productId} className="border-b border-zinc-50 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-                  <td className="px-5 py-2.5 text-xs text-zinc-400 tabular-nums">{i + 1}</td>
-                  <td className="px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 font-medium">{row.name}</td>
-                  <td className="px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400">{row.categoryName}</td>
-                  <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.qty}</td>
-                  <td className="px-5 py-2.5 text-sm text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">{formatCurrency(row.incasso)}</td>
+                <tr key={row.productId} className={trClass({ interactive: false })}>
+                  <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text-muted)] first:pl-5 last:pr-5`}>{i + 1}</td>
+                  <td className={`${tdClass} ${cellStrongClass} first:pl-5 last:pr-5`}>{row.name}</td>
+                  <td className={`${tdClass} first:pl-5 last:pr-5`}>{row.categoryName}</td>
+                  <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.qty}</td>
+                  <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text)] text-right first:pl-5 last:pr-5`}>{formatCurrency(row.incasso)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        )}
       </StatSectionCard>
 
       <StatSectionCard title="Prodotti per categoria">

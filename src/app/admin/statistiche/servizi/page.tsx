@@ -10,6 +10,7 @@ import {
   toServiceLeaderboard, toCategoryBreakdown, toServicesByOperator,
 } from '@/lib/components/admin/statistiche/statHelpers';
 import { formatCurrency } from '@/lib/utils/format';
+import { cellNumClass, cellStrongClass, tableClass, tbodyClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 
 export default function ServiziPage() {
   const data      = useStatisticheStore((s) => s.data);
@@ -20,42 +21,44 @@ export default function ServiziPage() {
   const byOperator  = useMemo(() => toServicesByOperator(data), [data]);
 
   if (isLoading) {
-    return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;
+    return <div className="h-64 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />;
   }
 
   return (
     <div className="space-y-4">
       <StatSectionCard title="Top servizi per incasso" subtitle="Primi 10 nel periodo">
         <TopServicesBarChart rows={leaderboard} />
-        <div className="border-t border-zinc-100 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                <th className="text-left px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">#</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Servizio</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Categoria</th>
-                <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">N.</th>
-                <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Incasso</th>
-                <th className="text-right px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">% inc.</th>
+        {leaderboard.length > 0 && (
+        <div className="border-t border-line">
+          <table className={`${tableClass} min-w-128`}>
+            <thead className={theadClass}>
+              <tr>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>#</th>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>Servizio</th>
+                <th className={`${thClass()} first:pl-5 last:pr-5`}>Categoria</th>
+                <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Numero</th>
+                <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Incasso</th>
+                <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>% incasso</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className={tbodyClass}>
               {leaderboard.map((row, i) => (
-                <tr key={row.serviceId} className="border-b border-zinc-50 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-                  <td className="px-5 py-2.5 text-xs text-zinc-400 tabular-nums">{i + 1}</td>
-                  <td className="px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 font-medium">{row.name}</td>
-                  <td className="px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400">{row.categoryName}</td>
-                  <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.count}</td>
-                  <td className="px-3 py-2.5 text-sm text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">{formatCurrency(row.incasso)}</td>
-                  <td className="px-5 py-2.5 text-sm text-right tabular-nums text-zinc-500">{row.pctIncasso.toFixed(1)}%</td>
+                <tr key={row.serviceId} className={trClass({ interactive: false })}>
+                  <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text-muted)] first:pl-5 last:pr-5`}>{i + 1}</td>
+                  <td className={`${tdClass} ${cellStrongClass} first:pl-5 last:pr-5`}>{row.name}</td>
+                  <td className={`${tdClass} first:pl-5 last:pr-5`}>{row.categoryName}</td>
+                  <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.count}</td>
+                  <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text)] text-right first:pl-5 last:pr-5`}>{formatCurrency(row.incasso)}</td>
+                  <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.pctIncasso.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        )}
       </StatSectionCard>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StatSectionCard title="Servizi per categoria">
           <ServicesByCategoryDonut data={byCategory} />
         </StatSectionCard>

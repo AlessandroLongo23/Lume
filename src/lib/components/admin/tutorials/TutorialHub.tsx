@@ -104,7 +104,7 @@ export function TutorialHub() {
       ) : (
         groups.map((group) => (
           <section key={String(group.key)} className="flex flex-col gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <h2 className="text-xs font-medium text-[var(--lume-text-secondary)]">
               {group.label}
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">

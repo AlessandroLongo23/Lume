@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User } from 'lucide-react';
+import { Phone, User } from 'lucide-react';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { useFormDefaults } from '@/lib/hooks/useFormDefaults';
 import type { Client } from '@/lib/types/Client';
@@ -108,17 +109,18 @@ export function QuickAddClientModal({
             required
           />
         </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-foreground">
-            Telefono <span className="text-muted-foreground font-normal">(opzionale)</span>
-          </label>
-          <PhoneNumber
-            prefixCode={phonePrefix}
-            phoneNumber={phoneNumber}
-            onPrefixChange={setPhonePrefix}
-            onPhoneChange={setPhoneNumber}
-          />
-        </div>
+        <Field label="Telefono (opzionale)" labelIcon={Phone}>
+          {({ id, invalid }) => (
+            <PhoneNumber
+              id={id}
+              invalid={invalid}
+              prefixCode={phonePrefix}
+              phoneNumber={phoneNumber}
+              onPrefixChange={setPhonePrefix}
+              onPhoneChange={setPhoneNumber}
+            />
+          )}
+        </Field>
       </div>
     </AddModal>
   );

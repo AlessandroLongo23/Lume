@@ -1,6 +1,7 @@
 'use client';
 
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 type AnyProps = Record<string, unknown>;
 
@@ -23,7 +24,8 @@ function mergeProps(slot: AnyProps, child: AnyProps): AnyProps {
     const childValue = child[key];
 
     if (key === 'className') {
-      merged[key] = [slotValue, childValue].filter(Boolean).join(' ');
+      // tailwind-merge, so the child's classes win over conflicting slot ones.
+      merged[key] = cn(slotValue as string, childValue as string);
     } else if (key === 'style') {
       merged[key] = { ...(slotValue as object), ...(childValue as object) };
     } else if (typeof slotValue === 'function' && typeof childValue === 'function') {

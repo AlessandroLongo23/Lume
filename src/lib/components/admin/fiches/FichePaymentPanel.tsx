@@ -1,11 +1,20 @@
 'use client';
 
 import { CreditCard, Banknote, HelpCircle, Shuffle, Plus, Trash2 } from 'lucide-react';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
+
+const PAYMENT_VIEWS: { key: Exclude<PaymentView, null>; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: FichePaymentMethod.CASH, label: 'Contanti', Icon: Banknote },
+  { key: FichePaymentMethod.POS, label: 'POS', Icon: CreditCard },
+  { key: FichePaymentMethod.OTHER, label: 'Altro', Icon: HelpCircle },
+  { key: 'mixed', label: 'Misto', Icon: Shuffle },
+];
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: FichePaymentMethod.CASH, label: 'Contanti' },
@@ -116,65 +125,48 @@ export function FichePaymentPanel({
   return (
     <div className="flex flex-col gap-4">
       <div data-tour="fiche-payment-methods">
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+        <p className="text-xs font-medium text-[var(--lume-text-secondary)] mb-3">
           Metodo di pagamento
         </p>
-        <div className="grid grid-cols-4 gap-2">
-          {(
-            [
-              { key: FichePaymentMethod.CASH, label: 'Contanti', Icon: Banknote },
-              { key: FichePaymentMethod.POS, label: 'POS', Icon: CreditCard },
-              { key: FichePaymentMethod.OTHER, label: 'Altro', Icon: HelpCircle },
-              { key: 'mixed' as const, label: 'Misto', Icon: Shuffle },
-            ] as { key: PaymentView; label: string; Icon: React.FC<{ className?: string }> }[]
-          ).map(({ key, label, Icon }) => (
-            <button
-              key={key ?? 'null'}
-              type="button"
-              onClick={() => {
-                onViewChange(key);
-                // Advances the "scegli il metodo" step of the incassa-fiche guide.
-                emitTourEvent('fiche:payment-method-selected');
-              }}
-              className={[
-                'flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border text-xs font-medium transition-all',
-                view === key
-                  ? 'border-primary bg-primary/10 dark:bg-primary/10 text-primary-hover dark:text-primary/70 ring-1 ring-primary'
-                  : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600',
-              ].join(' ')}
-            >
-              <Icon className="size-4" />
-              {label}
-            </button>
-          ))}
-        </div>
+        <ToggleButton
+          options={PAYMENT_VIEWS.map((v) => v.key)}
+          labels={PAYMENT_VIEWS.map((v) => v.label)}
+          icons={PAYMENT_VIEWS.map((v) => v.Icon)}
+          value={view}
+          ariaLabel="Metodo di pagamento"
+          onChange={(key: PaymentView) => {
+            onViewChange(key);
+            // Advances the "scegli il metodo" step of the incassa-fiche guide.
+            emitTourEvent('fiche:payment-method-selected');
+          }}
+          className="w-full"
+        />
       </div>
 
       <div className="min-h-25">
         {view === FichePaymentMethod.CASH && (
           <div data-tour="fiche-payment-cash" className="flex flex-col gap-3">
-            <div>
-              <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
-                Soldi ricevuti (€)
-              </label>
-              <NumberInput
-                value={cashGiven}
-                onChange={(v) => onCashGivenChange(v)}
-                min={0}
-                step={0.5}
-                decimals={2}
-                placeholder="0,00"
-                suffix="€"
-                size="md"
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-100 dark:bg-zinc-900/60">
-              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            <Field label="Soldi ricevuti (€)">
+              {({ id }) => (
+                <NumberInput
+                  id={id}
+                  value={cashGiven}
+                  onChange={(v) => onCashGivenChange(v)}
+                  min={0}
+                  step={0.5}
+                  decimals={2}
+                  placeholder="0,00"
+                  suffix="€"
+                />
+              )}
+            </Field>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-hover">
+              <span className="text-sm font-medium text-[var(--lume-text-secondary)]">
                 {isShortfall ? 'Mancano' : 'Resto'}
               </span>
               <span
-                className={`text-lg font-bold ${
-                  isShortfall ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                className={`text-lg font-medium ${
+                  isShortfall ? 'text-danger-strong' : 'text-success-strong'
                 }`}
               >
                 € {fmt(changeDisplay)}
@@ -185,12 +177,12 @@ export function FichePaymentPanel({
 
         {(view === FichePaymentMethod.POS || view === FichePaymentMethod.OTHER) && (
           <div className="flex items-center justify-center pt-2">
-            <div className="text-center p-4 rounded-lg bg-zinc-100 dark:bg-zinc-900/60 w-full">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="text-center p-4 rounded-lg bg-hover w-full">
+              <p className="text-sm text-[var(--lume-text-secondary)]">
                 Pagamento di{' '}
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">€ {fmt(total)}</span>{' '}
+                <span className="font-medium text-[var(--lume-text)]">€ {fmt(total)}</span>{' '}
                 tramite{' '}
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{METHOD_LABELS[view]}</span>
+                <span className="font-medium text-[var(--lume-text)]">{METHOD_LABELS[view]}</span>
               </p>
             </div>
           </div>
@@ -208,7 +200,7 @@ export function FichePaymentPanel({
                   valueKey="value"
                   searchable={false}
                   size="sm"
-                  classes="flex-1"
+                  className="flex-1"
                 />
                 <NumberInput
                   value={split.amount}
@@ -219,17 +211,15 @@ export function FichePaymentPanel({
                   placeholder="0,00"
                   suffix="€"
                   size="sm"
-                  width="w-28"
+                  className="w-28"
                 />
                 <Button
-                  variant="ghost"
+                  variant="ghost-destructive"
                   size="sm"
                   iconOnly
                   aria-label="Rimuovi"
-                  title="Rimuovi"
                   onClick={() => removeSplit(i)}
                   disabled={splits.length <= 2}
-                  className="text-zinc-400 hover:text-red-500"
                 >
                   <Trash2 />
                 </Button>
@@ -241,7 +231,7 @@ export function FichePaymentPanel({
               size="sm"
               leadingIcon={Plus}
               onClick={addSplit}
-              className="self-start text-primary-hover dark:text-primary/70 hover:text-primary-active dark:hover:text-primary/40"
+              className="self-start"
             >
               Aggiungi pagamento
             </Button>
@@ -249,14 +239,14 @@ export function FichePaymentPanel({
             <div
               className={`flex items-center justify-between p-3 rounded-lg mt-1 ${
                 splitsMatch
-                  ? 'bg-emerald-50 dark:bg-emerald-500/10'
-                  : 'bg-zinc-100 dark:bg-zinc-900/60'
+                  ? 'bg-success-soft'
+                  : 'bg-hover'
               }`}
             >
-              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Inserito</span>
+              <span className="text-sm font-medium text-[var(--lume-text-secondary)]">Inserito</span>
               <span
-                className={`text-sm font-semibold ${
-                  splitsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-100'
+                className={`text-sm font-medium ${
+                  splitsMatch ? 'text-success-strong' : 'text-[var(--lume-text)]'
                 }`}
               >
                 € {fmt(splitsSum)} / € {fmt(total)}

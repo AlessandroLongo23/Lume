@@ -30,7 +30,7 @@ interface RichTextEditorProps {
 }
 
 const EDITOR_CLASSNAME =
-  'prose prose-sm prose-zinc dark:prose-invert max-w-none focus:outline-none px-3 py-2.5';
+  'text-sm leading-relaxed text-[var(--lume-text)] focus:outline-none px-3 py-2.5';
 
 function promptLinkOnEditor(editor: Editor): void {
   const previous = editor.getAttributes('link').href as string | undefined;
@@ -153,22 +153,23 @@ export function RichTextEditor({
   if (!editor) {
     return (
       <div
-        className="rounded-md border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-900 animate-pulse"
+        className="rounded-lg bg-hover shadow-[inset_0_0_0_1px_var(--lume-edge)] motion-safe:animate-pulse"
         style={{ minHeight: minHeight + 40 }}
       />
     );
   }
 
   return (
+    // The shared field surface (`control`); the editable area is a div, not an
+    // input, so focus is drawn with focus-within.
     <div
-      className={`flex flex-col rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-900 overflow-hidden transition-shadow focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/40 ${
-        disabled ? 'opacity-60' : ''
-      }`}
+      aria-disabled={disabled || undefined}
+      className="control flex flex-col overflow-hidden focus-within:shadow-[inset_0_0_0_1px_var(--lume-ring-focus),inset_0_0_0_3px_var(--lume-accent-muted)]"
     >
       <style>{`
         .tiptap p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
-          color: rgb(161 161 170);
+          color: var(--lume-text-muted);
           pointer-events: none;
           float: left;
           height: 0;
@@ -182,31 +183,23 @@ export function RichTextEditor({
         .tiptap blockquote {
           margin: 0.5em 0;
           padding-left: 0.75rem;
-          border-left: 2px solid rgb(228 228 231);
-          color: rgb(82 82 91);
-        }
-        .dark .tiptap blockquote {
-          border-left-color: rgb(63 63 70);
-          color: rgb(212 212 216);
+          border-left: 2px solid var(--lume-edge);
+          color: var(--lume-text-secondary);
         }
         .tiptap code {
-          background: rgb(244 244 245);
+          background: var(--lume-active);
           padding: 0.1em 0.3em;
-          border-radius: 0.25rem;
+          border-radius: var(--radius-sm);
           font-size: 0.9em;
         }
-        .dark .tiptap code {
-          background: rgb(39 39 42);
-        }
         .tiptap a {
-          color: rgb(79 70 229);
+          color: var(--lume-accent);
           text-decoration: underline;
           text-underline-offset: 2px;
         }
-        .dark .tiptap a { color: rgb(129 140 248); }
       `}</style>
 
-      <div className="flex flex-row items-center gap-0.5 flex-wrap px-2 py-1.5 border-b border-zinc-500/15 bg-zinc-50/50 dark:bg-zinc-800/40">
+      <div className="flex flex-row items-center gap-0.5 flex-wrap px-1.5 py-1 border-b border-line">
         <ToolbarButton
           label="Grassetto"
           shortcut={shortcuts.bold}
@@ -232,7 +225,7 @@ export function RichTextEditor({
           disabled={disabled}
         />
 
-        <div className="mx-1 h-4 w-px bg-zinc-500/20" />
+        <div className="mx-1 h-4 w-px bg-line" />
 
         <ToolbarButton
           label="Elenco puntato"
@@ -259,7 +252,7 @@ export function RichTextEditor({
           disabled={disabled}
         />
 
-        <div className="mx-1 h-4 w-px bg-zinc-500/20" />
+        <div className="mx-1 h-4 w-px bg-line" />
 
         <ToolbarButton
           label={toolbarState.isLink ? 'Modifica link' : 'Inserisci link'}
@@ -295,21 +288,17 @@ function ToolbarButton({
   disabled?: boolean;
 }) {
   return (
-    <Tooltip label={label} shortcut={shortcut} side="bottom" sideOffset={6}>
+    <Tooltip label={label} shortcut={shortcut} side="bottom">
       <Button
         variant="ghost"
         size="sm"
         iconOnly
         aria-label={label}
-        aria-pressed={active}
+        tooltip={false}
+        pressed={active}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onClick}
         disabled={disabled}
-        className={
-          active
-            ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
-            : ''
-        }
       >
         <Icon />
       </Button>

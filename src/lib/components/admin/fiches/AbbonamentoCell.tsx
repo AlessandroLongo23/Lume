@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { BadgePercent, X, Check } from 'lucide-react';
+import { useRef, useMemo } from 'react';
+import { BadgePercent, X } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListGroupLabel } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+
+const PANEL_WIDTH = 224;
 import type { Abbonamento } from '@/lib/types/Abbonamento';
 
 interface AbbonamentoCellProps {
@@ -24,43 +31,13 @@ export function AbbonamentoCell({
   onChange,
 }: AbbonamentoCellProps) {
   const abbonamenti = useAbbonamentiStore((s) => s.abbonamenti);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(buttonRef, {
+    panelMaxHeight: 240,
+    align: 'end',
+    panelWidth: PANEL_WIDTH,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (ref.current?.contains(target)) return;
-      if (dropdownRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    const updatePos = () => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
-      const DROPDOWN_WIDTH = 224; // w-56
-      setDropdownPos({
-        top: rect.bottom + 4,
-        left: Math.max(8, rect.right - DROPDOWN_WIDTH),
-      });
-    };
-    updatePos();
-    window.addEventListener('scroll', updatePos, true);
-    window.addEventListener('resize', updatePos);
-    return () => {
-      window.removeEventListener('scroll', updatePos, true);
-      window.removeEventListener('resize', updatePos);
-    };
-  }, [open]);
 
   const current = useMemo<Abbonamento | null>(
     () => abbonamenti.find((a) => a.id === currentAbbonamentoId) ?? null,
@@ -85,7 +62,7 @@ export function AbbonamentoCell({
   }
 
   const buttonBase =
-    'p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
+    'p-1 rounded-md transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--lume-ring-focus)]';
 
   // Selected state — small emerald pill
   if (current) {
@@ -94,12 +71,13 @@ export function AbbonamentoCell({
       <div className="flex items-center justify-center">
         <Tooltip label={`Abbonamento attivo (${label}) — clicca per rimuovere`}>
           <button
+            // ds-ignore: active-abbonamento pill, a small green chip that clears the abbonamento on click; Button has no tinted variant and is taller
             type="button"
             onClick={() => onChange(null)}
-            className={`${buttonBase} flex items-center gap-1 px-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20`}
+            className={`${buttonBase} flex items-center gap-1 px-1.5 text-xs text-success-strong bg-success-soft`}
           >
             <BadgePercent className="size-3" />
-            <span className="font-mono">{label}</span>
+            <span className="tabular-nums">{label}</span>
             <X className="size-3 opacity-60" />
           </button>
         </Tooltip>
@@ -109,57 +87,49 @@ export function AbbonamentoCell({
 
   // Eligible but none selected
   return (
-    <div ref={ref} className="relative flex items-center justify-center">
-      <Tooltip label="Usa un abbonamento">
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={`${buttonBase} text-zinc-400 hover:text-primary hover:bg-primary/10`}
-          aria-label="Usa abbonamento"
-        >
-          <BadgePercent className="size-3.5" />
-        </button>
-      </Tooltip>
-      {open && dropdownPos && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={dropdownRef}
-          style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }}
-          className="w-56 rounded-md border border-zinc-500/25 bg-white dark:bg-zinc-800 shadow-xl z-popover"
-        >
-          <div className="px-2 py-1.5 text-2xs uppercase tracking-wide text-zinc-400 border-b border-zinc-500/10">
-            Abbonamenti disponibili
-          </div>
-          <ul className="max-h-48 overflow-y-auto divide-y divide-zinc-500/10">
-            {eligible.map((a) => {
-              const reserved = otherDraftAssignments[a.id] ?? 0;
-              const effectiveRemaining = a.remainingTreatments - reserved;
-              return (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    onClick={() => { onChange(a.id); setOpen(false); }}
-                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-left hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors"
-                  >
-                    <span className="flex flex-col min-w-0">
-                      <span className="font-mono text-emerald-600 dark:text-emerald-400">
+    <div className="flex items-center justify-center">
+      <Button tooltip="Usa un abbonamento"
+        ref={buttonRef}
+        variant="ghost"
+        size="sm"
+        iconOnly
+        aria-label="Usa abbonamento"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={toggle}
+      >
+        <BadgePercent />
+      </Button>
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom, width: PANEL_WIDTH }}
+            >
+              <ListBox role="listbox" aria-label="Abbonamenti disponibili" className="max-h-56 overflow-y-auto">
+                <ListGroupLabel>Abbonamenti disponibili</ListGroupLabel>
+                {eligible.map((a) => {
+                  const reserved = otherDraftAssignments[a.id] ?? 0;
+                  const effectiveRemaining = a.remainingTreatments - reserved;
+                  return (
+                    <ListRow
+                      key={a.id}
+                      onClick={() => { onChange(a.id); hide(); }}
+                      description={a.valid_until ? `scade ${new Date(a.valid_until).toLocaleDateString('it-IT')}` : undefined}
+                    >
+                      <span className="tabular-nums text-success-strong">
                         {effectiveRemaining} / {a.total_treatments} rimanenti
                       </span>
-                      {a.valid_until && (
-                        <span className="text-zinc-400 text-2xs">
-                          scade {new Date(a.valid_until).toLocaleDateString('it-IT')}
-                        </span>
-                      )}
-                    </span>
-                    <Check className="size-3 opacity-0 shrink-0" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>,
-        document.body,
-      )}
+                    </ListRow>
+                  );
+                })}
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </div>
   );
 }

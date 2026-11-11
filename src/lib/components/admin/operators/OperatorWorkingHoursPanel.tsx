@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Clock } from 'lucide-react';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
@@ -26,8 +25,8 @@ interface Props {
 
 /**
  * Schedule editor for a single operator. Offers two modes:
- *  – Inherit salon hours (working_hours = null in the DB)
- *  – Custom schedule (working_hours = OperatingHourDay[])
+ * – Inherit salon hours (working_hours = null in the DB)
+ * – Custom schedule (working_hours = OperatingHourDay[])
  */
 export function OperatorWorkingHoursPanel({ operator, readOnly: readOnlyProp = false }: Props) {
   const updateOperator = useOperatorsStore((s) => s.updateOperator);
@@ -92,23 +91,19 @@ export function OperatorWorkingHoursPanel({ operator, readOnly: readOnlyProp = f
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm px-6 py-4 flex items-start gap-4">
-        <Clock className="size-4 text-primary mt-0.5 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Segui gli orari del salone
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+      <SwitchRow
+        className="surface-card px-6 py-4"
+        label="Segui gli orari del salone"
+        description={
+          <>
             Quando attivo, l&apos;operatore lavora negli stessi orari di apertura del salone.
             Disattiva per impostare un orario personalizzato.
-          </p>
-        </div>
-        <Switch
-          checked={inherit}
-          onChange={() => handleToggleInherit(!inherit)}
-          disabled={readOnly || savingInherit}
-        />
-      </div>
+          </>
+        }
+        checked={inherit}
+        onChange={() => handleToggleInherit(!inherit)}
+        disabled={readOnly || savingInherit}
+      />
 
       {!inherit ? (
         <WorkingHoursForm

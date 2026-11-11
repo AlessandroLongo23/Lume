@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FlaskConical } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProductsStore } from '@/lib/stores/products';
@@ -70,10 +69,8 @@ export function ProductModal({ isOpen, onClose, trackInventory }: ProductModalPr
       onSubmit={handleSubmit}
       title="Nuovo Prodotto"
       subtitle="Aggiungi un nuovo prodotto al magazzino"
-      icon={FlaskConical}
       confirmText="Aggiungi"
       classes="max-w-2xl"
-      contentClasses="overflow-y-auto"
       confirmDataTour="save-product"
       // Emit only after the open animation settles, so the guide's next step
       // (anchored on a field inside the modal) measures its final position.

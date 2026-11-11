@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
+import { TextButton, TextLink } from '@/lib/components/shared/ui/TextLink';
 import { Cookie } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 import { Portal } from '@/lib/components/shared/ui/Portal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useCookieConsentStore } from '@/lib/stores/cookieConsent';
@@ -14,6 +15,7 @@ export function CookieConsentBanner() {
   const bannerOpen = useCookieConsentStore((s) => s.bannerOpen);
   const customizeOpen = useCookieConsentStore((s) => s.customizeOpen);
   const hydrate = useCookieConsentStore((s) => s.hydrate);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     hydrate();
@@ -23,7 +25,8 @@ export function CookieConsentBanner() {
 
   return (
     <Portal>
-      <div className="pointer-events-none fixed inset-x-4 bottom-4 z-toast md:left-1/2 md:right-auto md:bottom-6 md:w-[min(40rem,calc(100vw-3rem))] md:-translate-x-1/2">
+      {/* Phones: a full-width sheet on the bottom edge. From sm up: a small card in the bottom-left corner. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-toast sm:inset-x-auto sm:left-4 sm:bottom-4 sm:w-96">
         <AnimatePresence>
           {bannerOpen && (
             <motion.div
@@ -31,11 +34,11 @@ export function CookieConsentBanner() {
               role="dialog"
               aria-modal="false"
               aria-labelledby="cookie-consent-title"
-              className="pointer-events-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_8px_16px_-4px_var(--shadow-color),0_20px_40px_-8px_var(--shadow-color)] p-4 md:p-6"
-              initial={{ opacity: 0, y: 24 }}
+              className="surface-float pointer-events-auto rounded-b-none sm:rounded-b-[var(--radius-lg)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
             >
               {customizeOpen ? <CustomizeView /> : <DefaultView />}
             </motion.div>
@@ -52,47 +55,37 @@ function DefaultView() {
   const openCustomize = useCookieConsentStore((s) => s.openCustomize);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex items-start gap-3">
-        <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={2.25} />
+        <Cookie className="mt-0.5 size-4 shrink-0 text-[var(--lume-text-secondary)]" strokeWidth={1.75} aria-hidden />
         <div className="flex-1">
-          <h2 id="cookie-consent-title" className="text-sm font-semibold text-foreground">
+          <h2 id="cookie-consent-title" className="text-sm font-medium text-[var(--lume-text)]">
             Cookie e privacy
           </h2>
-          <p className="mt-1 text-sm leading-snug text-muted-foreground">
+          <p className="mt-1 text-sm leading-snug text-[var(--lume-text-secondary)]">
             Usiamo cookie tecnici per farti accedere a Lume e, con il tuo consenso, cookie di analisi
             per capire come migliorare il prodotto. Puoi cambiare scelta in qualsiasi momento dal
             footer.
           </p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <Link
-              href="/privacy"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--lume-text-secondary)]">
+            <TextLink href="/privacy" className="inline-flex items-center pointer-coarse:min-h-11 font-normal text-inherit">
               Privacy
-            </Link>
-            <Link
-              href="/cookie-policy"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
+            </TextLink>
+            <TextLink href="/cookie-policy" className="inline-flex items-center pointer-coarse:min-h-11 font-normal text-inherit">
               Cookie policy
-            </Link>
+            </TextLink>
             {/* Phones only: Personalizza moves here so the banner stays short
                 enough not to cover the page's own primary action. */}
-            <button
-              type="button"
-              onClick={openCustomize}
-              className="underline underline-offset-2 hover:text-foreground sm:hidden"
-            >
+            <TextButton onClick={openCustomize} className="inline-flex items-center pointer-coarse:min-h-11 font-normal text-inherit sm:hidden">
               Personalizza
-            </button>
+            </TextButton>
           </div>
         </div>
       </div>
 
       {/* Rifiuta and Accetta sit side by side at equal size on every width. */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-        <Button variant="secondary" onClick={openCustomize} className="hidden sm:inline-flex">
+        <Button variant="ghost" onClick={openCustomize} className="hidden sm:inline-flex sm:mr-auto sm:-ml-3">
           Personalizza
         </Button>
         <Button variant="secondary" onClick={reject}>
@@ -122,21 +115,21 @@ function CustomizeView() {
         const data = new FormData(e.currentTarget);
         setCustom({ analytics: data.get('analytics') === 'on' });
       }}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-4"
     >
       <div className="flex items-start gap-3">
-        <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={2.25} />
+        <Cookie className="mt-0.5 size-4 shrink-0 text-[var(--lume-text-secondary)]" strokeWidth={1.75} aria-hidden />
         <div className="flex-1">
-          <h2 id="cookie-consent-title" className="text-sm font-semibold text-foreground">
+          <h2 id="cookie-consent-title" className="text-sm font-medium text-[var(--lume-text)]">
             Personalizza i cookie
           </h2>
-          <p className="mt-1 text-sm leading-snug text-muted-foreground">
+          <p className="mt-1 text-sm leading-snug text-[var(--lume-text-secondary)]">
             Scegli quali categorie di cookie attivare.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="surface-card flex flex-col rounded-lg divide-y divide-line">
         <ToggleRow
           name="necessary"
           label="Necessari"
@@ -153,7 +146,7 @@ function CustomizeView() {
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button variant="secondary" onClick={closeCustomize} className="order-2 sm:order-1">
+        <Button variant="ghost" onClick={closeCustomize} className="order-2 sm:order-1">
           Annulla
         </Button>
         <Button variant="primary" type="submit" className="order-1 sm:order-2">
@@ -175,7 +168,8 @@ interface ToggleRowProps {
 function ToggleRow({ name, label, description, defaultChecked, disabled }: ToggleRowProps) {
   return (
     <label
-      className={`flex items-start gap-3 rounded-md border border-border bg-muted p-3 ${
+      // ds-ignore: consent row in an uncontrolled form (name + defaultChecked); the whole padded row toggles, 8px gap, the always-on row stays at 80%, none of which CheckboxRow does
+      className={`flex items-start gap-2 p-3 ${
         disabled ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
       }`}
     >
@@ -184,11 +178,11 @@ function ToggleRow({ name, label, description, defaultChecked, disabled }: Toggl
         name={name}
         defaultChecked={defaultChecked}
         disabled={disabled}
-        className="mt-0.5 shrink-0"
+        className="mt-0.5"
       />
       <div className="flex-1">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{description}</p>
+        <div className="text-sm font-medium text-[var(--lume-text)]">{label}</div>
+        <p className="mt-0.5 text-xs leading-snug text-[var(--lume-text-secondary)]">{description}</p>
       </div>
     </label>
   );

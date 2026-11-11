@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Archive, ArchiveRestore } from 'lucide-react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { ColorSwatchPicker } from '@/lib/components/shared/ui/forms/ColorSwatchPicker';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
-import { CATEGORY_PICKER_COLORS, DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
+import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 import type { ServiceCategory } from '@/lib/types/ServiceCategory';
 
@@ -75,7 +78,6 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
     }
   };
 
-  const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
 
   return (
     <AddModal
@@ -93,10 +95,9 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
       footerContent={
         selectedCategory && (
           <Button
-            variant="ghost"
+            variant="secondary"
             leadingIcon={selectedCategory.isArchived ? ArchiveRestore : Archive}
             onClick={handleToggleArchive}
-            className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
           >
             {selectedCategory.isArchived ? 'Ripristina' : 'Archivia'}
           </Button>
@@ -104,50 +105,33 @@ export function AddServiceCategoryModal({ isOpen, onClose, selectedCategory }: A
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
-          <div className="flex items-center gap-2">
-            <span className="size-5 rounded-full shrink-0 border border-zinc-300 dark:border-zinc-600" style={{ backgroundColor: form.color }} />
-            <input
-              type="text"
-              data-tour="field-service-category-name"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className={inputClass}
-              placeholder="es. Colore, Taglio, Trattamento..."
-            />
-          </div>
-          {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Descrizione</label>
-          <input
-            type="text"
-            data-tour="field-service-category-description"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className={inputClass}
-            placeholder="Descrizione opzionale"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5" data-tour="field-service-category-color">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Colore</label>
-          <div className="flex flex-wrap gap-1.5">
-            {CATEGORY_PICKER_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, color: c }))}
-                className="size-6 rounded-md border-2 transition-transform hover:scale-110"
-                style={{
-                  backgroundColor: c,
-                  borderColor: form.color === c ? 'white' : 'transparent',
-                  outline: form.color === c ? `2px solid ${c}` : 'none',
-                }}
-                aria-label={c}
+        <FormInput
+          label="Nome"
+          required
+          data-tour="field-service-category-name"
+          icon={<span aria-hidden className="block size-3 rounded-full" style={{ backgroundColor: form.color }} />}
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          placeholder="es. Colore, Taglio, Trattamento..."
+          error={nameError || undefined}
+        />
+        <FormInput
+          label="Descrizione"
+          data-tour="field-service-category-description"
+          value={form.description}
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+          placeholder="Descrizione opzionale"
+        />
+        <div data-tour="field-service-category-color">
+          <Field label="Colore">
+            {() => (
+              <ColorSwatchPicker
+                value={form.color}
+                onChange={(c) => setForm((f) => ({ ...f, color: c ?? DEFAULT_CATEGORY_COLOR }))}
+                columns={6}
               />
-            ))}
-          </div>
+            )}
+          </Field>
         </div>
       </div>
     </AddModal>

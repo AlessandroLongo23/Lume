@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { TriangleAlert, Trash2, LogOut, Download, ShieldCheck } from 'lucide-react';
+import { Trash2, LogOut, Download } from 'lucide-react';
 import { DeleteWorkspaceModal } from '@/lib/components/admin/DeleteWorkspaceModal';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { SettingsCard } from './SettingsCard';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { isOwner, isOperator, canManageSalon } from '@/lib/auth/roles';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -86,94 +87,74 @@ export function AccountPanel() {
   return (
     <div className="flex flex-col gap-6">
       {canManageSalon(role) && (
-        <div className="rounded-xl border border-border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">I tuoi dati (GDPR)</h2>
+        <SettingsCard
+          title="I tuoi dati (GDPR)"
+          description="Esercita i diritti di accesso e portabilità previsti dagli artt. 15 e 20 GDPR."
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-[var(--lume-text)]">Esporta i miei dati</p>
+              <p className="text-sm text-[var(--lume-text-secondary)] mt-0.5">
+                Scarica un file JSON con tutti i dati operativi del salone (clienti, fiches, ordini, prodotti, …).
+              </p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Esercita i diritti di accesso e portabilità previsti dagli artt. 15 e 20 GDPR.
-            </p>
+            <Button
+              variant="secondary"
+              leadingIcon={Download}
+              loading={exporting}
+              onClick={performExport}
+            >
+              {exporting ? 'Preparo…' : 'Scarica dati'}
+            </Button>
           </div>
-          <div className="px-6 py-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-foreground">Esporta i miei dati</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Scarica un file JSON con tutti i dati operativi del salone (clienti, fiches, ordini, prodotti, …).
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                leadingIcon={Download}
-                loading={exporting}
-                onClick={performExport}
-                className="shrink-0"
-              >
-                {exporting ? 'Preparo…' : 'Scarica dati'}
-              </Button>
-            </div>
-          </div>
-        </div>
+        </SettingsCard>
       )}
 
       {showDangerZone && (
-        <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-red-100 dark:border-red-900/40">
-            <div className="flex items-center gap-2">
-              <TriangleAlert className="size-4 text-red-500" />
-              <h2 className="text-sm font-semibold text-red-700 dark:text-red-400">Zona Pericolosa</h2>
-            </div>
-            <p className="mt-1 text-xs text-zinc-500">
-              Le azioni in questa sezione sono irreversibili.
-            </p>
-          </div>
-
-          {isOwner(role) && (
-            <div className="px-6 py-5">
-              <div className="flex items-center justify-between gap-4">
+        <SettingsCard
+          title="Zona pericolosa"
+          description="Le azioni in questa sezione sono irreversibili."
+        >
+          <div className="flex flex-col divide-y divide-line">
+            {isOwner(role) && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0">
                 <div>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Elimina Salone</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-sm font-medium text-[var(--lume-text)]">Elimina Salone</p>
+                  <p className="text-sm text-[var(--lume-text-secondary)] mt-0.5">
                     {"Cancella definitivamente il salone, tutti i suoi dati e disconnette l'account."}
                   </p>
                 </div>
                 <Button
-                  variant="secondary"
+                  variant="ghost-destructive"
                   leadingIcon={Trash2}
                   disabled={salonName === null}
                   onClick={() => setShowDeleteModal(true)}
-                  className="shrink-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
                   Elimina Salone
                 </Button>
               </div>
-            </div>
-          )}
+            )}
 
-          {isOperator(role) && (
-            <div className="px-6 py-5">
-              <div className="flex items-center justify-between gap-4">
+            {isOperator(role) && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0">
                 <div>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Esci dal salone</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-sm font-medium text-[var(--lume-text)]">Esci dal salone</p>
+                  <p className="text-sm text-[var(--lume-text-secondary)] mt-0.5">
                     Stacca il tuo account dal salone. La tua scheda operatore viene archiviata.
                   </p>
                 </div>
                 <Button
-                  variant="secondary"
+                  variant="ghost-destructive"
                   leadingIcon={LogOut}
                   loading={leaving}
                   onClick={() => setShowLeaveConfirm(true)}
-                  className="shrink-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
                   {leaving ? 'Uscita…' : 'Esci dal salone'}
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </SettingsCard>
       )}
 
       {!isImpersonating && salonName !== null && (

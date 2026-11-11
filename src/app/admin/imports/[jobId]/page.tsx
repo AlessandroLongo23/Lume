@@ -20,7 +20,11 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { CellEmpty, tableCardClass, tableClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import { useImportsStore } from '@/lib/stores/imports';
 import { getEntityConfig } from '@/lib/imports/entities/registry';
@@ -109,24 +113,12 @@ export default function ImportReviewPage({ params }: { params: Promise<{ jobId: 
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      <header className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          leadingIcon={ArrowLeft}
-          onClick={() => router.push(config.redirectAfterCompletion)}
-        >
-          Torna a {config.italianLabel.toLowerCase()}
-        </Button>
-        <JobIdBadge id={job.id} />
-      </header>
-
-      <div className="flex flex-col gap-1.5 min-w-0">
-        <h1 className="text-3xl font-bold tracking-tight leading-tight text-foreground truncate">
-          Importazione {config.italianLabel.toLowerCase()}
-        </h1>
-        <p className="text-sm font-mono text-muted-foreground truncate">{job.source_filename}</p>
-      </div>
+      <PageHeader
+        back={{ href: config.redirectAfterCompletion, label: `Torna a ${config.italianLabel.toLowerCase()}` }}
+        title={`Importazione ${config.italianLabel.toLowerCase()}`}
+        subtitle={<span className="tabular-nums">{job.source_filename}</span>}
+        actions={<JobIdBadge id={job.id} />}
+      />
 
       <StatusRouter job={job} jobId={jobId} config={config} importedHint={importedHint} />
     </div>
@@ -147,9 +139,10 @@ function JobIdBadge({ id }: { id: string }) {
   return (
     <Tooltip label={copied ? 'Copiato' : 'ID dell\'importazione. Clicca per copiare — utile per il supporto.'}>
       <button
+        // ds-ignore: the job ID shown as tiny muted text that copies on click; TextButton would underline it in full text colour, Button would give it a control height
         type="button"
         onClick={handleCopy}
-        className="text-2xs text-muted-foreground/70 font-mono hover:text-muted-foreground transition-colors"
+        className="text-2xs tabular-nums text-[var(--lume-text-muted)] hover:text-[var(--lume-text-secondary)] transition-colors"
       >
         {id.slice(0, 8)}
       </button>
@@ -215,10 +208,10 @@ function ParsingPanel({ job }: { job: ImportJob }) {
     parsing: 'Sto leggendo il file e mappando le colonne...',
   };
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-16 rounded-lg border border-border bg-card">
-      <Loader2 className="size-6 animate-spin text-primary" />
-      <p className="text-sm text-foreground">{labels[job.status]}</p>
-      <p className="text-xs text-muted-foreground">
+    <div className="surface-card flex flex-col items-center justify-center gap-3 py-16">
+      <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-[var(--lume-text-muted)]" />
+      <p className="text-sm text-[var(--lume-text)]">{labels[job.status]}</p>
+      <p className="text-xs text-[var(--lume-text-secondary)]">
         Continua anche se chiudi questa pagina.
       </p>
     </div>
@@ -280,32 +273,29 @@ function ReviewPanel({ job, jobId, config }: { job: ImportJob; jobId: string; co
   return (
     <div className="flex flex-col gap-6">
       {/* Summary banner */}
-      <div className="flex items-start gap-3 p-4 rounded-lg border border-primary/30 bg-primary/5">
-        <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-foreground">
-            <strong>{totalRows.toLocaleString('it-IT')}</strong> righe trovate ·{' '}
-            <strong>{previewCount}</strong> in anteprima ·{' '}
-            <strong>
-              {usedLLM
-                ? mappings.some((m) => m.smartTransform)
-                  ? 'mappatura AI con regole condizionali'
-                  : 'mappatura AI'
-                : 'mappatura automatica'}
-            </strong>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Controlla che ogni colonna sia abbinata al campo giusto. Le righe non valide saranno scartate al momento della conferma.
-          </p>
-        </div>
-      </div>
+      <Callout
+        tone="info"
+        icon={Sparkles}
+        title={
+          <>
+            {totalRows.toLocaleString('it-IT')} righe trovate · {previewCount} in anteprima ·{' '}
+            {usedLLM
+              ? mappings.some((m) => m.smartTransform)
+                ? 'mappatura AI con regole condizionali'
+                : 'mappatura AI'
+              : 'mappatura automatica'}
+          </>
+        }
+      >
+        Controlla che ogni colonna sia abbinata al campo giusto. Le righe non valide saranno scartate al momento della conferma.
+      </Callout>
 
       {/* Mapping editor */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-2xs font-semibold text-muted-foreground uppercase tracking-[0.04em]">
+        <h2 className="text-sm font-medium text-[var(--lume-text)]">
           Mappatura colonne
         </h2>
-        <div className="rounded-lg border border-border bg-card divide-y divide-border">
+        <div className="surface-card divide-y divide-line">
           {mappings.map((m) => (
             <MappingRow
               key={m.sourceColumn}
@@ -325,7 +315,7 @@ function ReviewPanel({ job, jobId, config }: { job: ImportJob; jobId: string; co
 
       {/* Preview table */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-2xs font-semibold text-muted-foreground uppercase tracking-[0.04em]">
+        <h2 className="text-sm font-medium text-[var(--lume-text)]">
           Anteprima righe trasformate
         </h2>
         <PreviewTable sample={sample} columns={config.previewColumns} />
@@ -383,14 +373,14 @@ function MappingRow({
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 px-4 py-3">
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-sm font-medium text-foreground truncate">{mapping.sourceColumn}</span>
+        <span className="text-sm font-medium text-[var(--lume-text)] truncate">{mapping.sourceColumn}</span>
         {sampleValues.filter(Boolean).length > 0 && (
-          <span className="text-xs text-muted-foreground/80 truncate">
+          <span className="text-xs text-[var(--lume-text-secondary)] truncate">
             es: {sampleValues.filter(Boolean).slice(0, 3).join(' · ')}
           </span>
         )}
       </div>
-      <ArrowRight className="size-4 text-muted-foreground/60 mt-2" />
+      <ArrowRight className="size-4 text-[var(--lume-text-muted)] mt-2" aria-hidden />
       <div className="flex flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-2">
           <Select
@@ -403,7 +393,7 @@ function MappingRow({
             isNullable
             disabled={!!smart}
             size="sm"
-            classes="flex-1"
+            className="flex-1"
           />
           {showConfidence && (mapping.destField || smart) && (
             <ConfidencePill confidence={mapping.confidence} />
@@ -411,20 +401,21 @@ function MappingRow({
         </div>
         {smart && (
           <div className="flex flex-col gap-1">
-            <span className="inline-flex items-center gap-1.5 text-2xs font-medium px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary w-fit">
-              <Sparkles className="size-3" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--lume-text)] w-fit">
+              <Sparkles className="size-3 text-[var(--lume-accent)]" aria-hidden />
               Scrive in: {smart.outputs.map((o) => destFieldLabels[o] ?? o).join(' + ')}
             </span>
             {smart.description && (
-              <p className="text-xs text-muted-foreground/80">{smart.description}</p>
+              <p className="text-xs text-[var(--lume-text-secondary)]">{smart.description}</p>
             )}
-            <button
-              type="button"
-              className="text-2xs text-muted-foreground hover:text-foreground underline w-fit"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-fit -ml-2"
               onClick={() => onChange(mapping.destField, true)}
             >
               Usa mappatura semplice
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -434,19 +425,13 @@ function MappingRow({
 
 function ConfidencePill({ confidence }: { confidence: number }) {
   const label = confidence >= 0.8 ? 'Alta' : confidence >= 0.6 ? 'Media' : 'Bassa';
-  const tone =
-    confidence >= 0.8
-      ? 'bg-[var(--lume-success-bg)] text-[var(--lume-success-fg)] border border-[var(--lume-success-border)]'
-      : confidence >= 0.6
-        ? 'bg-[var(--lume-warning-bg)] text-[var(--lume-warning-fg)] border border-[var(--lume-warning-border)]'
-        : 'bg-[var(--lume-danger-bg)] text-[var(--lume-danger-fg)] border border-[var(--lume-danger-border)]';
+  const tone = confidence >= 0.8 ? 'success' : confidence >= 0.6 ? 'warning' : 'danger';
   return (
-    <span
-      className={`text-2xs font-medium px-2 py-0.5 rounded ${tone}`}
-      title={`Confidence: ${(confidence * 100).toFixed(0)}%`}
-    >
-      {label}
-    </span>
+    <Tooltip label={`Confidence: ${(confidence * 100).toFixed(0)}%`}>
+      <span tabIndex={0} className="shrink-0 rounded-sm focus-visible:outline-2 focus-visible:outline-[var(--lume-ring-focus)]">
+        <StatusDot tone={tone} className="text-xs">{label}</StatusDot>
+      </span>
+    </Tooltip>
   );
 }
 
@@ -458,21 +443,21 @@ function PreviewTable({
   columns: readonly PreviewColumn[];
 }) {
   if (!sample || sample.length === 0) {
-    return <p className="text-sm text-muted-foreground italic">Nessuna riga disponibile per l&apos;anteprima.</p>;
+    return <p className="text-sm text-[var(--lume-text-secondary)]">Nessuna riga disponibile per l&apos;anteprima.</p>;
   }
   return (
-    <div className="rounded-lg border border-border bg-card overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40">
+    <div className={`${tableCardClass} overflow-x-auto`}>
+      <table className={tableClass}>
+        <thead className={theadClass}>
           <tr>
-            <th className="px-3 py-2 text-left text-2xs font-medium text-muted-foreground uppercase tracking-[0.04em]">#</th>
+            <th className={thClass()}>#</th>
             {columns.map((c) => (
-              <th key={c.key} className="px-3 py-2 text-left text-2xs font-medium text-muted-foreground uppercase tracking-[0.04em]">{c.label}</th>
+              <th key={c.key} className={thClass()}>{c.label}</th>
             ))}
-            <th className="w-8 px-3 py-2" aria-label="Stato" />
+            <th className={`${thClass()} w-8`} aria-label="Stato" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody>
           {sample.map((s, i) => {
             const rowData: Record<string, unknown> = s.ok
               ? (s.row as Record<string, unknown>)
@@ -480,23 +465,23 @@ function PreviewTable({
             return (
               <tr
                 key={i}
-                className={!s.ok ? 'bg-[var(--lume-danger-bg)]/50' : undefined}
+                className={`${trClass({ interactive: false })} ${!s.ok ? 'bg-danger-soft' : ''}`}
               >
-                <td className="px-3 py-2 text-xs text-muted-foreground/70 font-mono">{i + 1}</td>
+                <td className={`${tdClass} tabular-nums text-xs text-[var(--lume-text-muted)]`}>{i + 1}</td>
                 {columns.map((c) => {
                   const raw = rowData[c.key];
                   const value = raw == null ? '' : String(raw);
                   return (
-                    <td key={c.key} className="px-3 py-2 text-foreground/80 max-w-50 truncate">
-                      {value || <span className="text-muted-foreground/60">—</span>}
+                    <td key={c.key} className={`${tdClass} max-w-50 truncate`}>
+                      {value || <CellEmpty />}
                     </td>
                   );
                 })}
-                <td className="px-3 py-2 align-middle">
+                <td className={`${tdClass} align-middle`}>
                   {!s.ok && (
                     <Tooltip label={s.reason} side="left">
                       <span className="inline-flex" tabIndex={0} aria-label={`Errore: ${s.reason}`}>
-                        <AlertCircle className="size-4 text-destructive" />
+                        <AlertCircle className="size-4 text-danger-strong" />
                       </span>
                     </Tooltip>
                   )}
@@ -566,41 +551,35 @@ function CommittingPanel({
   const eta = useEta(touched, total);
 
   return (
-    <div className="flex flex-col gap-7 p-6 sm:p-8 rounded-lg border border-border bg-card">
+    <div className="surface-card flex flex-col gap-7 p-6 sm:p-8">
       {/* Header: state + ETA chip */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">
             Importazione in corso
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[var(--lume-text-secondary)]">
             Stiamo aggiungendo i record di {config.italianLabel.toLowerCase()}, una riga alla volta.
           </p>
         </div>
         {eta && (
-          <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/25 bg-primary/5 text-2xs font-medium text-primary">
-            <span className="relative flex size-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping motion-reduce:hidden" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
-            </span>
-            {eta}
-          </span>
+          <StatusDot tone="accent" className="shrink-0 text-xs text-[var(--lume-text-secondary)]">{eta}</StatusDot>
         )}
       </div>
 
       {/* Progress: counts + bar */}
       <div className="flex flex-col gap-2.5">
         <div className="flex items-baseline justify-between">
-          <span className="font-mono text-sm text-foreground">
-            <span className="text-2xl font-semibold tracking-tight">
+          <span className="tabular-nums text-sm text-[var(--lume-text)]">
+            <span className="text-2xl tracking-tight">
               {touched.toLocaleString('it-IT')}
             </span>
-            <span className="text-muted-foreground"> / {total.toLocaleString('it-IT')}</span>
+            <span className="text-[var(--lume-text-secondary)]"> / {total.toLocaleString('it-IT')}</span>
           </span>
-          <span className="font-mono text-sm text-muted-foreground tabular-nums">{pct}%</span>
+          <span className="tabular-nums text-sm text-[var(--lume-text-secondary)]">{pct}%</span>
         </div>
         <div
-          className="h-2 rounded-full bg-muted overflow-hidden"
+          className="h-2 rounded-full bg-active overflow-hidden"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -608,7 +587,7 @@ function CommittingPanel({
           aria-label="Avanzamento importazione"
         >
           <div
-            className="h-full bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            className="h-full bg-[var(--lume-accent)] transition-[width] duration-[var(--duration-count)] ease-out motion-reduce:transition-none"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -647,7 +626,7 @@ function CommittingPanel({
       </div>
 
       {/* Reassurance footer */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-[var(--lume-text-secondary)]">
         Puoi chiudere la pagina: l&apos;importazione continua sul nostro server e ritrovi
         i dati aggiornati appena è pronta.
       </p>
@@ -665,27 +644,27 @@ function TimelineStep({
   return (
     <li className="flex items-center gap-3">
       {state === 'done' && (
-        <span className="grid place-items-center size-5 rounded-full bg-[var(--lume-success-bg)] text-[var(--lume-success-fg)]">
+        <span className="grid place-items-center size-5 rounded-full bg-success-soft text-success-strong">
           <Check className="size-3" strokeWidth={3} />
         </span>
       )}
       {state === 'active' && (
-        <span className="grid place-items-center size-5 rounded-full bg-primary/10 ring-1 ring-primary/30">
-          <Loader2 className="size-3 animate-spin motion-reduce:animate-none text-primary" />
+        <span className="grid place-items-center size-5 rounded-full shadow-[inset_0_0_0_1px_var(--lume-edge-hover)]">
+          <Loader2 className="size-3 animate-spin motion-reduce:animate-none text-[var(--lume-text)]" />
         </span>
       )}
       {state === 'pending' && (
-        <span className="grid place-items-center size-5 rounded-full border border-border bg-transparent">
-          <span className="size-1.5 rounded-full bg-muted-foreground/40" />
+        <span className="grid place-items-center size-5 rounded-full edge">
+          <span className="size-1.5 rounded-full bg-[var(--lume-edge-hover)]" />
         </span>
       )}
       <span
         className={
           state === 'done'
-            ? 'text-sm text-foreground'
+            ? 'text-sm text-[var(--lume-text)]'
             : state === 'active'
-              ? 'text-sm font-medium text-foreground'
-              : 'text-sm text-muted-foreground/70'
+              ? 'text-sm font-medium text-[var(--lume-text)]'
+              : 'text-sm text-[var(--lume-text-muted)]'
         }
       >
         {label}
@@ -705,16 +684,16 @@ function StatChip({
   hint: string;
   tone?: 'neutral' | 'danger';
 }) {
-  const valueColor = tone === 'danger' ? 'text-destructive' : 'text-foreground';
+  const valueColor = tone === 'danger' ? 'text-danger-strong' : 'text-[var(--lume-text)]';
   return (
     <Tooltip label={hint}>
       <span className="inline-flex items-baseline gap-1.5 cursor-help">
-        <span className={`font-mono text-sm font-semibold tabular-nums ${valueColor}`}>
+        <span className={`tabular-nums text-sm font-medium ${valueColor}`}>
           {value.toLocaleString('it-IT')}
         </span>
-        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1 text-xs text-[var(--lume-text-secondary)]">
           {label}
-          <Info className="size-3 text-muted-foreground/60" />
+          <Info className="size-3 text-[var(--lume-text-muted)]" aria-hidden />
         </span>
       </span>
     </Tooltip>
@@ -737,8 +716,8 @@ function CompletedPanel({
   const isFull = job.status === 'completed';
   const Icon = isFull ? CheckCircle2 : AlertTriangle;
   const tone = isFull
-    ? 'text-[var(--lume-success-fg)]'
-    : 'text-[var(--lume-warning-fg)]';
+    ? 'text-success-strong'
+    : 'text-warning-strong';
   const errors = job.error_log?.rows ?? [];
 
   const downloadErrors = () => {
@@ -760,9 +739,9 @@ function CompletedPanel({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card text-center">
-      <Icon className={`size-12 ${tone}`} />
-      <h2 className="text-lg font-semibold text-foreground">
+    <div className="surface-card flex flex-col items-center gap-4 p-8 text-center">
+      <Icon className={`size-12 ${tone}`} strokeWidth={1.5} aria-hidden />
+      <h2 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">
         {isFull ? 'Importazione completata' : 'Importazione completata (con errori)'}
       </h2>
       <div className="grid grid-cols-3 gap-6 text-sm">
@@ -775,7 +754,7 @@ function CompletedPanel({
           hint={NON_VALIDE_HINT}
         />
       </div>
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
         {errors.length > 0 && (
           <Button variant="secondary" leadingIcon={FileWarning} onClick={downloadErrors}>
             Scarica report errori
@@ -791,36 +770,34 @@ function CompletedPanel({
 
 function ConciergePanel({ reason }: { reason: string | null }) {
   return (
-    <div className="flex flex-col items-center gap-4 p-8 rounded-lg border border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)] text-center">
-      <Mail className="size-12 text-[var(--lume-warning-fg)]" />
-      <h2 className="text-lg font-semibold text-foreground">
-        Affidato al team Lume
-      </h2>
-      <p className="text-sm text-muted-foreground max-w-md">
-        {reason ?? 'Il tuo file richiede un\'elaborazione manuale. Ti scriviamo entro 24 ore.'}
-      </p>
-    </div>
+    <Callout tone="warning" icon={Mail} title="Affidato al team Lume">
+      {reason ?? 'Il tuo file richiede un\'elaborazione manuale. Ti scriviamo entro 24 ore.'}
+    </Callout>
   );
 }
 
 function ErrorPanel({ title, message, onBack }: { title: string; message: string; onBack: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-4 p-8 rounded-lg border border-[var(--lume-danger-border)] bg-[var(--lume-danger-bg)] text-center">
-      <AlertTriangle className="size-10 text-destructive" />
-      <h2 className="text-base font-semibold text-foreground">{title}</h2>
-      <p className="text-sm text-muted-foreground">{message}</p>
-      <Button variant="secondary" leadingIcon={ArrowLeft} onClick={onBack}>
-        Torna indietro
-      </Button>
-    </div>
+    <Callout
+      tone="danger"
+      icon={AlertTriangle}
+      title={title}
+      action={
+        <Button variant="secondary" size="sm" leadingIcon={ArrowLeft} onClick={onBack}>
+          Torna indietro
+        </Button>
+      }
+    >
+      {message}
+    </Callout>
   );
 }
 
 function CenteredSpinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-24">
-      <Loader2 className="size-6 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-[var(--lume-text-muted)]" />
+      <p className="text-sm text-[var(--lume-text-secondary)]">{label}</p>
     </div>
   );
 }
@@ -837,12 +814,12 @@ function Stat({
   hint?: string;
 }) {
   const colors: Record<typeof tone, string> = {
-    success: 'text-[var(--lume-success-fg)]',
-    danger: 'text-destructive',
-    neutral: 'text-foreground',
+    success: 'text-success-strong',
+    danger: 'text-danger-strong',
+    neutral: 'text-[var(--lume-text)]',
   };
   const valueEl = (
-    <span className={`text-2xl font-semibold font-mono tabular-nums ${colors[tone]}`}>
+    <span className={`text-2xl tabular-nums ${colors[tone]}`}>
       {value.toLocaleString('it-IT')}
     </span>
   );
@@ -851,13 +828,13 @@ function Stat({
       {valueEl}
       {hint ? (
         <Tooltip label={hint}>
-          <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground uppercase tracking-[0.04em] cursor-help">
+          <span className="inline-flex items-center gap-1 text-xs text-[var(--lume-text-secondary)] cursor-help">
             {label}
-            <Info className="size-3 text-muted-foreground/60" />
+            <Info className="size-3 text-[var(--lume-text-muted)]" aria-hidden />
           </span>
         </Tooltip>
       ) : (
-        <span className="text-2xs text-muted-foreground uppercase tracking-[0.04em]">{label}</span>
+        <span className="text-xs text-[var(--lume-text-secondary)]">{label}</span>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
@@ -62,7 +63,6 @@ export function AddFornitoreModal({ isOpen, onClose, selectedSupplier }: AddForn
     }
   };
 
-  const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
 
   return (
     <AddModal
@@ -77,48 +77,35 @@ export function AddFornitoreModal({ isOpen, onClose, selectedSupplier }: AddForn
       onEnterComplete={() => emitTourEvent('supplier:modal-open')}
     >
       <div className="flex flex-col gap-4" data-tour="supplier-form">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
-          <input
-            type="text"
-            data-tour="field-supplier-name"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className={inputClass}
-            placeholder="es. Distribuzione Sud Srl"
-          />
-          {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Città</label>
-          <input
-            type="text"
-            value={form.city}
-            onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-            className={inputClass}
-            placeholder="es. Napoli"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Telefono</label>
-          <input
-            type="tel"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            className={inputClass}
-            placeholder="es. 081 123 4567"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className={inputClass}
-            placeholder="es. ordini@fornitore.it"
-          />
-        </div>
+        <FormInput
+          label="Nome"
+          required
+          data-tour="field-supplier-name"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          placeholder="es. Distribuzione Sud Srl"
+          error={nameError || undefined}
+        />
+        <FormInput
+          label="Città"
+          value={form.city}
+          onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+          placeholder="es. Napoli"
+        />
+        <FormInput
+          label="Telefono"
+          type="tel"
+          value={form.phone}
+          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+          placeholder="es. 081 123 4567"
+        />
+        <FormInput
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          placeholder="es. ordini@fornitore.it"
+        />
       </div>
     </AddModal>
   );

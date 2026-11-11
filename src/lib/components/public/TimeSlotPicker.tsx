@@ -1,10 +1,14 @@
 'use client';
 
+// ds-ignore: a grid of library Buttons, one per free time; a tap moves the booking to the next step, so there is no value for a form control (Select, OptionGroup) to hold
+
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import type { AvailableSlot } from '@/lib/booking/publicTypes';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 // Slots arrive at slot_granularity_min steps so a busy day can be ~50 chips
 // for an 8-hour shift. We dedupe by start_at when allow_operator_choice is
@@ -78,7 +82,7 @@ export function TimeSlotPicker({
   }
 
   if (error) {
-    return <p className="text-sm text-[var(--lume-danger-fg)]">{error}</p>;
+    return <Callout tone="danger" title={error} />;
   }
 
   if (!slots || slots.length === 0) {
@@ -92,14 +96,15 @@ export function TimeSlotPicker({
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
       {slots.map((slot) => (
-        <button
+        <Button
           key={slot.start_at}
-          type="button"
+          variant="secondary"
+          size="lg"
           onClick={() => onSelect(slot)}
-          className="rounded-lg border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] py-2 text-sm font-medium text-[var(--lume-text)] hover:border-[var(--lume-accent)] hover:bg-[var(--lume-accent-muted)] hover:text-[var(--lume-accent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
+          className="tabular-nums font-normal"
         >
           {format(new Date(slot.start_at), 'HH:mm')}
-        </button>
+        </Button>
       ))}
     </div>
   );

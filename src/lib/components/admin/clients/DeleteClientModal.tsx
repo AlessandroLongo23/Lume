@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TriangleAlert, Trash2, X, Archive } from 'lucide-react';
-import { Modal } from '@/lib/components/shared/ui/modals/Modal';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { useState } from 'react';
+import { Archive } from 'lucide-react';
+import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Client } from '@/lib/types/Client';
@@ -18,131 +17,69 @@ interface DeleteClientModalProps {
 export function DeleteClientModal({ isOpen, onClose, selectedClient, onDeleted }: DeleteClientModalProps) {
   const deleteClient = useClientsStore((s) => s.deleteClient);
   const archiveClient = useClientsStore((s) => s.archiveClient);
-  const [confirmInput, setConfirmInput] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const fullName = selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : '';
-  const isConfirmed = confirmInput.trim().toLowerCase() === fullName.toLowerCase();
   const isArchived = selectedClient?.isArchived ?? false;
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isOpen) setConfirmInput('');
-  }, [isOpen]);
-
-  const handleClose = () => {
-    setConfirmInput('');
-    onClose();
-  };
-
   const handleDelete = async () => {
-    if (!selectedClient || !isConfirmed) return;
+    if (!selectedClient) return;
+    setBusy(true);
     try {
       await deleteClient(selectedClient.id);
       messagePopup.getState().success('Cliente eliminato con successo.');
-      handleClose();
+      onClose();
       onDeleted?.();
     } catch {
       messagePopup.getState().error("Errore durante l'eliminazione.");
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleArchive = async () => {
     if (!selectedClient) return;
+    setBusy(true);
     try {
       await archiveClient(selectedClient.id);
       messagePopup.getState().success('Cliente archiviato con successo.');
-      handleClose();
+      onClose();
     } catch {
       messagePopup.getState().error("Errore durante l'archiviazione.");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} classes="max-w-lg" closeOnOutsideClick={false}>
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
-
-        {/* Header */}
-        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25">
-          <div className="flex flex-row items-center gap-3 min-w-0">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-red-500/10">
-              <TriangleAlert className="size-5 text-red-500" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Elimina cliente</h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">Azione irreversibile — leggi attentamente</p>
-            </div>
-          </div>
-          <Button variant="ghost" iconOnly aria-label="Chiudi" onClick={handleClose}>
-            <X />
-          </Button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 flex flex-col gap-5">
-          <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
-            <p className="text-sm text-red-800 dark:text-red-300 leading-relaxed">
-              <strong>Attenzione:</strong> eliminando <strong>{fullName}</strong> verranno cancellati
-              permanentemente il cliente e <strong>tutte le fiche collegate</strong>.
-              Questa operazione <strong>altererà irrimediabilmente il bilancio storico del salone</strong> e non
-              potrà essere annullata in nessun modo.
-            </p>
-          </div>
-
-          {!isArchived && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4">
-              <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
-                <strong>Consiglio:</strong> usa <strong>Archivia</strong> per nascondere il cliente
-                mantenendo intatto lo storico dati.
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400">
-              Digita <strong className="text-zinc-900 dark:text-zinc-100 font-medium">{fullName}</strong> per confermare
-            </label>
-            <input
-              type="text"
-              value={confirmInput}
-              onChange={(e) => setConfirmInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && isConfirmed) handleDelete(); }}
-              placeholder={fullName}
-              autoComplete="off"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex flex-row items-center justify-between gap-3 p-6 border-t border-zinc-500/25">
-          <div>
-            {!isArchived && (
-              <Button
-                variant="secondary"
-                leadingIcon={Archive}
-                onClick={handleArchive}
-                className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-transparent"
-              >
-                Archivia
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-row items-center gap-3">
-            <Button variant="secondary" leadingIcon={X} onClick={handleClose}>
-              Annulla
-            </Button>
-            <Button
-              variant="destructive"
-              leadingIcon={Trash2}
-              disabled={!isConfirmed}
-              onClick={handleDelete}
-            >
-              Elimina cliente
-            </Button>
-          </div>
-        </div>
-
-      </div>
-    </Modal>
+    <DeleteModal
+      // Remount per client so the type-to-confirm text never carries over.
+      key={selectedClient?.id ?? 'none'}
+      isOpen={isOpen}
+      onClose={onClose}
+      onConfirm={handleDelete}
+      title="Elimina cliente"
+      subtitle="Azione irreversibile — leggi attentamente"
+      confirmText="Elimina cliente"
+      confirmPhrase={fullName}
+      busy={busy}
+      warning={
+        <>
+          <strong className="font-medium text-[var(--lume-text)]">Attenzione:</strong> eliminando{' '}
+          <strong className="font-medium text-[var(--lume-text)]">{fullName}</strong> verranno cancellati
+          permanentemente il cliente e <strong className="font-medium text-[var(--lume-text)]">tutte le fiche collegate</strong>.
+          Questa operazione <strong className="font-medium text-[var(--lume-text)]">altererà irrimediabilmente il bilancio storico del salone</strong> e non
+          potrà essere annullata in nessun modo.
+        </>
+      }
+      tip={!isArchived ? (
+        <>
+          <strong className="font-medium text-[var(--lume-text)]">Consiglio:</strong> usa{' '}
+          <strong className="font-medium text-[var(--lume-text)]">Archivia</strong> per nascondere il cliente
+          mantenendo intatto lo storico dati.
+        </>
+      ) : undefined}
+      alternative={!isArchived ? { label: 'Archivia', icon: Archive, onClick: handleArchive } : undefined}
+    />
   );
 }

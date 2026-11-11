@@ -10,7 +10,7 @@ function formatHoveredTime(minutes: number): string {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
-/** Big live preview of the cell currently under the cursor. */
+/** Quiet live readout of the cell under the cursor: weekday, date and time in mono. */
 export function HoveredTimePreview() {
   const hovered = useCalendarStore((s) => s.hoveredTime);
   const currentView = useCalendarStore((s) => s.currentView);
@@ -23,14 +23,12 @@ export function HoveredTimePreview() {
   return (
     <div
       aria-live="polite"
-      className={`flex items-baseline gap-2 transition-opacity ${
-        hovered ? 'opacity-100' : 'opacity-30'
+      className={`flex items-baseline gap-1.5 text-compact leading-none whitespace-nowrap transition-opacity motion-reduce:transition-none ${
+        hovered ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <span className="text-xs uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-        {dateLabel ?? ' '}
-      </span>
-      <span className="text-3xl font-semibold tabular-nums leading-none text-zinc-800 dark:text-zinc-100">
+      <span className="text-[var(--lume-text-muted)]">{dateLabel ?? ' '}</span>
+      <span className="tabular-nums text-[var(--lume-text-secondary)]">
         {timeLabel ?? '--:--'}
       </span>
     </div>

@@ -1,0 +1,300 @@
+/* Landing page layout: a framed content column with hairlines at its edges and
+   between sections, after the NemTilmeld wireframe (elevenlabs.io / interfere.com
+   block layout). Landing-only, imported by the landing components. Colours come
+   from the --lume-* semantic layer only. */
+
+.lp-page {
+  --lp-col: 1200px;
+  --lp-pad: 16px;
+  /* Distance from the viewport edge to the column's inner content edge. */
+  --lp-edge: max(var(--lp-pad), calc((100% - var(--lp-col)) / 2 + var(--lp-pad)));
+  /* Brass amber has no semantic token of its own; the bilancio "uscite"
+     chart colour is brass, so the landing borrows it for warm accents. */
+  --lp-brass: var(--lume-chart-uscite);
+  --lp-indigo-glow: color-mix(in oklab, var(--lume-accent) 16%, transparent);
+  --lp-brass-glow: color-mix(in oklab, var(--lp-brass) 16%, transparent);
+  /* Landing type steps between the app scale's 14/16/18px: body copy 15px,
+     small headings 17px. Components use them as text-[length:var(--lp-text-*)]. */
+  --lp-text-body: 0.9375rem;
+  --lp-text-h3: 1.0625rem;
+  position: relative;
+  background: var(--lume-bg);
+  color: var(--lume-text);
+  overflow-x: clip;
+}
+.dark .lp-page {
+  --lp-indigo-glow: color-mix(in oklab, var(--lume-accent) 22%, transparent);
+  --lp-brass-glow: color-mix(in oklab, var(--lp-brass) 18%, transparent);
+}
+
+/* Soft lamplight wash behind product windows: the sanctioned hero gradient
+   (indigo-50 → neutral → brass-50, or its dark twin) with two glows, faded in
+   at the top so it never draws a hard edge. */
+.lp-hero-stage {
+  position: relative;
+  isolation: isolate;
+}
+.lp-hero-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-behind);
+  background:
+    radial-gradient(45% 60% at 22% 18%, var(--lp-indigo-glow), transparent 70%),
+    radial-gradient(35% 55% at 88% 40%, var(--lp-brass-glow), transparent 70%),
+    var(--lume-gradient-hero);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  pointer-events: none;
+}
+
+/* Static wash used inside mock screens (the register step). */
+.lp-stage { background: var(--lume-gradient-hero); }
+
+/* Closing band: indigo on one side, brass on the other. */
+.lp-cta-wash {
+  background:
+    radial-gradient(60% 120% at 0% 0%, var(--lp-indigo-glow), transparent 70%),
+    radial-gradient(50% 120% at 100% 100%, var(--lp-brass-glow), transparent 70%),
+    var(--lume-gradient-hero);
+}
+
+/* Small tinted square for feature icons. */
+.lp-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--lume-accent) 12%, transparent);
+  color: var(--lume-accent);
+}
+.lp-icon[data-tone="brass"] {
+  background: color-mix(in oklab, var(--lp-brass) 14%, transparent);
+  color: color-mix(in oklab, var(--lp-brass) 80%, var(--lume-text));
+}
+
+@media (min-width: 768px) {
+  .lp-page { --lp-pad: 40px; }
+}
+
+
+/* Guide lines down both sides of the column. They sit at z-index -1 inside
+   the isolated page: above its background, below every section, so a window
+   bleeding past the column edge covers the line instead of being crossed. */
+.lp-page { isolation: isolate; }
+.lp-page::before,
+.lp-page::after {
+  content: "";
+  position: absolute;
+  z-index: var(--z-behind);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--lume-line);
+  pointer-events: none;
+  display: none;
+}
+.lp-page::before { left: calc((100% - var(--lp-col)) / 2); }
+.lp-page::after { right: calc((100% - var(--lp-col)) / 2); }
+
+@media (min-width: 1260px) {
+  .lp-page::before,
+  .lp-page::after { display: block; }
+}
+
+.lp-container {
+  width: 100%;
+  max-width: var(--lp-col);
+  margin-inline: auto;
+  padding-inline: var(--lp-pad);
+}
+
+/* Sections: a hairline between neighbours, as wide as the column. */
+.lp-section {
+  position: relative;
+  padding-block: calc(var(--spacing) * 18);
+}
+@media (min-width: 768px) {
+  .lp-section { padding-block: calc(var(--spacing) * 28); }
+}
+.lp-section + .lp-section::before,
+.lp-rule::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: min(var(--lp-col), 100%);
+  height: 1px;
+  background: var(--lume-line);
+}
+
+/* Type */
+.lp-display {
+  font-weight: 500;
+  letter-spacing: -0.035em; /* ds-ignore: display headline tracking, tighter than --tracking-tight for 40-72px type */
+  line-height: 1.02;
+  font-size: clamp(2.5rem, 1.4rem + 4.4vw, 4.5rem); /* ds-ignore: fluid hero headline, 40px on phones to 72px on desktop; the type scale has fixed steps only */
+  text-wrap: balance;
+}
+.lp-h2 {
+  font-weight: 500;
+  letter-spacing: -0.03em; /* ds-ignore: section headline tracking, tighter than --tracking-tight for 28-40px type */
+  line-height: 1.1;
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); /* ds-ignore: fluid section headline, 28px on phones to 40px on desktop; the type scale has fixed steps only */
+  text-wrap: balance;
+}
+.lp-h3 {
+  font-weight: 500;
+  letter-spacing: -0.015em; /* ds-ignore: 17px landing heading, between --tracking-tight and --tracking-normal */
+  line-height: 1.3;
+  font-size: var(--lp-text-h3);
+}
+.lp-lede {
+  color: var(--lume-text-secondary);
+  font-size: 1.0625rem; /* ds-ignore: 17px landing lede, between text-base and text-lg, the same landing step as --lp-text-h3 */
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.lp-body {
+  color: var(--lume-text-secondary);
+  font-size: var(--lp-text-body);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* Heading left, intro right (elevenlabs.io section head). */
+.lp-split {
+  display: grid;
+  gap: calc(var(--spacing) * 5);
+  margin-bottom: calc(var(--spacing) * 10);
+}
+@media (min-width: 900px) {
+  .lp-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: calc(var(--spacing) * 12);
+    align-items: end;
+    margin-bottom: calc(var(--spacing) * 14);
+  }
+  .lp-split > :last-child { justify-self: end; max-width: 440px; }
+}
+
+/* App window that bleeds off the right edge of the viewport. */
+.lp-bleed {
+  padding-left: var(--lp-edge);
+}
+.lp-window {
+  position: relative;
+  z-index: var(--z-raised);
+  overflow: hidden;
+  border-radius: 14px 0 0 14px; /* ds-ignore: product window bleeding off the right edge, left corners only at 14px, between --radius-lg and --radius-xl */
+  background: var(--lume-surface-raised);
+  box-shadow:
+    0 0 0 1px var(--lume-edge),
+    0 40px 80px -48px var(--shadow-color),
+    0 24px 48px -32px var(--shadow-color);
+}
+.lp-window-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
+  height: 36px;
+  padding: 0 14px; /* ds-ignore: window title bar inset, 14px so the dots sit inside the 14px corner */
+  border-bottom: 1px solid var(--lume-line);
+  background: var(--lume-surface);
+}
+.lp-window-dots { display: flex; gap: 6px; } /* ds-ignore: 9px window-control dots, 6px apart like the desktop chrome they draw */
+.lp-window-dots i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  background: var(--lume-strong);
+}
+
+/* Bento: six columns on desktop, two on tablet, one on phone. */
+.lp-bento {
+  display: grid;
+  gap: calc(var(--spacing) * 3);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 900px) {
+  .lp-bento { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: calc(var(--spacing) * 4); }
+  .lp-bento > .lp-span-3 { grid-column: span 3; }
+  .lp-bento > .lp-span-2 { grid-column: span 2; }
+  .lp-bento > .lp-span-4 { grid-column: span 4; }
+}
+.lp-tile {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--lume-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--lume-line);
+}
+.lp-tile-vis {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  padding: calc(var(--spacing) * 6) 0 0 calc(var(--spacing) * 6);
+  border-bottom: 1px solid var(--lume-line);
+  background: var(--lume-gradient-hero);
+}
+.lp-tile-vis > .lp-mini {
+  border-radius: 10px 0 0 0; /* ds-ignore: miniature app screen in a bento tile, top-left corner only at 10px, between --radius-md and --radius-lg */
+  height: 100%;
+  background: var(--lume-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--lume-line);
+}
+
+/* Columns of facts sharing hairlines (lovable.dev/for-work). */
+.lp-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--lume-line);
+  border-bottom: 1px solid var(--lume-line);
+}
+.lp-cols > * + * { border-top: 1px solid var(--lume-line); }
+@media (min-width: 768px) {
+  .lp-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lp-cols > * + * { border-top: 0; border-left: 1px solid var(--lume-line); }
+}
+
+/* Accordion body: animates its height with grid rows, snaps when reduced. */
+.lp-acc-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-base) var(--ease-glide);
+}
+.lp-acc-body[data-open="true"] { grid-template-rows: 1fr; }
+.lp-acc-body > div { overflow: hidden; min-height: 0; }
+.lp-acc-item { position: relative; border-bottom: 1px solid var(--lume-line); }
+.lp-acc-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 1px;
+  width: 0;
+  background: var(--lume-accent);
+  transition: width var(--duration-slow) var(--ease-glide);
+}
+.lp-acc-item[data-open="true"]::before { width: 55%; }
+
+/* FAQ disclosure marker. */
+.lp-faq summary { list-style: none; cursor: pointer; }
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq .lp-faq-ic { transition: rotate var(--duration-base) var(--ease-glide); }
+.lp-faq[open] .lp-faq-ic { rotate: 45deg; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-acc-body,
+  .lp-acc-item::before,
+  .lp-faq .lp-faq-ic { transition: none; }
+}
+
+/* Phones see a smaller crop of the hero screen instead of just its sidebar. */
+@media (max-width: 639px) {
+  .lp-hero-screen { zoom: 0.62; }
+}

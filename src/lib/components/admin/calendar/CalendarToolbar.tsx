@@ -52,7 +52,7 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
       const days = getWeekDays(selectedDate);
       const start = days[0];
       const end = days[6];
-      return `${capitalize(formatDateString(start, 'd MMM'))} — ${capitalize(formatDateString(end, 'd MMM yyyy'))}`;
+      return `${formatDateString(start, 'd MMM')} – ${formatDateString(end, 'd MMM yyyy')}`;
     }
     return capitalize(formatDateString(currentMonth, 'MMMM yyyy'));
   }
@@ -62,22 +62,38 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
   }
 
   return (
-    <div className="flex w-full justify-between items-center gap-6 py-3 mb-3 border-b border-zinc-500/25">
+    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 pb-3">
 
-      {/* Left: live hover-time preview */}
-      <div className="flex items-center min-w-0 basis-0 grow shrink">
-        <HoveredTimePreview />
-      </div>
-
-      {/* Center: prev / date (click = today) / next */}
-      <div data-tour="calendar-date-nav" className="flex items-center gap-1 shrink-0">
-        <Button variant="ghost" size="sm" iconOnly aria-label="Precedente" onClick={navigatePrev}>
+      {/* Left: today / prev / next / date title (click opens the date picker) */}
+      <div data-tour="calendar-date-nav" className="flex items-center gap-1 min-w-0">
+        <Button
+          variant="secondary"
+          onClick={goToToday}
+          className="mr-1"
+        >
+          Oggi
+        </Button>
+        <Button
+          variant="ghost"
+          iconOnly
+          aria-label="Precedente"
+          onClick={navigatePrev}
+        >
           <ChevronLeft />
+        </Button>
+        <Button
+          variant="ghost"
+          iconOnly
+          aria-label="Successivo"
+          onClick={navigateNext}
+        >
+          <ChevronRight />
         </Button>
 
         {/* Date label opens a dropdown to pick year / month / day */}
         <CalendarDatePicker
           label={getDateLabel()}
+          shortLabel={currentView === 'day' ? formatDateString(selectedDate, 'd MMMM yyyy') : undefined}
           selectedDate={selectedDate}
           currentMonth={currentMonth}
           monthOnly={currentView === 'month'}
@@ -91,15 +107,15 @@ export function CalendarToolbar({ onAddFerie }: CalendarToolbarProps = {}) {
           }}
           onGoToToday={goToToday}
         />
-
-        <Button variant="ghost" size="sm" iconOnly aria-label="Successivo" onClick={navigateNext}>
-          <ChevronRight />
-        </Button>
       </div>
 
-      {/* Right: view toggle + operator filter */}
-      <div className="flex items-center justify-end gap-2 min-w-0 basis-0 grow shrink">
+      {/* Right: live hover readout + view toggle + operator filter */}
+      <div className="ml-auto flex items-center justify-end gap-2 min-w-0">
+        <div className="hidden xl:block mr-2">
+          <HoveredTimePreview />
+        </div>
         <ToggleButton
+          ariaLabel="Vista del calendario"
           options={[...VIEW_VALUES]}
           value={currentView}
           onChange={(v) => handleViewChange(v as CalendarView)}

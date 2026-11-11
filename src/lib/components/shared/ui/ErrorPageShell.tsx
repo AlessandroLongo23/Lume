@@ -6,13 +6,14 @@ import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { ArrowRight, LucideIcon, X } from 'lucide-react';
 
+const COUNTDOWN_SECONDS = 5;
+
 type ErrorPageShellProps = {
-  code?: string;
+  code: string;
   title: string;
   description: string;
   destinationHref: string;
   destinationLabel: string;
-  countdownSeconds?: number;
   extraAction?: {
     label: string;
     onClick: () => void;
@@ -26,11 +27,10 @@ export function ErrorPageShell({
   description,
   destinationHref,
   destinationLabel,
-  countdownSeconds = 5,
   extraAction,
 }: ErrorPageShellProps) {
   const router = useRouter();
-  const [remaining, setRemaining] = useState(countdownSeconds);
+  const [remaining, setRemaining] = useState(COUNTDOWN_SECONDS);
   const [cancelled, setCancelled] = useState(false);
   const redirected = useRef(false);
 
@@ -56,50 +56,60 @@ export function ErrorPageShell({
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center px-6 py-12 bg-[var(--lume-bg)] text-[var(--lume-text)]">
-      <div className="w-full max-w-xl flex flex-col items-center text-center gap-8">
-        <LumeLogo size="lg" />
+    <main className="min-h-dvh w-full flex flex-col bg-[var(--lume-bg)] text-[var(--lume-text)]">
+      <header className="h-16 px-4 sm:px-6 flex items-center">
+        <LumeLogo size="md" />
+      </header>
 
-        <div className="flex flex-col items-center gap-3">
-          {code && (
-            <span className="text-6xl md:text-7xl font-semibold tracking-tight text-primary">
-              {code}
+      <div className="flex-1 flex items-center justify-center px-4 pb-20">
+        <div className="w-full max-w-lg flex flex-col gap-8">
+          <div className="flex flex-col gap-3">
+            <span className="tabular-nums text-sm text-[var(--lume-text-muted)]">
+              Errore {code}
             </span>
-          )}
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-            {title}
-          </h1>
-          <p className="text-base text-[var(--lume-text-muted)] max-w-md">
-            {description}
-          </p>
-        </div>
+            <h1 className="text-3xl sm:text-4xl leading-tight font-medium tracking-tight text-balance">
+              {title}
+            </h1>
+            <p className="text-base leading-relaxed text-[var(--lume-text-secondary)] max-w-[44ch]">
+              {description}
+            </p>
+          </div>
 
-        <div
-          aria-live="polite"
-          className="min-h-[3rem] flex items-center text-sm text-[var(--lume-text-muted)]"
-        >
-          {cancelled ? (
-            <span>Reindirizzamento automatico annullato.</span>
-          ) : (
-            <span>
-              Verrai reindirizzato a{' '}
-              <span className="font-medium text-[var(--lume-text)]">
-                {destinationLabel}
-              </span>{' '}
-              tra <span className="font-medium text-primary">{remaining}</span>{' '}
-              {remaining === 1 ? 'secondo' : 'secondi'}...
-            </span>
-          )}
-        </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="primary" size="lg" trailingIcon={ArrowRight} onClick={goNow}>
+              Vai ora
+            </Button>
+            {extraAction && (
+              <Button variant="secondary" size="lg" leadingIcon={extraAction.icon} onClick={extraAction.onClick}>
+                {extraAction.label}
+              </Button>
+            )}
+          </div>
 
-        <div className="flex flex-wrap justify-center gap-3">
-          {!cancelled && (
-            <Button variant="secondary" leadingIcon={X} onClick={() => setCancelled(true)}>Annulla</Button>
-          )}
-          {extraAction && (
-            <Button variant="secondary" leadingIcon={extraAction.icon} onClick={extraAction.onClick}>{extraAction.label}</Button>
-          )}
-          <Button variant="primary" trailingIcon={ArrowRight} onClick={goNow}>Vai ora</Button>
+          <div
+            aria-live="polite"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-5 border-t border-line text-sm text-[var(--lume-text-secondary)]"
+          >
+            {cancelled ? (
+              <span>Reindirizzamento automatico annullato.</span>
+            ) : (
+              <>
+                <span>
+                  Tra <span className="tabular-nums text-[var(--lume-text)]">{remaining}</span>{' '}
+                  {remaining === 1 ? 'secondo' : 'secondi'} si apre {destinationLabel}.
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leadingIcon={X}
+                  onClick={() => setCancelled(true)}
+                  className="-mx-2 text-[var(--lume-text)] pointer-coarse:h-[var(--lume-control-h-lg)]"
+                >
+                  Resta qui
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>

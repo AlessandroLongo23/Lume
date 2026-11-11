@@ -1,61 +1,61 @@
 'use client';
 
-import { useMemo } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
-import { useTheme } from '@/lib/components/shared/ui/theme/ThemeProvider';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/utils/format';
 import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
+import { AXIS_TICK, CURSOR_FILL, GRID_STROKE, SERIES_PRIMARY, SERIES_SECONDARY, compactEuro } from '@/lib/components/graphs/chartTheme';
 import type { OperatorSummaryRow } from '../statHelpers';
 
-const readVar = (name: string, fallback: string) => {
-  if (typeof window === 'undefined') return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
-};
-
-const tooltip = makeRechartsTooltip((v, name) =>
-  name === 'incasso' ? [formatCurrency(v as number), 'Incasso'] : [String(v), 'Fiches'],
-);
+const incassoTooltip = makeRechartsTooltip((v) => [formatCurrency(Number(v)), 'Incasso']);
+const fichesTooltip = makeRechartsTooltip((v) => [String(v), 'Fiches']);
 
 interface Props { rows: OperatorSummaryRow[] }
 
+/**
+ * Revenue and fiches per operator as two small charts side by side, each on
+ * its own scale: one chart with two y-axes invites false comparisons.
+ */
 export function OperatoriComparisonChart({ rows }: Props) {
-  const { resolvedTheme: theme } = useTheme();
-  const colors = useMemo(() => ({
-    primary:   readVar('--color-brand-primary-500', '#6366F1'),
-    secondary: readVar('--color-brand-secondary-500', '#F59E0B'),
-    muted:     readVar('--lume-text-muted', '#A1A1AA'),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [theme]);
-
   const data = rows.map((r) => ({ name: r.name, incasso: r.incasso, fiches: r.ficheCount }));
 
   if (data.length === 0) {
-    return <p className="text-xs text-zinc-400 px-5 pb-5">Nessun operatore nel periodo.</p>;
+    return <p className="text-sm text-[var(--lume-text-muted)] px-5 pb-5">Nessun operatore nel periodo.</p>;
   }
 
   return (
-    <div className="px-5 pb-5">
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 4 }}>
-          <XAxis dataKey="name" axisLine={false} tickLine={false}
-            tick={{ fontSize: 11, fill: colors.muted }} />
-          <YAxis yAxisId="incasso" orientation="left" axisLine={false} tickLine={false}
-            tick={{ fontSize: 10, fill: colors.muted }} tickFormatter={(v) => `€${v}`} />
-          <YAxis yAxisId="fiches" orientation="right" axisLine={false} tickLine={false}
-            tick={{ fontSize: 10, fill: colors.muted }} />
-          <Tooltip content={tooltip} />
-          <Legend formatter={(value) => (
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">
-              {value === 'incasso' ? 'Incasso' : 'N. fiches'}
-            </span>
-          )} />
-          <Bar yAxisId="incasso" dataKey="incasso" fill={colors.primary} radius={[4, 4, 0, 0]} />
-          <Bar yAxisId="fiches" dataKey="fiches" fill={colors.secondary} radius={[4, 4, 0, 0]} />
+    <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <MiniBars title="Incasso" color={SERIES_PRIMARY} data={data} dataKey="incasso"
+        tooltip={incassoTooltip} tickFormatter={compactEuro} />
+      <MiniBars title="Fiches" color={SERIES_SECONDARY} data={data} dataKey="fiches"
+        tooltip={fichesTooltip} />
+    </div>
+  );
+}
+
+function MiniBars({ title, color, data, dataKey, tooltip, tickFormatter }: {
+  title: string;
+  color: string;
+  data: { name: string; incasso: number; fiches: number }[];
+  dataKey: 'incasso' | 'fiches';
+  tooltip: ReturnType<typeof makeRechartsTooltip>;
+  tickFormatter?: (v: number) => string;
+}) {
+  return (
+    <figure className="min-w-0">
+      <figcaption className="mb-2 flex items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
+        <span className="size-2 rounded-full" style={{ background: color }} aria-hidden />
+        {title}
+      </figcaption>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+          <CartesianGrid vertical={false} stroke={GRID_STROKE} />
+          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} interval={0} />
+          <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} width={tickFormatter ? 56 : 28}
+            allowDecimals={false} tickFormatter={tickFormatter} />
+          <Tooltip content={tooltip} cursor={CURSOR_FILL} />
+          <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} maxBarSize={28} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </figure>
   );
 }

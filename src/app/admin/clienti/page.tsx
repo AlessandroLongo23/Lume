@@ -100,10 +100,10 @@ export default function ClientiPage() {
         <PageHeader
           title={showArchived ? 'Clienti archiviati' : 'Clienti'}
           subtitle="Ricorda ogni persona che entra nel tuo salone."
-          icon={Users}
           actions={
             <>
               <ToggleButton
+                ariaLabel="Vista"
                 value={view}
                 onChange={(v) => setView('clients', v)}
                 options={['table', 'grid']}
@@ -114,7 +114,6 @@ export default function ClientiPage() {
                 variant="primary"
                 leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
-                className="whitespace-nowrap"
                 data-tour="action-client-create"
               >
                 Nuovo cliente

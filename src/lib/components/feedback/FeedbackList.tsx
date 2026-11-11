@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownWideNarrow, Check, Clock, MessageSquare, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowDownWideNarrow, Clock, MessageSquare, Plus, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
+import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
 import { useRealtimeStore } from '@/lib/hooks/useRealtimeStore';
 import {
   useFeedbackStore,
@@ -35,6 +37,15 @@ const STATUS_OPTIONS: { value: FeedbackFilter; label: string }[] = [
 
 const TYPE_ORDER: FeedbackType[] = ['suggestion', 'bug', 'idea'];
 
+const TYPE_OPTIONS: FacetedFilterOption[] = TYPE_ORDER.map((t) => {
+  const Icon = TYPE_META[t].icon;
+  return {
+    value: t,
+    label: TYPE_META[t].label,
+    prefix: <Icon className="size-3.5 text-[var(--lume-text-secondary)]" aria-hidden />,
+  };
+});
+
 export function FeedbackList({ mode }: FeedbackListProps) {
   const entries = useFeedbackStore((s) => s.entries);
   const isLoading = useFeedbackStore((s) => s.isLoading);
@@ -56,8 +67,6 @@ export function FeedbackList({ mode }: FeedbackListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
-  const typeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Effective flags based on where this list is rendered.
   const isPlatformView = mode === 'platform';
@@ -79,17 +88,6 @@ export function FeedbackList({ mode }: FeedbackListProps) {
       }
     });
   }, [fetchEntries]);
-
-  useEffect(() => {
-    if (!typeDropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
-        setTypeDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [typeDropdownOpen]);
 
   useRealtimeStore('feedback_entries', fetchEntries);
   useRealtimeStore('feedback_upvotes', fetchEntries);
@@ -158,7 +156,6 @@ export function FeedbackList({ mode }: FeedbackListProps) {
           subtitle={isPlatformView
             ? 'Tutti i feedback dei saloni'
             : 'Suggerisci, segnala, vota. Costruiamo Lume insieme.'}
-          icon={MessageSquare}
           actions={!isPlatformView ? (
             <Button variant="primary" leadingIcon={Plus} onClick={() => setShowAdd(true)}>
               {newLabel}
@@ -167,149 +164,56 @@ export function FeedbackList({ mode }: FeedbackListProps) {
         />
 
         {/* Status tabs */}
-        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <TabBar label="Stato dei feedback">
           {STATUS_OPTIONS.map(({ value, label }) => {
             const isActive = filter === value;
             return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilter(value)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  isActive
-                    ? 'border-primary text-primary-hover dark:text-primary/70'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                }`}
-              >
+              <TabButton key={value} active={isActive} count={countFor(value)} onClick={() => setFilter(value)}>
                 {label}
-                <NumberBadge value={countFor(value)} variant={isActive ? 'primary' : 'neutral'} size="md" />
-              </button>
+              </TabButton>
             );
           })}
-        </div>
+        </TabBar>
 
         {/* Toolbar */}
         <div className="flex items-center flex-wrap gap-2">
-          <div className="relative flex items-center flex-1 max-w-sm min-w-50">
-            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Cerca feedback..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                border-zinc-200 dark:border-zinc-800
-                focus:border-zinc-300 dark:focus:border-zinc-700
-                text-zinc-900 dark:text-zinc-100
-                placeholder:text-zinc-400 outline-none transition-colors"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                aria-label="Azzera ricerca"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2"
-              >
-                <X />
-              </Button>
-            )}
-          </div>
+          <Searchbar
+            placeholder="Cerca feedback..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+            bindShortcut={false}
+            className="flex-1 basis-full sm:basis-auto sm:max-w-sm"
+          />
 
-          <div ref={typeDropdownRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setTypeDropdownOpen((o) => !o)}
-              className={[
-                'flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors',
-                typeFilter !== 'all'
-                  ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
-                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-              ].join(' ')}
-            >
-              <SlidersHorizontal className="size-4" />
-              <span>Tipo</span>
-              {typeFilter !== 'all' && (
-                <NumberBadge value={1} variant="solid" size="md" />
-              )}
-            </button>
-
-            {typeDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 z-dropdown w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
-                <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Filtra per tipo
-                  </span>
-                </div>
-                <div className="py-1">
-                  {TYPE_ORDER.map((t) => {
-                    const meta = TYPE_META[t];
-                    const Icon = meta.icon;
-                    const checked = typeFilter === t;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => {
-                          setTypeFilter(checked ? 'all' : t);
-                          setTypeDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                      >
-                        <span
-                          className={[
-                            'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
-                            checked
-                              ? 'bg-primary border-primary'
-                              : 'border-zinc-300 dark:border-zinc-600',
-                          ].join(' ')}
-                        >
-                          {checked && <Check className="size-3 text-white" />}
-                        </span>
-                        <Icon className="size-3.5 text-zinc-500" />
-                        {meta.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {typeFilter !== 'all' && (
-                  <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      onClick={() => { setTypeFilter('all'); setTypeDropdownOpen(false); }}
-                      className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                    >
-                      Azzera filtri
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <FacetedFilter
+            label="Tipo"
+            options={TYPE_OPTIONS}
+            selected={typeFilter === 'all' ? [] : [typeFilter]}
+            // One type at a time: the newly ticked row replaces the old one.
+            onChange={(next) => {
+              const added = next.find((v) => v !== typeFilter) as FeedbackType | undefined;
+              setTypeFilter(added ?? 'all');
+            }}
+          />
 
           {mySalonIdResolved && !isPlatformView && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => setMineOnly(!mineOnly)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                mineOnly
-                  ? 'border-primary/30 bg-primary/10 text-primary-hover dark:text-primary/70'
-                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-              }`}
+              pressed={mineOnly}
             >
               Le mie
-            </button>
+            </Button>
           )}
 
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            leadingIcon={sort === 'top' ? ArrowDownWideNarrow : Clock}
             onClick={() => setSort(sort === 'top' ? 'recent' : 'top')}
-            className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+            className="ml-auto"
           >
-            {sort === 'top' ? <ArrowDownWideNarrow className="size-3.5" /> : <Clock className="size-3.5" />}
             {sort === 'top' ? 'Più votate' : 'Più recenti'}
-          </button>
+          </Button>
         </div>
 
         {isLoading ? (

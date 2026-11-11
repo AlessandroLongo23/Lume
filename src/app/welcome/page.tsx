@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { SplitText } from '@/lib/components/shared/ui/SplitText';
+import { EASE_OUT } from '@/lib/const/motion';
 
 const FADE_DURATION = 0.5;
 const DISPLAY_DURATION = 3000;
@@ -13,7 +14,7 @@ function hi(name: string) {
   return (
     <>
       Benvenuto in Lume,{' '}
-      <span className="text-primary font-semibold">{name}</span>.
+      <span className="text-[var(--lume-text)] font-medium">{name}</span>.
     </>
   );
 }
@@ -22,7 +23,7 @@ function workspace(salon: string) {
   return (
     <>
       Stiamo creando lo spazio di lavoro di{' '}
-      <span className="text-primary font-semibold">{salon}</span>...
+      <span className="text-[var(--lume-text)] font-medium">{salon}</span>...
     </>
   );
 }
@@ -80,20 +81,10 @@ function WelcomeSequence() {
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: FADE_DURATION, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: FADE_DURATION, ease: EASE_OUT }}
         >
           <SplitText
-            tag="p"
-            className="text-2xl font-light tracking-wide text-zinc-800 dark:text-zinc-200"
-            splitType="chars"
-            delay={22}
-            duration={0.55}
-            ease="power3.out"
-            from={{ opacity: 0, y: 14 }}
-            to={{ opacity: 1, y: 0 }}
-            threshold={0}
-            rootMargin="0px"
-            textAlign="center"
+            className="text-2xl font-light tracking-tight text-[var(--lume-text-secondary)]"
           >
             {messages[index]}
           </SplitText>
@@ -105,7 +96,7 @@ function WelcomeSequence() {
 
 export default function WelcomePage() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
+    <div className="fixed inset-0 flex items-center justify-center bg-[var(--lume-bg)]">
       <div className="absolute top-6 left-8">
         <LumeLogo size="md" />
       </div>

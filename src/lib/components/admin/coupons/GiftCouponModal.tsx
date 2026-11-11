@@ -11,6 +11,9 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateField } from '@/lib/components/shared/ui/forms/DateField';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponScopePicker';
 import { CouponNotifySuccess } from './CouponNotifySuccess';
@@ -133,10 +136,6 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
     }
   }
 
-  const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50';
-  const labelClass =
-    'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   const onConfirm = view === 'form' ? handleSubmit : onClose;
   const confirmText = view === 'form' ? (isSubmitting ? 'Creazione…' : 'Crea coupon') : 'Chiudi';
@@ -148,9 +147,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
       onSubmit={onConfirm}
       title="Nuovo coupon regalo"
       subtitle="Regala un coupon a un cliente"
-      icon={Gift}
       classes="max-w-2xl"
-      contentClasses="overflow-y-auto"
       confirmText={confirmText}
       confirmDisabled={isSubmitting}
       confirmDataTour="save-coupon"
@@ -167,116 +164,113 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
         />
       ) : (
         <div className="flex flex-col gap-5" data-tour="coupon-form">
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}><User className="size-3.5" />Destinatario *</label>
-            <Select
-              options={clientOptions}
-              labelKey="fullName"
-              valueKey="id"
-              value={recipientId}
-              onChange={(v) => {
-                // Advances an interactive guide's "choose the recipient" step once
-                // the user picks a client (no-op when no tour is running).
-                if (v && v !== recipientId) emitTourEvent('coupon:recipient-selected');
-                setRecipientId(v);
-              }}
-              placeholder="Cerca cliente…"
-            />
-          </div>
+          <Field label="Destinatario" labelIcon={User} required>
+            {({ id }) => (
+              <Select
+                id={id}
+                options={clientOptions}
+                labelKey="fullName"
+                valueKey="id"
+                value={recipientId}
+                onChange={(v) => {
+                  // Advances an interactive guide's "choose the recipient" step once
+                  // the user picks a client (no-op when no tour is running).
+                  if (v && v !== recipientId) emitTourEvent('coupon:recipient-selected');
+                  setRecipientId(v);
+                }}
+                placeholder="Cerca cliente…"
+              />
+            )}
+          </Field>
 
-          <div className="flex flex-col gap-2" data-tour="coupon-field-discount">
-            <label className={labelClass}>Tipo di sconto *</label>
-            <ToggleButton
-              options={['fixed', 'percent', 'free_item'] as CouponDiscountType[]}
-              labels={['Importo fisso', 'Percentuale', 'Omaggio']}
-              icons={[Euro, Percent, Gift]}
-              value={discountType}
-              onChange={(v) => setDiscountType(v as CouponDiscountType)}
-              className="w-full"
-            />
+          <div data-tour="coupon-field-discount">
+            <Field label="Tipo di sconto" required>
+              {() => (
+                <div className="flex flex-col gap-2">
+                  <ToggleButton
+                    ariaLabel="Tipo di sconto"
+                    options={['fixed', 'percent', 'free_item'] as CouponDiscountType[]}
+                    labels={['Importo fisso', 'Percentuale', 'Omaggio']}
+                    icons={[Euro, Percent, Gift]}
+                    value={discountType}
+                    onChange={(v) => setDiscountType(v as CouponDiscountType)}
+                    className="w-full"
+                  />
 
-            {discountType === 'fixed' && (
-              <div className="flex items-center gap-2">
-                <NumberInput
-                  value={discountValue}
-                  onChange={(v) => setDiscountValue(v)}
-                  min={0}
-                  step={0.5}
-                  decimals={2}
-                  suffix="€"
-                  size="lg"
-                  width="w-36"
-                />
-                <span className="text-xs text-zinc-400">di sconto</span>
-              </div>
-            )}
-            {discountType === 'percent' && (
-              <div className="flex items-center gap-2">
-                <NumberInput
-                  value={discountValue}
-                  onChange={(v) => setDiscountValue(v)}
-                  min={0}
-                  step={1}
-                  decimals={0}
-                  suffix="%"
-                  size="lg"
-                  width="w-32"
-                />
-                <span className="text-xs text-zinc-400">di sconto</span>
-              </div>
-            )}
-            {discountType === 'free_item' && (
-              <div className="flex flex-col gap-2">
-                <ToggleButton
-                  options={['service', 'product'] as CouponFreeItemKind[]}
-                  labels={['Servizio', 'Prodotto']}
-                  icons={[Scissors, Package]}
-                  value={freeItemKind}
-                  onChange={(v) => { setFreeItemKind(v as CouponFreeItemKind); setFreeItemId(''); }}
-                  className="w-full"
-                />
-                <Select
-                  options={freeItemKind === 'service' ? activeServices : activeProducts}
-                  labelKey="name"
-                  valueKey="id"
-                  value={freeItemId}
-                  onChange={setFreeItemId}
-                  placeholder={freeItemKind === 'service' ? 'Seleziona servizio…' : 'Seleziona prodotto…'}
-                />
-              </div>
-            )}
+                  {discountType === 'fixed' && (
+                    <div className="flex items-center gap-2">
+                      <NumberInput
+                        aria-label="Sconto in euro"
+                        value={discountValue}
+                        onChange={(v) => setDiscountValue(v)}
+                        min={0}
+                        step={0.5}
+                        decimals={2}
+                        suffix="€"
+                        className="w-36"
+                      />
+                      <span className="text-xs text-[var(--lume-text-muted)]">di sconto</span>
+                    </div>
+                  )}
+                  {discountType === 'percent' && (
+                    <div className="flex items-center gap-2">
+                      <NumberInput
+                        aria-label="Sconto in percentuale"
+                        value={discountValue}
+                        onChange={(v) => setDiscountValue(v)}
+                        min={0}
+                        step={1}
+                        suffix="%"
+                        className="w-32"
+                      />
+                      <span className="text-xs text-[var(--lume-text-muted)]">di sconto</span>
+                    </div>
+                  )}
+                  {discountType === 'free_item' && (
+                    <div className="flex flex-col gap-2">
+                      <ToggleButton
+                        ariaLabel="Tipo di omaggio"
+                        options={['service', 'product'] as CouponFreeItemKind[]}
+                        labels={['Servizio', 'Prodotto']}
+                        icons={[Scissors, Package]}
+                        value={freeItemKind}
+                        onChange={(v) => { setFreeItemKind(v as CouponFreeItemKind); setFreeItemId(''); }}
+                        className="w-full"
+                      />
+                      <Select
+                        options={freeItemKind === 'service' ? activeServices : activeProducts}
+                        labelKey="name"
+                        valueKey="id"
+                        value={freeItemId}
+                        onChange={setFreeItemId}
+                        placeholder={freeItemKind === 'service' ? 'Seleziona servizio…' : 'Seleziona prodotto…'}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-4" data-tour="coupon-field-validity">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Calendar className="size-3.5" />Valido dal *</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={validFrom}
-                onChange={(e) => setValidFrom(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Calendar className="size-3.5" />Valido fino al *</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
-            </div>
+            <Field label="Valido dal" labelIcon={Calendar} required>
+              {({ id }) => <DateField id={id} value={validFrom} onChange={setValidFrom} />}
+            </Field>
+            <Field label="Valido fino al" labelIcon={Calendar} required>
+              {({ id }) => <DateField id={id} value={validUntil} onChange={setValidUntil} />}
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="coupon-field-scope">
-            <label className={labelClass}>Ambito</label>
-            <CouponScopePicker value={scope} onChange={setScope} />
+          <div data-tour="coupon-field-scope">
+            <Field label="Ambito">
+              {() => <CouponScopePicker value={scope} onChange={setScope} />}
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="coupon-field-notes">
-            <label className={labelClass}><FileText className="size-3.5" />Note</label>
-            <textarea
-              className={`${inputClass} resize-none`}
+          <div data-tour="coupon-field-notes">
+            <TextArea
+              label="Note"
+              labelIcon={FileText}
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -284,7 +278,7 @@ export function GiftCouponModal({ isOpen, onClose }: GiftCouponModalProps) {
             />
           </div>
 
-          {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+          {errorMessage && <p className="text-sm text-danger-strong">{errorMessage}</p>}
         </div>
       )}
     </AddModal>

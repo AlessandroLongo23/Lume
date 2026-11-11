@@ -3,8 +3,9 @@
 import { forwardRef, type ButtonHTMLAttributes, type ComponentType, type SVGProps } from 'react';
 import { cn } from '@/lib/utils';
 import { Slot } from './Slot';
+import { Tooltip } from './Tooltip';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'destructive-outline';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'ghost-destructive' | 'destructive';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
@@ -16,15 +17,24 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   trailingIcon?: IconComponent;
   iconOnly?: boolean;
   loading?: boolean;
-  fullWidth?: boolean;
   asChild?: boolean;
+  /** Toggle buttons (an active filter, a view switch): the shared `selected` look + aria-pressed. */
+  pressed?: boolean;
+  /**
+   * Icon-only buttons show their `aria-label` as a tooltip. Pass a string to
+   * show a different text, or `false` when a wrapper already supplies one.
+   */
+  tooltip?: string | false;
   children?: React.ReactNode;
 }
 
+// md grows to 44px on touch screens, like the `control-md` recipe. The svg
+// rule sizes icons passed as children (an `asChild` link's icon, icon-only
+// buttons); `leadingIcon`/`trailingIcon` get the same size explicitly.
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-[var(--lume-control-h-sm)] gap-[var(--lume-control-gap-sm)] text-[length:var(--lume-control-text-sm)]',
-  md: 'h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
-  lg: 'h-[var(--lume-control-h-lg)] gap-[var(--lume-control-gap-lg)] text-[length:var(--lume-control-text-lg)]',
+  sm: 'h-[var(--lume-control-h-sm)] gap-[var(--lume-control-gap-sm)] text-[length:var(--lume-control-text-sm)] [&>svg]:size-3.5',
+  md: 'h-[var(--lume-control-h-md)] pointer-coarse:h-[var(--lume-control-h-lg)] gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)] [&>svg]:size-4',
+  lg: 'h-[var(--lume-control-h-lg)] gap-[var(--lume-control-gap-lg)] text-[length:var(--lume-control-text-lg)] [&>svg]:size-5',
 };
 
 const sizePaddingClasses: Record<ButtonSize, string> = {
@@ -34,42 +44,41 @@ const sizePaddingClasses: Record<ButtonSize, string> = {
 };
 
 const iconOnlyClasses: Record<ButtonSize, string> = {
-  sm: 'w-[var(--lume-control-h-sm)] p-0 [&>svg]:size-3.5 [&>svg]:shrink-0',
-  md: 'w-[var(--lume-control-h-md)] p-0 [&>svg]:size-4 [&>svg]:shrink-0',
-  lg: 'w-[var(--lume-control-h-lg)] p-0 [&>svg]:size-5 [&>svg]:shrink-0',
+  // Small icon buttons sit in dense rows; on touch they still get a 44px target.
+  sm: 'w-[var(--lume-control-h-sm)] pointer-coarse:size-[var(--lume-control-h-lg)] p-0',
+  md: 'w-[var(--lume-control-h-md)] pointer-coarse:size-[var(--lume-control-h-lg)] p-0',
+  lg: 'w-[var(--lume-control-h-lg)] p-0',
 };
 
+// Edges are 1px shadow rings (--lume-edge), never borders, so every size keeps
+// its exact height. No hover lift or glow: hover changes the fill, press scales
+// the whole control down a hair.
 const variantClasses: Record<ButtonVariant, string> = {
   primary: cn(
     'bg-[var(--lume-button-accent-bg)] text-[var(--lume-button-accent-fg)]',
-    'hover:bg-[var(--lume-button-accent-bg-hover)] active:bg-[var(--lume-button-accent-bg-active)]',
-    'hover:-translate-y-px hover:shadow-[0_8px_24px_-8px_var(--lume-accent-muted)]',
-    // Pressing drops the hover lift: the press reads as the button going down.
-    'active:translate-y-0',
+    'hover:bg-primary-hover active:bg-primary-active',
   ),
   secondary: cn(
     'bg-[var(--lume-button-secondary-bg)] text-[var(--lume-button-secondary-fg)]',
-    'border border-[var(--lume-border)]',
+    'shadow-[inset_0_0_0_1px_var(--lume-edge)]',
     'hover:bg-[var(--lume-button-secondary-bg-hover)]',
   ),
   ghost: cn(
-    'bg-[var(--lume-button-ghost-bg)] text-[var(--lume-button-ghost-fg)]',
-    'hover:bg-[var(--lume-button-ghost-bg-hover)]',
+    'bg-transparent text-[var(--lume-text-secondary)]',
+    'hover:bg-hover hover:text-[var(--lume-text)]',
+    'active:bg-active',
   ),
+  // Reads as ghost at rest; red only on hover. For the buttons that open a
+  // delete confirmation (and trash icons in rows): the confirmation itself
+  // carries the solid `destructive` button.
+  'ghost-destructive': cn(
+    'bg-transparent text-[var(--lume-text-secondary)]',
+    'hover:bg-danger-soft hover:text-danger-strong',
+  ),
+  // Solid red: only the button that performs a deletion, inside its confirmation.
   destructive: cn(
     'bg-[var(--lume-button-destructive-bg)] text-[var(--lume-button-destructive-fg)]',
     'hover:bg-[var(--lume-button-destructive-bg-hover)]',
-    'hover:-translate-y-px',
-    'active:translate-y-0',
-  ),
-  // Outlined destructive: same card shape as `secondary` (so it sits naturally
-  // beside neutral actions) but carries the danger identity — red text/icon,
-  // danger-tinted border, soft danger wash on hover. The confirm dialog stays
-  // the loud moment; this is the quiet, visible affordance.
-  'destructive-outline': cn(
-    'bg-[var(--lume-button-secondary-bg)] text-[var(--lume-danger-fg)]',
-    'border border-[var(--lume-danger-border)]',
-    'hover:bg-[var(--lume-danger-bg)]',
   ),
 };
 
@@ -87,8 +96,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     trailingIcon: TrailingIcon,
     iconOnly = false,
     loading = false,
-    fullWidth = false,
     asChild = false,
+    pressed,
+    tooltip,
     className,
     disabled,
     children,
@@ -105,19 +115,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   const isDisabled = disabled || loading;
 
   const classes = cn(
-    'relative inline-flex items-center justify-center rounded-lg font-medium whitespace-nowrap',
-    'transition-[background-color,border-color,color,translate,transform,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+    // shrink-0: an icon-only button would otherwise squeeze below its width in a
+    // tight flex row. A button that must shrink passes `shrink` (with min-w-0).
+    'relative inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap [&>svg]:shrink-0',
+    'transition-[background-color,color,scale,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+    // Press: shrink a hair. Touch devices get it too; it is the only press cue.
+    'active:scale-[0.98] motion-reduce:active:scale-100',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
-    // Disabled: dim, denied cursor, and no hover lift/shadow. The `disabled:hover:`
-    // resets are two pseudo-classes, so they outrank the variant's `hover:` lift
-    // regardless of source order (and cover both the `translate`-property and
-    // `transform` implementations).
-    'disabled:opacity-50 disabled:cursor-not-allowed',
-    'disabled:hover:translate-y-0 disabled:hover:transform-none disabled:hover:shadow-none',
+    'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
     sizeClasses[size],
     iconOnly ? iconOnlyClasses[size] : sizePaddingClasses[size],
     variantClasses[variant],
-    fullWidth && 'w-full',
+    // Icon-only ghost buttons (row actions, close, pagination) rest muted so a
+    // column of icons stays quiet; labelled ghost keeps the secondary text.
+    iconOnly && (variant === 'ghost' || variant === 'ghost-destructive') && 'text-[var(--lume-text-muted)]',
+    // Wins over the variant's fill: the same chosen look as tabs and rows.
+    pressed && 'bg-active! text-[var(--lume-text)]!',
     className,
   );
 
@@ -142,25 +155,32 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </>
   );
 
+  const tip = iconOnly && tooltip !== false ? (tooltip ?? ariaLabel) : undefined;
+
   if (asChild) {
     return (
-      <Slot className={classes} aria-label={ariaLabel} {...rest}>
-        {children}
-      </Slot>
+      <Tooltip label={tip}>
+        <Slot className={classes} aria-label={ariaLabel} {...rest}>
+          {children}
+        </Slot>
+      </Tooltip>
     );
   }
 
   return (
-    <button
-      ref={ref}
-      type={type ?? 'button'}
-      className={classes}
-      disabled={isDisabled}
-      aria-busy={loading || undefined}
-      aria-label={ariaLabel}
-      {...rest}
-    >
-      {content}
-    </button>
+    <Tooltip label={tip}>
+      <button
+        ref={ref}
+        type={type ?? 'button'}
+        className={classes}
+        disabled={isDisabled}
+        aria-busy={loading || undefined}
+        aria-pressed={pressed}
+        aria-label={ariaLabel}
+        {...rest}
+      >
+        {content}
+      </button>
+    </Tooltip>
   );
 });

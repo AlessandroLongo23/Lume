@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LUME_LEGAL, formatLumeAddress, formatLumeIdentity } from '@/lib/const/legal';
 import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
+import { LegalPageHeader } from '../_components/LegalPageHeader';
 
 export const metadata: Metadata = {
   title: 'Termini di servizio — Lume',
@@ -11,10 +12,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <>
-      <h1>Termini di servizio</h1>
-      <p>
-        <em>Versione {LEGAL_VERSIONS.terms}.</em>
-      </p>
+      <LegalPageHeader title="Termini di servizio" meta={<>Versione {LEGAL_VERSIONS.terms}.</>} />
       <p>
         Le presenti Condizioni Generali di Contratto (&laquo;<strong>Termini</strong>&raquo;)
         disciplinano l&apos;accesso e l&apos;utilizzo del servizio software-as-a-service{' '}

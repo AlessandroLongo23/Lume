@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Clock, User as UserIcon } from 'lucide-react';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useServicesStore } from '@/lib/stores/services';
@@ -38,30 +39,30 @@ export function AbbonamentoUsageList({ abbonamento }: AbbonamentoUsageListProps)
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+      <div className="flex items-center gap-2 text-xs font-medium text-[var(--lume-text-secondary)]">
         <Clock className="size-3.5" />
         Sedute utilizzate ({rows.length})
       </div>
       {rows.length === 0 ? (
-        <p className="rounded-md border border-zinc-500/15 px-3 py-4 text-center text-xs text-zinc-400">
+        <p className="surface-card px-3 py-4 text-center text-xs text-[var(--lume-text-muted)]">
           Nessuna seduta ancora utilizzata.
         </p>
       ) : (
-        <div className="rounded-md border border-zinc-500/15 divide-y divide-zinc-500/10 max-h-48 overflow-y-auto">
+        <div className="surface-card divide-y divide-line max-h-48 overflow-y-auto">
           {rows.map((r) => (
             <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
               <div className="flex flex-col min-w-0">
-                <span className="truncate text-zinc-900 dark:text-zinc-100">{r.serviceName}</span>
-                <span className="text-xs text-zinc-500 flex items-center gap-1">
+                <span className="truncate text-[var(--lume-text)]">{r.serviceName}</span>
+                <span className="text-xs text-[var(--lume-text-secondary)] flex items-center gap-1">
                   <UserIcon className="size-3" />{r.operatorName}
                 </span>
               </div>
               <div className="flex flex-col items-end shrink-0">
-                <span className="text-xs text-zinc-500 font-mono">
+                <span className="text-xs text-[var(--lume-text-secondary)] tabular-nums">
                   {new Date(r.when).toLocaleDateString('it-IT')}
                 </span>
                 {r.ficheStatus !== 'completed' && (
-                  <span className="text-2xs text-amber-500 uppercase">In sospeso</span>
+                  <StatusDot tone="warning" className="text-2xs text-[var(--lume-text-secondary)]">In sospeso</StatusDot>
                 )}
               </div>
             </div>

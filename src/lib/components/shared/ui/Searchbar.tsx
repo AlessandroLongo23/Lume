@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useSearchStore } from '@/lib/stores/search';
-
-type ControlSize = 'sm' | 'md' | 'lg';
+import { cn } from '@/lib/utils';
 
 interface SearchbarProps {
   placeholder?: string;
-  isNullable?: boolean;
   className?: string;
-  size?: ControlSize;
   /**
    * Controlled mode. When provided, the searchbar is decoupled from the
    * global useSearchStore and behaves as a plain controlled input. Pair
@@ -23,17 +20,9 @@ interface SearchbarProps {
   bindShortcut?: boolean;
 }
 
-const sizeClasses: Record<ControlSize, string> = {
-  sm: 'h-[var(--lume-control-h-sm)] text-[length:var(--lume-control-text-sm)]',
-  md: 'h-[var(--lume-control-h-md)] text-[length:var(--lume-control-text-md)]',
-  lg: 'h-[var(--lume-control-h-lg)] text-[length:var(--lume-control-text-lg)]',
-};
-
 export function Searchbar({
   placeholder = 'Cerca...',
-  isNullable = true,
-  className = '',
-  size = 'md',
+  className,
   value,
   onChange,
   bindShortcut,
@@ -69,8 +58,8 @@ export function Searchbar({
   }, [clear, shouldBindShortcut]);
 
   return (
-    <div className={`relative flex items-center ${className}`}>
-      <div className="absolute left-2.5 text-[var(--lume-text-muted)] pointer-events-none">
+    <div className={cn('relative flex items-center', className)}>
+      <div className="absolute left-3 text-[var(--lume-text-muted)] pointer-events-none">
         <Search className="size-4" />
       </div>
 
@@ -80,23 +69,18 @@ export function Searchbar({
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className={[
-          'w-full pl-9 pr-8 bg-transparent border rounded-lg outline-none',
-          'border-[var(--lume-border)] text-[var(--lume-text)] placeholder:text-[var(--lume-text-muted)]',
-          'focus:border-[var(--lume-ring-focus)]',
-          'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
-          sizeClasses[size],
-        ].join(' ')}
+        // The shared field surface; room for the icon and the clear button.
+        className="control control-md w-full pl-9 pr-8"
       />
 
-      {query && isNullable && (
+      {query && (
         <button
           type="button"
           className="absolute right-2 p-1 text-[var(--lume-text-muted)] hover:text-[var(--lume-text)] rounded-md transition-colors"
           onClick={clear}
           aria-label="Cancella ricerca"
         >
-          <X size={14} />
+          <X className="size-3.5" />
         </button>
       )}
     </div>

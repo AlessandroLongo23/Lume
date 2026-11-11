@@ -2,13 +2,13 @@
 
 import { Search } from 'lucide-react';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Kbd } from '@/lib/components/shared/ui/Kbd';
 
 interface CommandMenuTriggerProps {
   onOpen: () => void;
-  shortcutLabel?: string;
 }
 
-export function CommandMenuTrigger({ onOpen, shortcutLabel = '⌘K' }: CommandMenuTriggerProps) {
+export function CommandMenuTrigger({ onOpen }: CommandMenuTriggerProps) {
   return (
     <Button
       variant="secondary"
@@ -16,12 +16,13 @@ export function CommandMenuTrigger({ onOpen, shortcutLabel = '⌘K' }: CommandMe
       leadingIcon={Search}
       onClick={onOpen}
       aria-label="Apri comandi"
-      className="hidden sm:flex min-w-50 text-[var(--lume-text-muted)] justify-start"
+      // Reads like the Searchbar: control fill, shadow edge, muted placeholder
+      // text and a kbd chip at the end. Hover darkens the edge, not the fill.
+      // ds-ignore: muted text is the Searchbar placeholder look; Button mutes only icon-only ghost buttons, never a labelled secondary one
+      className="hidden sm:flex min-w-56 justify-start pr-1.5 font-normal text-[var(--lume-text-muted)] bg-[var(--lume-control-bg)] hover:bg-[var(--lume-control-bg)] hover:shadow-[inset_0_0_0_1px_var(--lume-edge-hover)] active:scale-100 [&>svg]:text-[var(--lume-text-muted)]"
     >
       <span className="flex-1 text-left truncate">Cerca…</span>
-      <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-2xs text-zinc-500 shrink-0">
-        {shortcutLabel}
-      </kbd>
+      <Kbd>⌘K</Kbd>
     </Button>
   );
 }

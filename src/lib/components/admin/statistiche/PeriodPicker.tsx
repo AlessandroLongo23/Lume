@@ -1,5 +1,6 @@
 'use client';
 
+// ds-ignore: binds the statistics store to admin/period/PeriodControl, which is built from forms/Select, forms/Field, forms/DateField and Button
 import { endOfDay, format, parseISO } from 'date-fns';
 import { useStatisticheStore, type QuickPreset, type YearPreset } from '@/lib/stores/statistiche';
 import { usePastYears } from '@/lib/hooks/usePastYears';
@@ -26,7 +27,7 @@ export function PeriodPicker() {
   const pastYears = usePastYears(new Date().getFullYear() - 1);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div>
       <PeriodControl
         layout="stack"
         presets={QUICK_PERIODS}

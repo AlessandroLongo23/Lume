@@ -1,39 +1,40 @@
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils/format';
 import type { ClientRow } from '../statHelpers';
+import { cellNumClass, cellStrongClass, tableClass, tbodyClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 
 interface Props { rows: ClientRow[] }
 
 export function TopClientsPreviewTable({ rows }: Props) {
   if (rows.length === 0) {
-    return <p className="text-xs text-zinc-400 px-5 pb-5">Nessun cliente nel periodo.</p>;
+    return <p className="text-sm text-[var(--lume-text-muted)] px-5 pb-5">Nessun cliente nel periodo.</p>;
   }
   const top5 = rows.slice(0, 5);
   return (
     <div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-zinc-100 dark:border-zinc-800">
-            <th className="text-left px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">#</th>
-            <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Cliente</th>
-            <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Presenze</th>
-            <th className="text-right px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Incasso</th>
+      <table className={`${tableClass} min-w-128`}>
+        <thead className={theadClass}>
+          <tr>
+            <th className={`${thClass()} first:pl-5 last:pr-5`}>#</th>
+            <th className={`${thClass()} first:pl-5 last:pr-5`}>Cliente</th>
+            <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Presenze</th>
+            <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Incasso</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className={tbodyClass}>
           {top5.map((row, i) => (
-            <tr key={row.clientId} className="border-b border-zinc-50 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-              <td className="px-5 py-2.5 text-xs text-zinc-400 tabular-nums">{i + 1}</td>
-              <td className="px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 font-medium">{row.name}</td>
-              <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.presenze}</td>
-              <td className="px-5 py-2.5 text-sm text-right tabular-nums text-zinc-900 dark:text-zinc-50 font-semibold">{formatCurrency(row.incasso)}</td>
+            <tr key={row.clientId} className={trClass({ interactive: false })}>
+              <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text-muted)] first:pl-5 last:pr-5`}>{i + 1}</td>
+              <td className={`${tdClass} ${cellStrongClass} first:pl-5 last:pr-5`}>{row.name}</td>
+              <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.presenze}</td>
+              <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text)] text-right first:pl-5 last:pr-5`}>{formatCurrency(row.incasso)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {rows.length > 5 && (
-        <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800">
-          <Link href="/admin/statistiche/clienti" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">
+        <div className="px-5 py-3 border-t border-line">
+          <Link href="/admin/statistiche/clienti" className="text-sm text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] transition-colors">
             Vedi tutti {rows.length} clienti →
           </Link>
         </div>

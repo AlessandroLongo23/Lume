@@ -1,19 +1,15 @@
-import Link from 'next/link';
+import { PublicHeading } from '@/lib/components/public/PublicHeading';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 
 export default function PublicSalonNotFound() {
   return (
     <main className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="text-2xl font-semibold text-[var(--lume-text)]">Pagina non trovata</h1>
-      <p className="mt-3 text-sm text-[var(--lume-text-secondary)]">
-        L&apos;indirizzo che hai digitato non corrisponde a nessun salone, oppure le prenotazioni
-        online non sono attive in questo momento.
-      </p>
-      <Link
-        href="/"
-        className="mt-6 inline-flex items-center text-sm text-[var(--lume-accent)] hover:underline"
-      >
+      <PublicHeading subtitle="L'indirizzo che hai digitato non corrisponde a nessun salone, oppure le prenotazioni online non sono attive in questo momento.">
+        Pagina non trovata
+      </PublicHeading>
+      <TextLink href="/" className="mt-6 inline-flex items-center min-h-11 text-sm font-normal">
         Torna alla home
-      </Link>
+      </TextLink>
     </main>
   );
 }

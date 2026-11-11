@@ -30,6 +30,7 @@ import { sidebarToggleLabel } from '@/lib/components/shell/keyboardShortcuts';
 import { TourCard } from '@/lib/components/admin/tutorials/TourCard';
 import { TourBridge } from '@/lib/components/admin/tutorials/TourBridge';
 import { lumeTours } from '@/lib/tutorials/tours';
+import { DURATION } from '@/lib/const/motion';
 import { useTourQueueStore } from '@/lib/stores/tourQueue';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { usePreferencesStore } from '@/lib/stores/preferences';
@@ -48,7 +49,7 @@ function LumeLogoBlock() {
   return (
     <div className="flex items-center justify-start min-w-0 overflow-hidden">
       <span className="flex items-center justify-center w-10 h-10 shrink-0">
-        <Lightbulb className="w-5 h-5 text-primary" strokeWidth={2.25} />
+        <Lightbulb className="size-5 text-[var(--lume-accent)]" strokeWidth={2.25} />
       </span>
       <AnimatePresence initial={false}>
         {!effectiveCollapsed && (
@@ -57,13 +58,13 @@ function LumeLogoBlock() {
             initial={{ opacity: 0, width: 0, marginLeft: 0 }}
             animate={{ opacity: 1, width: 'auto', marginLeft: 6 }}
             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={{ duration: DURATION.base, ease: 'easeOut' }}
             className="flex items-baseline gap-1.5 whitespace-nowrap"
           >
-            <span className="text-lg font-semibold tracking-tight text-foreground dark:text-white">
-              Lume<span className="text-primary">.</span>
+            <span className="text-lg font-semibold tracking-tight text-[var(--lume-text)]">
+              Lume<span className="text-[var(--lume-accent)]">.</span>
             </span>
-            <span className="text-2xs font-medium tabular-nums text-muted-foreground tracking-tight">
+            <span className="text-2xs font-medium tabular-nums text-[var(--lume-text-muted)] tracking-tight">
               v{appVersion}
             </span>
           </motion.span>
@@ -110,7 +111,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           'Per proteggere i tuoi dati, la sessione è scaduta. Effettua di nuovo l\'accesso.',
           'info',
           8000,
-          'top-right',
           'Bentornato!'
         );
         router.replace('/login');
@@ -247,7 +247,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <NextStep
         steps={lumeTours}
         cardComponent={TourCard}
-        cardTransition={{ duration: 0.4, ease: 'easeInOut' }}
+        cardTransition={{ duration: DURATION.slow, ease: 'easeInOut' }}
         // The actual finish handling (chain advance / abort / endRoute) runs in
         // TourBridge, under the provider where startNextStep is available.
         onComplete={(name) => useTourQueueStore.getState().notifyFinished(name, 'complete')}
@@ -262,7 +262,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <StoreInitializer />
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+              <Loader2 className="size-6 animate-spin text-[var(--lume-text-muted)]" />
             </div>
           ) : (
             <>

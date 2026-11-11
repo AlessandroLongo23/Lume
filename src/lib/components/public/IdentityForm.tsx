@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { supabase } from '@/lib/supabase/client';
 import type { BookingIdentity } from '@/lib/booking/publicTypes';
 
@@ -104,38 +108,43 @@ export function IdentityForm({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Nome" required>
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="Mario"
-            autoComplete="given-name"
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Cognome" required>
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            placeholder="Rossi"
-            autoComplete="family-name"
-            className={inputClass}
-          />
-        </Field>
+        <FormInput
+          size="lg"
+          label="Nome"
+          required
+          type="text"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          placeholder="Mario"
+          autoComplete="given-name"
+        />
+        <FormInput
+          size="lg"
+          label="Cognome"
+          required
+          type="text"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          placeholder="Rossi"
+          autoComplete="family-name"
+        />
       </div>
 
       <Field label="Telefono" required>
-        <PhoneNumber
-          prefixCode={phonePrefix}
-          phoneNumber={phone}
-          onPrefixChange={setPhonePrefix}
-          onPhoneChange={setPhone}
-        />
+        {({ id }) => (
+          <PhoneNumber
+            size="lg"
+            id={id}
+            prefixCode={phonePrefix}
+            phoneNumber={phone}
+            onPrefixChange={setPhonePrefix}
+            onPhoneChange={setPhone}
+          />
+        )}
       </Field>
 
-      <Field
+      <FormInput
+        size="lg"
         label="Email"
         required={emailRequired}
         hint={
@@ -143,71 +152,37 @@ export function IdentityForm({
             ? requireApproval
               ? 'Ti scriviamo qui non appena il salone conferma la prenotazione.'
               : undefined
-            : 'Facoltativa — se la lasci, ti inviamo il riepilogo via email.'
+            : 'Facoltativa: se la lasci, ti inviamo il riepilogo via email.'
         }
-      >
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="mario.rossi@email.it"
-          autoComplete="email"
-          className={inputClass}
-        />
-      </Field>
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="mario.rossi@email.it"
+        autoComplete="email"
+      />
 
-      <Field label="Note per il salone" hint="Facoltativo">
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          maxLength={500}
-          placeholder="Es. preferisco un colore caldo, allergie, ecc."
-          className={`${inputClass} resize-none`}
-        />
-      </Field>
+      <TextArea
+        label="Note per il salone"
+        hint="Facoltativo"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={3}
+        maxLength={500}
+        placeholder="Es. preferisco un colore caldo, allergie, ecc."
+        // 16px text on phones so iOS does not zoom into the field on focus.
+      />
 
-      {error && (
-        <p className="text-sm text-[var(--lume-danger-fg)] bg-[var(--lume-danger-bg)] border border-[var(--lume-danger-border)] rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
+      {error && <Callout tone="danger" title={error} />}
 
-      <button
-        type="button"
+      <Button
+        variant="primary"
+        size="lg"
         onClick={handleSubmit}
-        disabled={submitting}
-        className="self-start inline-flex items-center gap-2 rounded-lg bg-[var(--lume-button-accent-bg)] hover:bg-[var(--lume-button-accent-bg-hover)] active:bg-[var(--lume-button-accent-bg-active)] text-[var(--lume-button-accent-fg)] px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
+        loading={submitting}
+        className="w-full sm:w-auto sm:self-start px-6"
       >
-        {submitting && <Loader2 className="size-4 animate-spin" />}
         Vai al riepilogo
-      </button>
+      </Button>
     </div>
-  );
-}
-
-const inputClass =
-  'w-full rounded-lg border border-[var(--lume-border)] bg-[var(--lume-control-bg)] px-3 py-2 text-sm text-[var(--lume-text)] placeholder:text-[var(--lume-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--lume-ring-focus)] focus:border-[var(--lume-accent)] transition-shadow';
-
-function Field({
-  label,
-  required,
-  hint,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-[var(--lume-text-secondary)]">
-        {label}
-        {required && <span className="text-[var(--lume-danger-fg)] ml-0.5">*</span>}
-      </span>
-      {children}
-      {hint && <span className="text-2xs text-[var(--lume-text-muted)]">{hint}</span>}
-    </label>
   );
 }

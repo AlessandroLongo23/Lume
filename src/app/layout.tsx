@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono, Geist } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import '@/lib/types/tableMeta';
 import { ThemeProvider } from '@/lib/components/shared/ui/theme/ThemeProvider';
@@ -12,7 +12,7 @@ import { UI_SCALE_BOOT_SCRIPT } from '@/lib/utils/uiScale';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     // suppressHydrationWarning: the boot script sets data-ui-scale before React hydrates.
-    <html lang="it" className={cn(jetbrainsMono.variable, "font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="it" className={cn(geistMono.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: UI_SCALE_BOOT_SCRIPT }} />
       </head>

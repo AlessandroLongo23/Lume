@@ -36,8 +36,11 @@ npm run build        # Production build
 npm run start        # Start production server
 npm run lint         # Run ESLint
 npm run typecheck    # TypeScript type checking only
-npm run check        # Full check: tsc + eslint
+npm run check        # Full check: tsc + eslint + ds:check
 npm run db:types     # Regenerate src/lib/supabase/database.types.ts (run after every migration)
+npm run ds:check     # Design-system gates: fail on violations not in .ds-baseline.json (also a Stop hook)
+npm run ds:report    # Design-system metrics: adoption, token coverage, overrides, token layer
+npm run ds:baseline  # Re-record known violations (only for accepted debt; prefer a fix or a ds-ignore)
 ```
 
 There are no automated tests in this project.
@@ -122,6 +125,8 @@ src/
 **Supabase clients** — Always import from `src/lib/supabase/client.ts` for browser code, `src/lib/supabase/server.ts` for server components / route handlers, and `createAdminClient()` from `src/lib/supabase/admin.ts` for service-role access. Never instantiate `createClient` directly elsewhere (`scripts/` and `video/` run outside Next.js and keep their own). All three clients are typed with `Database` from `src/lib/supabase/types.ts`, so queries are checked against the schema: after every migration run `npm run db:types` and commit the result. `types.ts` overlays the generated types where the schema is looser than the data (`text` columns that hold an enum, nullable columns that never hold null, view columns, RPC arguments). Add an entry only after checking the live data, note what would make it unnecessary, and delete it once the schema enforces it. Avoid `as` casts on query results; when a JSON column must be read as an object, narrow it with `isJsonObject()` from `src/lib/supabase/json.ts`.
 
 **Styling** — Tailwind CSS v4. No `tailwind.config.*` file; configuration is done via CSS in `app/globals.css`. Dark/light mode is managed by `ThemeProvider` in `src/lib/components/shared/ui/theme/`.
+
+**Design-system checks** — `scripts/ds/` enforces the token and component rules (reference: [scripts/ds/README.md](scripts/ds/README.md)). Where the theme defines a utility for a token, write the utility (`bg-hover`, `border-line`, `text-danger-strong`, `bg-success-soft`); use `[var(--lume-*)]` only for tokens without one (`text-[var(--lume-text-secondary)]`). Motion comes from `DURATION` / `EASE_*` in `src/lib/const/motion.ts` (or `var(--duration-*)` in classes); `DURATION.enter` (400ms) is for staged entrances outside the admin app and `DURATION.count` (600ms) for a value animating to its target (a count-up, a bar filling). Semantic tokens reference `palette.css`, never a literal. A deliberate exception gets `ds-ignore: <reason>` on its line; never re-record the baseline to get past a failing check.
 
 ### Environment variables
 

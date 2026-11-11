@@ -9,16 +9,16 @@ export function TutorialCard({ tutorial, completed }: { tutorial: Tutorial; comp
   const cardBody = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold text-foreground">{tutorial.title}</h3>
+        <h3 className="font-medium text-[var(--lume-text)]">{tutorial.title}</h3>
         <div className="flex shrink-0 items-center gap-2">
           {completed && !tutorial.comingSoon && (
             <CheckCircle2
-              className="size-5 text-emerald-600 dark:text-emerald-400"
+              className="size-5 text-success-strong"
               aria-label="Completato"
             />
           )}
           {tutorial.comingSoon ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+            <span className="inline-flex items-center gap-1 h-6 text-xs font-medium text-[var(--lume-text-secondary)]">
               <Clock3 className="size-3.5" aria-hidden="true" />
               In arrivo
             </span>
@@ -28,7 +28,7 @@ export function TutorialCard({ tutorial, completed }: { tutorial: Tutorial; comp
         </div>
       </div>
 
-      <p className="line-clamp-3 text-sm text-muted-foreground">{tutorial.summary}</p>
+      <p className="line-clamp-3 text-sm text-[var(--lume-text-secondary)]">{tutorial.summary}</p>
 
       <div className="mt-1 flex flex-wrap gap-1.5">
         <ScopeChips scopes={tutorial.scopes} />
@@ -40,7 +40,7 @@ export function TutorialCard({ tutorial, completed }: { tutorial: Tutorial; comp
     return (
       <div
         aria-disabled="true"
-        className="flex cursor-default flex-col gap-2 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 p-4 opacity-75 dark:border-zinc-800 dark:bg-zinc-900/40"
+        className="flex cursor-default flex-col gap-2 rounded-xl border border-dashed border-[var(--lume-border)] p-4 opacity-75"
       >
         {cardBody}
       </div>
@@ -50,7 +50,7 @@ export function TutorialCard({ tutorial, completed }: { tutorial: Tutorial; comp
   return (
     <Link
       href={`/admin/aiuto/${tutorial.slug}`}
-      className="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-primary/40 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/50"
+      className="group surface-card card-interactive flex flex-col gap-2 p-4"
     >
       {cardBody}
     </Link>

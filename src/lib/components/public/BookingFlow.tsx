@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Check, Pencil, Calendar, Clock, Scissors, User, ClipboardCheck, Loader2 } from 'lucide-react';
+import { Pencil, Calendar, Clock, Scissors, User, ClipboardCheck, Hourglass } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { cn } from '@/lib/utils';
 import type { PublicSalon } from '@/lib/gateway/loadPublicSalon';
 import type {
   AvailableSlot,
@@ -17,6 +20,7 @@ import { DatePicker } from './DatePicker';
 import { TimeSlotPicker } from './TimeSlotPicker';
 import { IdentityForm } from './IdentityForm';
 import { BookingConfirmation } from './BookingConfirmation';
+import { StepMarker } from '@/lib/components/shared/ui/StepMarker';
 
 type Step = 'service' | 'operator' | 'date' | 'time' | 'identity' | 'review';
 
@@ -169,7 +173,7 @@ export function BookingFlow({
   return (
     <section className="mt-10 flex flex-col gap-3">
       {publicMessage && currentStep === 'service' && (
-        <div className="rounded-xl border border-[var(--lume-border)] bg-[var(--lume-accent-muted)] p-4 text-sm text-[var(--lume-text)] whitespace-pre-wrap">
+        <div className="surface-card p-4 text-base leading-relaxed text-[var(--lume-text)] whitespace-pre-wrap">
           {publicMessage}
         </div>
       )}
@@ -324,7 +328,7 @@ function ReviewBody({
   const start = new Date(startAt);
   return (
     <div className="flex flex-col gap-4">
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-base">
         <ReviewRow label="Servizio" value={service.name} />
         <ReviewRow
           label="Operatore"
@@ -345,26 +349,22 @@ function ReviewBody({
       </dl>
 
       {requireApproval && (
-        <p className="text-xs text-[var(--lume-text-muted)] bg-[var(--lume-warning-bg)] border border-[var(--lume-warning-border)] text-[var(--lume-warning-fg)] rounded-lg px-3 py-2">
+        <Callout tone="info" icon={Hourglass}>
           Questa prenotazione richiede l&apos;approvazione del salone. Ti scriveremo non appena viene confermata.
-        </p>
+        </Callout>
       )}
 
-      {submitError && (
-        <p className="text-sm text-[var(--lume-danger-fg)] bg-[var(--lume-danger-bg)] border border-[var(--lume-danger-border)] rounded-lg px-3 py-2">
-          {submitError}
-        </p>
-      )}
+      {submitError && <Callout tone="danger" title={submitError} />}
 
-      <button
-        type="button"
+      <Button
+        variant="primary"
+        size="lg"
         onClick={onSubmit}
-        disabled={submitting}
-        className="self-start inline-flex items-center gap-2 rounded-lg bg-[var(--lume-button-accent-bg)] hover:bg-[var(--lume-button-accent-bg-hover)] active:bg-[var(--lume-button-accent-bg-active)] text-[var(--lume-button-accent-fg)] px-5 py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
+        loading={submitting}
+        className="w-full sm:w-auto sm:self-start px-6"
       >
-        {submitting && <Loader2 className="size-4 animate-spin" />}
         {requireApproval ? 'Invia richiesta' : 'Conferma prenotazione'}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -380,7 +380,7 @@ function ReviewRow({
 }) {
   return (
     <div className={fullWidth ? 'sm:col-span-2' : undefined}>
-      <dt className="text-2xs uppercase tracking-wider text-[var(--lume-text-muted)] font-medium">{label}</dt>
+      <dt className="text-xs text-[var(--lume-text-muted)]">{label}</dt>
       <dd className="mt-0.5 text-[var(--lume-text)]">{value}</dd>
     </div>
   );
@@ -406,44 +406,33 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
+    // The active step is the raised card; the others keep its hairline on the page.
     <div
-      className={`rounded-xl border transition-colors ${
-        active
-          ? 'border-[var(--lume-accent)] bg-[var(--lume-surface-raised)] shadow-sm'
-          : 'border-[var(--lume-border)] bg-[var(--lume-surface)]'
-      }`}
+      className={cn(
+        'surface-card rounded-2xl transition-[background-color] duration-[var(--duration-base)] motion-reduce:transition-none',
+        !active && 'bg-transparent',
+      )}
     >
-      <header className="flex items-center gap-3 px-5 py-4">
-        <span
-          className={`size-7 shrink-0 rounded-full inline-flex items-center justify-center text-xs font-semibold ${
-            done
-              ? 'bg-[var(--lume-accent)] text-[var(--lume-text-on-accent)]'
-              : active
-              ? 'bg-[var(--lume-accent-muted)] text-[var(--lume-accent)]'
-              : 'bg-[var(--lume-surface-raised)] text-[var(--lume-text-muted)] border border-[var(--lume-border)]'
-          }`}
-        >
-          {done ? <Check className="size-3.5" /> : index}
-        </span>
-        <Icon className="size-4 text-[var(--lume-text-secondary)]" />
-        <h2 className="text-sm font-medium text-[var(--lume-text)] flex-1">
-          {title}
+      <header className="flex items-center gap-3 px-4 sm:px-5 min-h-14 py-3">
+        <StepMarker index={index} state={done ? 'done' : active ? 'current' : 'todo'} />
+        <Icon className="size-4 shrink-0 text-[var(--lume-text-muted)] max-sm:hidden" aria-hidden />
+        <h2 className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
+          <span className={`text-base font-medium ${active || done ? 'text-[var(--lume-text)]' : 'text-[var(--lume-text-secondary)]'}`}>
+            {title}
+          </span>
           {summary && (
-            <span className="ml-2 text-[var(--lume-text-secondary)] font-normal">· {summary}</span>
+            <span className="text-sm text-[var(--lume-text-secondary)] font-normal truncate first-letter:uppercase">
+              {summary}
+            </span>
           )}
         </h2>
         {onEdit && !active && (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="inline-flex items-center gap-1 text-xs text-[var(--lume-accent)] hover:underline"
-          >
-            <Pencil className="size-3" />
+          <Button variant="ghost" leadingIcon={Pencil} onClick={onEdit} className="-mr-2 font-normal">
             Modifica
-          </button>
+          </Button>
         )}
       </header>
-      {active && <div className="px-5 pb-5">{children}</div>}
+      {active && <div className="px-4 sm:px-5 pb-5">{children}</div>}
     </div>
   );
 }

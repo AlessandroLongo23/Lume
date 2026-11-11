@@ -1,24 +1,32 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Ban, Check, Crosshair, GripVertical, Users } from 'lucide-react';
-import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from 'motion/react';
+import { Ban, Crosshair, Users } from 'lucide-react';
+import { AnimatePresence, Reorder } from 'motion/react';
 import { useCalendarStore } from '@/lib/stores/calendar';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListSeparator } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { ReorderListRow } from '@/lib/components/admin/table/ReorderListRow';
 import { useOperatorOrder } from '@/lib/hooks/useOperatorOrder';
 import type { Operator } from '@/lib/types/Operator';
 
-function OperatorAvatar({ operator }: { operator: Operator }) {
+/** Round operator photo, or the first initial on a neutral fill. Also used by the day-view column headers. */
+export function OperatorAvatar({ operator, size = 28 }: { operator: Operator; size?: number }) {
   if (operator.avatar_url) {
     return (
-      <span className="block size-7 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0">
+      <span
+        className="block rounded-full overflow-hidden bg-active shrink-0"
+        style={{ width: size, height: size }}
+      >
         <Image
           src={operator.avatar_url}
           alt=""
-          width={28}
-          height={28}
+          width={size}
+          height={size}
           className="size-full object-cover"
           draggable={false}
         />
@@ -26,86 +34,17 @@ function OperatorAvatar({ operator }: { operator: Operator }) {
     );
   }
   return (
-    <span className="size-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-semibold text-zinc-700 dark:text-zinc-200 select-none shrink-0">
+    <span
+      aria-hidden
+      className={`rounded-full bg-active flex items-center justify-center font-medium text-[var(--lume-text-secondary)] select-none shrink-0 ${size <= 24 ? 'text-2xs' : 'text-xs'}`}
+      style={{ width: size, height: size }}
+    >
       {(operator.firstName?.[0] ?? '·').toUpperCase()}
     </span>
   );
 }
 
-function RowCheckbox({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={[
-        'size-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-        checked ? 'bg-primary border-primary' : 'border-zinc-300 dark:border-zinc-600',
-      ].join(' ')}
-    >
-      {checked && <Check className="size-3 text-white" strokeWidth={3} />}
-    </span>
-  );
-}
-
-function RowRadio({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={[
-        'size-4 rounded-full border flex items-center justify-center shrink-0 transition-colors',
-        checked ? 'border-primary' : 'border-zinc-300 dark:border-zinc-600',
-      ].join(' ')}
-    >
-      {checked && <span className="size-2 rounded-full bg-primary" />}
-    </span>
-  );
-}
-
-interface OperatorRowProps {
-  operator: Operator;
-  isWeek: boolean;
-  checked: boolean;
-  onActivate: () => void;
-  onContextMenu: (e: React.MouseEvent) => void;
-}
-
-function OperatorRow({ operator, isWeek, checked, onActivate, onContextMenu }: OperatorRowProps) {
-  const controls = useDragControls();
-  return (
-    <Reorder.Item
-      as="div"
-      value={operator.id}
-      dragListener={false}
-      dragControls={controls}
-      role={isWeek ? 'radio' : 'button'}
-      aria-checked={isWeek ? checked : undefined}
-      aria-pressed={!isWeek ? checked : undefined}
-      tabIndex={0}
-      onClick={onActivate}
-      onContextMenu={onContextMenu}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onActivate();
-        }
-      }}
-      whileDrag={{ scale: 1.01, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
-      className="flex w-full items-center gap-2 pl-2 pr-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer bg-white dark:bg-zinc-800 select-none focus:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-zinc-700/50"
-    >
-      <span
-        aria-hidden
-        className="text-zinc-300 dark:text-zinc-500 cursor-grab active:cursor-grabbing shrink-0 touch-none"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          controls.start(e);
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <GripVertical className="size-4" />
-      </span>
-      <OperatorAvatar operator={operator} />
-      <span className="grow text-left truncate">{operator.getFullName()}</span>
-      {isWeek ? <RowRadio checked={checked} /> : <RowCheckbox checked={checked} />}
-    </Reorder.Item>
-  );
-}
+const PANEL_WIDTH = 256;
 
 interface OperatorFilterButtonProps {
   onAddFerie?: (operator: Operator) => void;
@@ -120,12 +59,14 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
   const setFocusedOperatorId = useCalendarStore((s) => s.setFocusedOperatorId);
   const isWeek = currentView === 'week';
 
-  const [open, setOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ operator: Operator; x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
-  const reduceMotion = useReducedMotion();
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 400,
+    offset: 8,
+    align: 'end',
+    panelWidth: PANEL_WIDTH,
+  });
 
   const effectiveDayIds = useMemo(() => {
     if (selectedOperatorIds === null) return new Set(orderedOperators.map((o) => o.id));
@@ -134,54 +75,23 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
 
   const allSelected = selectedOperatorIds === null;
 
-  // Position the panel below-right of the trigger button.
-  useLayoutEffect(() => {
-    if (!open || !triggerRef.current) return;
-    const update = () => {
-      const r = triggerRef.current!.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [open]);
-
-  // Close panel on outside click.
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  // Close panel on Escape.
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [open]);
-
-  // Close context menu on outside click / scroll / Escape.
+  // Close context menu on outside click / scroll / Escape. The panel's own
+  // Escape is useAnchoredPopover's (document, capture); this one listens on
+  // window in the capture phase, so it runs first and closes only the menu.
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      close();
+    };
     window.addEventListener('mousedown', close);
-    window.addEventListener('keydown', esc);
+    window.addEventListener('keydown', esc, true);
     window.addEventListener('scroll', close, true);
     return () => {
       window.removeEventListener('mousedown', close);
-      window.removeEventListener('keydown', esc);
+      window.removeEventListener('keydown', esc, true);
       window.removeEventListener('scroll', close, true);
     };
   }, [contextMenu]);
@@ -225,123 +135,114 @@ export function OperatorFilterButton({ onAddFerie }: OperatorFilterButtonProps =
         <Button
           ref={triggerRef}
           variant="secondary"
-          size="md"
           iconOnly
           aria-label="Filtra operatori"
+          aria-haspopup="listbox"
           aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          pressed={!isWeek && !allSelected}
+          onClick={toggle}
         >
           <Users />
         </Button>
         {!isWeek && !allSelected && (
           <span
             aria-hidden
-            className="absolute top-0.5 right-0.5 size-2 rounded-full bg-primary pointer-events-none"
+            className="absolute top-1 right-1 size-1.5 rounded-full bg-[var(--lume-text)] pointer-events-none"
           />
         )}
       </div>
 
-      <AnimatePresence>
-        {open && pos && (
-          <Portal>
-            <motion.div
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
               ref={panelRef}
-              className="fixed w-60 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg z-dropdown overflow-hidden"
-              style={{ top: pos.top, right: pos.right, transformOrigin: '100% 0%' }}
-              role={isWeek ? 'radiogroup' : undefined}
-              aria-label={isWeek ? 'Operatore visibile' : undefined}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              transition={{
-                duration: reduceMotion ? 0.12 : 0.18,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              side={side}
+              layer="dropdown"
+              style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom, width: PANEL_WIDTH }}
             >
-            {/* Select-all row — only in multi-select (day/month) view */}
-            {!isWeek && (
-              <>
-                <button
-                  type="button"
-                  onClick={selectAll}
-                  className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors text-sm text-zinc-700 dark:text-zinc-300"
-                >
-                  <RowCheckbox checked={allSelected} />
-                  <span className="grow text-left font-medium">Tutti gli operatori</span>
-                </button>
+              <ListBox
+                role="listbox"
+                // Day/month: several operators (rows show a check); week: one.
+                multiple={!isWeek}
+                aria-label={isWeek ? 'Operatore visibile' : 'Operatori visibili'}
+                className="max-h-96 overflow-y-auto overflow-x-hidden"
+              >
+                {/* Select-all row, only in multi-select (day/month) view */}
+                {!isWeek && (
+                  <>
+                    <ListRow selected={allSelected} icon={Users} onClick={selectAll}>
+                      Tutti gli operatori
+                    </ListRow>
+                    <ListSeparator />
+                  </>
+                )}
 
-                <div className="border-t border-zinc-500/15 mx-3 my-0.5" />
-              </>
-            )}
-
-            {/* Per-operator rows — drag to reorder via grip handle */}
-            <Reorder.Group
-              as="div"
-              axis="y"
-              values={orderedIds}
-              onReorder={setOrder}
-              className="max-h-80 overflow-y-auto overflow-x-hidden"
-            >
-              {orderedOperators.map((op) => {
-                const checked = isWeek ? focusedOperatorId === op.id : effectiveDayIds.has(op.id);
-                return (
-                  <OperatorRow
-                    key={op.id}
-                    operator={op}
-                    isWeek={isWeek}
-                    checked={checked}
-                    onActivate={() => {
-                      if (isWeek) {
-                        setFocusedOperatorId(op.id);
-                        setOpen(false);
-                      } else {
-                        toggleMembership(op.id);
-                      }
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
-                    }}
-                  />
-                );
-              })}
-            </Reorder.Group>
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+                {/* Per-operator rows, drag to reorder via the grip handle */}
+                <Reorder.Group as="div" axis="y" values={orderedIds} onReorder={setOrder} className="flex flex-col gap-px">
+                  {orderedOperators.map((op) => {
+                    const checked = isWeek ? focusedOperatorId === op.id : effectiveDayIds.has(op.id);
+                    return (
+                      <ReorderListRow
+                        key={op.id}
+                        value={op.id}
+                        selected={checked}
+                        className="pl-2"
+                        onActivate={() => {
+                          if (isWeek) {
+                            setFocusedOperatorId(op.id);
+                            hide();
+                          } else {
+                            toggleMembership(op.id);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setContextMenu({ operator: op, x: e.clientX, y: e.clientY });
+                        }}
+                      >
+                        <OperatorAvatar operator={op} />
+                        <span className="grow truncate">{op.getFullName()}</span>
+                      </ReorderListRow>
+                    );
+                  })}
+                </Reorder.Group>
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
 
       {/* Right-click context menu */}
-      {contextMenu && (
-        <Portal>
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-            className="fixed z-popover min-w-44 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden text-sm"
-            style={{ left: Math.min(contextMenu.x, window.innerWidth - 200), top: Math.min(contextMenu.y, window.innerHeight - 100) }}
-          >
-            {!isWeek && (
-              <button
-                type="button"
-                onClick={() => { isolate(contextMenu.operator.id); setContextMenu(null); }}
-                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
-              >
-                <Crosshair className="size-4" />
-                Isola
-              </button>
-            )}
-            {onAddFerie && (
-              <button
-                type="button"
-                onClick={() => { onAddFerie(contextMenu.operator); setContextMenu(null); }}
-                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
-              >
-                <Ban className="size-4" />
-                Aggiungi ferie
-              </button>
-            )}
-          </div>
-        </Portal>
-      )}
+      <Portal>
+        <AnimatePresence>
+          {contextMenu && (
+            <FloatingPanel
+              layer="popover"
+              onMouseDown={(e) => e.stopPropagation()}
+              className="min-w-44"
+              style={{
+                position: 'fixed',
+                left: Math.min(contextMenu.x, window.innerWidth - 200),
+                top: Math.min(contextMenu.y, window.innerHeight - 100),
+              }}
+            >
+              <ListBox role="menu" aria-label={contextMenu.operator.getFullName()}>
+                {!isWeek && (
+                  <ListRow icon={Crosshair} onClick={() => { isolate(contextMenu.operator.id); setContextMenu(null); }}>
+                    Isola
+                  </ListRow>
+                )}
+                {onAddFerie && (
+                  <ListRow icon={Ban} onClick={() => { onAddFerie(contextMenu.operator); setContextMenu(null); hide(); }}>
+                    Aggiungi ferie
+                  </ListRow>
+                )}
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </>
   );
 }

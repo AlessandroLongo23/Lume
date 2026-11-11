@@ -1,26 +1,21 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Plane, Mail, Phone, Cake, Archive, ArchiveRestore, Wallet, CalendarDays, CalendarClock, Plus, Sparkles,
-} from 'lucide-react';
+import { Plane, Archive, ArchiveRestore, Plus } from 'lucide-react';
 import type { Client } from '@/lib/types/Client';
-import { useClientRatingsStore } from '@/lib/stores/client_ratings';
 import { useClientStatsStore } from '@/lib/stores/client_stats';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import { colorForClient } from '@/lib/utils/clientColor';
 import { daysUntilBirthday } from '@/lib/utils/date';
+import { formatCurrency } from '@/lib/utils/format';
 import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import { IncompleteContactBadge } from './IncompleteContactBadge';
 import { BirthdayBadge } from './BirthdayBadge';
 import styles from './ClientCard.module.css';
-
-function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255);
-  return `${hex}${a.toString(16).padStart(2, '0')}`;
-}
 
 interface ClientCardProps {
   client: Client;
@@ -41,14 +36,17 @@ function daysSince(dateStr: string | null | undefined): number | null {
 
 export function ClientCard({ client, onArchive, onRestore, showArchived = false }: ClientCardProps) {
   const router = useRouter();
-  const rating = useClientRatingsStore((s) => s.ratings[client.id]);
-  const lastVisit = useClientStatsStore((s) => s.stats[client.id]?.last_visit) ?? null;
+  const stat = useClientStatsStore((s) => s.stats[client.id]);
+  const lastVisit = stat?.last_visit ?? null;
+  const visitCount = stat?.visit_count ?? 0;
+  const totalSpent = stat?.total_spent ?? 0;
   const birthdayReminder =
     usePreferencesStore((s) => s.preferences.clientsTable?.birthdayReminder) ??
     FACTORY_PREFERENCES.clientsTable.birthdayReminder;
   const created = client.created_at;
   const initials = `${client.firstName?.[0] ?? ''}${client.lastName?.[0] ?? ''}`.toUpperCase();
   const fullName = `${client.firstName} ${client.lastName}`.trim();
+  const hasPhone = Boolean(client.phonePrefix && client.phoneNumber);
 
   const sinceCreated = daysSince(created);
   const isNew = sinceCreated !== null && sinceCreated <= NEW_CLIENT_DAYS;
@@ -60,6 +58,11 @@ export function ClientCard({ client, onArchive, onRestore, showArchived = false 
     e.stopPropagation();
     router.push(`/admin/clienti/${client.id}?edit=${client.id}`);
   };
+  // A contact link opens WhatsApp or mail; its click and Enter must not also open the card.
+  const stopCardActivation = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  // The client's own colour, as a soft tint on the avatar (see ClientCard.module.css).
+  const tint = { '--client-color': colorForClient(client) } as CSSProperties;
 
   return (
     <div
@@ -69,167 +72,139 @@ export function ClientCard({ client, onArchive, onRestore, showArchived = false 
       aria-label={`Apri scheda di ${fullName}`}
       className={styles.card}
       onClick={goToDetail}
-      onKeyDown={(e) => e.key === 'Enter' && goToDetail()}
+      onKeyDown={(e) => {
+        // Only the card itself: Enter on a button or link inside it does that control's job.
+        if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        goToDetail();
+      }}
     >
       <header className={styles.header}>
         <div
-          className={styles.avatar}
+          className={`${styles.avatar} ${client.photoUrl ? styles.avatarPhoto : ''}`}
           aria-hidden="true"
-          style={
-            client.photoUrl
-              ? { borderColor: colorForClient(client), borderWidth: 2 }
-              : { backgroundColor: withAlpha(colorForClient(client), 0.18) }
-          }
+          style={tint}
         >
           {client.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={client.photoUrl} alt="" className={styles.avatarImg} />
           ) : (
-            <span className={styles.initials} style={{ color: colorForClient(client) }}>
-              {initials || '·'}
-            </span>
+            <span className={styles.initials}>{initials || '·'}</span>
           )}
         </div>
         <div className={styles.identity}>
           <h3 className={styles.name}>{fullName}</h3>
           <div className={styles.sub}>
-            {client.phonePrefix && client.phoneNumber && (
-              <span
-                className={`${styles.phone} ${styles.link}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const phone = `${client.phonePrefix}${client.phoneNumber}`.replace(/[^0-9]/g, '');
-                  window.open(`https://wa.me/${phone}`, '_blank');
-                }}
-              >
-                <Phone className="w-3 h-3" /> {client.phonePrefix} {client.phoneNumber}
-              </span>
-            )}
             {isNew ? (
-              <span className={styles.nuovo}>
-                <Sparkles className="w-3 h-3" /> Nuovo
+              <span className={styles.state}>
+                <span className={`${styles.dot} ${styles.dotInfo}`} aria-hidden /> Nuovo
               </span>
             ) : created ? (
-              <span className={styles.since}>
+              <span>
                 Cliente dal {new Date(created).toLocaleDateString('it-IT')}
               </span>
             ) : null}
             {client.isTourist && (
-              <span className={styles.tourist}>
-                <Plane className="w-3 h-3" /> Turista
+              <span className={styles.state}>
+                <Plane className={styles.subIcon} aria-hidden /> Turista
               </span>
             )}
-            {client.hasIncompleteContact && <IncompleteContactBadge variant="pill" />}
+            {client.hasIncompleteContact && <IncompleteContactBadge variant="dot" />}
           </div>
         </div>
       </header>
 
       <div className={styles.fields}>
+        {hasPhone && (
+          <TextLink
+            quiet
+            href={`https://wa.me/${`${client.phonePrefix}${client.phoneNumber}`.replace(/[^0-9]/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${styles.contact} ${styles.mono} ${styles.link}`}
+            onClick={stopCardActivation}
+            onKeyDown={stopCardActivation}
+          >
+            {client.phonePrefix} {client.phoneNumber}
+          </TextLink>
+        )}
         {client.email && (
-          <div className={styles.field}>
-            <Mail className="w-3.5 h-3.5" />
-            <Tooltip label={client.email}>
-              <span
-                className={`${styles.fieldValue} ${styles.link}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(`mailto:${client.email}`, '_blank');
-                }}
-              >
-                {client.email}
-              </span>
-            </Tooltip>
-          </div>
+          <Tooltip label={client.email}>
+            <TextLink
+              quiet
+              href={`mailto:${client.email}`}
+              target="_blank"
+              className={`${styles.contact} ${styles.link}`}
+              onClick={stopCardActivation}
+              onKeyDown={stopCardActivation}
+            >
+              {client.email}
+            </TextLink>
+          </Tooltip>
         )}
-        {lastVisit && (
-          <div className={styles.field}>
-            <CalendarClock className="w-3.5 h-3.5" />
-            <span className={styles.fieldValue}>
-              {lastVisit.toLocaleDateString('it-IT')}
-            </span>
-          </div>
-        )}
-        {client.birthDate && (
-          <div className={styles.field}>
-            <Cake className="w-3.5 h-3.5" />
-            <span className={styles.birthdateValue}>
-              <span className={styles.fieldValue}>
-                {new Date(client.birthDate).toLocaleDateString('it-IT')}
-              </span>
-              {daysToBday !== null && daysToBday <= birthdayReminder.daysAhead && (
-                <BirthdayBadge daysLeft={daysToBday} />
-              )}
-            </span>
-          </div>
+        {(lastVisit || client.birthDate) && (
+          <dl className={styles.facts}>
+            {lastVisit && (
+              <div className={styles.fact}>
+                <dt>Ultima visita</dt>
+                <dd className={styles.mono}>{lastVisit.toLocaleDateString('it-IT')}</dd>
+              </div>
+            )}
+            {client.birthDate && (
+              <div className={styles.fact}>
+                <dt>Compleanno</dt>
+                <dd>
+                  <span className={styles.mono}>{new Date(client.birthDate).toLocaleDateString('it-IT')}</span>
+                  {daysToBday !== null && daysToBday <= birthdayReminder.daysAhead && (
+                    <BirthdayBadge daysLeft={daysToBday} />
+                  )}
+                </dd>
+              </div>
+            )}
+          </dl>
         )}
         {!showArchived && client.hasIncompleteContact && (
-          <button
-            type="button"
+          <Button
+            // ds-ignore: a labelled sm Button keeps 32px on touch (only md and icon-only sm grow), so this one asks for the 44px target itself
+            variant="secondary"
+            size="sm"
+            leadingIcon={Plus}
             onClick={goToEditContact}
-            className={styles.addContactCta}
+            className="self-start mt-1 pointer-coarse:h-11"
           >
-            <Plus className="w-3.5 h-3.5" />
             Aggiungi contatto
-          </button>
+          </Button>
         )}
       </div>
 
       <footer className={styles.foot}>
-        <div className={styles.ratings}>
-          <RatingRow icon={<Wallet />} label="Spesa" value={rating?.spend_stars ?? null} />
-          <RatingRow icon={<CalendarDays />} label="Visite" value={rating?.visit_stars ?? null} />
-        </div>
-        {showArchived ? (
-          <Tooltip label="Ripristina cliente">
-            <button
-              onClick={(e) => { e.stopPropagation(); onRestore?.(client); }}
-              className={`${styles.btn} ${styles.btnRestore}`}
-              aria-label="Ripristina cliente"
-            ><ArchiveRestore className="w-3.5 h-3.5" /></button>
-          </Tooltip>
+        {visitCount > 0 ? (
+          <p className={styles.stats}>
+            <span className={styles.statValue}>{visitCount}</span> {visitCount === 1 ? 'visita' : 'visite'}
+            <span className={styles.statSep} aria-hidden>·</span>
+            <span className={styles.statValue}>{formatCurrency(totalSpent)}</span>
+          </p>
         ) : (
-          <Tooltip label="Archivia cliente">
-            <button
-              onClick={(e) => { e.stopPropagation(); onArchive(client); }}
-              className={`${styles.btn} ${styles.btnArchive}`}
-              aria-label="Archivia cliente"
-            ><Archive className="w-3.5 h-3.5" /></button>
-          </Tooltip>
+          <p className={styles.stats}>Nessuna visita</p>
+        )}
+        {showArchived ? (
+          <Button
+            variant="ghost"
+            iconOnly
+            onClick={(e) => { e.stopPropagation(); onRestore?.(client); }}
+            className={`${styles.reveal} transition-[background-color,color,opacity,scale]`}
+            aria-label="Ripristina cliente"
+          ><ArchiveRestore /></Button>
+        ) : (
+          <Button
+            variant="ghost"
+            iconOnly
+            onClick={(e) => { e.stopPropagation(); onArchive(client); }}
+            className={`${styles.reveal} transition-[background-color,color,opacity,scale]`}
+            aria-label="Archivia cliente"
+          ><Archive /></Button>
         )}
       </footer>
-    </div>
-  );
-}
-
-function RatingRow({ icon, label, value }: { icon: ReactNode; label: string; value: number | null }) {
-  const hasData = value !== null && value !== undefined;
-  if (!hasData) {
-    return (
-      <Tooltip label={`${label} ancora non disponibile`}>
-        <div
-          className={`${styles.row} ${styles.rowEmpty}`}
-          aria-label={`${label}: non disponibile`}
-        >
-          <span className={styles.rowIcon}>{icon}</span>
-          <span className={styles.rowEmptyText}>
-            {label}<span aria-hidden="true" className={styles.rowEmptyDash}>—</span>
-          </span>
-        </div>
-      </Tooltip>
-    );
-  }
-  return (
-    <div className={styles.row}>
-      <span className={styles.rowIcon}>{icon}</span>
-      <span className={styles.rowLabel}>{label}</span>
-      <div className={styles.bar} aria-label={`${label}: ${value} su 5`}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <span
-            key={i}
-            className={`${styles.seg} ${i <= (value as number) ? styles.segOn : ''}`}
-          />
-        ))}
-      </div>
     </div>
   );
 }

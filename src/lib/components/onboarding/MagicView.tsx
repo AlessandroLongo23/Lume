@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { DURATION } from '@/lib/const/motion';
 import { FileFeed } from './FileFeed';
 import { EASE_OUT, type ChildState, type OnboardingState } from './onboardingTypes';
 
@@ -114,18 +116,18 @@ export function MagicView({
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-      transition={{ duration: 0.5, ease: EASE_OUT }}
+      transition={{ duration: DURATION.enter, ease: EASE_OUT }}
     >
       <div className="text-center">
         <div className="h-10 overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.h1
               key={phase.headline}
-              className="text-2xl font-semibold text-foreground"
+              className="text-2xl font-medium tracking-tight text-[var(--lume-text)]"
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-              transition={{ duration: 0.25, ease: EASE_OUT }}
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
             >
               {phase.headline}
             </motion.h1>
@@ -135,11 +137,11 @@ export function MagicView({
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
               key={phase.subline}
-              className="text-sm text-muted-foreground"
+              className="text-sm text-[var(--lume-text-muted)]"
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-              transition={{ duration: 0.25, ease: EASE_OUT }}
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
             >
               {phase.subline}
             </motion.p>
@@ -147,7 +149,7 @@ export function MagicView({
         </div>
       </div>
 
-      <div className="mt-6 h-[2px] overflow-hidden rounded-full bg-muted">
+      <div className="mt-6 h-0.5 overflow-hidden rounded-full bg-active">
         <motion.div
           className="h-full origin-left"
           style={{
@@ -157,7 +159,7 @@ export function MagicView({
           }}
           initial={false}
           animate={{ scaleX: progress }}
-          transition={{ duration: 0.5, ease: EASE_OUT }}
+          transition={{ duration: DURATION.count, ease: EASE_OUT }}
         />
       </div>
 
@@ -167,32 +169,28 @@ export function MagicView({
 
       {conciergeCount > 0 && (
         <motion.div
-          className="mt-4 flex items-start gap-3 rounded-md bg-muted/40 px-4 py-3"
+          className="mt-4"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.2 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.2 }}
         >
-          <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.25} />
-          <div className="text-sm text-foreground">
-            {conciergeCount === 1
-              ? 'Il team Lume si occuperà di 1 file.'
-              : `Il team Lume si occuperà di ${conciergeCount} file.`}
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Ti scriviamo via email appena pronti. Non perdi niente.
-            </p>
-          </div>
+          <Callout
+            icon={Sparkles}
+            title={
+              conciergeCount === 1
+                ? 'Il team Lume si occuperà di 1 file.'
+                : `Il team Lume si occuperà di ${conciergeCount} file.`
+            }
+          >
+            Ti scriviamo via email appena pronti. Non perdi niente.
+          </Callout>
         </motion.div>
       )}
 
       <div className="mt-8 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setConfirmingCancel(true)}
-          disabled={busyCancel}
-          className="text-sm text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
-        >
+        <Button variant="ghost" onClick={() => setConfirmingCancel(true)} disabled={busyCancel} className="-ml-3 font-normal">
           Annulla importazione
-        </button>
+        </Button>
         <Button
           variant="secondary"
           onClick={onContinueInBackground}

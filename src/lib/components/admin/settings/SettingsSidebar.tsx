@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   User,
@@ -24,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { canManageSalon, isSalonStaff } from '@/lib/auth/roles';
+import { SectionNav, SectionNavGroup, SectionNavLink } from '@/lib/components/shared/ui/nav/SectionNav';
 
 type Item = { href: string; label: string; icon: React.ElementType };
 type Group = { title: string; items: Item[]; hint?: string; gated?: boolean };
@@ -84,43 +84,24 @@ export function SettingsSidebar() {
   ];
 
   return (
-    <nav className="w-52 shrink-0 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto">
-      <ul className="flex flex-col gap-5">
+    <div className="w-full min-w-0 md:w-52 md:shrink-0 md:sticky md:top-16 md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+      <SectionNav id="settings-nav" label="Sezioni delle impostazioni">
         {groups
           .filter((g) => !g.gated)
           .map((group) => (
-            <li key={group.title}>
-              <p className="px-3 mb-1.5 text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                {group.title}
-                {group.hint && (
-                  <span className="ml-1.5 normal-case tracking-normal text-zinc-400 dark:text-zinc-500/80 font-normal">
-                    · {group.hint}
-                  </span>
-                )}
-              </p>
-              <ul className="flex flex-col gap-0.5">
-                {group.items.map(({ href, label, icon: Icon }) => {
-                  const isActive = pathname === href || pathname.startsWith(href + '/');
-                  return (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-primary/10 dark:bg-primary/20 text-primary-hover dark:text-primary/70'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100'
-                        }`}
-                      >
-                        <Icon className="size-4 shrink-0" />
-                        {label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </li>
+            <SectionNavGroup key={group.title} title={group.title} hint={group.hint}>
+              {group.items.map(({ href, label, icon }) => (
+                <SectionNavLink
+                  key={href}
+                  href={href}
+                  label={label}
+                  icon={icon}
+                  active={pathname === href || pathname.startsWith(href + '/')}
+                />
+              ))}
+            </SectionNavGroup>
           ))}
-      </ul>
-    </nav>
+      </SectionNav>
+    </div>
   );
 }

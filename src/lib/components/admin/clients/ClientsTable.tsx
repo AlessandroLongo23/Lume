@@ -11,7 +11,7 @@ import {
   type SortingState,
   type RowSelectionState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, Plane, ArchiveRestore, NotebookText, Globe, GlobeLock } from 'lucide-react';
+import { X, Trash2, Plane, ArchiveRestore, NotebookText, Globe, GlobeLock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
@@ -37,13 +37,16 @@ import { BirthdayBadge } from './BirthdayBadge';
 import { DeleteClientModal } from './DeleteClientModal';
 import { TreatmentHistory } from './TreatmentHistory';
 import { SidePanel } from '@/lib/components/shared/ui/SidePanel';
-import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
-import { Portal } from '@/lib/components/shared/ui/Portal';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
-import { cardStyle } from '@/lib/const/appearance';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { tableCardClass, tableClass, theadClass, thClass, trClass, tdClass, cellStrongClass, cellNumClass, tableMessageClass, CellEmpty, SortIndicator } from '@/lib/components/shared/ui/table/tableStyles';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 
 interface ClientsTableProps {
   clients: Client[];
@@ -51,8 +54,8 @@ interface ClientsTableProps {
 }
 
 const GENDER_OPTIONS = [
-  { value: 'M', label: 'Uomo', prefix: <span className="text-xs font-semibold text-blue-500 mr-0.5">M</span> },
-  { value: 'F', label: 'Donna', prefix: <span className="text-xs font-semibold text-pink-500 mr-0.5">F</span> },
+  { value: 'M', label: 'Uomo', prefix: <span className="tabular-nums text-xs text-[var(--lume-text-muted)] mr-0.5">M</span> },
+  { value: 'F', label: 'Donna', prefix: <span className="tabular-nums text-xs text-[var(--lume-text-muted)] mr-0.5">F</span> },
 ];
 
 const GENDER_BULK_OPTIONS = [
@@ -159,7 +162,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         meta: { pickerLabel: 'Colore' },
         cell: ({ row }) => (
           <span
-            className="inline-block size-2.5 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+            className="inline-block size-2.5 rounded-full shadow-[inset_0_0_0_1px_var(--lume-edge)]"
             style={{ backgroundColor: colorForClient(row.original) }}
             aria-hidden
           />
@@ -184,7 +187,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: 'Nome',
         cell: ({ getValue, row }) => (
           <span className="inline-flex items-center gap-1.5">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+            <span className={cellStrongClass}>{getValue() as string}</span>
             {row.original.hasIncompleteContact && <IncompleteContactBadge variant="icon" />}
           </span>
         ),
@@ -193,7 +196,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       {
         accessorKey: 'lastName',
         header: 'Cognome',
-        cell: ({ getValue }) => <span>{getValue() as string}</span>,
+        cell: ({ getValue }) => <span className={cellStrongClass}>{getValue() as string}</span>,
         meta: { requiredVisible: true },
       },
       {
@@ -201,15 +204,11 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: 'Email',
         cell: ({ row }) => {
           const email = row.original.email;
-          if (!email) return <span className="text-zinc-400 italic">—</span>;
+          if (!email) return <CellEmpty />;
           return (
-            <span
-              data-no-row-click
-              className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
-              onClick={() => window.open(`mailto:${email}`, '_blank')}
-            >
+            <TextLink quiet data-no-row-click href={`mailto:${email}`} target="_blank" className="text-inherit">
               {email}
-            </span>
+            </TextLink>
           );
         },
       },
@@ -218,18 +217,18 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: 'Telefono',
         cell: ({ row }) => {
           const { phonePrefix, phoneNumber } = row.original;
-          if (!phonePrefix || !phoneNumber) return <span className="text-zinc-400 italic">—</span>;
+          if (!phonePrefix || !phoneNumber) return <CellEmpty />;
           return (
-            <span
+            <TextLink
+              quiet
               data-no-row-click
-              className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
-              onClick={() => {
-                const phone = `${phonePrefix}${phoneNumber}`.replace(/[^0-9]/g, '');
-                window.open(`https://wa.me/${phone}`, '_blank');
-              }}
+              href={`https://wa.me/${`${phonePrefix}${phoneNumber}`.replace(/[^0-9]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-inherit tabular-nums text-compact"
             >
               {phonePrefix} {phoneNumber}
-            </span>
+            </TextLink>
           );
         },
         enableSorting: false,
@@ -239,9 +238,9 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: '',
         cell: ({ getValue }) => {
           const g = getValue() as string;
-          if (g === 'M') return <span className="text-sm font-semibold text-blue-500">M</span>;
-          if (g === 'F') return <span className="text-sm font-semibold text-pink-500">F</span>;
-          return <span className="text-zinc-400">—</span>;
+          if (g === 'M') return <Tooltip label="Uomo"><span className="tabular-nums text-xs text-[var(--lume-text-secondary)]">M</span></Tooltip>;
+          if (g === 'F') return <Tooltip label="Donna"><span className="tabular-nums text-xs text-[var(--lume-text-secondary)]">F</span></Tooltip>;
+          return <CellEmpty />;
         },
         meta: { pickerLabel: 'Genere' },
       },
@@ -250,13 +249,13 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         header: 'Data di nascita',
         cell: ({ getValue }) => {
           const v = getValue() as string;
-          if (!v) return <span className="text-zinc-400">—</span>;
+          if (!v) return <CellEmpty />;
           const daysLeft = birthdayReminder.enabled ? daysUntilBirthday(v) : null;
           const showBadge =
             daysLeft !== null && daysLeft <= birthdayReminder.daysAhead;
           return (
             <span className="inline-flex items-center gap-2">
-              <span className="tabular-nums">{new Date(v).toLocaleDateString('it-IT')}</span>
+              <span className={cellNumClass}>{new Date(v).toLocaleDateString('it-IT')}</span>
               {showBadge && <BirthdayBadge daysLeft={daysLeft} />}
             </span>
           );
@@ -268,7 +267,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => stats[row.id]?.visit_count ?? 0,
         cell: ({ row }) => {
           const n = stats[row.original.id]?.visit_count ?? 0;
-          return <span className="tabular-nums">{n}</span>;
+          return <span className={cellNumClass}>{n}</span>;
         },
       },
       {
@@ -277,7 +276,7 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => stats[row.id]?.total_spent ?? 0,
         cell: ({ row }) => {
           const v = stats[row.original.id]?.total_spent ?? 0;
-          return <span className="tabular-nums">{formatCurrency(v)}</span>;
+          return <span className={`${cellNumClass} text-[var(--lume-text)]`}>{formatCurrency(v)}</span>;
         },
       },
       {
@@ -286,8 +285,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => stats[row.id]?.avg_ticket ?? 0,
         cell: ({ row }) => {
           const s = stats[row.original.id];
-          if (!s || s.visit_count === 0) return <span className="text-zinc-400">—</span>;
-          return <span className="tabular-nums">{formatCurrency(s.avg_ticket)}</span>;
+          if (!s || s.visit_count === 0) return <CellEmpty />;
+          return <span className={cellNumClass}>{formatCurrency(s.avg_ticket)}</span>;
         },
       },
       {
@@ -296,8 +295,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => stats[row.id]?.first_visit?.getTime() ?? 0,
         cell: ({ row }) => {
           const d = stats[row.original.id]?.first_visit;
-          if (!d) return <span className="text-zinc-400">—</span>;
-          return <span className="tabular-nums">{d.toLocaleDateString('it-IT')}</span>;
+          if (!d) return <CellEmpty />;
+          return <span className={cellNumClass}>{d.toLocaleDateString('it-IT')}</span>;
         },
       },
       {
@@ -306,20 +305,15 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => stats[row.id]?.last_visit?.getTime() ?? 0,
         cell: ({ row }) => {
           const s = stats[row.original.id];
-          if (!s?.last_visit) return <span className="text-zinc-400">—</span>;
+          if (!s?.last_visit) return <CellEmpty />;
           const days = s.daysSinceLastVisit() ?? 0;
-          const color =
-            days < 30
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : days < 90
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-red-600 dark:text-red-400';
+          const tone = days < 30 ? 'success' : days < 90 ? 'warning' : 'danger';
           return (
-            <div className="flex flex-row items-baseline gap-1.5">
-              <span className="tabular-nums">{s.last_visit.toLocaleDateString('it-IT')}</span>
-              <span className={`text-xs tabular-nums ${color}`}>
-                {days === 0 ? 'oggi' : `${days}g fa`}
-              </span>
+            <div className="flex flex-row items-center gap-2.5">
+              <span className={cellNumClass}>{s.last_visit.toLocaleDateString('it-IT')}</span>
+              <StatusDot tone={tone} className="text-xs text-[var(--lume-text-muted)]">
+                {days === 0 ? 'oggi' : days === 1 ? 'ieri' : `${days} giorni fa`}
+              </StatusDot>
             </div>
           );
         },
@@ -334,8 +328,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
           ),
         cell: ({ row }) => {
           const name = stats[row.original.id]?.top_service_name;
-          if (!name) return <span className="text-zinc-400">—</span>;
-          return <span className="truncate max-w-[10rem] inline-block">{name}</span>;
+          if (!name) return <CellEmpty />;
+          return <span className="truncate max-w-40 inline-block">{name}</span>;
         },
       },
       {
@@ -348,8 +342,8 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
           ),
         cell: ({ row }) => {
           const name = stats[row.original.id]?.top_operator_name;
-          if (!name) return <span className="text-zinc-400">—</span>;
-          return <span className="truncate max-w-[10rem] inline-block">{name}</span>;
+          if (!name) return <CellEmpty />;
+          return <span className="truncate max-w-40 inline-block">{name}</span>;
         },
       },
       {
@@ -358,15 +352,15 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         accessorFn: (row) => (row.created_at ? new Date(row.created_at).getTime() : 0),
         cell: ({ row }) => {
           const v = row.original.created_at;
-          if (!v) return <span className="text-zinc-400">—</span>;
-          return <span className="tabular-nums">{new Date(v).toLocaleDateString('it-IT')}</span>;
+          if (!v) return <CellEmpty />;
+          return <span className={cellNumClass}>{new Date(v).toLocaleDateString('it-IT')}</span>;
         },
       },
       {
         accessorKey: 'isTourist',
         header: '',
         cell: ({ getValue }) =>
-          getValue() ? <Plane className="size-4 text-zinc-500" /> : null,
+          getValue() ? <Plane className="size-4 text-[var(--lume-text-muted)]" aria-label="Turista" /> : null,
         enableSorting: false,
         meta: { pickerLabel: 'Turista' },
       },
@@ -442,10 +436,10 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
         {/* Toolbar — transforms to action bar when rows are selected */}
         {hasSelection ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-primary">
-              {selectedIds.length} {selectedIds.length === 1 ? 'selezionato' : 'selezionati'}
+            <span className="text-sm font-medium text-[var(--lume-text)]">
+              <span className="tabular-nums">{selectedIds.length}</span> {selectedIds.length === 1 ? 'selezionato' : 'selezionati'}
             </span>
-            <span className="text-zinc-400 dark:text-zinc-600">·</span>
+            <span className="text-[var(--lume-text-muted)]" aria-hidden>·</span>
 
             <Select
               value={null}
@@ -465,13 +459,14 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
               valueKey="id"
               placeholder="Genere"
               disabled={bulkLoading}
-              size="md"
-              width="w-32"
+              className="w-32"
             />
 
             {isSelectedMode && !showArchived && (
               <>
-                <button
+                <Button
+                  variant="secondary"
+                  leadingIcon={Globe}
                   onClick={() => {
                     setBulkLoading(true);
                     bulkUpdateClients(selectedIds, { can_book_online: true })
@@ -485,12 +480,12 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                       .finally(() => setBulkLoading(false));
                   }}
                   disabled={bulkLoading}
-                  className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                 >
-                  <Globe className="size-4" />
                   Abilita online
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  leadingIcon={GlobeLock}
                   onClick={() => {
                     setBulkLoading(true);
                     bulkUpdateClients(selectedIds, { can_book_online: false })
@@ -504,79 +499,58 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                       .finally(() => setBulkLoading(false));
                   }}
                   disabled={bulkLoading}
-                  className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                 >
-                  <GlobeLock className="size-4" />
                   Disabilita online
-                </button>
+                </Button>
               </>
             )}
 
             {showArchived ? (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkRestoreConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Ripristina
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkArchiveConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Archivia
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="ghost-destructive"
+              leadingIcon={Trash2}
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkLoading}
-              className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="size-4" />
               Elimina
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              leadingIcon={X}
+              className="ml-auto"
               onClick={() => setRowSelection({})}
-              className="ml-auto inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
             >
-              <X className="size-4" />
               Annulla
-            </button>
+            </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center flex-1 max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca cliente..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  aria-label="Azzera ricerca"
-                  onClick={() => setGlobalFilter('')}
-                  className="absolute right-1"
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Searchbar
+              className="basis-full sm:basis-auto sm:flex-1 sm:max-w-sm"
+              placeholder="Cerca cliente..."
+              value={globalFilter}
+              onChange={setGlobalFilter}
+            />
             <FacetedFilter label="Genere" options={GENDER_OPTIONS} selected={selectedGenders} onChange={setSelectedGenders} />
             <div className="ml-auto flex items-center gap-2">
               <ExportMenu
@@ -592,11 +566,11 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
 
         {/* Table */}
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="group">
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
@@ -605,40 +579,32 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                          isSelect ? 'w-10' : '',
-                        ].join(' ')}
+                        aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
+                        className={`${thClass({ sortable: canSort })} ${isSelect ? 'w-10' : ''}`}
                       >
                         <span className="inline-flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-24">
-                    Azioni
+                  <th className={`${thClass({ align: 'right' })} w-24`}>
+                    <span className="sr-only">Azioni</span>
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Caricando clienti...
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Nessun cliente trovato.
                   </td>
                 </tr>
@@ -658,50 +624,44 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
                     }}
                     role="button"
                     tabIndex={0}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    className={trClass({ selected: row.getIsSelected() })}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      <td key={cell.id} className={tdClass}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
-                        <Tooltip label="Scheda tecnica">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Scheda tecnica"
+                          onClick={(e) => { e.stopPropagation(); setSchedaClient(row.original); }}
+                        >
+                          <NotebookText />
+                        </Button>
+                        {showArchived ? (
                           <Button
                             variant="ghost"
                             size="sm"
                             iconOnly
-                            aria-label="Scheda tecnica"
-                            onClick={(e) => { e.stopPropagation(); setSchedaClient(row.original); }}
+                            aria-label="Ripristina"
+                            onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
                           >
-                            <NotebookText />
+                            <ArchiveRestore />
                           </Button>
-                        </Tooltip>
-                        {showArchived ? (
-                          <Tooltip label="Ripristina">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              iconOnly
-                              aria-label="Ripristina"
-                              onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
-                            >
-                              <ArchiveRestore />
-                            </Button>
-                          </Tooltip>
                         ) : (
-                          <Tooltip label="Elimina">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              iconOnly
-                              aria-label="Elimina"
-                              onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setShowDelete(true); }}
-                            >
-                              <Trash2 />
-                            </Button>
-                          </Tooltip>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Elimina"
+                            onClick={(e) => { e.stopPropagation(); setSelectedClient(row.original); setShowDelete(true); }}
+                          >
+                            <Trash2 />
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -737,78 +697,50 @@ export function ClientsTable({ clients, showArchived = false }: ClientsTableProp
       </SidePanel>
 
       {/* Bulk archive confirm */}
-      {bulkArchiveConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Archivia {selectedIds.length} {selectedIds.length === 1 ? 'cliente' : 'clienti'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I clienti archiviati non saranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkArchiveConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkArchiveConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkArchiveClients(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} clienti archiviati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante l\'archiviazione');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Archivia
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkArchiveConfirm}
+        onClose={() => setBulkArchiveConfirm(false)}
+        tone="default"
+        title={`Archivia ${selectedIds.length} ${selectedIds.length === 1 ? 'cliente' : 'clienti'}?`}
+        description="I clienti archiviati non saranno visibili nella lista principale."
+        confirmLabel="Archivia"
+        onConfirm={async () => {
+          setBulkArchiveConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkArchiveClients(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} clienti archiviati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante l\'archiviazione');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
       {/* Bulk restore confirm */}
-      {bulkRestoreConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Ripristina {selectedIds.length} {selectedIds.length === 1 ? 'cliente' : 'clienti'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I clienti torneranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkRestoreConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkRestoreConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkRestoreClients(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} clienti ripristinati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante il ripristino');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Ripristina
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkRestoreConfirm}
+        onClose={() => setBulkRestoreConfirm(false)}
+        tone="default"
+        title={`Ripristina ${selectedIds.length} ${selectedIds.length === 1 ? 'cliente' : 'clienti'}?`}
+        description="I clienti torneranno visibili nella lista principale."
+        confirmLabel="Ripristina"
+        onConfirm={async () => {
+          setBulkRestoreConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkRestoreClients(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} clienti ripristinati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante il ripristino');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
       <DeleteAllModal
         isOpen={bulkDeleteConfirm}

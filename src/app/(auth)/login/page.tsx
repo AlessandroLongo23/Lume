@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { AtSign, Lock } from 'lucide-react';
@@ -9,6 +8,10 @@ import { supabase } from '@/lib/supabase/client';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
+import { AuthCard } from '@/lib/components/auth/AuthCard';
+import { DURATION } from '@/lib/const/motion';
 import { isEmailLike, normalizeLoginPhone } from '@/lib/utils/phone';
 
 const AUTH_ERRORS: Record<string, string> = {
@@ -24,14 +27,14 @@ function mapError(message: string): string {
   return 'Accesso non riuscito. Riprova.';
 }
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.2, 0, 0, 1] as const;
 
 const fieldVariants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 6 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, delay: i * 0.1, ease },
+    transition: { duration: DURATION.enter, delay: i * 0.05, ease },
   }),
 };
 
@@ -74,17 +77,11 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      <motion.div
-        className="mb-6"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease }}
-      >
-        <h1 className="text-xl font-semibold text-zinc-900">Bentornato</h1>
-        <p className="text-sm text-zinc-500 mt-1">Accedi al tuo gestionale</p>
-      </motion.div>
-
+    <AuthCard
+      title="Bentornato"
+      subtitle="Accedi al tuo gestionale"
+      footer={<>Non hai un account?{' '}<TextLink href="/register">Inizia la prova gratuita</TextLink></>}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
           <FormInput
@@ -93,7 +90,8 @@ export default function LoginPage() {
             placeholder="nome@salone.it oppure 3331234567"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            icon={<AtSign className="w-4 h-4 text-zinc-400" />}
+            icon={<AtSign className="size-4 text-[var(--lume-text-muted)]" />}
+            size="lg"
             required
             autoComplete="username"
           />
@@ -106,7 +104,8 @@ export default function LoginPage() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            icon={<Lock className="w-4 h-4 text-zinc-400" />}
+            icon={<Lock className="size-4 text-[var(--lume-text-muted)]" />}
+            size="lg"
             required
             autoComplete="current-password"
           />
@@ -114,36 +113,24 @@ export default function LoginPage() {
 
         <AnimatePresence>
           {error && (
-            <motion.p
-              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+            <motion.div
+              className="overflow-hidden"
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: DURATION.slow }}
             >
-              {error}
-            </motion.p>
+              <Callout tone="danger" title={error} />
+            </motion.div>
           )}
         </AnimatePresence>
 
         <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
-          <Button type="submit" variant="primary" fullWidth loading={isLoading} className="mt-2">
+          <Button type="submit" variant="primary" size="lg" loading={isLoading} className="mt-2 w-full">
             Accedi
           </Button>
         </motion.div>
       </form>
-
-      <motion.p
-        className="text-center text-sm text-zinc-500 mt-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-      >
-        Non hai un account?{' '}
-        <Link href="/register" className="text-primary-hover hover:text-primary-active transition-colors font-medium">
-          Inizia la prova gratuita
-        </Link>
-      </motion.p>
-    </>
+    </AuthCard>
   );
 }

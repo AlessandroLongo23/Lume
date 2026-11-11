@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "docs": "npm --prefix edl-docs run dev",
+    "docs:install": "EDL_NPM_TOKEN=$(gh auth token --user al-edl) npm --prefix edl-docs install",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "tsc --noEmit && eslint",
+    "check": "tsc --noEmit && eslint && npm run -s ds:check",
     "db:types": "supabase gen types typescript --project-id vfzoyiosnljhdheggqhz --schema public > src/lib/supabase/database.types.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -16,6 +18,9 @@
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "shoot:landing": "tsx scripts/screenshots/landing-hero.ts",
     "audit:tenancy": "tsx scripts/audit-tenant-isolation.ts",
+    "ds:check": "tsx scripts/ds/cli.ts check",
+    "ds:baseline": "tsx scripts/ds/cli.ts baseline",
+    "ds:report": "tsx scripts/ds/cli.ts report",
     "demo:create-user": "tsx scripts/demo/create-demo-user.ts"
   },
   "dependencies": {

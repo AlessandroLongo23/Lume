@@ -99,15 +99,15 @@ export default function OrdiniPage() {
         onConfirm={deleteAllOrders}
       />
 
-      <div data-tour="ordini-page" className="flex-1 min-h-0 flex flex-col gap-8">
+      <div data-tour="ordini-page" className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Ordini"
           subtitle="Riordina prima che gli scaffali si svuotino."
-          icon={ShoppingCart}
           actions={
             <>
               <Searchbar placeholder="Cerca ordine" className="w-80" />
               <ToggleButton
+                ariaLabel="Vista"
                 value={view}
                 onChange={(v) => setView('orders', v)}
                 options={['table', 'calendar']}
@@ -119,7 +119,6 @@ export default function OrdiniPage() {
                 variant="primary"
                 leadingIcon={ShoppingCart}
                 onClick={() => setShowAdd(true)}
-                className="whitespace-nowrap"
               >
                 Nuovo Ordine
               </Button>

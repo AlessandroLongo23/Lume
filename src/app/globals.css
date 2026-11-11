@@ -11,6 +11,7 @@
 @import "../styles/tokens/palette.css";
 @import "../styles/tokens/primitives.css";
 @import "../styles/tokens/semantic.css";
+@import "../styles/components.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 /* Short windows: a 1366×768 screen leaves ~650px of viewport, a 1080p laptop
@@ -51,11 +52,11 @@
   --border:               var(--lume-border);
   --input:                var(--lume-border);
   --ring:                 var(--lume-ring-focus);
-  --chart-1:              var(--color-brand-primary-500);
-  --chart-2:              var(--color-info-500);
-  --chart-3:              var(--color-success-500);
-  --chart-4:              var(--color-warning-500);
-  --chart-5:              var(--color-danger-500);
+  --chart-1:              var(--lume-series-1);
+  --chart-2:              var(--lume-series-2);
+  --chart-3:              var(--lume-series-3);
+  --chart-4:              var(--lume-series-4);
+  --chart-5:              var(--lume-series-5);
   --radius:               var(--radius-lg);
   --sidebar:                           var(--lume-surface);
   --sidebar-foreground:                var(--lume-text);
@@ -81,9 +82,9 @@
   /* Muted / accent are the hover/subtle-bg roles in shadcn. They must
      contrast against the surface they sit on — the sidebar/cards now
      live at L 0.232, so we push this up to ~0.295 for a clean hover. */
-  --muted:                oklch(0.295 0.010 265);
+  --muted:                var(--color-midnight-border);
   --muted-foreground:     var(--lume-text-muted);
-  --accent:               oklch(0.295 0.010 265);
+  --accent:               var(--color-midnight-border);
   --accent-foreground:    var(--lume-text);
   --destructive:          var(--lume-button-destructive-bg);
   --success:              var(--lume-success-fg);
@@ -91,16 +92,16 @@
   --border:               var(--lume-border);
   --input:                var(--lume-border);
   --ring:                 var(--lume-ring-focus);
-  --chart-1:              var(--color-brand-primary-400);
-  --chart-2:              var(--color-info-400);
-  --chart-3:              var(--color-success-400);
-  --chart-4:              var(--color-warning-400);
-  --chart-5:              var(--color-danger-400);
+  --chart-1:              var(--lume-series-1);
+  --chart-2:              var(--lume-series-2);
+  --chart-3:              var(--lume-series-3);
+  --chart-4:              var(--lume-series-4);
+  --chart-5:              var(--lume-series-5);
   --sidebar:                           var(--lume-surface);
   --sidebar-foreground:                var(--lume-text);
   --sidebar-primary:                   var(--lume-button-accent-bg);
   --sidebar-primary-foreground:        var(--lume-button-accent-fg);
-  --sidebar-accent:                    oklch(0.295 0.010 265);
+  --sidebar-accent:                    var(--color-midnight-border);
   --sidebar-accent-foreground:         var(--lume-text);
   --sidebar-border:                    var(--lume-border);
   --sidebar-ring:                      var(--lume-ring-focus);
@@ -111,6 +112,11 @@
 * {
 	font-family: var(--font-sans);
 	font-weight: var(--font-weight-regular);
+}
+
+/* The reset above flattens <strong>/<b>; give emphasis in running text back. */
+strong, b {
+	font-weight: var(--font-weight-semibold);
 }
 
 .font-mono {
@@ -228,17 +234,39 @@ button, a {
 }
 
 /* Soften the hard cut where page content scrolls behind the opaque AppShell
- * header. The solid stop MUST equal the scroll surface (`bg-white
- * dark:bg-zinc-900` on the AppShell container) so the fade is invisible at
- * rest and seamless against the header's bottom edge. Light mode's
- * --lume-surface-raised already resolves to #fff (== bg-white); dark mode
- * pins to the same zinc-900 the container uses. If that surface ever moves to
- * a semantic token, update the dark stop here to match. */
+ * header. The solid stop MUST equal the scroll surface (the AppShell content
+ * panel, --lume-panel) so the fade is invisible at rest and seamless against
+ * the header's bottom edge. */
 .shell-content-fade {
-	background: linear-gradient(to bottom, var(--lume-surface-raised), transparent);
+	background: linear-gradient(to bottom, var(--lume-panel), transparent);
 }
-.dark .shell-content-fade {
-	background: linear-gradient(to bottom, var(--color-zinc-900), transparent);
+
+/* Hover glide (src/lib/hooks/useHoverGlide.ts): one highlight per list that
+ * follows the pointer from row to row on the spring, fading in where the
+ * pointer enters. Rows paint over it. Reduced motion keeps only the fade. */
+.hover-glide {
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: 0;
+	border-radius: var(--radius-md);
+	background: var(--lume-hover);
+	opacity: 0;
+	pointer-events: none;
+	transition:
+		transform var(--duration-spring) var(--ease-spring),
+		width var(--duration-spring) var(--ease-spring),
+		height var(--duration-spring) var(--ease-spring),
+		opacity var(--duration-glide) var(--ease-glide);
+}
+.hover-glide.is-on { opacity: 1; }
+.hover-glide.is-jump { transition: opacity var(--duration-glide) var(--ease-glide); }
+/* In segmented controls and tabs the preview is the selected fill, softened,
+ * so "here" reads one step lighter than "chosen" on any control surface. */
+.hover-glide--preview { background: var(--lume-active); }
+.hover-glide--preview.is-on { opacity: 0.7; }
+@media (prefers-reduced-motion: reduce) {
+	.hover-glide { transition: opacity var(--duration-glide) var(--ease-glide); }
 }
 
 /* Hide scrollbar, keep scrolling */
@@ -481,6 +509,21 @@ button, a {
 	/* Accent washes (rare-event indigo) */
 	--color-accent-soft:                  var(--lume-accent-light);
 	--color-accent-muted:                 var(--lume-accent-muted);
+
+	/* Overlay ladder and lines (see semantic.css). bg-hover / bg-active /
+	   bg-strong for fills, border-line / divide-line for hairlines. */
+	--color-hover:                        var(--lume-hover);
+	--color-active:                       var(--lume-active);
+	--color-strong:                       var(--lume-strong);
+	--color-line:                         var(--lume-line);
+	--color-edge:                         var(--lume-edge);
+	--shadow-float:                       var(--lume-shadow-float);
+}
+
+/* A control's 1px edge, inset so a scrolling parent can never clip it and
+   the box never grows. */
+@utility edge {
+	box-shadow: inset 0 0 0 1px var(--lume-edge);
 }
 
 @layer base {
@@ -493,6 +536,16 @@ button, a {
   html {
     @apply font-sans;
 	}
+  /* Headings carry hierarchy through size and tight tracking, not weight. */
+  h1, h2, h3 {
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+  }
+  /* Numbers line up in columns wherever they appear: Geist with tabular
+     figures. The mono font is for code only. */
+  .tabular-nums, td, [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
   /* Force focus rings on form controls to render inset, so they are never
      clipped by a parent with overflow: hidden/auto/scroll (e.g. modals). */
   input,

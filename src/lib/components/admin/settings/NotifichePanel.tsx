@@ -1,7 +1,7 @@
 'use client';
 
-import { Bell, RotateCcw } from 'lucide-react';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { RotateCcw } from 'lucide-react';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { SettingsCard } from './SettingsCard';
 import { usePreferencesStore } from '@/lib/stores/preferences';
@@ -55,20 +55,18 @@ export function NotifichePanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Bell}
         title="Notifiche in-app"
         description="Avvisi mostrati nella dashboard. Personali al tuo account."
       >
-        <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800 -mx-6">
+        <ul className="flex flex-col divide-y divide-line">
           {ITEMS.map(({ key, label, description }) => (
-            <li key={key} className="px-6 py-3 flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
-              </div>
-              <Switch
+            <li key={key}>
+              <SwitchRow
+                label={label}
+                description={description}
                 checked={current(key)}
                 onChange={() => void persist({ [key]: !current(key) })}
+                className="py-3"
               />
             </li>
           ))}

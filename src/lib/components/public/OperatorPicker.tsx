@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Loader2, Users, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import type { BookableOperator } from '@/lib/booking/publicTypes';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+import { PICKER_ROW } from './ServicePicker';
 
 // `null` represents the "qualunque operatore" choice — server interprets it
 // as "first eligible operator with a free slot".
@@ -53,7 +56,7 @@ export function OperatorPicker({
   }
 
   if (error) {
-    return <p className="text-sm text-[var(--lume-danger-fg)]">{error}</p>;
+    return <Callout tone="danger" title={error} />;
   }
 
   if (operators.length === 0) {
@@ -65,14 +68,15 @@ export function OperatorPicker({
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      <li>
+    <ListBox className="-mx-1 p-0 gap-1">
+      <ListRow asChild>
         <button
+          // ds-ignore: booking picker row, styled by ListRow asChild; ListRow's own button wraps children in a truncating span that breaks the avatar + text layout
           type="button"
           onClick={() => onSelect(null)}
-          className="group w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] hover:border-[var(--lume-accent)] hover:bg-[var(--lume-accent-muted)] transition-colors text-left"
+          className={PICKER_ROW}
         >
-          <div className="size-12 shrink-0 rounded-full bg-[var(--lume-accent-muted)] flex items-center justify-center text-[var(--lume-accent)]">
+          <div className="size-11 shrink-0 rounded-full bg-active flex items-center justify-center text-[var(--lume-text-secondary)]">
             <Users className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
@@ -81,18 +85,19 @@ export function OperatorPicker({
               Ti assegniamo l&apos;operatore con la prima disponibilità.
             </p>
           </div>
-          <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover:text-[var(--lume-accent)] shrink-0" />
+          <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover/row:text-[var(--lume-text)] shrink-0" />
         </button>
-      </li>
+      </ListRow>
       {operators.map((op) => (
-        <li key={op.id}>
+        <ListRow key={op.id} asChild>
           <button
+            // ds-ignore: booking picker row, styled by ListRow asChild; ListRow's own button wraps children in a truncating span that breaks the avatar + text layout
             type="button"
             onClick={() => onSelect(op)}
-            className="group w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] hover:border-[var(--lume-accent)] hover:bg-[var(--lume-accent-muted)] transition-colors text-left"
+            className={PICKER_ROW}
           >
             {op.avatar_url ? (
-              <div className="size-12 shrink-0 rounded-full overflow-hidden bg-[var(--lume-surface)]">
+              <div className="size-11 shrink-0 rounded-full overflow-hidden bg-[var(--lume-surface)]">
                 <Image
                   src={op.avatar_url}
                   alt={`${op.first_name} ${op.last_name}`}
@@ -103,7 +108,7 @@ export function OperatorPicker({
                 />
               </div>
             ) : (
-              <div className="size-12 shrink-0 rounded-full bg-[var(--lume-accent-muted)] flex items-center justify-center text-[var(--lume-accent)] font-medium">
+              <div className="size-11 shrink-0 rounded-full bg-active flex items-center justify-center text-[var(--lume-text-secondary)] font-medium">
                 {op.first_name.charAt(0).toUpperCase()}
                 {op.last_name.charAt(0).toUpperCase()}
               </div>
@@ -113,10 +118,10 @@ export function OperatorPicker({
                 {op.first_name} {op.last_name}
               </p>
             </div>
-            <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover:text-[var(--lume-accent)] shrink-0" />
+            <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover/row:text-[var(--lume-text)] shrink-0" />
           </button>
-        </li>
+        </ListRow>
       ))}
-    </ul>
+    </ListBox>
   );
 }

@@ -4,6 +4,8 @@ import { CreditCard, ExternalLink, Gift } from 'lucide-react';
 import { useState } from 'react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { formatCurrency } from '@/lib/utils/format';
 
 const PLAN_LABEL: Record<string, string> = {
   monthly: 'Mensile',
@@ -57,61 +59,57 @@ export function SubscriptionSummaryCard() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+    <div className="surface-card overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-line">
         <div className="px-5 py-4">
-          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs text-[var(--lume-text-secondary)]">
             Piano
           </div>
           <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-base font-semibold text-foreground">{planLabel}</span>
+            <span className="text-base font-medium text-[var(--lume-text)]">{planLabel}</span>
             {!isCanceling && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-2xs font-medium text-success-strong">
-                Attivo
-              </span>
+              <StatusDot tone="success" className="text-xs">Attivo</StatusDot>
             )}
             {isCanceling && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-2xs font-medium text-warning-strong">
-                In annullamento
-              </span>
+              <StatusDot tone="warning" className="text-xs">In annullamento</StatusDot>
             )}
           </div>
         </div>
 
         <div className="px-5 py-4">
-          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs text-[var(--lume-text-secondary)]">
             {isCanceling ? 'Si chiuderà il' : 'Prossimo addebito'}
           </div>
           <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-base font-semibold text-foreground">
+            <span className="text-base font-medium text-[var(--lume-text)]">
               {renewalDate ?? '—'}
             </span>
             {!isCanceling && nextChargeAmount != null && (
-              <span className="font-mono text-sm text-muted-foreground">
-                · {nextChargeAmount.toFixed(2).replace('.', ',')} €
+              <span className="tabular-nums text-sm text-[var(--lume-text-secondary)]">
+                · {formatCurrency(nextChargeAmount)}
               </span>
             )}
           </div>
           {isOnReferralCredit && !isCanceling && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-0.5 text-2xs font-medium text-success-strong">
-              <Gift className="size-3" />
+            <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+              <Gift className="size-3.5 text-success-strong" aria-hidden />
               Credito referral · 1 mese gratuito
             </div>
           )}
         </div>
 
         <div className="px-5 py-4">
-          <div className="text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs text-[var(--lume-text-secondary)]">
             Metodo di pagamento
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-2">
             {paymentMethod ? (
-              <span className="text-base font-semibold text-foreground inline-flex items-center gap-2">
-                <CreditCard className="size-4 text-muted-foreground" />
-                {cardBrand} <span className="font-mono text-sm text-muted-foreground">•••• {paymentMethod.last4}</span>
+              <span className="text-base font-medium text-[var(--lume-text)] inline-flex items-center gap-2">
+                <CreditCard className="size-4 text-[var(--lume-text-muted)]" aria-hidden />
+                {cardBrand} <span className="tabular-nums text-sm text-[var(--lume-text-secondary)]">•••• {paymentMethod.last4}</span>
               </span>
             ) : (
-              <span className="text-sm text-muted-foreground">Nessun metodo salvato</span>
+              <span className="text-sm text-[var(--lume-text-secondary)]">Nessun metodo salvato</span>
             )}
             <Button
               variant="ghost"
@@ -120,7 +118,6 @@ export function SubscriptionSummaryCard() {
               onClick={openPortal}
               loading={portalLoading}
               aria-label="Aggiorna metodo di pagamento (apre il portale Stripe)"
-              className="shrink-0 text-primary hover:text-primary-hover"
             >
               Aggiorna
             </Button>

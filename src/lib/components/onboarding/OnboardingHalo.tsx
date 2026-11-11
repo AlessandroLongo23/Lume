@@ -27,7 +27,7 @@ export function OnboardingHalo() {
             : { scale: [0.98, 1.02, 0.98], opacity: [0.85, 1, 0.85] }
         }
         transition={{
-          duration: 7,
+          duration: 7, // ds-ignore: ambient glow loop behind the wizard, a slow pulse that repeats forever, not a transition
           ease: 'easeInOut',
           repeat: Infinity,
           repeatType: 'mirror',

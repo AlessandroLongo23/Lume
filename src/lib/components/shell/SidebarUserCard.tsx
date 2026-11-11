@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, type ComponentProps } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, Loader2, type LucideIcon } from 'lucide-react';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { useListNavigation } from '@/lib/hooks/useListNavigation';
+import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/const/motion';
 import { useSidebarCollapseContext, useSidebarForceExpanded } from './sidebarContext';
 
 export type UserCardMenuItem =
@@ -19,34 +26,35 @@ interface SidebarUserCardProps {
   menuItems: UserCardMenuItem[];
 }
 
+/** Collapsed sidebar: the menu cannot match the 56px trigger, so it has its own width. */
+const COLLAPSED_MENU_WIDTH = 224;
+
+function Spinner({ className, ...props }: ComponentProps<typeof Loader2>) {
+  return <Loader2 {...props} className={cn(className, 'animate-spin')} />;
+}
+
 export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuItems }: SidebarUserCardProps) {
-  const [open, setOpen] = useState(false);
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [fixedPos, setFixedPos] = useState<{ left: number; bottom: number } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const { collapsed } = useSidebarCollapseContext();
   const forceExpanded = useSidebarForceExpanded();
   const effectiveCollapsed = forceExpanded ? false : collapsed;
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Collapsed, the rail is too narrow for the menu: it opens to the right of it.
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(buttonRef, {
+    panelMaxHeight: menuItems.length * 40 + 16,
+    offset: effectiveCollapsed ? 20 : 8,
+    placement: effectiveCollapsed ? 'right' : 'bottom',
+  });
 
-  useLayoutEffect(() => {
-    if (!open || !effectiveCollapsed || !buttonRef.current) {
-      setFixedPos(null);
-      return;
-    }
-    const rect = buttonRef.current.getBoundingClientRect();
-    setFixedPos({ left: rect.left, bottom: window.innerHeight - rect.top + 8 });
-  }, [open, effectiveCollapsed]);
+  const linkRefs = useRef<(HTMLElement | null)[]>([]);
+  const nav = useListNavigation({
+    count: menuItems.length,
+    onPick: (i) => linkRefs.current[i]?.click(),
+    onEscape: hide,
+    listRef,
+  });
 
   async function handleItem(item: UserCardMenuItem, idx: number) {
     if (item.type !== 'button') return;
@@ -55,17 +63,21 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
       await item.onClick();
     } finally {
       setBusyIndex(null);
-      setOpen(false);
+      hide();
     }
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       <button
+        // ds-ignore: a sidebar rail row (avatar, name, role); the rail's hover glide paints its hover, where Button would paint its own fill and control height
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer overflow-hidden"
+        onClick={() => { nav.setActive(-1); toggle(); }}
+        onKeyDown={open ? nav.onKeyDown : undefined}
+        // A row of the sidebar rail: its hover glide paints the hover (data-nav-row).
+        data-nav-row=""
+        className="relative w-full flex items-center justify-between rounded-md cursor-pointer overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--lume-ring-focus)]"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menu utente"
@@ -73,7 +85,7 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
         <div className="flex items-center min-w-0">
           <span className="flex items-center justify-center w-10 h-10 shrink-0">
             {avatarUrl ? (
-              <span className="relative w-8 h-8 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+              <span className="relative w-8 h-8 rounded-full overflow-hidden shadow-[inset_0_0_0_1px_var(--lume-edge)]">
                 <Image
                   src={avatarUrl}
                   alt={name}
@@ -83,7 +95,7 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
                 />
               </span>
             ) : (
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-active text-[var(--lume-text)] text-xs font-medium">
                 {avatarInitials || '?'}
               </span>
             )}
@@ -95,11 +107,11 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
                 initial={{ opacity: 0, width: 0, marginLeft: 0 }}
                 animate={{ opacity: 1, width: 'auto', marginLeft: 12 }}
                 exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: 'easeOut' }}
                 className="flex flex-col items-start min-w-0 leading-tight overflow-hidden whitespace-nowrap"
               >
-                <span className="text-sm font-medium text-zinc-900 dark:text-white truncate max-w-35">{name}</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-35">{role}</span>
+                <span className="text-sm font-medium text-[var(--lume-text)] truncate max-w-35">{name}</span>
+                <span className="text-xs text-[var(--lume-text-muted)] truncate max-w-35">{role}</span>
               </motion.span>
             )}
           </AnimatePresence>
@@ -111,65 +123,65 @@ export function SidebarUserCard({ name, role, avatarInitials, avatarUrl, menuIte
               initial={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
               animate={{ opacity: 1, width: 'auto', marginLeft: 8, marginRight: 8 }}
               exit={{ opacity: 0, width: 0, marginLeft: 0, marginRight: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              transition={{ duration: DURATION.base, ease: 'easeOut' }}
               className="shrink-0 overflow-hidden"
             >
-              <ChevronDown className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
+              <ChevronDown className="w-4 h-4 text-[var(--lume-text-muted)]" strokeWidth={1.5} />
             </motion.span>
           )}
         </AnimatePresence>
       </button>
 
-      {open && (!effectiveCollapsed || fixedPos) && (
-        <div
-          role="menu"
-          style={
-            effectiveCollapsed && fixedPos
-              ? { position: 'fixed', left: fixedPos.left, bottom: fixedPos.bottom }
-              : undefined
-          }
-          className={
-            effectiveCollapsed
-              ? 'w-56 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-dropdown py-1'
-              : 'absolute bottom-full mb-2 left-0 right-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-dropdown py-1'
-          }
-        >
-          {menuItems.map((item, idx) => {
-            const Icon = item.icon;
-            if (item.type === 'link') {
-              return (
-                <Link
-                  key={idx}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  {Icon && <Icon className="w-4 h-4" strokeWidth={1.5} />}
-                  <span>{item.label}</span>
-                </Link>
-              );
-            }
-            const isBusy = busyIndex === idx;
-            return (
-              <button
-                key={idx}
-                onClick={() => handleItem(item, idx)}
-                disabled={isBusy}
-                role="menuitem"
-                className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer ${
-                  item.danger
-                    ? 'text-red-600 dark:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                }`}
-              >
-                {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : Icon && <Icon className="w-4 h-4" strokeWidth={1.5} />}
-                <span>{isBusy && item.loadingLabel ? item.loadingLabel : item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              layer="dropdown"
+              style={{
+                position: 'fixed',
+                left: position.left,
+                top: position.top,
+                bottom: position.bottom,
+                width: effectiveCollapsed ? COLLAPSED_MENU_WIDTH : position.width,
+              }}
+            >
+              <ListBox ref={listRef} role="menu" aria-label="Menu utente" onKeyDown={nav.onKeyDown}>
+                {menuItems.map((item, idx) => {
+                  const setRef = (el: HTMLElement | null) => { linkRefs.current[idx] = el; };
+                  if (item.type === 'link') {
+                    const Icon = item.icon;
+                    return (
+                      <ListRow key={idx} asChild highlighted={nav.active === idx} onMouseEnter={() => nav.setActive(idx)}>
+                        <Link ref={setRef} href={item.href} onClick={hide}>
+                          {Icon && <Icon aria-hidden className="size-4 shrink-0 text-[var(--lume-text-muted)]" />}
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        </Link>
+                      </ListRow>
+                    );
+                  }
+                  const isBusy = busyIndex === idx;
+                  return (
+                    <ListRow
+                      key={idx}
+                      ref={setRef}
+                      icon={isBusy ? Spinner : item.icon}
+                      destructive={item.danger}
+                      disabled={isBusy}
+                      highlighted={nav.active === idx}
+                      onMouseEnter={() => nav.setActive(idx)}
+                      onClick={() => handleItem(item, idx)}
+                    >
+                      {isBusy && item.loadingLabel ? item.loadingLabel : item.label}
+                    </ListRow>
+                  );
+                })}
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </div>
   );
 }

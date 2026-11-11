@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
-import { GripVertical, ChevronUp, ChevronDown, Info, Globe } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, Info, Globe, Check } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -18,6 +18,7 @@ import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { colorForClient } from '@/lib/utils/clientColor';
 import { ClientColorDot } from '@/lib/components/admin/clients/ClientColorDot';
 import type { Fiche } from '@/lib/types/Fiche';
+import { FicheStatus } from '@/lib/types/ficheStatus';
 import type { FicheService } from '@/lib/types/FicheService';
 
 interface FicheBlockProps {
@@ -39,9 +40,9 @@ interface FicheBlockProps {
 /** Move threshold (px) to distinguish click from drag. */
 const DRAG_THRESHOLD = 4;
 
-function withOpacity(hex: string, opacity: number): string {
-  const clamped = Math.round(Math.max(0, Math.min(1, opacity)) * 255);
-  return `${hex}${clamped.toString(16).padStart(2, '0')}`;
+/** Mixes a swatch colour into transparency, so the fill sits on any surface in both themes. */
+function tint(color: string, percent: number): string {
+  return `color-mix(in oklab, ${color} ${percent}%, transparent)`;
 }
 
 export function FicheBlock({
@@ -150,18 +151,21 @@ export function FicheBlock({
   if (!firstService || !lastService) return null;
 
   const headerLabel = client?.getFullName() ?? 'Cliente';
-  const blockBorderColor = isThisFicheDragging && !dragValid ? '#ef4444' : undefined;
-  const blockBorderClass = isThisFicheDragging
+  // Edge: a 1px inset ring in the block's own colour. While this fiche is being
+  // dragged it becomes a 2px ring: indigo when the drop is valid, danger when not.
+  const blockEdge = isThisFicheDragging
     ? dragValid
-      ? 'ring-2 ring-primary/60'
-      : 'ring-2 ring-red-500/70'
-    : '';
+      ? '0 0 0 2px var(--lume-accent)'
+      : '0 0 0 2px var(--lume-danger-fg)'
+    : `inset 0 0 0 1px ${tint(accentColor, 28)}`;
+  const isCompleted = fiche.status === FicheStatus.COMPLETED;
+  const awaitsApproval = fiche.status === FicheStatus.PENDING_APPROVAL;
 
   return (
     <div
-      className={`group/block absolute left-0 w-full flex flex-col rounded-md z-raised overflow-hidden shadow-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 ${
-        isPast ? 'opacity-60' : ''
-      } ${blockBorderClass} ${
+      className={`group/block absolute left-0.5 right-0.5 flex flex-col rounded-md z-raised overflow-hidden bg-[var(--lume-panel)] ${
+        isPast ? 'opacity-70' : ''
+      } ${
         isThisFicheDragging && (dragKind === 'move-block' || dragKind === 'move-service')
           ? 'pointer-events-none opacity-50'
           : ''
@@ -169,16 +173,7 @@ export function FicheBlock({
       style={{
         top: `${topOffsetRem}rem`,
         height: `${(totalMinutes / timeStep) * 2}rem`,
-        borderLeftWidth: '3px',
-        borderLeftStyle: 'solid',
-        borderLeftColor: blockBorderColor ?? accentColor,
-        ...(blockBorderColor
-          ? {
-              borderTopColor: blockBorderColor,
-              borderRightColor: blockBorderColor,
-              borderBottomColor: blockBorderColor,
-            }
-          : {}),
+        boxShadow: blockEdge,
       }}
     >
       {/* Top resize handle (first service start time) */}
@@ -187,7 +182,8 @@ export function FicheBlock({
           type="button"
           aria-label="Sposta inizio"
           onPointerDown={startResize('resize-top', firstService)}
-          className="absolute top-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
+          // ds-ignore: calendar resize handle, a 6px pointer-drag strip along the block edge, not a control-sized button
+          className="absolute top-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-strong"
         />
       </Tooltip>
 
@@ -221,12 +217,12 @@ export function FicheBlock({
             key={fs.id}
             data-segment-root
             className={`relative shrink-0 select-none flex flex-col ${fadeForOtherSegments(fs.id)} ${
-              isSegmentDragging ? 'ring-1 ring-inset ring-primary/40' : ''
+              isSegmentDragging ? 'shadow-[inset_0_0_0_1px_var(--lume-accent)]' : ''
             }`}
             style={{
               height: `${blockHeightRem}rem`,
-              backgroundColor: withOpacity(color, 0.13),
-              borderTop: index > 0 ? '1px solid rgba(0,0,0,0.06)' : undefined,
+              backgroundColor: tint(color, 16),
+              borderTop: index > 0 ? `1px solid ${tint(color, 30)}` : undefined,
             }}
           >
             {isFirst && (
@@ -241,12 +237,11 @@ export function FicheBlock({
                       onSelectFiche();
                     }
                   }}
-                  className="group/seg shrink-0 flex items-center gap-1 px-2 py-1 min-w-0 border-b border-black/5 dark:border-white/5 cursor-grab active:cursor-grabbing"
-                  style={{ backgroundColor: withOpacity(color, 0.10) }}
+                  className="group/seg shrink-0 flex items-center gap-1.5 pl-2 pr-1.5 pt-1 min-w-0 cursor-grab active:cursor-grabbing rounded-t-md focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--lume-ring-focus)]"
                 >
                   {isBlockDragEligible && (
-                    <div className="overflow-hidden flex shrink-0 w-0 -mr-1 group-hover/seg:w-3 group-hover/seg:mr-0 transition-[width,margin] duration-200 ease-out">
-                      <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/seg:translate-x-0 transition-transform duration-200 ease-out" />
+                    <div className="overflow-hidden flex shrink-0 w-0 -mr-1.5 group-hover/seg:w-3 group-hover/seg:mr-0 transition-[width,margin] duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none">
+                      <GripVertical className="size-3 text-[var(--lume-text-muted)] shrink-0 -translate-x-3 group-hover/seg:translate-x-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none" />
                     </div>
                   )}
                   {client && (
@@ -262,13 +257,28 @@ export function FicheBlock({
                       }}
                     />
                   )}
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight min-w-0">
+                  <p className="text-compact font-medium tracking-tight text-[var(--lume-text)] truncate leading-tight min-w-0">
                     {headerLabel}
                   </p>
+                  {isCompleted && (
+                    <Tooltip label="Conclusa" side="top">
+                      <span className="inline-flex shrink-0 text-success-strong">
+                        <Check className="size-3" strokeWidth={2.5} aria-label="Conclusa" />
+                      </span>
+                    </Tooltip>
+                  )}
+                  {awaitsApproval && (
+                    <Tooltip label="Da approvare" side="top">
+                      <span className="inline-flex shrink-0 items-center justify-center size-3 text-warning-strong">
+                        <span className="size-1.5 rounded-full bg-current" />
+                        <span className="sr-only">Da approvare</span>
+                      </span>
+                    </Tooltip>
+                  )}
                   {fiche.booking_source === 'online' && (
                     <Tooltip label="Prenotazione online" side="top">
-                      <span className="inline-flex shrink-0 items-center justify-center size-4 rounded-full bg-primary/15 text-primary">
-                        <Globe className="size-2.5" />
+                      <span className="inline-flex shrink-0 text-[var(--lume-text-secondary)]">
+                        <Globe className="size-3" aria-label="Prenotazione online" />
                       </span>
                     </Tooltip>
                   )}
@@ -292,17 +302,22 @@ export function FicheBlock({
                     onSelectFiche();
                   }
                 }}
-                className="group/body flex-1 min-h-0 overflow-hidden px-2 py-1 flex items-start cursor-grab active:cursor-grabbing"
+                className="group/body flex-1 min-h-0 overflow-hidden px-2 py-1 flex items-start cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--lume-ring-focus)]"
               >
-                <div className="overflow-hidden flex shrink-0 w-0 mr-0 group-hover/body:w-3 group-hover/body:mr-1 transition-[width,margin] duration-200 ease-out mt-px">
-                  <GripVertical className="size-3 text-zinc-400 shrink-0 -translate-x-3 group-hover/body:translate-x-0 transition-transform duration-200 ease-out" />
+                <div className="overflow-hidden flex shrink-0 w-0 mr-0 group-hover/body:w-3 group-hover/body:mr-1 transition-[width,margin] duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none mt-px">
+                  <GripVertical className="size-3 text-[var(--lume-text-muted)] shrink-0 -translate-x-3 group-hover/body:translate-x-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none" />
                 </div>
-                <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-tight min-w-0">
-                  {service?.name ?? 'Servizio'}
-                  {blockHeightRem >= 2 && (
-                    <span className="text-zinc-500 dark:text-zinc-400"> • {startTime}–{endTime}</span>
+                <div className="min-w-0 flex flex-col gap-0.5">
+                  <p className="text-xs text-[var(--lume-text-secondary)] truncate leading-tight">
+                    {service?.name ?? 'Servizio'}
+                  </p>
+                  {/* Time on its own line when the segment has room for it. */}
+                  {blockHeightRem - (isFirst ? 1.5 : 0) >= 2.5 && (
+                    <p className="tabular-nums text-2xs leading-tight text-[var(--lume-text-muted)] truncate">
+                      {startTime}–{endTime}
+                    </p>
                   )}
-                </p>
+                </div>
               </div>
             </Tooltip>
 
@@ -314,7 +329,8 @@ export function FicheBlock({
                     type="button"
                     aria-label="Estendi servizio precedente"
                     onPointerDown={startResize('resize-seam-up', fs)}
-                    className="pointer-events-auto rounded-full bg-zinc-100 dark:bg-zinc-700 ring-1 ring-zinc-500/30 size-4 flex items-center justify-center cursor-row-resize hover:bg-primary hover:text-white"
+                    // ds-ignore: seam resize handle, a 16px round chevron dragged with the pointer, not a control-sized button
+                    className="pointer-events-auto rounded-full bg-[var(--lume-surface-raised)] text-[var(--lume-text-secondary)] shadow-[inset_0_0_0_1px_var(--lume-edge)] size-4 flex items-center justify-center cursor-row-resize hover:bg-[var(--lume-text)] hover:text-[var(--lume-surface-raised)]"
                   >
                     <ChevronUp className="size-3" />
                   </button>
@@ -324,7 +340,8 @@ export function FicheBlock({
                     type="button"
                     aria-label="Estendi servizio successivo"
                     onPointerDown={startResize('resize-seam-down', lower)}
-                    className="pointer-events-auto rounded-full bg-zinc-100 dark:bg-zinc-700 ring-1 ring-zinc-500/30 size-4 flex items-center justify-center cursor-row-resize hover:bg-primary hover:text-white"
+                    // ds-ignore: seam resize handle, a 16px round chevron dragged with the pointer, not a control-sized button
+                    className="pointer-events-auto rounded-full bg-[var(--lume-surface-raised)] text-[var(--lume-text-secondary)] shadow-[inset_0_0_0_1px_var(--lume-edge)] size-4 flex items-center justify-center cursor-row-resize hover:bg-[var(--lume-text)] hover:text-[var(--lume-surface-raised)]"
                   >
                     <ChevronDown className="size-3" />
                   </button>
@@ -341,13 +358,14 @@ export function FicheBlock({
           type="button"
           aria-label="Sposta fine"
           onPointerDown={startResize('resize-bottom', lastService)}
-          className="absolute bottom-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-primary/30"
+          // ds-ignore: calendar resize handle, a 6px pointer-drag strip along the block edge, not a control-sized button
+          className="absolute bottom-0 left-0 right-0 h-1.5 z-content-floating cursor-ns-resize hover:bg-strong"
         />
       </Tooltip>
 
       {/* Cascade-mode badge */}
       {isThisFicheDragging && useCalendarDragStore.getState().cascade && (
-        <div className="absolute top-1 right-1 z-content-floating text-2xs font-medium px-1.5 py-0.5 rounded bg-primary text-white shadow">
+        <div className="absolute top-1 right-1 z-content-floating text-2xs font-medium px-1.5 py-0.5 rounded-sm bg-[var(--lume-accent)] text-[var(--lume-text-on-accent)]">
           Sposta successivi
         </div>
       )}
@@ -363,32 +381,30 @@ function ClientSchedaIcon({ client, onOpen }: { client: NonNullable<ReturnType<F
 
   const popoverContent = last ? (
     <div className="text-xs space-y-1.5">
-      <p className="font-semibold text-zinc-900 dark:text-zinc-100">{lastLabel}</p>
+      <p className="font-medium text-[var(--lume-text)]">{lastLabel}</p>
       <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-        <span className="text-zinc-500 dark:text-zinc-400">Miscela</span>
-        <span className="text-zinc-800 dark:text-zinc-100">{last.miscela?.trim() || '—'}</span>
-        <span className="text-zinc-500 dark:text-zinc-400">Tecnica</span>
-        <span className="text-zinc-800 dark:text-zinc-100">{last.tecnica?.trim() || '—'}</span>
+        <span className="text-[var(--lume-text-secondary)]">Miscela</span>
+        <span className="text-[var(--lume-text)]">{last.miscela?.trim() || '—'}</span>
+        <span className="text-[var(--lume-text-secondary)]">Tecnica</span>
+        <span className="text-[var(--lume-text)]">{last.tecnica?.trim() || '—'}</span>
       </div>
       {last.note?.trim() && (
-        <p className="text-zinc-600 dark:text-zinc-300 pt-1 border-t border-zinc-500/20 whitespace-pre-wrap">
+        <p className="text-[var(--lume-text-secondary)] pt-1 border-t border-line whitespace-pre-wrap">
           {last.note}
         </p>
       )}
-      <p className="text-2xs text-zinc-400 pt-1">Clicca per la scheda completa</p>
+      <p className="text-2xs text-[var(--lume-text-muted)] pt-1">Clicca per la scheda completa</p>
     </div>
   ) : (
-    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+    <div className="text-xs text-[var(--lume-text-secondary)]">
       Nessuno storico trattamenti
     </div>
   );
 
   return (
     <HoverPopover
-      placement="bottom"
-      align="start"
       onTriggerClick={onOpen}
-      triggerClassName="shrink-0 inline-flex items-center cursor-pointer text-zinc-400 hover:text-primary transition-colors"
+      triggerClassName="shrink-0 inline-flex items-center cursor-pointer text-[var(--lume-text-muted)] hover:text-[var(--lume-text)] transition-colors"
       trigger={<Info className="size-3.5" />}
       content={popoverContent}
     />

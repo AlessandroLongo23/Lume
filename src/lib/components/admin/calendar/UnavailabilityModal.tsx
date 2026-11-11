@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Ban, Calendar as CalendarIcon, FileText, Trash } from 'lucide-react';
+import { Calendar as CalendarIcon, FileText, Trash } from 'lucide-react';
 import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { DateField } from '@/lib/components/shared/ui/forms/DateField';
 import type { Operator } from '@/lib/types/Operator';
 import type { OperatorUnavailability } from '@/lib/types/OperatorUnavailability';
 
@@ -21,10 +24,6 @@ interface UnavailabilityModalProps {
   /** When set, switch to "edit" mode for an existing block. */
   editing?: OperatorUnavailability | null;
 }
-
-const labelClass = 'flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300';
-const inputClass =
-  'w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary/40';
 
 function toDateInputValue(d: Date): string {
   // YYYY-MM-DD in local time.
@@ -185,18 +184,15 @@ export function UnavailabilityModal({
         onSubmit={handleSubmit}
         title={isEdit ? 'Modifica non disponibilità' : 'Nuova non disponibilità'}
         subtitle={operatorName ? `Per ${operatorName}` : 'Blocca tempo nel calendario'}
-        icon={Ban}
         confirmText={isEdit ? 'Salva' : 'Crea'}
         confirmDisabled={isSubmitting}
         classes="max-w-md"
-        contentClasses="overflow-y-auto"
         dangerAction={
           isEdit ? (
             <Button
-              variant="secondary"
+              variant="ghost-destructive"
               leadingIcon={Trash}
               onClick={() => setConfirmDelete(true)}
-              className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border-transparent"
             >
               Elimina
             </Button>
@@ -204,80 +200,51 @@ export function UnavailabilityModal({
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              Tutto il giorno
-            </span>
-            <Switch checked={allDay} onChange={() => setAllDay((v) => !v)} />
-          </div>
+          <SwitchRow
+            label="Tutto il giorno"
+            checked={allDay}
+            onChange={() => setAllDay((v) => !v)}
+            className="surface-card px-3 py-2"
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
-                <CalendarIcon className="size-3.5" />
-                Inizio
-              </label>
-              <input
-                type="date"
-                className={inputClass}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Ora</label>
-              <input
-                type="time"
-                className={`${inputClass} ${allDay ? 'opacity-40 pointer-events-none' : ''}`}
-                value={startTime}
-                disabled={allDay}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
-                <CalendarIcon className="size-3.5" />
-                Fine
-              </label>
-              <input
-                type="date"
-                className={inputClass}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Ora</label>
-              <input
-                type="time"
-                className={`${inputClass} ${allDay ? 'opacity-40 pointer-events-none' : ''}`}
-                value={endTime}
-                disabled={allDay}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>
-              <FileText className="size-3.5" />
-              Nota (opzionale)
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={note}
-              maxLength={200}
-              placeholder="Es. Visita medica, Ferie estive"
-              onChange={(e) => setNote(e.target.value)}
+            <Field label="Inizio" labelIcon={CalendarIcon}>
+              {({ id }) => <DateField id={id} value={startDate} onChange={setStartDate} />}
+            </Field>
+            <FormInput
+              label="Ora"
+              type="time"
+              value={startTime}
+              disabled={allDay}
+              onChange={(e) => setStartTime(e.target.value)}
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Fine" labelIcon={CalendarIcon}>
+              {({ id }) => <DateField id={id} value={endDate} onChange={setEndDate} />}
+            </Field>
+            <FormInput
+              label="Ora"
+              type="time"
+              value={endTime}
+              disabled={allDay}
+              onChange={(e) => setEndTime(e.target.value)}
+            />
+          </div>
+
+          <FormInput
+            label="Nota (opzionale)"
+            labelIcon={FileText}
+            type="text"
+            value={note}
+            maxLength={200}
+            placeholder="Es. Visita medica, Ferie estive"
+            onChange={(e) => setNote(e.target.value)}
+          />
+
           {errorMessage && (
-            <p className="text-xs text-red-600 dark:text-red-400">{errorMessage}</p>
+            <p role="alert" className="text-xs text-danger-strong">{errorMessage}</p>
           )}
         </div>
       </AddModal>

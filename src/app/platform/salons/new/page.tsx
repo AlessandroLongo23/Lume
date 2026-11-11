@@ -1,4 +1,3 @@
-import { Building2 } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { NewSalonForm } from '@/lib/components/platform/NewSalonForm';
 
@@ -8,7 +7,6 @@ export default function NewSalonPage() {
       <PageHeader
         title="Nuovo salone"
         subtitle="Crea manualmente un salone e il suo account proprietario"
-        icon={Building2}
       />
       <NewSalonForm />
     </div>

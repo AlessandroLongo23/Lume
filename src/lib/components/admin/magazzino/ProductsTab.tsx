@@ -11,7 +11,7 @@ import {
   type SortingState,
   type RowSelectionState,
 } from '@tanstack/react-table';
-import { Package, Plus, Minus, ArrowDownToLine, ChevronUp, ChevronDown, Trash2, Search, X, SlidersHorizontal, Check, ArchiveRestore } from 'lucide-react';
+import { Package, Plus, Minus, ArrowDownToLine, Trash2, X, ArchiveRestore } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useProductsStore } from '@/lib/stores/products';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -19,7 +19,6 @@ import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { ConciergeImportModal } from '@/lib/components/shared/ui/ConciergeImportModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { DeleteProductModal } from './DeleteProductModal';
@@ -31,27 +30,40 @@ import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
 import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
-import { cardStyle } from '@/lib/const/appearance';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
-import { Portal } from '@/lib/components/shared/ui/Portal';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
+import {
+  tableCardClass,
+  tableClass,
+  theadClass,
+  thClass,
+  trClass,
+  tdClass,
+  cellStrongClass,
+  cellNumClass,
+  tableMessageClass,
+  SortIndicator,
+} from '@/lib/components/shared/ui/table/tableStyles';
 import type { Product } from '@/lib/types/Product';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { formatCurrency } from '@/lib/utils/format';
 
 // ─── Stock badge component ────────────────────────────────────────────────────
 
 function StockBadge({ stock_quantity, min_threshold }: { stock_quantity: number; min_threshold: number }) {
   const isLow = stock_quantity <= min_threshold;
+  // Low stock is a state: a danger dot beside the number, the number stays neutral.
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-        isLow
-          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-          : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300'
-      }`}
-    >
-      {isLow && <Package className="size-3" />}
-      {stock_quantity}
-    </span>
+    <Tooltip label={isLow ? 'Scorta bassa' : undefined}>
+      <span className={`inline-flex items-center justify-end gap-1.5 min-w-8 ${cellNumClass} text-[var(--lume-text)]`}>
+        {isLow && <span aria-hidden className="size-1.5 rounded-full bg-danger-strong" />}
+        {stock_quantity}
+        {isLow && <span className="sr-only">Scorta bassa</span>}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -93,116 +105,27 @@ function StockAdjuster({ productId, initialQuantity, minThreshold }: {
 
   return (
     <div className="flex items-center gap-1" data-no-row-click data-tour="stock-adjuster">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
         onClick={(e) => adjust(e, -1)}
-        className="size-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        className="size-6 rounded-md [&>svg]:size-3"
         aria-label="Riduci giacenza"
       >
-        <Minus className="size-3" />
-      </button>
+        <Minus />
+      </Button>
       <StockBadge stock_quantity={localQty} min_threshold={minThreshold} />
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
         onClick={(e) => adjust(e, +1)}
-        className="size-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        className="size-6 rounded-md [&>svg]:size-3"
         aria-label="Aumenta giacenza"
       >
-        <Plus className="size-3" />
-      </button>
-    </div>
-  );
-}
-
-// ─── Faceted filter dropdown ──────────────────────────────────────────────────
-
-interface FacetedFilterProps {
-  label: string;
-  options: { value: string; label: string }[];
-  selected: string[];
-  onChange: (values: string[]) => void;
-}
-
-function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const toggle = (value: string) =>
-    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={[
-          'inline-flex items-center rounded-lg border transition-colors',
-          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
-          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
-          selected.length > 0
-            ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
-            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-        ].join(' ')}
-      >
-        <SlidersHorizontal className="size-4" />
-        <span>{label}</span>
-        {selected.length > 0 && (
-          <NumberBadge value={selected.length} variant="solid" size="md" />
-        )}
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-dropdown w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
-          <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-              Filtra per {label.toLowerCase()}
-            </span>
-          </div>
-          <div className="py-1 max-h-56 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-zinc-400">Nessuna opzione</p>
-            ) : (
-              options.map((opt) => {
-                const checked = selected.includes(opt.value);
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => toggle(opt.value)}
-                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <span
-                      className={[
-                        'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
-                        checked ? 'bg-primary border-primary' : 'border-zinc-300 dark:border-zinc-600',
-                      ].join(' ')}
-                    >
-                      {checked && <Check className="size-3 text-white" />}
-                    </span>
-                    {opt.label}
-                  </button>
-                );
-              })
-            )}
-          </div>
-          {selected.length > 0 && (
-            <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange([])}
-                className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-              >
-                Azzera filtri
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+        <Plus />
+      </Button>
     </div>
   );
 }
@@ -322,7 +245,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       accessorKey: 'name',
       header: 'Nome',
       cell: ({ getValue }) => (
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+        <span className={cellStrongClass}>{getValue() as string}</span>
       ),
       meta: { requiredVisible: true },
     },
@@ -368,13 +291,9 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       cell: ({ getValue }) => {
         const v = getValue() as boolean;
         return v ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary dark:text-primary/80">
-            Vendita
-          </span>
+          <span className="text-[var(--lume-text-secondary)]">Vendita</span>
         ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-            Uso interno
-          </span>
+          <span className="text-[var(--lume-text-muted)]">Uso interno</span>
         );
       },
       meta: { pickerLabel: 'Vendita' },
@@ -383,7 +302,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       accessorKey: 'price',
       header: () => <span className="block w-full text-right">Prezzo Acquisto</span>,
       cell: ({ getValue }) => (
-        <span className="block text-right tabular-nums">{Number(getValue() as number).toFixed(2)} €</span>
+        <span className={`block text-right ${cellNumClass}`}>{formatCurrency(Number(getValue() as number))}</span>
       ),
       meta: { pickerLabel: 'Prezzo Acquisto' },
     },
@@ -392,7 +311,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       header: () => <span className="block w-full text-right">Prezzo Vendita</span>,
       cell: ({ getValue }) => {
         const v = getValue() as number | null;
-        return <span className="block text-right tabular-nums">{v != null ? `${v.toFixed(2)} €` : '—'}</span>;
+        return <span className={`block text-right ${cellNumClass}`}>{v != null ? formatCurrency(v) : '—'}</span>;
       },
       meta: { pickerLabel: 'Prezzo Vendita' },
     },
@@ -402,12 +321,12 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       cell: ({ row }) => {
         const { sell_price, price, is_for_retail } = row.original;
         if (!is_for_retail || sell_price == null || price == null) {
-          return <span className="block text-right text-zinc-400">—</span>;
+          return <span className="block text-right text-[var(--lume-text-muted)]">—</span>;
         }
         const margin = sell_price - price;
         return (
-          <span className={`block text-right tabular-nums ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-            {margin >= 0 ? '+' : ''}{margin.toFixed(2)} €
+          <span className={`block text-right ${cellNumClass} ${margin >= 0 ? 'text-success-strong' : 'text-danger-strong'}`}>
+            {margin >= 0 ? '+' : ''}{formatCurrency(margin)}
           </span>
         );
       },
@@ -417,7 +336,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       accessorKey: 'total_purchased',
       header: () => <span className="block w-full text-right">Acquistati</span>,
       cell: ({ getValue }) => (
-        <span className="block text-right tabular-nums">{getValue() as number}</span>
+        <span className={`block text-right ${cellNumClass}`}>{getValue() as number}</span>
       ),
       meta: { pickerLabel: 'Acquistati' },
     },
@@ -425,7 +344,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       accessorKey: 'total_sold',
       header: () => <span className="block w-full text-right">Venduti</span>,
       cell: ({ getValue }) => (
-        <span className="block text-right tabular-nums">{getValue() as number}</span>
+        <span className={`block text-right ${cellNumClass}`}>{getValue() as number}</span>
       ),
       meta: { pickerLabel: 'Venduti' },
     },
@@ -447,7 +366,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
       accessorKey: 'min_threshold',
       header: () => <span className="block w-full text-right">Soglia Min.</span>,
       cell: ({ getValue }) => (
-        <span className="block text-right tabular-nums">{(getValue() as number) ?? 0}</span>
+        <span className={`block text-right ${cellNumClass}`}>{(getValue() as number) ?? 0}</span>
       ),
       meta: { pickerLabel: 'Soglia Min.' },
     },
@@ -540,10 +459,10 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
         {/* Toolbar — transforms to action bar when rows are selected */}
         {hasSelection ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-primary">
+            <span className="text-sm font-medium text-[var(--lume-text)]">
               {selectedIds.length} {selectedIds.length === 1 ? 'selezionato' : 'selezionati'}
             </span>
-            <span className="text-zinc-400 dark:text-zinc-600">·</span>
+            <span className="text-[var(--lume-text-muted)]">·</span>
 
             <Select
               value={null}
@@ -563,8 +482,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Marca"
               disabled={bulkLoading}
-              size="md"
-              width="w-36"
+              className="w-36"
             />
 
             <Select
@@ -585,8 +503,7 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Categoria"
               disabled={bulkLoading}
-              size="md"
-              width="w-36"
+              className="w-36"
             />
 
             <Select
@@ -607,75 +524,45 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
               valueKey="id"
               placeholder="Fornitore"
               disabled={bulkLoading}
-              size="md"
-              width="w-36"
+              className="w-36"
             />
 
             {showArchived ? (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkRestoreConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Ripristina
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkArchiveConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Archivia
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="ghost-destructive"
+              leadingIcon={Trash2}
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkLoading}
-              className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="size-4" />
               Elimina
-            </button>
+            </Button>
 
-            <button
-              onClick={() => setRowSelection({})}
-              className="ml-auto inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-            >
-              <X className="size-4" />
+            <Button variant="ghost" leadingIcon={X} onClick={() => setRowSelection({})} className="ml-auto">
               Annulla
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex items-center flex-1 max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca prodotto..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  aria-label="Cancella ricerca"
-                  onClick={() => setGlobalFilter('')}
-                  className="absolute right-1"
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+            <Searchbar placeholder="Cerca prodotto..." value={globalFilter} onChange={setGlobalFilter} bindShortcut={false} className="flex-1 basis-full sm:basis-auto sm:max-w-sm" />
 
             <FacetedFilter
               label="Marca"
@@ -710,11 +597,11 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
 
         {/* Table */}
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="group">
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
@@ -725,40 +612,33 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                         className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                          isNumeric ? 'text-right' : 'text-left',
+                          thClass({ sortable: canSort, align: isNumeric ? 'right' : 'left' }),
                           isSelect ? 'w-10' : '',
                         ].join(' ')}
                       >
                         <span className={['inline-flex items-center gap-1', isNumeric ? 'flex-row-reverse' : ''].join(' ')}>
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-20">
+                  <th className={`${thClass({ align: 'right' })} w-20`}>
                     Azioni
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Caricando prodotti...
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Nessun prodotto trovato.
                   </td>
                 </tr>
@@ -778,23 +658,20 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                     }}
                     role="button"
                     tabIndex={0}
-                    className="group bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    className={`group ${trClass({ selected: row.getIsSelected() })}`}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isNumeric = numericColumns.has(cell.column.id);
                       return (
                         <td
                           key={cell.id}
-                          className={[
-                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap',
-                            isNumeric ? 'text-right' : '',
-                          ].join(' ')}
+                          className={[tdClass, isNumeric ? 'text-right' : ''].join(' ')}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       );
                     })}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived ? (
                           <Button
@@ -802,21 +679,17 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
                             size="sm"
                             iconOnly
                             aria-label="Ripristina"
-                            title="Ripristina"
                             onClick={(e) => handleRestore(e, row.original)}
-                            className="text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                           >
                             <ArchiveRestore />
                           </Button>
                         ) : (
                           <Button
-                            variant="ghost"
+                            variant="ghost-destructive"
                             size="sm"
                             iconOnly
                             aria-label="Elimina"
-                            title="Elimina"
                             onClick={(e) => handleDeleteClick(e, row.original)}
-                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 />
                           </Button>
@@ -840,79 +713,49 @@ export function ProductsTab({ products, onAdd, showArchived = false }: ProductsT
         />
       </div>
 
-      {/* Bulk archive confirm */}
-      {bulkArchiveConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Archivia {selectedIds.length} {selectedIds.length === 1 ? 'prodotto' : 'prodotti'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I prodotti archiviati non saranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkArchiveConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkArchiveConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkArchiveProducts(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} prodotti archiviati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante l\'archiviazione');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Archivia
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkArchiveConfirm}
+        onClose={() => setBulkArchiveConfirm(false)}
+        tone="default"
+        title={`Archivia ${selectedIds.length} ${selectedIds.length === 1 ? 'prodotto' : 'prodotti'}?`}
+        description="I prodotti archiviati non saranno visibili nella lista principale."
+        confirmLabel="Archivia"
+        onConfirm={async () => {
+          setBulkArchiveConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkArchiveProducts(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} prodotti archiviati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante l\'archiviazione');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
-      {/* Bulk restore confirm */}
-      {bulkRestoreConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Ripristina {selectedIds.length} {selectedIds.length === 1 ? 'prodotto' : 'prodotti'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I prodotti torneranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkRestoreConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkRestoreConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkRestoreProducts(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} prodotti ripristinati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante il ripristino');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Ripristina
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkRestoreConfirm}
+        onClose={() => setBulkRestoreConfirm(false)}
+        tone="default"
+        title={`Ripristina ${selectedIds.length} ${selectedIds.length === 1 ? 'prodotto' : 'prodotti'}?`}
+        description="I prodotti torneranno visibili nella lista principale."
+        confirmLabel="Ripristina"
+        onConfirm={async () => {
+          setBulkRestoreConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkRestoreProducts(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} prodotti ripristinati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante il ripristino');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
       <DeleteAllModal
         isOpen={bulkDeleteConfirm}

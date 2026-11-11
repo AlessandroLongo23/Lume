@@ -2,20 +2,16 @@ interface StatSectionCardProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
-  action?: React.ReactNode;
 }
 
-export function StatSectionCard({ title, subtitle, children, action }: StatSectionCardProps) {
+export function StatSectionCard({ title, subtitle, children }: StatSectionCardProps) {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-      <div className="px-5 pt-5 pb-4 flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
-          {subtitle && <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>}
-        </div>
-        {action && <div>{action}</div>}
+    <section className="min-w-0 surface-card overflow-hidden">
+      <div className="px-5 pt-5 pb-4 min-w-0">
+        <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">{title}</h3>
+        {subtitle && <p className="text-sm text-[var(--lume-text-secondary)] mt-0.5">{subtitle}</p>}
       </div>
-      <div>{children}</div>
-    </div>
+      <div className="overflow-x-auto">{children}</div>
+    </section>
   );
 }

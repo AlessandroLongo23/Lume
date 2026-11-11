@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { BusinessType } from '@/lib/types/Salon';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 
 const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'barber',        label: 'Barbiere' },
@@ -46,55 +48,43 @@ export function NewSalonForm() {
     }
   }
 
-  const inputCls = 'w-full px-3 py-2 text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:border-primary';
-
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card">
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Nome salone</span>
-        <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
-      </label>
+    <form onSubmit={handleSubmit} className="surface-card flex flex-col gap-4 p-6">
+      <FormInput label="Nome salone" required value={name} onChange={(e) => setName(e.target.value)} />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Tipo</span>
-        <Select
-          value={businessType}
-          onChange={(v) => setBusinessType(v as BusinessType)}
-          options={BUSINESS_TYPES}
-          labelKey="label"
-          valueKey="value"
-          searchable={false}
-        />
-      </label>
+      <Field label="Tipo">
+        {({ id }) => (
+          <Select
+            id={id}
+            value={businessType}
+            onChange={(v) => setBusinessType(v as BusinessType)}
+            options={BUSINESS_TYPES}
+            labelKey="label"
+            valueKey="value"
+            searchable={false}
+          />
+        )}
+      </Field>
 
-      <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Proprietario</p>
+      <div className="pt-4 border-t border-line">
+        <h2 className="text-sm font-medium tracking-tight text-[var(--lume-text)] mb-3">Proprietario</h2>
 
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Nome</span>
-              <input required value={ownerFirstName} onChange={(e) => setOwnerFirstName(e.target.value)} className={inputCls} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Cognome</span>
-              <input required value={ownerLastName} onChange={(e) => setOwnerLastName(e.target.value)} className={inputCls} />
-            </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormInput label="Nome" required value={ownerFirstName} onChange={(e) => setOwnerFirstName(e.target.value)} />
+            <FormInput label="Cognome" required value={ownerLastName} onChange={(e) => setOwnerLastName(e.target.value)} />
           </div>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Email</span>
-            <input required type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} className={inputCls} />
-          </label>
+          <FormInput label="Email" required type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-strong">{error}</p>}
 
       <Button
         type="submit"
         variant="primary"
         loading={isSaving}
-        className="mt-2"
+        className="mt-2 self-end max-md:self-stretch"
       >
         {isSaving ? 'Creazione…' : 'Crea salone'}
       </Button>

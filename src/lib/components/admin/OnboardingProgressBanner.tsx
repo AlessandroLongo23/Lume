@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 import { Sparkles } from 'lucide-react';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import type { OnboardingState } from '@/lib/components/onboarding/onboardingTypes';
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = EASE_OUT;
 const POLL_INTERVAL_MS = 3000;
 
 const STATUS_LABEL: Record<OnboardingState['status'], string> = {
@@ -34,6 +36,7 @@ const STATUS_LABEL: Record<OnboardingState['status'], string> = {
 export function OnboardingProgressBanner() {
   const [state, setState] = useState<OnboardingState | null>(null);
   const [hideAfterDone, setHideAfterDone] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
@@ -95,37 +98,36 @@ export function OnboardingProgressBanner() {
       {visible && state && (
         <motion.div
           key="onboarding-banner"
-          initial={{ opacity: 0, y: -4 }}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.4, ease }}
-          className="border-b border-border bg-card"
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+          transition={{ duration: DURATION.base, ease }}
+          className="border-b border-line"
         >
-          <div className="flex items-center gap-3 px-4 py-2">
-            <Sparkles className="size-3.5 text-primary shrink-0" strokeWidth={2.25} />
-            <span className="text-xs font-light text-foreground truncate">
-              {STATUS_LABEL[state.status]}
-            </span>
-            {state.committed_count > 0 && (
-              <span className="text-xs font-light text-muted-foreground tabular-nums">
-                · {state.committed_count.toLocaleString('it-IT')} record
-              </span>
-            )}
-            {state.status === 'reviewing' && (
-              <Link
-                href="/onboarding/import"
-                className="ml-auto text-xs font-light text-primary hover:underline"
-              >
+          <Callout
+            tone="info"
+            icon={Sparkles}
+            className="rounded-none items-center gap-x-2.5 py-0 px-4 min-h-9 [&>svg]:mt-0 [&>svg]:size-3.5"
+            action={state.status === 'reviewing' ? (
+              <TextLink href="/onboarding/import" className="inline-flex items-center min-h-9 pointer-coarse:min-h-11">
                 Continua
-              </Link>
-            )}
-            <div className="flex-1" />
-          </div>
-          <div className="h-px bg-border overflow-hidden">
+              </TextLink>
+            ) : undefined}
+          >
+            <p className="truncate text-[var(--lume-text)]">
+              {STATUS_LABEL[state.status]}
+              {state.committed_count > 0 && (
+                <span className="text-[var(--lume-text-secondary)] tabular-nums">
+                  {' '}· {state.committed_count.toLocaleString('it-IT')} record
+                </span>
+              )}
+            </p>
+          </Callout>
+          <div className="h-0.5 bg-line overflow-hidden">
             <motion.div
-              className="h-full bg-primary origin-left"
+              className="h-full bg-info-strong origin-left"
               animate={{ scaleX: progress }}
-              transition={{ duration: 0.5, ease }}
+              transition={{ duration: reduceMotion ? 0 : 0.5, ease }}
               style={{ transformOrigin: 'left' }}
             />
           </div>

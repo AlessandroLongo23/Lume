@@ -1,8 +1,12 @@
 'use client';
 
-import { CircleAlert, Trash2, X, type LucideIcon } from 'lucide-react';
+import { useId, useState, type ReactNode } from 'react';
+import { Trash2, type LucideIcon } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { DialogFooter, DialogHeader } from './dialogParts';
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -10,16 +14,27 @@ interface DeleteModalProps {
   onConfirm: () => void;
   title?: string;
   subtitle?: string;
-  children?: React.ReactNode;
-  footerContent?: React.ReactNode;
+  /** Free content between the header and the footer. */
+  children?: ReactNode;
+  /** What will be lost, shown as a danger Callout. */
+  warning?: ReactNode;
+  /** A safer alternative, shown as a warning Callout (e.g. "usa Archivia"). */
+  tip?: ReactNode;
+  /** Typing this phrase enables the delete button (irreversible deletes). */
+  confirmPhrase?: string;
+  /** The safer alternative as a button on the left of the footer. */
+  alternative?: { label: string; icon?: LucideIcon; onClick: () => void };
   confirmText?: string;
-  cancelText?: string;
-  mainIcon?: LucideIcon;
-  confirmIcon?: LucideIcon;
-  classes?: string;
-  contentClasses?: string;
+  /** Disables the buttons while the delete runs. */
+  busy?: boolean;
 }
 
+/**
+ * Every delete confirmation in Lume. Simple deletes pass title/subtitle;
+ * irreversible ones add `warning`, `confirmPhrase` (type-to-confirm) and an
+ * `alternative` such as Archivia, so the dialog is laid out the same way
+ * for clients, services, products, operators and coupons.
+ */
 export function DeleteModal({
   isOpen,
   onClose,
@@ -27,56 +42,68 @@ export function DeleteModal({
   title = 'Conferma eliminazione',
   subtitle = 'Questa azione è irreversibile',
   children,
-  footerContent,
+  warning,
+  tip,
+  confirmPhrase,
+  alternative,
   confirmText = 'Elimina',
-  cancelText = 'Annulla',
-  mainIcon: MainIcon = CircleAlert,
-  confirmIcon: ConfirmIcon = Trash2,
-  classes = 'max-w-md',
-  contentClasses = '',
+  busy = false,
 }: DeleteModalProps) {
-  const hasBody = children !== undefined && children !== null && children !== false;
+  const titleId = useId();
+  const [typed, setTyped] = useState('');
+  // Start empty every time the dialog opens, so no caller needs to remount it.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setTyped('');
+  }
+  const confirmed = !confirmPhrase || typed.trim().toLowerCase() === confirmPhrase.trim().toLowerCase();
+  const hasBody = Boolean(children || warning || tip || confirmPhrase);
+
+  // While the delete runs, the dialog stays open: it reports the outcome.
+  const close = () => { if (busy) return; setTyped(''); onClose(); };
+  const confirm = () => { if (confirmed && !busy) onConfirm(); };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} classes={classes}>
-      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full">
-        <div
-          className={`flex flex-row items-center justify-between px-6 py-4 ${
-            hasBody ? 'border-b border-zinc-500/25' : ''
-          }`}
-        >
-          <div className="flex flex-row items-center gap-3 truncate">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-red-500/10">
-              <MainIcon className="size-5 text-red-500" />
-            </div>
-            <div className="flex flex-col truncate">
-              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-              <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={onClose}>
-            <X />
+    <Modal
+      isOpen={isOpen}
+      onClose={close}
+      classes={hasBody ? 'max-w-lg' : 'max-w-md'}
+      closeOnOutsideClick={!confirmPhrase}
+      labelledBy={titleId}
+    >
+      <DialogHeader titleId={titleId} title={title} subtitle={subtitle} onClose={close} closeDisabled={busy} divider={!!confirmPhrase} className={hasBody ? (confirmPhrase ? '' : 'pb-0') : 'pb-5'} />
+
+      {hasBody && (
+        <div className="px-6 pt-4 pb-5 flex flex-col gap-4 text-sm text-[var(--lume-text)] min-h-0 overflow-y-auto">
+          {warning && <Callout tone="danger">{warning}</Callout>}
+          {tip && <Callout tone="warning">{tip}</Callout>}
+          {children}
+          {confirmPhrase && (
+            <FormInput
+              label={<>Digita <strong className="font-medium text-[var(--lume-text)]">{confirmPhrase}</strong> per confermare</>}
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') confirm(); }}
+              placeholder={confirmPhrase}
+              autoComplete="off"
+            />
+          )}
+        </div>
+      )}
+
+      <DialogFooter
+        start={alternative ? (
+          <Button variant="secondary" leadingIcon={alternative.icon} disabled={busy} onClick={() => { setTyped(''); alternative.onClick(); }}>
+            {alternative.label}
           </Button>
-        </div>
-
-        {hasBody && (
-          <div className={`p-6 ${contentClasses}`}>
-            <div className="text-foreground">{children}</div>
-          </div>
-        )}
-
-        <div className="flex flex-row items-center justify-between p-6 border-t border-zinc-500/25">
-          <div>{footerContent}</div>
-          <div className="flex flex-row items-center gap-3">
-            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
-              {cancelText}
-            </Button>
-            <Button variant="destructive" leadingIcon={ConfirmIcon} onClick={onConfirm}>
-              {confirmText}
-            </Button>
-          </div>
-        </div>
-      </div>
+        ) : undefined}
+      >
+        <Button variant="ghost" disabled={busy} onClick={close}>Annulla</Button>
+        <Button variant="destructive" leadingIcon={Trash2} disabled={!confirmed} loading={busy} onClick={confirm}>
+          {confirmText}
+        </Button>
+      </DialogFooter>
     </Modal>
   );
 }

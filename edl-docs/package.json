@@ -1,0 +1,14 @@
+{
+  "name": "lume-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "edl-docs dev",
+    "build": "edl-docs build"
+  },
+  "devDependencies": {
+    "@edl-studio/docs": "0.3.0",
+    "@tailwindcss/vite": "4.2.2",
+    "vite": "^7.1.0"
+  }
+}

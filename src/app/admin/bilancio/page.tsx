@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Wallet, LayoutDashboard, Receipt, Target } from 'lucide-react';
+import { LayoutDashboard, Receipt, Target } from 'lucide-react';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { BilancioPanoramicaTab } from '@/lib/components/admin/bilancio/BilancioPanoramicaTab';
 import { BilancioSpeseTab } from '@/lib/components/admin/bilancio/BilancioSpeseTab';
@@ -29,30 +30,19 @@ export default function BilancioPage() {
       <PageHeader
         title="Bilancio"
         subtitle="Quanto entra, quanto esce, dove stai andando."
-        icon={Wallet}
       />
 
-      <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+      <TabBar label="Sezioni del bilancio">
         {visible.map((id) => {
           const { label, icon: Icon } = TAB_META[id];
-          const isActive = activeTab === id;
           return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setUserTab(id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                isActive
-                  ? 'border-primary text-primary-hover dark:text-primary/70'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-              }`}
-            >
-              <Icon className="size-4" />
+            <TabButton key={id} active={activeTab === id} onClick={() => setUserTab(id)}>
+              <Icon />
               {label}
-            </button>
+            </TabButton>
           );
         })}
-      </div>
+      </TabBar>
 
       {activeTab === 'panoramica' && <BilancioPanoramicaTab />}
       {activeTab === 'spese' && <BilancioSpeseTab />}

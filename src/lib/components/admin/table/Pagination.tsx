@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 interface PaginationProps {
   currentPage: number;
@@ -38,47 +37,38 @@ export function Pagination({
   }, [totalPages, currentPage, onPageChange]);
 
   return (
-    <div className="flex flex-row justify-between items-center w-full">
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+    <div className="flex flex-row justify-between items-center gap-3 w-full min-h-[var(--lume-control-h-md)]">
+      <p className="text-xs text-[var(--lume-text-secondary)] min-w-0">
         {totalItems === 0 ? (
           `Nessun ${labelPlural} trovato`
         ) : (
           <>
-            Mostrando{' '}
-            <span className="text-zinc-700 dark:text-zinc-300">{startIndex}-{endIndex}</span>
+            <span className="tabular-nums text-[var(--lume-text)]">{startIndex}–{endIndex}</span>
             {' '}di{' '}
-            <span className="text-zinc-700 dark:text-zinc-300">{totalItems}</span>
+            <span className="tabular-nums text-[var(--lume-text)]">{totalItems}</span>
             {' '}{labelPlural}
           </>
         )}
       </p>
 
       {totalPages > 1 && (
-        <div className="flex items-center gap-1">
-          <Tooltip label="Prima pagina">
-            <Button variant="secondary" size="sm" iconOnly aria-label="Prima pagina" onClick={() => goToPage(1)} disabled={currentPage === 1}>
-              <ChevronsLeft />
-            </Button>
-          </Tooltip>
-          <Tooltip label="Pagina precedente">
-            <Button variant="secondary" size="sm" iconOnly aria-label="Pagina precedente" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-              <ChevronLeft />
-            </Button>
-          </Tooltip>
-          <span className="text-xs text-zinc-700 dark:text-zinc-300 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg">
-            {currentPage} / {totalPages}
+        <nav aria-label="Paginazione" className="flex items-center gap-0.5">
+          <Button variant="ghost" size="md" iconOnly aria-label="Prima pagina" onClick={() => goToPage(1)} disabled={currentPage === 1}>
+            <ChevronsLeft />
+          </Button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Pagina precedente" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+            <ChevronLeft />
+          </Button>
+          <span className="px-2 tabular-nums text-xs text-[var(--lume-text-secondary)] whitespace-nowrap" aria-live="polite">
+            <span className="text-[var(--lume-text)]">{currentPage}</span> / {totalPages}
           </span>
-          <Tooltip label="Pagina successiva">
-            <Button variant="secondary" size="sm" iconOnly aria-label="Pagina successiva" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-              <ChevronRight />
-            </Button>
-          </Tooltip>
-          <Tooltip label="Ultima pagina">
-            <Button variant="secondary" size="sm" iconOnly aria-label="Ultima pagina" onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages}>
-              <ChevronsRight />
-            </Button>
-          </Tooltip>
-        </div>
+          <Button variant="ghost" size="md" iconOnly aria-label="Pagina successiva" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+            <ChevronRight />
+          </Button>
+          <Button variant="ghost" size="md" iconOnly aria-label="Ultima pagina" onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages}>
+            <ChevronsRight />
+          </Button>
+        </nav>
       )}
     </div>
   );

@@ -14,7 +14,7 @@ import { AddServiceCategoryModal } from '@/lib/components/admin/services/AddServ
 import { ServicesTable } from '@/lib/components/admin/services/ServicesTable';
 import { CategorieServiziTab } from '@/lib/components/admin/services/CategorieServiziTab';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { DropdownMenu, type DropdownMenuItem } from '@/lib/components/shared/ui/DropdownMenu';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -163,7 +163,6 @@ export default function ServiziPage() {
         <PageHeader
           title="Servizi"
           subtitle="Tutto quello che il tuo salone sa fare."
-          icon={Scissors}
           actions={
             <>
               {isServiziTab ? (
@@ -181,7 +180,7 @@ export default function ServiziPage() {
         />
 
         {/* Tab nav */}
-        <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <TabBar label="Sezioni dei servizi">
           {visible.map((id) => {
             const { label, icon: Icon } = TAB_META[id];
             const isActive = activeTab === id;
@@ -192,35 +191,23 @@ export default function ServiziPage() {
               : (categoriesShowArchived ? categoriesArchivedCount : categories.length - categoriesArchivedCount);
             const displayLabel = archivedForTab ? `${label} archiviati` : label;
             return (
-              <button
+              <TabButton
                 key={id}
-                type="button"
+                active={isActive}
                 data-tour={id === 'categorie' ? 'tab-service-categories' : undefined}
+                count={archivedForTab ? (archivedCountForTab > 0 ? archivedCountForTab : undefined) : totalForTab}
                 onClick={() => {
                   setActiveTab(id);
                   // Advances an interactive guide's "open the Categorie tab" step.
                   if (id === 'categorie') emitTourEvent('service-category:tab-open');
                 }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  isActive
-                    ? 'border-primary text-primary-hover dark:text-primary/70'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                }`}
               >
-                <Icon className="size-4" />
+                <Icon />
                 {displayLabel}
-                {archivedForTab
-                  ? archivedCountForTab > 0 && (
-                      <span className="ml-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                        {archivedCountForTab}
-                      </span>
-                    )
-                  : <NumberBadge value={totalForTab} variant={isActive ? 'primary' : 'neutral'} size="md" />
-                }
-              </button>
+              </TabButton>
             );
           })}
-        </div>
+        </TabBar>
 
         {/* Tab content */}
         {activeTab === 'servizi' && (

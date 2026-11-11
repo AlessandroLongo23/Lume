@@ -1,9 +1,9 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Palette, Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, ALargeSmall, AArrowUp, AArrowDown, Wand2, Type } from 'lucide-react';
+import { Monitor, Sun, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, AArrowUp, AArrowDown, Wand2, Type } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
-import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { OptionGroup, type Option } from '@/lib/components/shared/ui/forms/OptionGroup';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { useTheme, type Theme } from '@/lib/components/shared/ui/theme/ThemeProvider';
 import { usePreferencesStore } from '@/lib/stores/preferences';
@@ -12,7 +12,6 @@ import { FACTORY_PREFERENCES } from '@/lib/const/factory-defaults';
 import type { Density, SidebarDefault } from '@/lib/types/Preferences';
 import { applyUiScale, readUiScale, subscribeUiScale, type UiScale } from '@/lib/utils/uiScale';
 
-type Option<T extends string> = { value: T; label: string; icon: React.ElementType; hint?: string };
 
 const THEME_OPTIONS: Option<Theme>[] = [
   { value: 'system', label: 'Sistema', icon: Monitor, hint: 'Segui le impostazioni del dispositivo' },
@@ -37,44 +36,6 @@ const SIDEBAR_OPTIONS: Option<SidebarDefault>[] = [
   { value: 'open', label: 'Espansa', icon: PanelLeftOpen, hint: 'Mostra etichette dei link' },
   { value: 'collapsed', label: 'Compressa', icon: PanelLeftClose, hint: 'Solo icone' },
 ];
-
-function SegmentedRow<T extends string>({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  value: T;
-  options: Option<T>[];
-  onChange: (v: T) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-2">
-      {options.map(({ value: v, label, icon: Icon, hint }) => {
-        const selected = v === value;
-        return (
-          <Tooltip key={v} label={hint}>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onChange(v)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                selected
-                  ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
-                  : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-              }`}
-            >
-              <Icon className="size-4" />
-              {label}
-            </button>
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-}
 
 export function AspettoPanel() {
   const { theme, setTheme } = useTheme();
@@ -120,19 +81,17 @@ export function AspettoPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Palette}
         title="Tema"
         description="Scegli tra chiaro, scuro o segui le impostazioni di sistema."
       >
-        <SegmentedRow value={theme} options={THEME_OPTIONS} onChange={onThemeChange} ariaLabel="Tema" />
+        <OptionGroup value={theme} options={THEME_OPTIONS} onChange={onThemeChange} ariaLabel="Tema" />
       </SettingsCard>
 
       <SettingsCard
-        icon={ALargeSmall}
         title="Dimensione interfaccia"
         description="Rimpicciolisci tutta l'interfaccia per vedere più contenuto sugli schermi piccoli, o ingrandiscila per leggere meglio. Vale solo per questo dispositivo."
       >
-        <SegmentedRow
+        <OptionGroup
           value={uiScale}
           options={UI_SCALE_OPTIONS}
           onChange={applyUiScale}
@@ -141,19 +100,17 @@ export function AspettoPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Monitor}
         title="Densità"
         description="Regola la spaziatura generale dell'interfaccia."
       >
-        <SegmentedRow value={density} options={DENSITY_OPTIONS} onChange={onDensityChange} ariaLabel="Densità" />
+        <OptionGroup value={density} options={DENSITY_OPTIONS} onChange={onDensityChange} ariaLabel="Densità" />
       </SettingsCard>
 
       <SettingsCard
-        icon={PanelLeftOpen}
         title="Barra laterale"
         description="Stato predefinito della barra laterale all'avvio su un nuovo dispositivo."
       >
-        <SegmentedRow
+        <OptionGroup
           value={sidebarDefault}
           options={SIDEBAR_OPTIONS}
           onChange={onSidebarDefaultChange}

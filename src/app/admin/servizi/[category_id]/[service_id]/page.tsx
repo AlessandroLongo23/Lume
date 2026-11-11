@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
+import { DURATION } from '@/lib/const/motion';
 import { Trash2, Scissors, Archive, ArchiveRestore, FileX } from 'lucide-react';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
@@ -19,12 +20,10 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { DeleteServiceModal } from '@/lib/components/admin/services/DeleteServiceModal';
 import { ServiceForm, type ServiceFormValue, type ServiceFormErrors } from '@/lib/components/admin/services/ServiceForm';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import type { Service } from '@/lib/types/Service';
+import { formatCurrency } from '@/lib/utils/format';
 
-function formatEur(amount: number): string {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-}
 
 function formatDuration(minutes: number | null): string {
   if (!minutes) return '—';
@@ -194,26 +193,21 @@ export default function ServiceDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+        <div className="size-8 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
+        <p className="mt-4 text-[var(--lume-text-secondary)]">Caricamento...</p>
       </div>
     );
   }
 
   if (error || !service) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <FileX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
-        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Servizio non trovato</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il servizio non esiste o è stato rimosso.'}</p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push(`/admin/servizi/${categoryId}`)}
-          className="mt-6"
-        >
-          Torna ai servizi
-        </Button>
+      <div className="p-6">
+        <EmptyState
+          icon={FileX}
+          title="Servizio non trovato"
+          description={error ?? 'Il servizio non esiste o è stato rimosso.'}
+          secondaryAction={{ label: 'Torna ai servizi', onClick: () => router.push(`/admin/servizi/${categoryId}`) }}
+        />
       </div>
     );
   }
@@ -221,7 +215,7 @@ export default function ServiceDetailPage() {
   const category = categories.find((c) => c.id === service.category_id);
   const margin = (service.price ?? 0) - (service.product_cost ?? 0);
   const marginPct = service.price ? Math.round((margin / service.price) * 100) : 0;
-  const marginTone = marginPct >= 70 ? 'emerald' : marginPct >= 40 ? 'sky' : marginPct >= 0 ? 'amber' : 'red';
+  const marginTone = marginPct >= 70 ? 'success' : marginPct >= 40 ? 'info' : marginPct >= 0 ? 'warning' : 'danger';
 
   return (
     <>
@@ -247,12 +241,12 @@ export default function ServiceDetailPage() {
       <div className="flex flex-col">
         <DetailHero
           onBack={handleBack}
-          avatar={<HeroIconTile icon={Scissors} tone="primary" />}
+          avatar={<HeroIconTile icon={Scissors} />}
           title={service.name}
           chips={
             <>
-              {service.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
-              {category && <DetailChip tone="zinc">{category.name}</DetailChip>}
+              {service.isArchived && <DetailChip tone="warning">Archiviato</DetailChip>}
+              {category && <DetailChip>{category.name}</DetailChip>}
             </>
           }
           meta={<span>Servizio</span>}
@@ -285,7 +279,7 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: 'easeOut' }}
               >
                 <DetailSection label="Modifica servizio">
                   <ServiceForm value={draft} onChange={setDraft} errors={errors} />
@@ -297,29 +291,29 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: 'easeOut' }}
                 className="flex flex-col gap-12"
               >
                 <DetailSection index={0} label="Economics">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <StatTile label="Durata" value={formatDuration(service.duration)} />
-                    <StatTile label="Prezzo" value={formatEur(service.price ?? 0)} />
+                    <StatTile label="Prezzo" value={formatCurrency(service.price ?? 0)} />
                     <StatTile
                       label="Margine"
-                      value={formatEur(margin)}
+                      value={formatCurrency(margin)}
                       accent={service.price ? { tone: marginTone, text: `${marginPct}%` } : undefined}
-                      hint={service.product_cost > 0 ? `Costo prodotti: ${formatEur(service.product_cost)}` : undefined}
+                      hint={service.product_cost > 0 ? `Costo prodotti: ${formatCurrency(service.product_cost)}` : undefined}
                     />
                   </div>
                 </DetailSection>
 
                 <DetailSection index={1} label="Descrizione">
                   {service.description?.trim() ? (
-                    <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-[var(--lume-text)] whitespace-pre-wrap leading-relaxed">
                       {service.description}
                     </p>
                   ) : (
-                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+                    <p className="text-sm text-[var(--lume-text-muted)] italic">
                       Nessuna descrizione
                     </p>
                   )}

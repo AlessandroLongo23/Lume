@@ -3,8 +3,6 @@ import type { DataColumn } from './dataColumn';
 import type { Fiche } from './Fiche';
 import type { Gender } from './Gender';
 import type { Tables } from '@/lib/supabase/types';
-import { GenderTd } from '@/lib/components/admin/table/GenderTd';
-import { TouristTd } from '@/lib/components/admin/table/TouristTd';
 
 export class Client {
   id: string;
@@ -131,10 +129,6 @@ export class Client {
       key: 'gender',
       sortable: true,
       icon: VenusAndMars,
-      component: {
-        is: GenderTd,
-        getProps: (client: Client) => ({ gender: client.gender }),
-      },
     },
     {
       label: 'Data di nascita',
@@ -149,10 +143,6 @@ export class Client {
       key: 'isTourist',
       sortable: true,
       icon: Plane,
-      component: {
-        is: TouristTd,
-        getProps: (client: Client) => ({ isTourist: client.isTourist }),
-      },
     },
   ];
 }

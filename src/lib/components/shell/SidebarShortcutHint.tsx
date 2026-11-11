@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { SIDEBAR_HINT_EVENT } from './SidebarCollapseToggle';
 import { sidebarToggleLabel } from './keyboardShortcuts';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Kbd } from '@/lib/components/shared/ui/Kbd';
+import { Portal } from '@/lib/components/shared/ui/Portal';
 
 const AUTO_DISMISS_MS = 6000;
 
@@ -25,31 +27,31 @@ export function SidebarShortcutHint() {
     return () => window.clearTimeout(id);
   }, [visible]);
 
-  if (!visible) return null;
-
+  // Portaled to <body> so the hint stays above the shell whatever its ancestors do.
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed bottom-6 left-6 z-tooltip flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-200 shadow-lg max-w-sm transition-opacity"
-    >
-      <span>
-        Suggerimento: premi{' '}
-        <kbd className="inline-flex items-center px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-2xs text-zinc-600 dark:text-zinc-300">
-          {sidebarToggleLabel()}
-        </kbd>{' '}
-        per aprire e chiudere la barra laterale.
-      </span>
-      <Button
-        variant="ghost"
-        size="sm"
-        iconOnly
-        aria-label="Chiudi suggerimento"
-        onClick={() => setVisible(false)}
-        className="shrink-0"
-      >
-        <X />
-      </Button>
-    </div>
+    <Portal>
+      {visible && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="surface-float fixed bottom-6 left-6 z-tooltip flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 text-sm text-[var(--lume-text-secondary)] max-w-sm animate-in fade-in-0 slide-in-from-bottom-1 duration-[var(--duration-fast)] motion-reduce:animate-none"
+        >
+          <span>
+            Suggerimento: premi{' '}
+            <Kbd className="align-middle">{sidebarToggleLabel()}</Kbd>{' '}
+            per aprire e chiudere la barra laterale.
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label="Chiudi suggerimento"
+            onClick={() => setVisible(false)}
+          >
+            <X />
+          </Button>
+        </div>
+      )}
+    </Portal>
   );
 }

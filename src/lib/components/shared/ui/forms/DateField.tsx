@@ -1,17 +1,13 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Popover } from '@base-ui/react/popover';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, isSameDay, isValid, parse, parseISO, setMonth, setYear } from 'date-fns';
+import { Calendar } from 'lucide-react';
+import { format, isValid, parse, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { addMonths, subMonths, getMonthDays, formatDateString, weekDays } from '@/lib/utils/date';
-import { capitalize } from '@/lib/utils/string';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { CalendarPanel } from './CalendarPanel';
 
-type PanelMode = 'day' | 'month' | 'year';
-
-const YEAR_SPAN = 12; // years shown per page in the year grid
 const ISO = 'yyyy-MM-dd';
 const DISPLAY = 'dd/MM/yyyy';
 
@@ -47,15 +43,14 @@ interface DateFieldProps {
   min?: string;
   max?: string;
   size?: 'sm' | 'md';
+  disabled?: boolean;
   id?: string;
   'aria-label'?: string;
   className?: string;
 }
 
-const sizeClasses = {
-  sm: 'h-[var(--lume-control-h-sm)] pl-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)]',
-  md: 'h-[var(--lume-control-h-md)] pl-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)]',
-};
+// The calendar button sits flush in the right edge, so no right padding.
+const sizeClasses = { sm: 'control-sm pr-0!', md: 'control-md pr-0!' };
 
 /**
  * Date input in the Italian order (gg/mm/aaaa) on every browser and OS, with a
@@ -63,11 +58,12 @@ const sizeClasses = {
  * language, so the same salon saw mm/dd/yyyy on an English-language machine.
  */
 export function DateField({
-  value, onChange, onEnter, min, max, size = 'md', id, className, 'aria-label': ariaLabel,
+  value, onChange, onEnter, min, max, size = 'md', disabled, id, className, 'aria-label': ariaLabel,
 }: DateFieldProps) {
   const [text, setText] = useState(() => toDisplay(value));
   const [open, setOpen] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
+  const outOfRange = (iso: string) => (!!min && iso < min) || (!!max && iso > max);
 
   // The parent changed the date (a quick period, a calendar pick): show it.
   // Skipped while the text already means that value, so typing is never rewritten.
@@ -79,13 +75,9 @@ export function DateField({
     <Popover.Root open={open} onOpenChange={setOpen}>
       <div
         ref={fieldRef}
-        className={cn(
-          'flex items-center rounded-md border bg-card text-foreground transition-colors',
-          'focus-within:border-[var(--lume-ring-focus)]',
-          invalid ? 'border-danger-line' : 'border-border',
-          sizeClasses[size],
-          className,
-        )}
+        aria-disabled={disabled || undefined}
+        // The shared field surface: edge, hover, focus and invalid come from `control`.
+        className={cn('control flex items-center', sizeClasses[size], className)}
       >
         <input
           id={id}
@@ -95,6 +87,7 @@ export function DateField({
           placeholder="gg/mm/aaaa"
           aria-label={ariaLabel}
           aria-invalid={invalid || undefined}
+          disabled={disabled}
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -107,14 +100,15 @@ export function DateField({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && parseItalianDate(text)) onEnter?.();
           }}
-          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[length:inherit] tabular-nums outline-none focus:ring-0 placeholder:text-muted-foreground"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[length:inherit] tabular-nums outline-none focus:ring-0 shadow-none! placeholder:text-[var(--lume-text-muted)]"
         />
         <Popover.Trigger
+          disabled={disabled}
           aria-label="Apri il calendario"
           className={cn(
-            'flex h-full shrink-0 items-center justify-center rounded-r-md text-muted-foreground',
-            'hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
-            size === 'sm' ? 'w-[var(--lume-control-h-sm)]' : 'w-[var(--lume-control-h-md)]',
+            'flex h-full shrink-0 items-center justify-center rounded-r-[inherit] text-[var(--lume-text-muted)]',
+            'hover:text-[var(--lume-text)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
+            size === 'sm' ? 'w-[var(--lume-control-h-sm)]' : 'w-[var(--lume-control-h-md)]', // square
           )}
         >
           <Calendar className="size-4" aria-hidden />
@@ -126,165 +120,35 @@ export function DateField({
         <Popover.Positioner anchor={fieldRef} side="bottom" align="start" sideOffset={6} className="z-popover">
           <Popover.Popup
             aria-label="Scegli una data"
-            className="w-72 rounded-lg bg-popover p-3 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none"
+            className={cn(
+              'w-72 rounded-lg bg-[var(--lume-surface-raised)] p-3 text-[var(--lume-text)] shadow-float outline-none',
+              'origin-[var(--transform-origin)] transition-[opacity,translate] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+              'data-[starting-style]:opacity-0 data-[starting-style]:-translate-y-1 data-[ending-style]:opacity-0 data-[ending-style]:-translate-y-1',
+              'motion-reduce:translate-y-0!',
+            )}
           >
             <CalendarPanel
-              value={value}
-              min={min}
-              max={max}
-              onPick={(iso) => {
-                onChange(iso);
+              selected={value ? parseISO(value) : null}
+              isDisabled={(d) => outOfRange(format(d, ISO))}
+              onPickDay={(d) => {
+                onChange(format(d, ISO));
                 setOpen(false);
               }}
+              footer={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  disabled={outOfRange(format(new Date(), ISO))}
+                  onClick={() => { onChange(format(new Date(), ISO)); setOpen(false); }}
+                >
+                  Oggi
+                </Button>
+              }
             />
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
     </Popover.Root>
-  );
-}
-
-const cellBase =
-  'rounded-md text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--lume-ring-focus)]';
-const cellIdle = 'text-foreground hover:bg-accent';
-const cellSelected = 'bg-primary text-primary-foreground hover:bg-primary-hover';
-const cellCurrent = 'font-semibold text-primary hover:bg-accent';
-
-/** Month grid; the header label steps out to the months of the year, then to the years. */
-function CalendarPanel({ value, min, max, onPick }: {
-  value: string; min?: string; max?: string; onPick: (iso: string) => void;
-}) {
-  const selected = value ? parseISO(value) : null;
-  const today = useMemo(() => new Date(), []);
-  const [mode, setMode] = useState<PanelMode>('day');
-  const [displayMonth, setDisplayMonth] = useState<Date>(selected ?? today);
-  const [yearPageStart, setYearPageStart] = useState(
-    () => Math.floor((selected ?? today).getFullYear() / YEAR_SPAN) * YEAR_SPAN,
-  );
-
-  const monthDays = useMemo(() => getMonthDays(displayMonth), [displayMonth]);
-  const monthLabels = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => capitalize(formatDateString(new Date(2000, i, 1), 'MMM'))),
-    [],
-  );
-  const years = Array.from({ length: YEAR_SPAN }, (_, i) => yearPageStart + i);
-  const outOfRange = (iso: string) => (!!min && iso < min) || (!!max && iso > max);
-
-  function step(direction: 1 | -1) {
-    if (mode === 'day') setDisplayMonth(direction === 1 ? addMonths(displayMonth, 1) : subMonths(displayMonth, 1));
-    else if (mode === 'month') setDisplayMonth(setYear(displayMonth, displayMonth.getFullYear() + direction));
-    else setYearPageStart((p) => p + direction * YEAR_SPAN);
-  }
-
-  return (
-    <>
-      <div className="mb-2 flex items-center justify-between">
-        <Button variant="ghost" size="sm" iconOnly aria-label="Precedente" onClick={() => step(-1)}>
-          <ChevronLeft />
-        </Button>
-        <button
-          type="button"
-          onClick={() => setMode(mode === 'day' ? 'month' : mode === 'month' ? 'year' : 'day')}
-          className={cn(cellBase, cellIdle, 'px-2 py-1 font-medium')}
-        >
-          {mode === 'day' && capitalize(formatDateString(displayMonth, 'MMMM yyyy'))}
-          {mode === 'month' && displayMonth.getFullYear()}
-          {mode === 'year' && `${years[0]} – ${years[years.length - 1]}`}
-        </button>
-        <Button variant="ghost" size="sm" iconOnly aria-label="Successivo" onClick={() => step(1)}>
-          <ChevronRight />
-        </Button>
-      </div>
-
-      {mode === 'day' && (
-        <>
-          <div className="mb-1 grid grid-cols-7">
-            {weekDays.map((d) => (
-              <div key={d} className="py-1 text-center text-xs font-medium text-muted-foreground">{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-0.5">
-            {monthDays.map(({ date, isCurrentMonth }) => {
-              const iso = format(date, ISO);
-              const isSelected = !!selected && isSameDay(date, selected);
-              return (
-                <button
-                  key={iso}
-                  type="button"
-                  disabled={outOfRange(iso)}
-                  aria-pressed={isSelected}
-                  onClick={() => onPick(iso)}
-                  className={cn(
-                    cellBase, 'h-9 tabular-nums disabled:cursor-not-allowed disabled:opacity-40',
-                    isSelected ? cellSelected
-                      : isSameDay(date, today) ? cellCurrent
-                        : isCurrentMonth ? cellIdle
-                          : 'text-muted-foreground hover:bg-accent',
-                  )}
-                >
-                  {date.getDate()}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {mode === 'month' && (
-        <div className="grid grid-cols-3 gap-1">
-          {monthLabels.map((label, i) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => {
-                setDisplayMonth(setMonth(displayMonth, i));
-                setMode('day');
-              }}
-              className={cn(
-                cellBase, 'py-2',
-                i === displayMonth.getMonth() ? cellSelected
-                  : today.getFullYear() === displayMonth.getFullYear() && today.getMonth() === i ? cellCurrent
-                    : cellIdle,
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {mode === 'year' && (
-        <div className="grid grid-cols-3 gap-1">
-          {years.map((year) => (
-            <button
-              key={year}
-              type="button"
-              onClick={() => {
-                setDisplayMonth(setYear(displayMonth, year));
-                setMode('month');
-              }}
-              className={cn(
-                cellBase, 'py-2 tabular-nums',
-                year === displayMonth.getFullYear() ? cellSelected : year === today.getFullYear() ? cellCurrent : cellIdle,
-              )}
-            >
-              {year}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-3 border-t border-border pt-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          fullWidth
-          disabled={outOfRange(format(today, ISO))}
-          onClick={() => onPick(format(today, ISO))}
-        >
-          Oggi
-        </Button>
-      </div>
-    </>
   );
 }

@@ -4,7 +4,6 @@ import { forwardRef, useId, useRef, useState, useEffect } from 'react';
 import { Check, Minus } from 'lucide-react';
 
 interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
-  label?: string;
   size?: 'sm' | 'md';
   indeterminate?: boolean;
   className?: string;
@@ -21,7 +20,6 @@ function mergeRefs<T>(...refs: React.Ref<T>[]): React.RefCallback<T> {
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
   {
-    label,
     size = 'md',
     indeterminate,
     className = '',
@@ -55,52 +53,62 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   };
 
   const isActive = isChecked || !!indeterminate;
-  const boxClass = size === 'sm' ? 'h-5 w-5 rounded' : 'h-10 w-10 rounded-md';
-  const iconClass = size === 'sm' ? 'size-2.5' : 'size-4';
+  // md keeps a 36px hit area around an 18px box (same footprint as before);
+  // sm is the 16px table checkbox. Touch devices extend the hit area to 44px
+  // with a pseudo-element, so row layouts don't move.
+  const hitClass = size === 'sm' ? 'size-5' : 'size-9';
+  const boxClass = size === 'sm' ? 'size-4' : 'size-4.5';
+  const iconClass = size === 'sm' ? 'size-3' : 'size-3.5';
   const markClass = (shown: boolean) => [
     iconClass,
-    'absolute text-primary transition-[opacity,scale] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+    'absolute text-[var(--lume-bg)] transition-[opacity,scale] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
     shown ? 'opacity-100 scale-100' : 'opacity-0 motion-safe:scale-50',
   ].join(' ');
 
   return (
-    <div className={className}>
-      {label && (
-        <label
-          htmlFor={id}
-          className={`select-none text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-        >
-          {label}
-        </label>
-      )}
-      <label htmlFor={id} className={disabled ? 'cursor-not-allowed' : 'cursor-pointer'}>
-        <input
-          ref={mergedRef}
-          id={id}
-          type="checkbox"
-          className="sr-only"
-          {...(isControlled ? { checked: !!checked } : { defaultChecked })}
-          onChange={handleChange}
-          disabled={disabled}
-          {...rest}
-        />
-        <div
-          aria-hidden
-          className={[
-            boxClass,
-            'relative inline-flex align-middle items-center justify-center border',
-            'transition-[background-color,border-color] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
-            isActive
-              ? 'border-primary/50 bg-primary/10'
-              : 'border-zinc-500/25 bg-white dark:bg-zinc-800',
-            disabled ? 'opacity-50' : 'hover:border-primary/30',
-          ].join(' ')}
-        >
-          {/* Both marks stay mounted so the tick can scale in and out. */}
-          <Check className={markClass(isChecked && !indeterminate)} strokeWidth={2} />
-          <Minus className={markClass(!!indeterminate)} strokeWidth={2} />
-        </div>
-      </label>
-    </div>
+    <label
+      htmlFor={id}
+      className={[
+        'relative inline-flex shrink-0 align-middle items-center justify-center',
+        "pointer-coarse:before:absolute pointer-coarse:before:left-1/2 pointer-coarse:before:top-1/2 pointer-coarse:before:size-11 pointer-coarse:before:-translate-1/2 pointer-coarse:before:content-['']",
+        hitClass,
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+        className,
+      ].join(' ')}
+    >
+      <input
+        ref={mergedRef}
+        id={id}
+        type="checkbox"
+        className="peer sr-only"
+        {...(isControlled ? { checked: !!checked } : { defaultChecked })}
+        onChange={handleChange}
+        disabled={disabled}
+        {...rest}
+      />
+      {/* On = the text colour with an inverted tick, the same "selected,
+          not an action" language as the neutral active fills; indigo stays
+          for buttons and focus. Switch uses the same on colour. */}
+      <div
+        aria-hidden
+        className={[
+          boxClass,
+          'relative inline-flex items-center justify-center rounded-sm',
+          'transition-[background-color,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
+          'peer-focus-visible:shadow-[inset_0_0_0_1px_var(--lume-ring-focus),inset_0_0_0_3px_var(--lume-accent-muted)]',
+          isActive
+            ? 'bg-[var(--lume-text)]'
+            : [
+                'bg-[var(--lume-control-bg)] shadow-[inset_0_0_0_1px_var(--lume-edge-hover)]',
+                disabled ? '' : 'hover:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--lume-text)_40%,transparent)]',
+              ].join(' '),
+          disabled ? 'opacity-50' : '',
+        ].join(' ')}
+      >
+        {/* Both marks stay mounted so the tick can scale in and out. */}
+        <Check className={markClass(isChecked && !indeterminate)} strokeWidth={3} />
+        <Minus className={markClass(!!indeterminate)} strokeWidth={3} />
+      </div>
+    </label>
   );
 });

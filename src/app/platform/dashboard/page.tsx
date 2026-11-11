@@ -1,4 +1,3 @@
-import { LineChart } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { PLANS } from '@/lib/stripe/config';
 import { DashboardPage, type DashboardData } from './DashboardPage';
@@ -52,7 +51,6 @@ export default async function Page() {
       <PageHeader
         title="Dashboard"
         subtitle="Panoramica della piattaforma"
-        icon={LineChart}
       />
       <DashboardPage data={data} />
     </div>

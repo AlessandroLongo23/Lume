@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight, MoreVertical, Pencil, Trash2, Users, Ticket, Euro, FlaskConical } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { DeletePlatformSalonModal } from './DeletePlatformSalonModal';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListSeparator } from '@/lib/components/shared/ui/list/ListBox';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { Tag } from '@/lib/components/shared/ui/Tag';
+import { subscriptionStatus } from './subscriptionStatus';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 
 export type SalonCardRow = {
   id:                 string;
@@ -25,27 +34,8 @@ export type SalonCardRow = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    active:     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-    trialing:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    past_due:   'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    canceled:   'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-    unpaid:     'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-    incomplete: 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-  };
-  const labels: Record<string, string> = {
-    active:     'Attivo',
-    trialing:   'Trial',
-    past_due:   'Scaduto',
-    canceled:   'Annullato',
-    unpaid:     'Non pagato',
-    incomplete: 'Incompleto',
-  };
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${styles[status] ?? styles.incomplete}`}>
-      {labels[status] ?? status}
-    </span>
-  );
+  const { tone, label } = subscriptionStatus(status);
+  return <StatusDot tone={tone} className="font-medium">{label}</StatusDot>;
 }
 
 function getInitials(name: string): string {
@@ -64,14 +54,22 @@ function formatEur(value: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
 }
 
+const MENU_WIDTH = 224;
+
 export function SalonCard({ row }: { row: SalonCardRow }) {
   const router = useRouter();
   const [isEntering, setIsEntering] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(row.name);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [confirmTestToggle, setConfirmTestToggle] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { open: menuOpen, show, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 160,
+    offset: 6,
+    align: 'end',
+    panelWidth: MENU_WIDTH,
+  });
 
   async function handleEnter() {
     setIsEntering(true);
@@ -109,10 +107,18 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
 
   const plan = row.subscriptionPlan === 'yearly' ? 'Annuale' : row.subscriptionPlan === 'monthly' ? 'Mensile' : '—';
   const renewalDate = row.subscriptionStatus === 'trialing' ? row.trialEndsAt : row.subscriptionEndsAt;
-  const renewalLabel = row.subscriptionStatus === 'trialing' ? 'Trial fino al' : 'Rinnovo';
+  const renewalLabel = row.subscriptionStatus === 'trialing' ? 'Prova fino al' : 'Rinnovo';
+
+  const closeMenu = hide;
+
+  function toggleMenu() {
+    if (menuOpen) { hide(); return; }
+    setConfirmTestToggle(false);
+    show();
+  }
 
   return (
-    <div className="relative flex flex-col gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+    <div className="surface-card relative flex flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {row.logoUrl ? (
@@ -121,180 +127,180 @@ export function SalonCard({ row }: { row: SalonCardRow }) {
               alt={row.name}
               width={40}
               height={40}
-              className="rounded-md object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+              className="rounded-lg object-cover shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-md bg-primary/15 dark:bg-primary/20 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-primary-hover dark:text-primary/70 leading-none">
+            <div className="size-10 rounded-lg bg-active flex items-center justify-center shrink-0">
+              <span className="text-xs font-medium text-[var(--lume-text-secondary)] leading-none">
                 {getInitials(row.name)}
               </span>
             </div>
           )}
           <div className="min-w-0">
             {isRenaming ? (
-              <input
+              <FormInput
                 autoFocus
+                size="sm"
+                aria-label="Nuovo nome del salone"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setIsRenaming(false); }}
-                className="w-full text-sm font-semibold tracking-tight text-zinc-900 dark:text-white bg-transparent border-b border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-primary"
+                fieldClassName="-mx-2"
+                className="px-2 font-medium tracking-tight"
               />
             ) : (
               <div className="flex items-center gap-1.5 min-w-0">
-                <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white truncate">
+                <p className="text-sm font-medium tracking-tight text-[var(--lume-text)] truncate">
                   {row.name}
                 </p>
                 {row.isTest && (
-                  <span className="shrink-0 flex items-center gap-1 text-2xs font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    <FlaskConical className="size-2.5" />
+                  <Tag className="shrink-0">
+                    <FlaskConical aria-hidden />
                     Test
-                  </span>
+                  </Tag>
                 )}
               </div>
             )}
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{row.ownerEmail}</p>
+            <p className="text-xs text-[var(--lume-text-secondary)] truncate">{row.ownerEmail}</p>
           </div>
         </div>
 
-        <div className="relative shrink-0">
+        <div className="shrink-0">
           <Button
+            ref={triggerRef}
             variant="ghost"
             size="sm"
             iconOnly
             aria-label="Azioni"
-            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={toggleMenu}
           >
             <MoreVertical />
           </Button>
-          {menuOpen && (
-            <>
-              <button
-                type="button"
-                aria-label="Chiudi menu"
-                className="fixed inset-0"
-                onClick={() => { setMenuOpen(false); setConfirmTestToggle(false); }}
-              />
-              <div className="absolute right-0 top-8 z-dropdown w-48 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1">
-                <button
-                  type="button"
-                  onClick={() => { setIsRenaming(true); setMenuOpen(false); setConfirmTestToggle(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          <Portal>
+            <AnimatePresence>
+              {menuOpen && position && (
+                <FloatingPanel
+                  ref={panelRef}
+                  side={side}
+                  layer="dropdown"
+                  style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom, width: MENU_WIDTH }}
                 >
-                  <Pencil className="w-4 h-4" /> Rinomina
-                </button>
+                  <ListBox role="menu" aria-label="Azioni salone">
+                    <ListRow icon={Pencil} onClick={() => { setIsRenaming(true); closeMenu(); }}>
+                      Rinomina
+                    </ListRow>
 
-                {confirmTestToggle ? (
-                  <div className="px-3 py-2 flex flex-col gap-2">
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                      {row.isTest ? 'Rimuovere il flag di test?' : 'Segnare come salone di test?'}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setConfirmTestToggle(false);
-                          setMenuOpen(false);
-                          try {
-                            const res = await fetch(`/api/platform/salons/${row.id}`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ is_test: !row.isTest }),
-                            });
-                            if (!res.ok) throw new Error('is_test update failed');
-                            router.refresh();
-                          } catch (err) {
-                            console.error(err);
-                          }
-                        }}
-                        className="flex-1 text-xs px-2 py-1 rounded bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium hover:bg-zinc-700 dark:hover:bg-zinc-100"
-                      >
-                        Conferma
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmTestToggle(false)}
-                        className="flex-1 text-xs px-2 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      >
-                        Annulla
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmTestToggle(true)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <FlaskConical className="w-4 h-4" />
-                    {row.isTest ? 'Rimuovi da test' : 'Segna come test'}
-                  </button>
-                )}
+                    {confirmTestToggle ? (
+                      <div className="px-3 py-2 flex flex-col gap-2">
+                        <p className="text-xs text-[var(--lume-text-secondary)]">
+                          {row.isTest ? 'Rimuovere il flag di test?' : 'Segnare come salone di test?'}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                            onClick={async () => {
+                              closeMenu();
+                              try {
+                                const res = await fetch(`/api/platform/salons/${row.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ is_test: !row.isTest }),
+                                });
+                                if (!res.ok) throw new Error('is_test update failed');
+                                router.refresh();
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                          >
+                            Conferma
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setConfirmTestToggle(false)}
+                          >
+                            Annulla
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <ListRow icon={FlaskConical} onClick={() => setConfirmTestToggle(true)}>
+                        {row.isTest ? 'Rimuovi da test' : 'Segna come test'}
+                      </ListRow>
+                    )}
 
-                <button
-                  type="button"
-                  onClick={() => { setDeleteModalOpen(true); setMenuOpen(false); setConfirmTestToggle(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                >
-                  <Trash2 className="w-4 h-4" /> Elimina
-                </button>
-              </div>
-            </>
-          )}
+                    <ListSeparator />
+
+                    <ListRow icon={Trash2} destructive onClick={() => { setDeleteModalOpen(true); closeMenu(); }}>
+                      Elimina
+                    </ListRow>
+                  </ListBox>
+                </FloatingPanel>
+              )}
+            </AnimatePresence>
+          </Portal>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-3">
+      <dl className="grid grid-cols-3 gap-2 py-3 border-y border-line">
         <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-            <Users className="size-3.5" strokeWidth={1.75} />
-            <span className="text-2xs uppercase tracking-wider">Clienti</span>
-          </div>
-          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.clientsCount}</p>
+          <dt className="flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+            <Users className="size-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            <span className="truncate">Clienti</span>
+          </dt>
+          <dd className="text-base tabular-nums text-[var(--lume-text)]">{row.clientsCount}</dd>
         </div>
         <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-            <Ticket className="size-3.5" strokeWidth={1.75} />
-            <span className="text-2xs uppercase tracking-wider">Fiches/m</span>
-          </div>
-          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">{row.fichesThisMonth}</p>
+          <dt className="flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+            <Ticket className="size-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            <span className="truncate">Fiche del mese</span>
+          </dt>
+          <dd className="text-base tabular-nums text-[var(--lume-text)]">{row.fichesThisMonth}</dd>
         </div>
         <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-            <Euro className="size-3.5" strokeWidth={1.75} />
-            <span className="text-2xs uppercase tracking-wider">Ricavi/m</span>
-          </div>
-          <p className="text-base font-semibold tabular-nums text-zinc-900 dark:text-white truncate">{formatEur(row.revenueThisMonth)}</p>
+          <dt className="flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+            <Euro className="size-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            <span className="truncate">Ricavi del mese</span>
+          </dt>
+          <dd className="text-base tabular-nums text-[var(--lume-text)] truncate">{formatEur(row.revenueThisMonth)}</dd>
         </div>
-      </div>
+      </dl>
 
-      <div className="grid grid-cols-2 gap-3 text-xs">
+      <dl className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-1">Stato</p>
-          <StatusBadge status={row.subscriptionStatus} />
+          <dt className="text-[var(--lume-text-secondary)] mb-1">Stato</dt>
+          <dd><StatusBadge status={row.subscriptionStatus} /></dd>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-1">Piano</p>
-          <p className="text-zinc-900 dark:text-zinc-100 font-medium">{plan}</p>
+          <dt className="text-[var(--lume-text-secondary)] mb-1">Piano</dt>
+          <dd className="text-[var(--lume-text)] font-medium">{plan}</dd>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-1">{renewalLabel}</p>
-          <p className="text-zinc-900 dark:text-zinc-100 font-medium tabular-nums">{formatDate(renewalDate)}</p>
+          <dt className="text-[var(--lume-text-secondary)] mb-1">{renewalLabel}</dt>
+          <dd className="text-[var(--lume-text)] tabular-nums">{formatDate(renewalDate)}</dd>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-1">Creato</p>
-          <p className="text-zinc-900 dark:text-zinc-100 font-medium tabular-nums">{formatDate(row.createdAt)}</p>
+          <dt className="text-[var(--lume-text-secondary)] mb-1">Creato</dt>
+          <dd className="text-[var(--lume-text)] tabular-nums">{formatDate(row.createdAt)}</dd>
         </div>
-      </div>
+      </dl>
 
+      {/* Secondary, not primary: a grid of cards would otherwise paint one
+          indigo button per salon. */}
       <Button
-        variant="primary"
+        variant="secondary"
         size="sm"
-        fullWidth
         loading={isEntering}
-        leadingIcon={ArrowRight}
+        trailingIcon={ArrowRight}
         onClick={handleEnter}
-        className="mt-1"
+        className="mt-1 w-full max-md:h-11"
       >
         {isEntering ? 'Entrando…' : 'Entra nel salone'}
       </Button>

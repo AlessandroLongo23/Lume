@@ -1,12 +1,15 @@
 'use client';
 
-import { useRef, useState, type DragEvent } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft, X } from 'lucide-react';
 import type { UploadProgress } from './useOnboardingUpload';
 import { FileIcon } from './fileIcons';
 import { EASE_OUT } from './onboardingTypes';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { DURATION } from '@/lib/const/motion';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { FileDropZone } from './FileDropZone';
+import { OnboardingTitle } from './OnboardingTitle';
 
 const ease = EASE_OUT;
 const ACCEPT = '.csv,.tsv,.txt,.xlsx,.xls,.json,.pdf';
@@ -30,23 +33,6 @@ interface DropViewProps {
  * which calls the upload hook and transitions to MagicView.
  */
 export function DropView({ files, onChange, onSubmit, onBack, uploads, busy, error }: DropViewProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-
-  function handleDrop(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    onChange(dedupByName([...files, ...dropped]));
-  }
-
-  function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files ?? []);
-    onChange(dedupByName([...files, ...selected]));
-    // Allow re-selecting the same file later
-    e.target.value = '';
-  }
-
   function removeAt(index: number) {
     onChange(files.filter((_, i) => i !== index));
   }
@@ -58,54 +44,23 @@ export function DropView({ files, onChange, onSubmit, onBack, uploads, busy, err
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.5, ease }}
+      transition={{ duration: DURATION.enter, ease }}
     >
-      <div className="text-center">
-        <h1 className="text-2xl font-light tracking-wide text-foreground">
-          Trascina qui i file dal tuo vecchio gestionale
-        </h1>
-        <p className="mt-2 text-sm font-light text-muted-foreground">
-          Excel, CSV, PDF, JSON. Qualsiasi cosa va bene. Niente di troppo grande?
-          Massimo 50&nbsp;MB per file.
-        </p>
-      </div>
+      <OnboardingTitle title="Trascina qui i file dal tuo vecchio gestionale" size="md" animate={false}>
+        Excel, CSV, PDF, JSON. Qualsiasi cosa va bene. Niente di troppo grande?
+        Massimo 50&nbsp;MB per file.
+      </OnboardingTitle>
 
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        className={[
-          'mt-8 rounded-2xl border-2 border-dashed p-10 cursor-pointer transition-all',
-          'flex flex-col items-center justify-center min-h-44',
-          dragOver
-            ? 'border-primary bg-primary/5 scale-[1.01]'
-            : 'border-border hover:border-primary/60 hover:bg-muted/40',
-        ].join(' ')}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept={ACCEPT}
-          className="hidden"
-          onChange={handleSelect}
-        />
-        <p className="text-sm font-light text-muted-foreground">
-          {dragOver
-            ? 'Lascia pure, ci penso io.'
-            : 'Trascina qui i file, oppure '}
-          {!dragOver && (
-            <span className="text-primary underline-offset-2 hover:underline">scegli dal computer</span>
-          )}
-        </p>
-      </div>
+      <FileDropZone
+        size="lg"
+        multiple
+        accept={ACCEPT}
+        onFiles={(picked) => onChange(dedupByName([...files, ...picked]))}
+        prompt="Trascina qui i file, oppure"
+        action="scegli dal computer"
+        dragPrompt="Lascia pure, ci penso io."
+        className="mt-8"
+      />
 
       {files.length > 0 && (
         <ul className="mt-5 space-y-2">
@@ -119,30 +74,30 @@ export function DropView({ files, onChange, onSubmit, onBack, uploads, busy, err
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.3, ease, delay: i * 0.04 }}
-                  className="flex items-center gap-3 rounded-xl bg-card border border-border px-4 py-3"
+                  transition={{ duration: DURATION.slow, ease, delay: i * 0.04 }}
+                  className="surface-card flex items-center gap-3 px-4 py-3"
                 >
-                  <FileIcon filename={file.name} className="size-5 shrink-0 text-muted-foreground" />
+                  <FileIcon filename={file.name} className="size-5 shrink-0 text-[var(--lume-text-muted)]" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm font-light text-foreground truncate">
+                      <span className="text-sm font-light text-[var(--lume-text)] truncate">
                         {file.name}
                       </span>
-                      <span className="text-xs font-light text-muted-foreground shrink-0">
+                      <span className="text-xs font-light text-[var(--lume-text-muted)] shrink-0">
                         {formatSize(file.size)}
                       </span>
                     </div>
                     {upload && upload.state !== 'idle' && (
-                      <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
+                      <div className="mt-2 h-1 rounded-full bg-active overflow-hidden">
                         <motion.div
                           className={
                             upload.state === 'error'
-                              ? 'h-full bg-destructive'
-                              : 'h-full bg-primary'
+                              ? 'h-full bg-danger-strong'
+                              : 'h-full bg-[var(--lume-text)]'
                           }
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min(100, Math.round((upload.progress ?? 0) * 100))}%` }}
-                          transition={{ duration: 0.2, ease: 'linear' }}
+                          transition={{ duration: DURATION.base, ease: 'linear' }}
                         />
                       </div>
                     )}
@@ -166,20 +121,12 @@ export function DropView({ files, onChange, onSubmit, onBack, uploads, busy, err
         </ul>
       )}
 
-      {error && (
-        <p className="mt-4 text-sm text-destructive font-light text-center">{error}</p>
-      )}
+      {error && <Callout tone="danger" title={error} className="mt-4" />}
 
       <div className="mt-8 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={busy}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors font-light"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
+        <Button variant="ghost" leadingIcon={ArrowLeft} onClick={onBack} disabled={busy} className="-ml-3 font-normal">
           Indietro
-        </button>
+        </Button>
         <Button
           variant="primary"
           onClick={onSubmit}

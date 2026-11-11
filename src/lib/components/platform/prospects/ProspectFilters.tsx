@@ -1,25 +1,15 @@
 'use client';
 
 import { useMemo, type ReactNode } from 'react';
-import { Search, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { ProspectStatusChip } from './ProspectStatusChip';
 import {
   PROSPECT_STATUSES,
-  STATUS_LABEL,
-  STATUS_TONE,
   type ProspectStatus,
   Prospect,
 } from '@/lib/types/Prospect';
-
-const TONE_DOT: Record<(typeof STATUS_TONE)[ProspectStatus], string> = {
-  neutral: 'bg-muted-foreground',
-  muted:   'bg-muted-foreground/60',
-  warning: 'bg-[var(--lume-warning-fg)]',
-  danger:  'bg-[var(--lume-danger-fg)]',
-  success: 'bg-[var(--lume-success-fg)]',
-  accent:  'bg-[var(--lume-accent)]',
-};
 
 export type ProspectFiltersValue = {
   query:    string;
@@ -61,25 +51,12 @@ export function ProspectFilters({ value, onChange, prospects, trailing }: Prospe
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex items-center flex-1 min-w-[12rem] max-w-sm">
-          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Cerca per nome, telefono, note…"
-            value={value.query}
-            onChange={(e) => onChange({ ...value, query: e.target.value })}
-            className="w-full py-2 pl-9 pr-8 text-sm bg-card text-foreground placeholder:text-muted-foreground border border-input rounded-lg focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none transition-[border-color,box-shadow]"
-          />
-          {value.query && (
-            <button
-              onClick={() => onChange({ ...value, query: '' })}
-              className="absolute right-2 p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-              aria-label="Cancella ricerca"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
+        <Searchbar
+          placeholder="Cerca per nome, telefono, note…"
+          value={value.query}
+          onChange={(q) => onChange({ ...value, query: q })}
+          className="flex-1 min-w-48 max-w-sm"
+        />
 
         <Select
           value={value.region}
@@ -89,16 +66,13 @@ export function ProspectFilters({ value, onChange, prospects, trailing }: Prospe
           valueKey="value"
           placeholder="Tutte le regioni"
           isNullable
-          width="w-56"
+          className="w-56"
         />
 
         {hasActive && (
-          <button
-            onClick={reset}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
-          >
+          <Button variant="ghost" onClick={reset}>
             Azzera filtri
-          </button>
+          </Button>
         )}
 
         {trailing && <div className="ml-auto">{trailing}</div>}
@@ -108,20 +82,16 @@ export function ProspectFilters({ value, onChange, prospects, trailing }: Prospe
         {PROSPECT_STATUSES.map((s) => {
           const active = value.statuses.includes(s);
           return (
-            <button
+            <Button
               key={s}
+              variant="secondary"
+              size="sm"
               onClick={() => toggleStatus(s)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
-                active
-                  ? 'border-border bg-muted text-foreground'
-                  : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
-              )}
-              aria-pressed={active}
+              pressed={active}
+              className="max-md:h-11"
             >
-              <span className={cn('size-1.5 rounded-full', TONE_DOT[STATUS_TONE[s]])} />
-              {STATUS_LABEL[s]}
-            </button>
+              <ProspectStatusChip status={s} className="font-[inherit]" />
+            </Button>
           );
         })}
       </div>

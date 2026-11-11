@@ -19,7 +19,7 @@ export default function ClientiPage() {
   const dayDist = useMemo(() => toDayDistribution(data), [data]);
 
   if (isLoading) {
-    return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;
+    return <div className="h-64 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />;
   }
 
   return (
@@ -32,7 +32,7 @@ export default function ClientiPage() {
         <ClientLeaderboardTable rows={leaderboard} sortBy="presenze" />
       </StatSectionCard>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StatSectionCard title="Nuovi vs. abituali" subtitle="Clienti nel periodo">
           <NewVsReturningDonut data={newVsReturning} />
         </StatSectionCard>

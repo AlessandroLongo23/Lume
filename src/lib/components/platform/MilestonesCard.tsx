@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT } from '@/lib/const/motion';
 import { Check } from 'lucide-react';
 
 const MILESTONES = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
@@ -17,6 +18,7 @@ function milestonePct(n: number): string {
 
 export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number }) {
   const count = activePlusTrial;
+  const reduceMotion = useReducedMotion();
 
   const nextIdx = MILESTONES.findIndex((m) => count < m);
   const nextMilestone: number = nextIdx === -1 ? GOAL : MILESTONES[nextIdx];
@@ -33,14 +35,14 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
   const dashOffset = CIRCUMFERENCE * (1 - pctToNext / 100);
 
   return (
-    <div className="flex flex-col gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-card">
+    <div className="surface-card flex flex-col gap-4 p-5">
 
       {/* Header */}
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+        <h2 className="text-sm font-medium tracking-tight text-[var(--lume-text)]">
           Traguardi
-        </span>
-        <span className="text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+        </h2>
+        <span className="text-xs text-[var(--lume-text-muted)] tabular-nums">
           {count.toLocaleString('it-IT')} {count === 1 ? 'salone' : 'saloni'} · obiettivo 1.000
         </span>
       </div>
@@ -53,50 +55,50 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
               cx="44" cy="44" r="40"
               fill="none"
               strokeWidth={6}
-              className="stroke-zinc-100 dark:stroke-zinc-800"
+              className="stroke-active"
             />
             <motion.circle
               cx="44" cy="44" r="40"
               fill="none"
               strokeWidth={6}
               strokeLinecap="round"
-              className="stroke-indigo-500"
+              className="stroke-[var(--lume-accent)]"
               strokeDasharray={CIRCUMFERENCE}
               initial={{ strokeDashoffset: CIRCUMFERENCE }}
               animate={{ strokeDashoffset: dashOffset }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduceMotion ? 0 : 0.9, ease: EASE_OUT }}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-lg font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+            <span className="text-lg tabular-nums text-[var(--lume-text)]">
               {pctToNext}%
             </span>
           </div>
         </div>
 
         <div>
-          <p className="text-2xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">
+          <p className="text-xs text-[var(--lume-text-secondary)] mb-1.5">
             {isComplete ? 'Obiettivo raggiunto' : 'Prossimo traguardo'}
           </p>
-          <p className="text-xl font-semibold tabular-nums text-zinc-900 dark:text-white leading-none">
+          <p className="text-2xl font-light tabular-nums tracking-tight text-[var(--lume-text)] leading-none">
             {isComplete
               ? `${GOAL.toLocaleString('it-IT')} · 100%`
               : `${nextMilestone.toLocaleString('it-IT')} · ${milestonePct(nextMilestone)}`}
           </p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 tabular-nums">
-            <span className="text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm text-[var(--lume-text-secondary)] mt-1.5">
+            <span className="tabular-nums text-[var(--lume-text)]">
               {count.toLocaleString('it-IT')}
             </span>{' '}
             {count === 1 ? 'salone' : 'saloni'} oggi
             {!isComplete && (
-              <> · <span className="text-zinc-700 dark:text-zinc-300">{remaining.toLocaleString('it-IT')}</span> ancora</>
+              <> · <span className="tabular-nums text-[var(--lume-text)]">{remaining.toLocaleString('it-IT')}</span> ancora</>
             )}
           </p>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+      <div className="h-px bg-line" />
 
       {/* Milestone chips */}
       <div className="flex flex-wrap gap-1.5">
@@ -107,17 +109,18 @@ export function MilestonesCard({ activePlusTrial }: { activePlusTrial: number })
             <span
               key={m}
               className={[
-                'inline-flex items-center gap-1.5 text-2xs tabular-nums rounded-md px-2.5 py-1 border',
+                'inline-flex items-center gap-1.5 text-xs tabular-nums rounded-md px-2 h-6',
+                // Done: check mark + secondary text; next: the shared "current" ring.
                 done
-                  ? 'border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400'
+                  ? 'text-[var(--lume-text-secondary)]'
                   : current
-                  ? 'border-indigo-300/60 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-500/10 font-medium'
-                  : 'border-transparent text-zinc-400 dark:text-zinc-600 opacity-50',
+                  ? 'marker-current'
+                  : 'text-[var(--lume-text-muted)]',
               ].join(' ')}
             >
               {done && (
                 <Check
-                  className="w-3 h-3 text-emerald-500 shrink-0"
+                  className="size-3 text-success-strong shrink-0"
                   strokeWidth={3}
                   aria-hidden
                 />

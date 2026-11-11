@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { isSameDay, setMonth, setYear, startOfMonth } from 'date-fns';
-import { addMonths, subMonths, getMonthDays, formatDateString, weekDays } from '@/lib/utils/date';
-import { capitalize } from '@/lib/utils/string';
+import { useRef, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Button } from '@/lib/components/shared/ui/Button';
-
-type PickerMode = 'day' | 'month' | 'year';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { CalendarPanel } from '@/lib/components/shared/ui/forms/CalendarPanel';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
 
 interface CalendarDatePickerProps {
   /** The label rendered on the trigger. */
   label: string;
+  /** Optional shorter label shown on phone widths instead of `label`. */
+  shortLabel?: string;
   /** Date to highlight (for day/week views). */
   selectedDate: Date;
   /** Month to display when opening. */
@@ -21,321 +21,92 @@ interface CalendarDatePickerProps {
   onSelect: (date: Date) => void;
   /** Called when the user clicks "Torna a oggi". */
   onGoToToday: () => void;
-  /** When true, the grid highlights whole months; clicks close on month pick. */
+  /** When true, the grid picks whole months. */
   monthOnly?: boolean;
 }
 
-const YEAR_SPAN = 12; // years shown per page in year picker
+const PICKER_WIDTH = 288;
 
+/** The calendar toolbar's date title, opening the shared <CalendarPanel>. */
 export function CalendarDatePicker({
   label,
+  shortLabel,
   selectedDate,
   currentMonth,
   onSelect,
   onGoToToday,
   monthOnly = false,
 }: CalendarDatePickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<PickerMode>(monthOnly ? 'month' : 'day');
-  const [displayMonth, setDisplayMonth] = useState<Date>(currentMonth);
-  const [yearPageStart, setYearPageStart] = useState<number>(
-    () => Math.floor(currentMonth.getFullYear() / YEAR_SPAN) * YEAR_SPAN,
-  );
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
+  const { open, show, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 380,
+    offset: 6,
+  });
+  // Remount the panel on every open, so it starts on the current month and view.
+  const [openCount, setOpenCount] = useState(0);
 
-  const today = useMemo(() => new Date(), []);
-  const monthDays = useMemo(() => getMonthDays(displayMonth), [displayMonth]);
-
-  // Sync displayed month with the parent's current month whenever it changes externally
-  useEffect(() => {
-    setDisplayMonth(currentMonth);
-    setYearPageStart(Math.floor(currentMonth.getFullYear() / YEAR_SPAN) * YEAR_SPAN);
-  }, [currentMonth]);
-
-  // Reset internal mode when the trigger type changes
-  useEffect(() => {
-    if (!isOpen) setMode(monthOnly ? 'month' : 'day');
-  }, [isOpen, monthOnly]);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        (!portalRef.current || !portalRef.current.contains(target))
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [isOpen]);
-
-  // Close on scroll so the fixed popover doesn't drift
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleScroll = () => setIsOpen(false);
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [isOpen]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen]);
-
-  function open() {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const PICKER_WIDTH = 288;
-      const left = Math.max(8, rect.left + rect.width / 2 - PICKER_WIDTH / 2);
-      setPos({ top: rect.bottom + 6, left });
-    }
-    setDisplayMonth(currentMonth);
-    setYearPageStart(Math.floor(currentMonth.getFullYear() / YEAR_SPAN) * YEAR_SPAN);
-    setMode(monthOnly ? 'month' : 'day');
-    setIsOpen(true);
-  }
-
-  function toggle() {
-    if (isOpen) setIsOpen(false);
-    else open();
-  }
-
-  function handlePickDay(date: Date) {
-    onSelect(date);
-    setIsOpen(false);
-  }
-
-  function handlePickMonth(monthIndex: number) {
-    const next = setMonth(displayMonth, monthIndex);
-    if (monthOnly) {
-      onSelect(startOfMonth(next));
-      setIsOpen(false);
-    } else {
-      setDisplayMonth(next);
-      setMode('day');
-    }
-  }
-
-  function handlePickYear(year: number) {
-    const next = setYear(displayMonth, year);
-    setDisplayMonth(next);
-    setMode(monthOnly ? 'month' : 'month');
-  }
-
-  function handleToday() {
-    onGoToToday();
-    setIsOpen(false);
-  }
-
-  const monthLabels = useMemo(
-    () => Array.from({ length: 12 }, (_, i) =>
-      capitalize(formatDateString(new Date(2000, i, 1), 'MMM')),
-    ),
-    [],
-  );
-
-  const yearList = useMemo(
-    () => Array.from({ length: YEAR_SPAN }, (_, i) => yearPageStart + i),
-    [yearPageStart],
-  );
+  const toggle = () => {
+    if (open) return hide();
+    setOpenCount((n) => n + 1);
+    show();
+  };
 
   return (
     <>
-      <button
+      {/* The toolbar's date title: a ghost button at title size, pressed while the picker is open. */}
+      <Button
         ref={triggerRef}
-        type="button"
+        variant="ghost"
+        pressed={open}
         onClick={toggle}
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        className="px-3 py-1 rounded-md text-lg font-medium
-          text-zinc-800 dark:text-zinc-100 select-none cursor-pointer
-          hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        aria-expanded={open}
+        className="px-2 -mx-0.5 shrink min-w-0 justify-start overflow-hidden text-base sm:text-lg tracking-tight text-[var(--lume-text)] select-none"
       >
-        {label}
-      </button>
+        {shortLabel ? (
+          <>
+            <span className="truncate sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:block truncate">{label}</span>
+          </>
+        ) : (
+          <span className="truncate">{label}</span>
+        )}
+      </Button>
 
-      {isOpen && pos && createPortal(
-        <div
-          ref={portalRef}
-          role="dialog"
-          aria-label="Seleziona data"
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 288 }}
-          className="bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-lg p-3 z-popover"
-        >
-          {/* Header: prev / (clickable label) / next */}
-          <div className="flex items-center justify-between mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              aria-label="Precedente"
-              onClick={() => {
-                if (mode === 'day') setDisplayMonth(subMonths(displayMonth, 1));
-                else if (mode === 'month') setDisplayMonth(setYear(displayMonth, displayMonth.getFullYear() - 1));
-                else setYearPageStart((p) => p - YEAR_SPAN);
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              role="dialog"
+              aria-label="Seleziona data"
+              style={{
+                position: 'fixed',
+                top: position.top,
+                bottom: position.bottom,
+                left: Math.max(8, Math.min(position.left + position.width / 2 - PICKER_WIDTH / 2, window.innerWidth - PICKER_WIDTH - 8)),
+                width: PICKER_WIDTH,
               }}
+              className="p-3"
             >
-              <ChevronLeft />
-            </Button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (mode === 'day') setMode('month');
-                else if (mode === 'month') setMode('year');
-                else setMode(monthOnly ? 'month' : 'day');
-              }}
-              className="px-2 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-100
-                rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-            >
-              {mode === 'day' && capitalize(formatDateString(displayMonth, 'MMMM yyyy'))}
-              {mode === 'month' && displayMonth.getFullYear()}
-              {mode === 'year' && `${yearList[0]} — ${yearList[yearList.length - 1]}`}
-            </button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              aria-label="Successivo"
-              onClick={() => {
-                if (mode === 'day') setDisplayMonth(addMonths(displayMonth, 1));
-                else if (mode === 'month') setDisplayMonth(setYear(displayMonth, displayMonth.getFullYear() + 1));
-                else setYearPageStart((p) => p + YEAR_SPAN);
-              }}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-
-          {/* Day grid */}
-          {mode === 'day' && (
-            <>
-              <div className="grid grid-cols-7 mb-1">
-                {weekDays.map((d) => (
-                  <div
-                    key={d}
-                    className="text-center text-2xs font-medium uppercase tracking-wider
-                      text-zinc-500 dark:text-zinc-400 py-1"
-                  >
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-0.5">
-                {monthDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameDay(date, selectedDate);
-                  const isToday = isSameDay(date, today);
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => handlePickDay(date)}
-                      className={[
-                        'h-8 text-sm rounded-md transition-colors',
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                        isSelected
-                          ? 'bg-primary text-white hover:bg-primary-hover'
-                          : isToday
-                            ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                            : isCurrentMonth
-                              ? 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                              : 'text-zinc-400 dark:text-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700/50',
-                      ].join(' ')}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
+              <CalendarPanel
+                key={openCount}
+                selected={selectedDate}
+                initialMonth={currentMonth}
+                monthOnly={monthOnly}
+                onPickDay={(d) => { onSelect(d); hide(); }}
+                onPickMonth={(d) => { onSelect(d); hide(); }}
+                footer={
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => { onGoToToday(); hide(); }}>
+                    Torna a oggi
+                  </Button>
+                }
+              />
+            </FloatingPanel>
           )}
-
-          {/* Month grid */}
-          {mode === 'month' && (
-            <div className="grid grid-cols-3 gap-1">
-              {monthLabels.map((label, i) => {
-                const isActive = i === displayMonth.getMonth();
-                const isCurrent = today.getFullYear() === displayMonth.getFullYear() && today.getMonth() === i;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handlePickMonth(i)}
-                    className={[
-                      'py-2 text-sm rounded-md transition-colors',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                      isActive
-                        ? 'bg-primary text-white hover:bg-primary-hover'
-                        : isCurrent
-                          ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                          : 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700',
-                    ].join(' ')}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Year grid */}
-          {mode === 'year' && (
-            <div className="grid grid-cols-3 gap-1">
-              {yearList.map((year) => {
-                const isActive = year === displayMonth.getFullYear();
-                const isCurrent = year === today.getFullYear();
-                return (
-                  <button
-                    key={year}
-                    type="button"
-                    onClick={() => handlePickYear(year)}
-                    className={[
-                      'py-2 text-sm rounded-md transition-colors',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                      isActive
-                        ? 'bg-primary text-white hover:bg-primary-hover'
-                        : isCurrent
-                          ? 'text-primary-hover dark:text-primary/70 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                          : 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700',
-                    ].join(' ')}
-                  >
-                    {year}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="mt-3 pt-3 border-t border-zinc-500/25">
-            <button
-              type="button"
-              onClick={handleToday}
-              className="w-full py-1.5 text-sm font-medium rounded-md
-                text-primary-hover dark:text-primary/70
-                hover:bg-primary/10 transition-colors
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            >
-              Torna a oggi
-            </button>
-          </div>
-        </div>,
-        document.body,
-      )}
+        </AnimatePresence>
+      </Portal>
     </>
   );
 }

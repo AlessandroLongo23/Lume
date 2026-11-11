@@ -7,6 +7,8 @@ import { useSuppliersStore } from '@/lib/stores/suppliers';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateTimeField } from '@/lib/components/shared/ui/forms/DateTimeField';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddOrderModalProps {
@@ -45,39 +47,43 @@ export function AddOrderModal({ isOpen, onClose }: AddOrderModalProps) {
     }
   };
 
-  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
-  const labelClass = 'flex flex-row items-center gap-2';
 
   return (
     <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Aggiungi ordine" subtitle="Gestione ordini" classes="max-w-lg" confirmDataTour="save-order" onEnterComplete={() => emitTourEvent('order:modal-open')}>
       <div data-tour="order-form" className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><Truck className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Fornitore *</span></label>
-          <Select options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => { set('supplier_id', v); emitTourEvent('order:supplier-selected'); }} placeholder="Seleziona fornitore" />
-          {errors.supplier_id && <p className="text-xs text-red-500">{errors.supplier_id}</p>}
-        </div>
+        <Field label="Fornitore" labelIcon={Truck} required error={errors.supplier_id || undefined}>
+          {({ id }) => (
+            <Select id={id} options={suppliers} labelKey="name" valueKey="id" value={order.supplier_id} onChange={(v) => { set('supplier_id', v); emitTourEvent('order:supplier-selected'); }} placeholder="Seleziona fornitore" />
+          )}
+        </Field>
 
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data e ora *</span></label>
-          <input data-tour="field-order-datetime" type="datetime-local" className={inputClass} value={order.datetime} onChange={(e) => set('datetime', e.target.value)} />
-          {errors.datetime && <p className="text-xs text-red-500">{errors.datetime}</p>}
-        </div>
+        <Field label="Data e ora" labelIcon={Calendar} required error={errors.datetime || undefined}>
+          {({ id }) => (
+            <div data-tour="field-order-datetime">
+              <DateTimeField id={id} value={order.datetime} onChange={(v) => set('datetime', v)} />
+            </div>
+          )}
+        </Field>
 
-        <div data-tour="field-order-status" className="flex flex-col gap-2">
-          <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          <Select
-            value={order.status}
-            onChange={(v) => set('status', v)}
-            options={[
-              { value: 'pending', label: 'In attesa' },
-              { value: 'confirmed', label: 'Confermato' },
-              { value: 'delivered', label: 'Consegnato' },
-              { value: 'cancelled', label: 'Annullato' },
-            ]}
-            labelKey="label"
-            valueKey="value"
-            searchable={false}
-          />
+        <div data-tour="field-order-status">
+          <Field label="Stato" labelIcon={Check}>
+            {({ id }) => (
+              <Select
+                id={id}
+                value={order.status}
+                onChange={(v) => set('status', v)}
+                options={[
+                  { value: 'pending', label: 'In attesa' },
+                  { value: 'confirmed', label: 'Confermato' },
+                  { value: 'delivered', label: 'Consegnato' },
+                  { value: 'cancelled', label: 'Annullato' },
+                ]}
+                labelKey="label"
+                valueKey="value"
+                searchable={false}
+              />
+            )}
+          </Field>
         </div>
       </div>
     </AddModal>

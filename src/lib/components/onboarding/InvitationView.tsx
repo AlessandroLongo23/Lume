@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { DURATION } from '@/lib/const/motion';
 import { EASE_OUT } from './onboardingTypes';
+import { OnboardingTitle } from './OnboardingTitle';
 import { Button } from '@/lib/components/shared/ui/Button';
 
 const ease = EASE_OUT;
@@ -27,37 +29,23 @@ interface InvitationViewProps {
 export function InvitationView({ salonName, onAccept, onSkip, busy }: InvitationViewProps) {
   return (
     <div className="w-full max-w-xl px-8 text-center select-none">
-      <motion.h1
-        className="text-3xl font-light tracking-wide text-foreground"
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease }}
-      >
-        Hai dei dati nel tuo vecchio gestionale?
-      </motion.h1>
-
-      <motion.p
-        className="mt-4 text-base font-light text-muted-foreground leading-relaxed"
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease, delay: 0.14 }}
-      >
-        Posso importarli in <span className="text-foreground">{salonName}</span>. Tutto in una volta.
+      <OnboardingTitle title="Hai dei dati nel tuo vecchio gestionale?">
+        Posso importarli in <span className="text-[var(--lume-text)]">{salonName}</span>. Tutto in una volta.
         <br />
         Excel, CSV, JSON. Qualsiasi cosa va bene.
-      </motion.p>
+      </OnboardingTitle>
 
       <motion.ul
         className="mt-6 flex flex-wrap items-center justify-center gap-2"
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease, delay: 0.26 }}
+        transition={{ duration: DURATION.enter, ease, delay: 0.26 }}
         aria-label="Cosa viene importato"
       >
         {SCOPE_ITEMS.map((label) => (
           <li
             key={label}
-            className="inline-flex items-center rounded-full border border-border/70 bg-card/60 px-3 py-1 text-xs font-light text-muted-foreground tracking-wide"
+            className="inline-flex items-center rounded-full shadow-[inset_0_0_0_1px_var(--lume-line)] bg-[var(--lume-surface-raised)]/60 px-3 py-1 text-xs font-light text-[var(--lume-text-muted)] tracking-wide"
           >
             {label}
           </li>
@@ -68,7 +56,7 @@ export function InvitationView({ salonName, onAccept, onSkip, busy }: Invitation
         className="mt-10 flex flex-row items-center justify-center gap-3"
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease, delay: 0.4 }}
+        transition={{ duration: DURATION.enter, ease, delay: 0.4 }}
       >
         <Button variant="primary" onClick={onAccept} disabled={busy}>
           Sì, importa tutto
@@ -79,10 +67,10 @@ export function InvitationView({ salonName, onAccept, onSkip, busy }: Invitation
       </motion.div>
 
       <motion.p
-        className="mt-6 text-xs font-light text-muted-foreground/70"
+        className="mt-6 text-xs font-light text-[var(--lume-text-muted)]/70"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, ease, delay: 0.52 }}
+        transition={{ duration: DURATION.enter, ease, delay: 0.52 }}
       >
         Niente di esistente viene toccato. Puoi rifare quando vuoi.
       </motion.p>
