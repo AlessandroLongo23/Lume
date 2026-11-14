@@ -90,6 +90,21 @@ export default function PrivacyPage() {
             <td>12 mesi</td>
           </tr>
           <tr>
+            <td>
+              Statistiche di utilizzo senza cookie: pagina visitata, browser, sistema operativo,
+              tipo di dispositivo, paese, tempi di caricamento
+            </td>
+            <td>
+              Misurare l&apos;uso e la velocit&agrave; del Servizio (Vercel Web Analytics e
+              Speed Insights)
+            </td>
+            <td>Legittimo interesse (art. 6.1.f GDPR)</td>
+            <td>
+              Solo in forma aggregata; l&apos;identificativo del visitatore si azzera ogni
+              giorno. Vedi <Link href="/cookie-policy">Cookie policy</Link>
+            </td>
+          </tr>
+          <tr>
             <td>Backup di sicurezza</td>
             <td>Continuit&agrave; operativa</td>
             <td>Legittimo interesse (art. 6.1.f GDPR)</td>
@@ -126,7 +141,8 @@ export default function PrivacyPage() {
           <strong>Supabase Inc.</strong> (USA) — database, autenticazione, archiviazione file.
         </li>
         <li>
-          <strong>Vercel Inc.</strong> (USA) — hosting dell&apos;applicazione.
+          <strong>Vercel Inc.</strong> (USA) — hosting dell&apos;applicazione, statistiche di
+          utilizzo senza cookie.
         </li>
         <li>
           <strong>Stripe Payments Europe Ltd.</strong> (Irlanda) — elaborazione dei pagamenti.

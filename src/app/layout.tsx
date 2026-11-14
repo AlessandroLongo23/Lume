@@ -7,6 +7,7 @@ import { MessagePopupContainer } from '@/lib/components/shared/ui/messagePopup/M
 import { CookieConsentBanner } from '@/lib/components/shared/cookieConsent/CookieConsentBanner';
 import { UiProviders } from '@/lib/components/shared/ui/UiProviders';
 import { PostHogProvider } from '@/lib/posthog/PostHogProvider';
+import { VercelInsights } from '@/lib/components/shared/analytics/VercelInsights';
 import { cn } from "@/lib/utils";
 import { UI_SCALE_BOOT_SCRIPT } from '@/lib/utils/uiScale';
 
@@ -52,6 +53,7 @@ export default function RootLayout({
             </UiProviders>
           </ThemeProvider>
         </PostHogProvider>
+        <VercelInsights />
       </body>
     </html>
   );
