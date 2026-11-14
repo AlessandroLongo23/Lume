@@ -92,12 +92,9 @@ export default function PrivacyPage() {
           <tr>
             <td>
               Statistiche di utilizzo senza cookie: pagina visitata, browser, sistema operativo,
-              tipo di dispositivo, paese, tempi di caricamento
+              tipo di dispositivo, paese
             </td>
-            <td>
-              Misurare l&apos;uso e la velocit&agrave; del Servizio (Vercel Web Analytics e
-              Speed Insights)
-            </td>
+            <td>Misurare l&apos;uso del Servizio (Vercel Web Analytics)</td>
             <td>Legittimo interesse (art. 6.1.f GDPR)</td>
             <td>
               Solo in forma aggregata; l&apos;identificativo del visitatore si azzera ogni
