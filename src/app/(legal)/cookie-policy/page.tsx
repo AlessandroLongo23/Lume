@@ -107,13 +107,12 @@ export default function CookiePolicyPage() {
 
       <h2>Statistiche senza cookie</h2>
       <p>
-        Per misurare le visite e la velocit&agrave; delle pagine Lume usa{' '}
-        <strong>Vercel Web Analytics</strong> e <strong>Vercel Speed Insights</strong>, forniti
-        da Vercel Inc., che ospita gi&agrave; il Servizio. Questi strumenti non usano cookie e
-        non salvano nulla sul tuo dispositivo, per questo restano attivi anche se rifiuti i
-        cookie di analisi. Registrano in forma aggregata la pagina visitata (senza i parametri
-        dell&apos;indirizzo), il browser, il sistema operativo, il tipo di dispositivo, il paese
-        e i tempi di caricamento. Per contare i visitatori unici Vercel calcola
+        Per misurare le visite Lume usa <strong>Vercel Web Analytics</strong>, fornito da
+        Vercel Inc., che ospita gi&agrave; il Servizio. Questo strumento non usa cookie e non
+        salva nulla sul tuo dispositivo, per questo resta attivo anche se rifiuti i cookie di
+        analisi. Registra in forma aggregata la pagina visitata (senza i parametri
+        dell&apos;indirizzo), il browser, il sistema operativo, il tipo di dispositivo e il
+        paese. Per contare i visitatori unici Vercel calcola
         un&apos;impronta della richiesta che si azzera ogni giorno, quindi non pu&ograve;
         seguirti da un giorno all&apos;altro n&eacute; tra siti diversi. Maggiori dettagli
         nell&apos;

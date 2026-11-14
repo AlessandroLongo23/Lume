@@ -29,7 +29,7 @@ export const SUB_PROCESSORS: SubProcessor[] = [
   },
   {
     name: 'Vercel Inc.',
-    purpose: "Hosting dell'applicazione e CDN, statistiche di utilizzo senza cookie (Web Analytics, Speed Insights)",
+    purpose: "Hosting dell'applicazione e CDN, statistiche di utilizzo senza cookie (Web Analytics)",
     country: 'Stati Uniti',
     countryCode: 'US',
     transferMechanism: 'Clausole Contrattuali Standard 2021/914',
