@@ -28,7 +28,10 @@ const STATUS_LABEL: Record<OnboardingState['status'], string> = {
  * Thin top progress bar mounted in the admin shell. Visible whenever an
  * onboarding bulk-import is mid-flight; auto-fades 5s after completion.
  *
- * Polls /api/onboarding/imports/active every 3s — cheap, the row is small.
+ * Checks /api/onboarding/imports/active once on mount and whenever the tab
+ * becomes visible again, then polls every 3s only while an import is in
+ * flight and the tab is visible. Each check is a Vercel function call, and
+ * polling idle tabs around the clock pushed the project past its CPU quota.
  * If the user is on /onboarding/import this component still renders, but the
  * page itself is full-screen so the banner is hidden behind it (acceptable;
  * mounting at the AppShell level covers the admin shell case).
@@ -40,24 +43,42 @@ export function OnboardingProgressBanner() {
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
+    let active = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    async function tick() {
+    async function check() {
+      timer = null;
+      inFlight = true;
       try {
         const res = await fetch('/api/onboarding/imports/active', { cache: 'no-store' });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (cancelled) return;
-        setState(json.onboarding ?? null);
+        if (res.ok) {
+          const json = await res.json();
+          if (cancelled) return;
+          active = json.onboarding != null;
+          setState(json.onboarding ?? null);
+        }
       } catch {
-        // Silent — banner is best-effort. Will retry on next interval.
+        // Silent: the banner is best-effort. A failed check keeps the last
+        // known state, so an import in flight is retried on the next tick.
+      } finally {
+        inFlight = false;
+      }
+      if (!cancelled && active && document.visibilityState === 'visible') {
+        timer = setTimeout(check, POLL_INTERVAL_MS);
       }
     }
 
-    tick();
-    const interval = setInterval(tick, POLL_INTERVAL_MS);
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible' && !inFlight && timer === null) check();
+    }
+
+    check();
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (timer !== null) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
