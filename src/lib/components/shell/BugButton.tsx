@@ -2,15 +2,20 @@
 
 // ds-ignore: stays local, the bug-report floating action button with its screenshot flow; its corner button has a look Button lacks (see below)
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Bug, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { supabase } from '@/lib/supabase/client';
-import { captureViewport } from '@/lib/utils/captureViewport';
-import { AddFeedbackModal } from '@/lib/components/feedback/AddFeedbackModal';
 import { bugReportLabel } from './keyboardShortcuts';
+
+// The button sits on every admin page; the feedback modal (with its rich-text
+// editor, about 95KB) and the screenshot library load on the first click.
+const loadFeedbackModal = () =>
+  import('@/lib/components/feedback/AddFeedbackModal').then((m) => m.AddFeedbackModal);
+const AddFeedbackModal = dynamic(loadFeedbackModal, { ssr: false });
 
 const BUCKET = 'feedback-attachments';
 const FLASH_DURATION_MS = 220;
@@ -18,6 +23,8 @@ const FLASH_DURATION_MS = 220;
 export function BugButton() {
   const [isWorking, setIsWorking] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Mounted on the first open and kept, so the modal can play its exit.
+  const [modalMounted, setModalMounted] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -25,9 +32,12 @@ export function BugButton() {
   const handleClick = async () => {
     if (isWorking || isModalOpen) return;
     setIsWorking(true);
+    // Fetch the modal's code while the screenshot is taken and uploaded.
+    void loadFeedbackModal();
 
     let blob: Blob | null = null;
     try {
+      const { captureViewport } = await import('@/lib/utils/captureViewport');
       blob = await captureViewport();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
@@ -56,6 +66,7 @@ export function BugButton() {
 
     setPendingPath(uploadedPath);
     setIsWorking(false);
+    setModalMounted(true);
     setIsModalOpen(true);
   };
 
@@ -117,12 +128,14 @@ export function BugButton() {
         </AnimatePresence>
       </Portal>
 
-      <AddFeedbackModal
-        isOpen={isModalOpen}
-        onClose={handleClose}
-        initialType="bug"
-        initialImagePaths={pendingPath ? [pendingPath] : undefined}
-      />
+      {modalMounted && (
+        <AddFeedbackModal
+          isOpen={isModalOpen}
+          onClose={handleClose}
+          initialType="bug"
+          initialImagePaths={pendingPath ? [pendingPath] : undefined}
+        />
+      )}
     </>
   );
 }
