@@ -32,7 +32,7 @@ export default function DeliberatoriaPage({ params }: { params: Promise<{ slug: 
     <>
       <Link
         href="/admin/impostazioni/legale/deliberatorie"
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4 print:hidden"
+        className="inline-flex items-center gap-1.5 text-xs text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] mb-4 print:hidden"
       >
         <ArrowLeft className="size-3.5" />
         Torna alle deliberatorie

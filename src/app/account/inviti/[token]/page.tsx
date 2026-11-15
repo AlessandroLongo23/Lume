@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
+import { AuthShell } from '@/lib/components/auth/AuthCard';
 import { ClaimInviteClient } from './ClaimInviteClient';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -62,10 +62,7 @@ export default async function ClaimInvitePage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6">
-      <div className="mb-8">
-        <LumeLogo size="lg" />
-      </div>
+    <AuthShell backToHome={false}>
       <ClaimInviteClient
         token={token}
         salonName={salonName}
@@ -74,6 +71,6 @@ export default async function ClaimInvitePage({ params }: Props) {
         isLoggedIn={!!user}
         currentUserEmail={user?.email ?? null}
       />
-    </div>
+    </AuthShell>
   );
 }

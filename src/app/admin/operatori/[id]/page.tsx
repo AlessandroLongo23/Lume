@@ -18,7 +18,7 @@ import { EditOperatorModal } from '@/lib/components/admin/operators/EditOperator
 import { DeleteOperatorModal } from '@/lib/components/admin/operators/DeleteOperatorModal';
 import { AddOperatorCredentialsModal } from '@/lib/components/admin/operators/AddOperatorCredentialsModal';
 import { OperatorWorkingHoursPanel } from '@/lib/components/admin/operators/OperatorWorkingHoursPanel';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { canManageSalon } from '@/lib/auth/roles';
 import type { Operator } from '@/lib/types/Operator';
@@ -104,7 +104,6 @@ export default function OperatorDetailPage() {
     if (!isLoading) {
       const found = operators.find((o) => o.id === operatorId);
       if (found) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOperator(found);
       } else {
         setError('Operatore non trovato');
@@ -127,26 +126,21 @@ export default function OperatorDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+        <div className="size-8 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
+        <p className="mt-4 text-[var(--lume-text-secondary)]">Caricamento...</p>
       </div>
     );
   }
 
   if (error || !operator) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <UserX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
-        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Operatore non trovato</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? "L'operatore non esiste o è stato rimosso."}</p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push('/admin/operatori')}
-          className="mt-6"
-        >
-          Torna alla lista operatori
-        </Button>
+      <div className="p-6">
+        <EmptyState
+          icon={UserX}
+          title="Operatore non trovato"
+          description="L'operatore non esiste o è stato rimosso."
+          secondaryAction={{ label: 'Torna alla lista operatori', onClick: () => router.push('/admin/operatori') }}
+        />
       </div>
     );
   }
@@ -179,20 +173,19 @@ export default function OperatorDetailPage() {
           title={`${operator.firstName} ${operator.lastName}`}
           chips={
             <>
-              {operator.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
+              {operator.isArchived && <DetailChip tone="warning">Archiviato</DetailChip>}
               {linkedToUser && (
-                <DetailChip tone="primary" icon={Link2}>
+                <DetailChip tone="accent" icon={Link2}>
                   Account collegato
                 </DetailChip>
               )}
               {pendingInvite && !operator.isArchived && (
-                <DetailChip tone="amber" icon={Clock}>
+                <DetailChip tone="warning" icon={Clock}>
                   Invito in attesa
                 </DetailChip>
               )}
               {!linkedToUser && !operator.isArchived && canEdit && (
                 <DetailChip
-                  tone="zinc"
                   icon={KeyRound}
                   onClick={() => setShowAddCredentials(true)}
                   title="Crea le credenziali per consentire all'operatore di accedere"
@@ -201,7 +194,7 @@ export default function OperatorDetailPage() {
                 </DetailChip>
               )}
               {!linkedToUser && (operator.isArchived || !canEdit) && (
-                <DetailChip tone="zinc" icon={KeyRound}>
+                <DetailChip icon={KeyRound}>
                   Senza account
                 </DetailChip>
               )}
@@ -244,8 +237,8 @@ export default function OperatorDetailPage() {
         <div className="px-6 lg:px-10 py-8 max-w-5xl w-full mx-auto flex flex-col gap-12">
           <DetailSection index={0} label="Contatti">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-zinc-500/15 bg-zinc-50/60 dark:bg-zinc-900/40 px-5 py-4 flex flex-col gap-2">
-                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Email</span>
+              <div className="surface-card px-5 py-4 flex flex-col gap-2">
+                <span className="text-xs font-medium text-[var(--lume-text-secondary)]">Email</span>
                 {hasEmail ? (
                   <ContactRow
                     icon={Mail}
@@ -257,11 +250,11 @@ export default function OperatorDetailPage() {
                     }}
                   />
                 ) : (
-                  <span className="text-sm text-zinc-400 dark:text-zinc-500 italic">Nessuna email</span>
+                  <span className="text-sm text-[var(--lume-text-muted)] italic">Nessuna email</span>
                 )}
               </div>
-              <div className="rounded-xl border border-zinc-500/15 bg-zinc-50/60 dark:bg-zinc-900/40 px-5 py-4 flex flex-col gap-2">
-                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Telefono</span>
+              <div className="surface-card px-5 py-4 flex flex-col gap-2">
+                <span className="text-xs font-medium text-[var(--lume-text-secondary)]">Telefono</span>
                 {hasPhone ? (
                   <ContactRow
                     icon={Phone}
@@ -273,7 +266,7 @@ export default function OperatorDetailPage() {
                     }}
                   />
                 ) : (
-                  <span className="text-sm text-zinc-400 dark:text-zinc-500 italic">Nessun telefono</span>
+                  <span className="text-sm text-[var(--lume-text-muted)] italic">Nessun telefono</span>
                 )}
               </div>
             </div>

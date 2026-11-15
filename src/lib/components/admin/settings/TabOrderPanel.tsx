@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Reorder } from 'motion/react';
-import { LayoutList, GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -69,46 +69,47 @@ function PageReorder({ page }: { page: TabsPageKey }) {
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-sm font-medium text-[var(--lume-text)]">
           {TAB_PAGE_LABELS[page]}
-        </h3>
+        </h4>
         <Button variant="ghost" size="sm" leadingIcon={RotateCcw} onClick={reset}>
           Ripristina
         </Button>
       </div>
 
-      <Reorder.Group axis="y" values={order} onReorder={onReorder} className="divide-y divide-zinc-100 dark:divide-zinc-800">
+      <Reorder.Group axis="y" values={order} onReorder={onReorder} className="divide-y divide-line border-y border-line">
         {order.map((id) => {
           const isHidden = hidden.has(id);
           return (
             <Reorder.Item
               key={id}
               value={id}
-              className="px-4 py-2.5 flex items-center gap-3 bg-white dark:bg-zinc-900"
-              whileDrag={{ scale: 1.01, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+              className="relative py-1.5 flex items-center gap-3 bg-[var(--lume-panel)] rounded-md"
+              whileDrag={{ scale: 1.01, boxShadow: 'var(--lume-shadow-float)' }}
             >
-              <span className="text-zinc-300 dark:text-zinc-600 cursor-grab active:cursor-grabbing">
+              <span className="text-[var(--lume-text-muted)] cursor-grab active:cursor-grabbing touch-none">
                 <GripVertical className="size-4" />
               </span>
               <span
                 className={`flex-1 text-sm font-medium ${
                   isHidden
-                    ? 'text-zinc-400 dark:text-zinc-600 line-through'
-                    : 'text-zinc-900 dark:text-zinc-100'
+                    ? 'text-[var(--lume-text-muted)] line-through'
+                    : 'text-[var(--lume-text)]'
                 }`}
               >
                 {TAB_LABELS[page][id] ?? id}
               </span>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
                 onClick={() => toggleHide(id)}
                 aria-label={isHidden ? 'Mostra' : 'Nascondi'}
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
               >
                 <SwapIcon icon={isHidden ? EyeOff : Eye} className="size-4" />
-              </button>
+              </Button>
             </Reorder.Item>
           );
         })}
@@ -134,18 +135,18 @@ export function TabOrderPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={LayoutList}
         title="Ordine e visibilità delle schede"
         description="Trascina le schede per riordinarle, nascondi quelle che non usi. La prima scheda visibile è quella che si apre per prima."
       >
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[var(--lume-text-muted)]">
           Le modifiche sono immediate e si applicano alla prossima visita di ogni pagina.
         </p>
+        <div className="mt-6 grid gap-8 lg:grid-cols-2">
+          {PAGE_KEYS.map((page) => (
+            <PageReorder key={page} page={page} />
+          ))}
+        </div>
       </SettingsCard>
-
-      {PAGE_KEYS.map((page) => (
-        <PageReorder key={page} page={page} />
-      ))}
 
       <div className="flex justify-end">
         <Button variant="ghost" size="sm" leadingIcon={RotateCcw} onClick={resetAll}>

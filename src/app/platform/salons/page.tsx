@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Building2, Plus } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { SalonCard, type SalonCardRow } from '@/lib/components/platform/SalonCard';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -93,23 +95,22 @@ export default async function SalonsPage() {
       <PageHeader
         title="Saloni"
         subtitle={`${rows.length} ${rows.length === 1 ? 'salone' : 'saloni'} sulla piattaforma`}
-        icon={Building2}
         actions={
-          <Link
-            href="/platform/salons/new"
-            className="flex flex-row items-center whitespace-nowrap justify-center px-4 py-2 gap-2 text-sm font-thin transition-all bg-black hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-zinc-50 dark:text-zinc-900 rounded-lg border border-zinc-500/25"
-          >
-            <Plus className="size-5" />
-            <span>Nuovo salone</span>
-          </Link>
+          <Button asChild variant="primary" size="md">
+            <Link href="/platform/salons/new">
+              <Plus aria-hidden />
+              <span>Nuovo salone</span>
+            </Link>
+          </Button>
         }
       />
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-zinc-500 dark:text-zinc-400">
-          <Building2 className="size-10 mb-3" strokeWidth={1.5} />
-          <p className="text-sm">Nessun salone ancora registrato.</p>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="Nessun salone"
+          description="Nessun salone è ancora registrato sulla piattaforma."
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rows.map((row) => (

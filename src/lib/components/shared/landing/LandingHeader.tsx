@@ -3,82 +3,85 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, LogIn, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { cn } from '@/lib/utils';
 
 interface LandingHeaderProps {
   session: Session | null;
 }
+
+const NAV = [
+  { href: '#funzionalita', label: 'Funzionalità' },
+  { href: '#come-funziona', label: 'Come funziona' },
+  { href: '#prezzi', label: 'Prezzi' },
+  { href: '#domande', label: 'Domande' },
+];
 
 export function LandingHeader({ session }: LandingHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-header transition-all duration-200 ${
+      className={cn(
+        'sticky top-0 z-header border-b transition-[background-color,border-color] duration-[var(--duration-base)]',
         scrolled
-          ? 'bg-white/95 backdrop-blur-sm border-b border-border shadow-sm'
-          : 'bg-transparent'
-      }`}
+          ? 'bg-[color-mix(in_oklab,var(--lume-bg)_88%,transparent)] backdrop-blur-md border-line'
+          : 'bg-[var(--lume-bg)] border-line',
+      )}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <LumeLogo size="md" />
+      <div className="lp-container h-16 flex items-center gap-8">
+        <Link
+          href="/"
+          aria-label="Lume, pagina iniziale"
+          className="rounded-md text-[var(--lume-text)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lume-ring-focus)]"
+        >
+          <LumeLogo size="md" />
+        </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#funzionalita" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
-            Funzionalità
-          </a>
-          <a href="#come-funziona" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
-            Come funziona
-          </a>
-          <a href="#prezzi" className="text-sm text-zinc-500 hover:text-foreground transition-colors">
-            Prezzi
-          </a>
+        <nav aria-label="Sezioni" className="hidden md:flex items-center gap-1">
+          {NAV.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              // ds-ignore: a link in the landing header's nav bar, not a row in a list
+              className="h-9 px-3 inline-flex items-center rounded-md text-sm text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] hover:bg-hover transition-colors"
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           {session ? (
             <>
-              <Button variant="primary" size="md" asChild>
-                <a href="/dashboard">
-                  <LogIn className="size-4" aria-hidden />
-                  Dashboard
-                </a>
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="md"
-                leadingIcon={LogOut}
+              <Button variant="ghost" size="md" leadingIcon={LogOut}
                 onClick={async () => {
                   await fetch('/auth/logout', { method: 'POST' });
                   window.location.href = '/';
                 }}
-                aria-label="Esci"
               >
                 Esci
+              </Button>
+              <Button variant="secondary" size="md" asChild>
+                <Link href="/dashboard">Vai al gestionale</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="md" className="hidden sm:inline-flex" asChild>
-                <Link href="/login">
-                  <LogIn className="size-4" aria-hidden />
-                  Accedi
-                </Link>
+              <Button variant="ghost" size="md" asChild>
+                <Link href="/login">Accedi</Link>
               </Button>
-              <Button variant="primary" size="md" asChild>
-                <Link href="/register">
-                  Inizia gratis
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
+              <Button variant="secondary" size="md" asChild className="hidden sm:inline-flex">
+                <Link href="/register">Prova gratis</Link>
               </Button>
             </>
           )}

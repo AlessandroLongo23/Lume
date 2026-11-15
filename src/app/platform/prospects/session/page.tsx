@@ -82,9 +82,12 @@ export default function ProspectSessionPage() {
   if (snapshot === null) {
     return (
       <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-3">
-        <Link href="/platform/prospects">
-          <Button variant="ghost" leadingIcon={ArrowLeft}>Torna alla lista</Button>
-        </Link>
+        <Button asChild variant="ghost">
+          <Link href="/platform/prospects">
+            <ArrowLeft aria-hidden />
+            Torna alla lista
+          </Link>
+        </Button>
       </div>
     );
   }

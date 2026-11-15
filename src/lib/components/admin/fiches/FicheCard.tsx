@@ -1,23 +1,20 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Pencil, Trash2, CheckCircle2, Clock, Sparkles, Receipt } from 'lucide-react';
+import { Pencil, Trash2, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { FicheStatus } from '@/lib/types/ficheStatus';
-import { FicheBucket, FICHE_BUCKET_LABELS, BUCKET_STYLES, getFicheBucket } from '@/lib/types/Fiche';
+import { FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { FICHE_BUCKET_TONE } from './ficheBucketTone';
 import type { Fiche } from '@/lib/types/Fiche';
 import type { FicheProduct } from '@/lib/types/FicheProduct';
-
-function withOpacity(hex: string, opacity: number): string {
-  const clamped = Math.round(Math.max(0, Math.min(1, opacity)) * 255);
-  return `${hex}${clamped.toString(16).padStart(2, '0')}`;
-}
 
 interface FicheCardProps {
   fiche: Fiche;
@@ -55,7 +52,6 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
 
   const isCompleted = fiche.status === FicheStatus.COMPLETED;
   const bucket = getFicheBucket(fiche);
-  const isArretrata = bucket === FicheBucket.ARRETRATA;
 
   const categoryColors = useMemo(() => {
     return ficheServices.map((fs) => {
@@ -67,35 +63,29 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
 
   return (
     <div
-      className="group relative bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300"
+      className="surface-card group relative flex flex-col overflow-hidden hover:shadow-[inset_0_0_0_1px_var(--lume-edge-hover)] transition-shadow duration-[var(--duration-fast)]"
     >
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">
-            {client ? client.getFullName() : <span className="text-zinc-400 font-normal">Cliente sconosciuto</span>}
+          <p className="text-base font-medium text-[var(--lume-text)] truncate tracking-tight">
+            {client ? client.getFullName() : <span className="text-[var(--lume-text-muted)] font-normal">Cliente sconosciuto</span>}
           </p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <Clock className="size-3 text-zinc-400 shrink-0" />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
-              <span className="capitalize">{dateLabel}</span>
-              <span className="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-              {timeWindow}
-            </p>
-          </div>
+          <p className="mt-0.5 text-xs text-[var(--lume-text-secondary)]">
+            <span className="capitalize">{dateLabel}</span>
+            <span className="mx-1.5 text-[var(--lume-text-muted)]" aria-hidden>·</span>
+            <span className="tabular-nums text-[var(--lume-text)]">{timeWindow}</span>
+          </p>
         </div>
-        <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${BUCKET_STYLES[bucket]}`}>
-          {isArretrata && <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />}
+        <StatusDot tone={FICHE_BUCKET_TONE[bucket]} className="shrink-0 mt-0.5 text-xs">
           {FICHE_BUCKET_LABELS[bucket]}
-        </span>
+        </StatusDot>
       </div>
 
-      {/* Body — services rendered as a thread; each service is a node connected
-          by a thin line that morphs between adjacent category colors. */}
-      <div className="px-4 py-3 flex-1 min-h-20 border-t border-zinc-100 dark:border-zinc-800/60">
+      {/* Body: services as a thread of category-coloured nodes joined by a hairline. */}
+      <div className="px-4 py-3 flex-1 min-h-20 shadow-[inset_0_1px_0_var(--lume-line)]">
         {ficheServices.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic flex items-center gap-1.5">
-            <Sparkles className="size-3" />
+          <p className="text-xs text-[var(--lume-text-muted)]">
             Nessun servizio aggiunto
           </p>
         ) : (
@@ -104,7 +94,6 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
               const service = serviceMap.get(fs.service_id);
               const operator = operatorMap.get(fs.operator_id);
               const color = categoryColors[i] ?? DEFAULT_CATEGORY_COLOR;
-              const nextColor = categoryColors[i + 1] ?? color;
               const isLast = i === ficheServices.length - 1;
               const fsStart = fs.start_time ? format(new Date(fs.start_time), 'HH:mm') : null;
               const fsEnd = fs.end_time ? format(new Date(fs.end_time), 'HH:mm') : null;
@@ -112,42 +101,33 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
               return (
                 <li
                   key={fs.id}
-                  className={`relative flex items-start gap-3 group/row ${isLast ? '' : 'pb-3'}`}
+                  className={`relative flex items-start gap-3 ${isLast ? '' : 'pb-3'}`}
                 >
-                  {/* Node — sized to the dot; connector lives on the <li> so
-                      its height matches the row regardless of content. */}
-                  <span className="relative shrink-0 size-2.5 mt-1">
-                    <span
-                      className="absolute inset-0 rounded-full transition-transform duration-200 group-hover/row:scale-125"
-                      style={{
-                        backgroundColor: color,
-                        boxShadow: `0 0 0 3px ${withOpacity(color, 0.18)}`,
-                      }}
-                    />
-                  </span>
+                  <span
+                    className="relative shrink-0 size-2 mt-1.5 rounded-full"
+                    style={{ backgroundColor: color, boxShadow: `0 0 0 3px color-mix(in oklab, ${color} 18%, transparent)` }}
+                    aria-hidden
+                  />
                   {!isLast && (
                     <span
                       aria-hidden
-                      className="absolute left-[0.3125rem] -translate-x-1/2 top-4.5 bottom-0 w-px pointer-events-none"
-                      style={{
-                        background: `linear-gradient(to bottom, ${withOpacity(color, 0.8)}, ${withOpacity(nextColor, 0.8)})`,
-                      }}
+                      className="absolute left-1 -translate-x-1/2 top-5 bottom-1 w-px pointer-events-none bg-line"
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 truncate">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-[var(--lume-text)] truncate">
                         {fs.name || service?.name || '—'}
                       </span>
                       {operator && (
-                        <span className="ml-auto text-2xs px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 font-medium">
+                        <span className="ml-auto text-xs text-[var(--lume-text-secondary)] shrink-0">
                           {operator.firstName}
                         </span>
                       )}
                     </div>
-                    <p className="text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums mt-0.5">
+                    <p className="tabular-nums text-xs text-[var(--lume-text-muted)] mt-0.5">
                       {fsRange && <span>{fsRange}</span>}
-                      {fsRange && <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">·</span>}
+                      {fsRange && <span className="mx-1.5" aria-hidden>·</span>}
                       <span>{formatPrice(fs.final_price)}</span>
                     </p>
                   </div>
@@ -159,70 +139,55 @@ export function FicheCard({ fiche, onEdit, onDelete, onCheckout }: FicheCardProp
       </div>
 
       {/* Footer */}
-      <div className="px-4 pt-3 pb-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/60 bg-gradient-to-b from-transparent to-zinc-50/60 dark:to-zinc-950/30">
+      <div className="px-4 pt-3 pb-4 mt-auto shadow-[inset_0_1px_0_var(--lume-line)]">
         <div className="flex items-baseline justify-between mb-3">
-          <span className="text-2xs uppercase tracking-wider font-semibold text-zinc-400 dark:text-zinc-500">Totale</span>
-          <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+          <span className="text-xs text-[var(--lume-text-secondary)]">Totale</span>
+          <span className="tabular-nums text-base text-[var(--lume-text)]">
             {formatPrice(total)}
           </span>
         </div>
         {isCompleted ? (
-          <div className="space-y-2">
-            <div className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-md border border-emerald-200 dark:border-emerald-800">
-              <CheckCircle2 className="size-4" />
-              Pagata
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                iconOnly
-                fullWidth
-                aria-label="Elimina"
-                title="Elimina"
-                onClick={() => onDelete(fiche)}
-                className="text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40"
-              >
-                <Trash2 />
-              </Button>
-              <Button
-                variant="secondary"
-                iconOnly
-                fullWidth
-                aria-label="Modifica"
-                title="Modifica fiche chiusa"
-                onClick={() => onEdit(fiche)}
-              >
-                <Pencil />
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <StatusDot tone="success" className="flex-1 text-sm">Pagata</StatusDot>
+            <Button
+              variant="ghost-destructive"
+              iconOnly
+              aria-label="Elimina"
+              onClick={() => onDelete(fiche)}
+            >
+              <Trash2 />
+            </Button>
+            <Button
+              variant="ghost"
+              iconOnly
+              aria-label="Modifica"
+              tooltip="Modifica fiche chiusa"
+              onClick={() => onEdit(fiche)}
+            >
+              <Pencil />
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                iconOnly
-                fullWidth
-                aria-label="Elimina"
-                title="Elimina"
-                onClick={() => onDelete(fiche)}
-                className="text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40"
-              >
-                <Trash2 />
-              </Button>
-              <Button
-                variant="secondary"
-                iconOnly
-                fullWidth
-                aria-label="Modifica"
-                title="Modifica"
-                onClick={() => onEdit(fiche)}
-              >
-                <Pencil />
-              </Button>
-            </div>
-            <Button variant="primary" fullWidth leadingIcon={Receipt} onClick={() => onCheckout(fiche)}>
-              Chiudi Fiche
+          <div className="flex items-center gap-2">
+            {/* Secondary: a grid shows many cards, and indigo stays for the one page action. */}
+            <Button variant="secondary" leadingIcon={Receipt} onClick={() => onCheckout(fiche)} className="flex-1">
+              Chiudi fiche
+            </Button>
+            <Button
+              variant="ghost-destructive"
+              iconOnly
+              aria-label="Elimina"
+              onClick={() => onDelete(fiche)}
+            >
+              <Trash2 />
+            </Button>
+            <Button
+              variant="ghost"
+              iconOnly
+              aria-label="Modifica"
+              onClick={() => onEdit(fiche)}
+            >
+              <Pencil />
             </Button>
           </div>
         )}

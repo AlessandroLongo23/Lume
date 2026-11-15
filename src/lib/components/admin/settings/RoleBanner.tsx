@@ -30,17 +30,13 @@ export function RoleBanner() {
     return null;
   }
 
+  // One quiet line under the page title: who you are here and what you can change.
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 shadow-sm">
-      <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-        <Icon className="size-4" />
-      </div>
-      <div className="min-w-0 flex flex-col">
-        <p className="text-sm text-zinc-900 dark:text-zinc-100">
-          Sei <span className="font-semibold text-primary-hover dark:text-primary/80">{label}</span>.
-        </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
-      </div>
+    <div className="flex items-start gap-2.5 text-sm">
+      <Icon className="size-4 shrink-0 mt-0.5 text-[var(--lume-text-muted)]" aria-hidden />
+      <p className="min-w-0 text-[var(--lume-text-secondary)]">
+        Sei <span className="font-medium text-[var(--lume-text)]">{label}</span>. {description}
+      </p>
     </div>
   );
 }

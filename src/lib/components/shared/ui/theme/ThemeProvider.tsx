@@ -44,10 +44,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
   const lastAppliedRef = useRef<ResolvedTheme | null>(null);
+  // The theme asked for last. A view transition applies it a frame later, so
+  // localStorage still holds the old one while the curtain runs.
+  const requestedRef = useRef<Theme | null>(null);
 
   const applyTheme = (t: Theme) => {
     const isLightLocked = LIGHT_LOCKED_ROUTES.has(pathname);
     const next: ResolvedTheme = isLightLocked ? 'light' : resolve(t);
+    requestedRef.current = t;
     const apply = () => {
       document.documentElement.classList.toggle('dark', next === 'dark');
       document.documentElement.setAttribute('data-theme', next);
@@ -110,8 +114,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (!state.isLoaded) return;
       const dbTheme = state.preferences.appearance?.theme;
       if (!dbTheme) return;
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === dbTheme) return;
+      // Compare with the theme just requested, not localStorage: a toggle
+      // saves to the store before its transition has written localStorage,
+      // and a second applyTheme would cut the running transition short.
+      const current = requestedRef.current ?? localStorage.getItem(STORAGE_KEY);
+      if (current === dbTheme) return;
       applyTheme(dbTheme);
     });
     return unsub;

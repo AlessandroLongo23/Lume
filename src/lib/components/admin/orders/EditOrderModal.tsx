@@ -1,10 +1,13 @@
 'use client';
 
+import { format } from 'date-fns';
 import { Calendar, Check } from 'lucide-react';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { EditModal } from '@/lib/components/shared/ui/modals/EditModal';
+import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateTimeField } from '@/lib/components/shared/ui/forms/DateTimeField';
 import type { Order } from '@/lib/types/Order';
 
 const ORDER_STATUS_OPTIONS = [
@@ -38,32 +41,38 @@ export function EditOrderModal({ isOpen, onClose, editedOrder, onEditedOrderChan
     }
   };
 
-  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
-  const labelClass = 'flex flex-row items-center gap-2';
+  // Local wall-clock time: the field edits local time and saves it back as UTC.
   const datetimeValue = editedOrder.datetime
-    ? new Date(editedOrder.datetime).toISOString().slice(0, 16)
+    ? format(new Date(editedOrder.datetime), "yyyy-MM-dd'T'HH:mm")
     : '';
 
   return (
-    <EditModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica ordine" subtitle="Gestione ordini" classes="max-w-lg">
+    <AddModal isOpen={isOpen} onClose={onClose} onSubmit={handleSubmit} title="Modifica ordine" subtitle="Gestione ordini" confirmText="Salva" classes="max-w-lg">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data e ora</span></label>
-          <input type="datetime-local" className={inputClass} value={datetimeValue} onChange={(e) => set('datetime', e.target.value ? new Date(e.target.value).toISOString() : null)} />
-        </div>
+        <Field label="Data e ora" labelIcon={Calendar}>
+          {({ id }) => (
+            <DateTimeField
+              id={id}
+              value={datetimeValue}
+              onChange={(v) => set('datetime', v ? new Date(v).toISOString() : null)}
+            />
+          )}
+        </Field>
 
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><Check className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Stato</span></label>
-          <Select
-            value={editedOrder.status ?? null}
-            onChange={(v) => set('status', v)}
-            options={ORDER_STATUS_OPTIONS}
-            labelKey="label"
-            valueKey="value"
-            searchable={false}
-          />
-        </div>
+        <Field label="Stato" labelIcon={Check}>
+          {({ id }) => (
+            <Select
+              id={id}
+              value={editedOrder.status ?? null}
+              onChange={(v) => set('status', v)}
+              options={ORDER_STATUS_OPTIONS}
+              labelKey="label"
+              valueKey="value"
+              searchable={false}
+            />
+          )}
+        </Field>
       </div>
-    </EditModal>
+    </AddModal>
   );
 }

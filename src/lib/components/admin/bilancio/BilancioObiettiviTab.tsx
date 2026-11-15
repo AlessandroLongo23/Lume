@@ -3,12 +3,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useObiettiviStore } from '@/lib/stores/obiettivi';
 import { BilancioObiettiviSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { formatCurrency } from '@/lib/utils/format';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
 
 const emptyForm = () => ({
   casa: null as number | null,
@@ -82,112 +82,120 @@ export function BilancioObiettiviTab() {
     }
   };
 
-  const labelClass = 'text-sm text-zinc-700 dark:text-zinc-300';
+  const labelClass = 'text-sm text-[var(--lume-text)]';
 
   const fields: { key: keyof Omit<ReturnType<typeof emptyForm>, 'buffer_percent'>; label: string }[] = [
-    { key: 'casa', label: 'Casa (affitto / mutuo)' },
+    { key: 'casa', label: 'Casa (affitto o mutuo)' },
     { key: 'famiglia', label: 'Famiglia' },
-    { key: 'spese_personali', label: 'Spese Personali' },
-    { key: 'tempo_libero', label: 'Tempo Libero' },
+    { key: 'spese_personali', label: 'Spese personali' },
+    { key: 'tempo_libero', label: 'Tempo libero' },
     { key: 'trasporti', label: 'Trasporti' },
   ];
 
   if (isLoading) return <BilancioObiettiviSkeleton />;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
-      {/* Left — form */}
-      <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 ring-0 border">
-        <CardHeader className="px-6">
-          <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            Fabbisogno Personale Mensile
-          </CardTitle>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+      {/* Left: what you need each month */}
+      <section className="surface-card p-6 flex flex-col gap-5">
+        <div>
+          <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">
+            Fabbisogno personale mensile
+          </h3>
+          <p className="text-sm text-[var(--lume-text-secondary)] mt-1">
             Inserisci le tue spese mensili nette per calcolare l&apos;incasso necessario.
           </p>
-        </CardHeader>
-        <CardContent className="px-6 flex flex-col gap-4">
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
           {fields.map(({ key, label }) => (
-            <div key={key} className="flex flex-col gap-1.5">
-              <label className={labelClass}>{label}</label>
-              <NumberInput
-                value={form[key] as number | null}
-                onChange={(v) => set(key, v)}
-                min={0}
-                step={1}
-                placeholder="0"
-                suffix="€"
-              />
-            </div>
+            <Field key={key} label={label}>
+              {({ id, describedBy, invalid }) => (
+                <NumberInput
+                  id={id}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid}
+                  value={form[key] as number | null}
+                  onChange={(v) => set(key, v)}
+                  min={0}
+                  step={1}
+                  placeholder="0"
+                  suffix="€"
+                />
+              )}
+            </Field>
           ))}
+        </div>
 
-          {/* Buffer slider */}
-          <div className="flex flex-col gap-3 pt-2">
-            <div className="flex items-center justify-between">
-              <span className={labelClass}>% Imprevisti</span>
-              <span className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-                {form.buffer_percent}%
-              </span>
-            </div>
-            <Slider
-              min={0}
-              max={50}
-              step={1}
-              value={[form.buffer_percent]}
-              onValueChange={(values) => {
-                const v = Array.isArray(values) ? values[0] : values;
-                set('buffer_percent', v);
-              }}
-            />
-            <p className="text-xs text-zinc-400">
-              Margine di sicurezza aggiunto al fabbisogno netto.
-            </p>
+        {/* Buffer slider */}
+        <div className="flex flex-col gap-3 border-t border-line pt-5">
+          <div className="flex items-center justify-between">
+            <span className={labelClass}>Margine per gli imprevisti</span>
+            <span className="text-sm tabular-nums text-[var(--lume-text)]">
+              {form.buffer_percent}%
+            </span>
           </div>
-
-          <div className="pt-2">
-            <Button variant="primary" loading={isSaving} fullWidth onClick={handleSave}>
-              {isSaving ? 'Salvataggio…' : 'Salva Obiettivi'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Right — calculator */}
-      <Card className="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 ring-0 border lg:sticky lg:top-8 self-start">
-        <CardHeader className="px-6">
-          <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            Target di Incasso
-          </CardTitle>
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
-            Calcolato in base al fabbisogno inserito (forfettario 27%).
+          <Slider
+            min={0}
+            max={50}
+            step={1}
+            value={[form.buffer_percent]}
+            aria-label="Margine per gli imprevisti"
+            onValueChange={(values) => {
+              const v = Array.isArray(values) ? values[0] : values;
+              set('buffer_percent', v);
+            }}
+          />
+          <p className="text-xs text-[var(--lume-text-muted)]">
+            Margine di sicurezza aggiunto al fabbisogno netto.
           </p>
-        </CardHeader>
-        <CardContent className="px-6 flex flex-col gap-0 divide-y divide-zinc-200 dark:divide-zinc-800">
-          <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Fabbisogno base</span>
-            <span className="text-sm tabular-nums text-zinc-700 dark:text-zinc-200">{formatCurrency(sum)}</span>
+        </div>
+
+        <div className="flex justify-end">
+          <Button variant="primary" loading={isSaving} onClick={handleSave}>
+            {isSaving ? 'Salvataggio…' : 'Salva obiettivi'}
+          </Button>
+        </div>
+      </section>
+
+      {/* Right: the revenue that covers it */}
+      <section className="surface-card p-6 lg:sticky lg:top-8">
+        <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">
+          Incasso da raggiungere
+        </h3>
+        <p className="text-sm text-[var(--lume-text-secondary)] mt-1">
+          Calcolato in base al fabbisogno inserito (forfettario 27%).
+        </p>
+
+        <div className="mt-6">
+          <p className="tabular-nums text-3xl leading-tight font-normal tracking-tight text-[var(--lume-text)]">
+            {formatCurrency(lordoAnnuo)}
+          </p>
+          <p className="mt-1.5 text-sm text-[var(--lume-text-secondary)]">Incasso lordo all&apos;anno</p>
+        </div>
+
+        <dl className="mt-6 flex flex-col divide-y divide-line border-y border-line text-sm">
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-[var(--lume-text-secondary)]">Al mese</dt>
+            <dd className="tabular-nums text-[var(--lume-text)]">{formatCurrency(lordoMensile)}</dd>
           </div>
-          <div className="flex items-center justify-between py-3">
-            <div className="flex flex-col">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">Stipendio Netto Necessario</span>
-              <span className="text-xs text-zinc-400 dark:text-zinc-600">include {form.buffer_percent}% imprevisti</span>
-            </div>
-            <span className="text-sm tabular-nums text-zinc-700 dark:text-zinc-200">{formatCurrency(nettoMensile)}</span>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-[var(--lume-text-secondary)]">Fabbisogno base</dt>
+            <dd className="tabular-nums text-[var(--lume-text)]">{formatCurrency(sum)}</dd>
           </div>
-          <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Tasse e INPS Stimate Annue (27%)</span>
-            <span className="text-sm tabular-nums text-red-500 dark:text-red-400">+ {formatCurrency(tasseAnnue)}</span>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="flex flex-col">
+              <span className="text-[var(--lume-text-secondary)]">Stipendio netto necessario</span>
+              <span className="text-xs text-[var(--lume-text-muted)]">include {form.buffer_percent}% di imprevisti</span>
+            </dt>
+            <dd className="tabular-nums text-[var(--lume-text)]">{formatCurrency(nettoMensile)}</dd>
           </div>
-          <div className="flex items-center justify-between py-4">
-            <span className="text-base font-semibold text-zinc-900 dark:text-white">Incasso Lordo Target (Annuo)</span>
-            <span className="text-3xl font-bold tabular-nums text-zinc-900 dark:text-white">{formatCurrency(lordoAnnuo)}</span>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-[var(--lume-text-secondary)]">Tasse e INPS stimate all&apos;anno (27%)</dt>
+            <dd className="tabular-nums text-[var(--lume-text)]">+ {formatCurrency(tasseAnnue)}</dd>
           </div>
-          <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Target Mensile</span>
-            <span className="text-sm tabular-nums text-zinc-700 dark:text-zinc-200">{formatCurrency(lordoMensile)}</span>
-          </div>
-        </CardContent>
-      </Card>
+        </dl>
+      </section>
     </div>
   );
 }

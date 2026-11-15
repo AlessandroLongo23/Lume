@@ -1,19 +1,16 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
-import {
-  Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { DateField } from '@/lib/components/shared/ui/forms/DateField';
 
 /** Shown in the list only while a typed range is the active period. */
 export const CUSTOM_PERIOD = 'personalizzato';
 const CUSTOM_LABEL = 'Periodo personalizzato';
-
-export type YearPeriod = `anno_${number}`;
 
 interface PeriodControlProps {
   /** Quick periods, in list order. */
@@ -41,7 +38,6 @@ interface PeriodControlProps {
 export function PeriodControl({
   presets, pastYears, preset, dal, al, isLoading, onPreset, onApply, layout = 'row',
 }: PeriodControlProps) {
-  const ids = useId();
   const [draft, setDraft] = useState({ dal, al, of: `${dal}|${al}` });
   // A new period landed from outside (quick period, apply): the draft restarts from it.
   if (draft.of !== `${dal}|${al}`) setDraft({ dal, al, of: `${dal}|${al}` });
@@ -56,80 +52,67 @@ export function PeriodControl({
 
   const stack = layout === 'stack';
   const size = stack ? 'sm' : 'md';
-  const controlHeight = stack ? 'data-[size=default]:h-[var(--lume-control-h-sm)]' : 'data-[size=default]:h-[var(--lume-control-h-md)]';
-  const items = {
-    ...Object.fromEntries(presets.map((p) => [p.value, p.label])),
-    ...Object.fromEntries(pastYears.map((y) => [`anno_${y}`, String(y)])),
-    [CUSTOM_PERIOD]: CUSTOM_LABEL,
-  };
+  // Quick periods, the custom range while it is active, then past years under their own heading.
+  const options: { value: string; label: string; group?: string }[] = [
+    ...presets,
+    ...(preset === CUSTOM_PERIOD ? [{ value: CUSTOM_PERIOD, label: CUSTOM_LABEL }] : []),
+    ...pastYears.map((y) => ({ value: `anno_${y}`, label: String(y), group: 'Anni precedenti' })),
+  ];
 
   return (
     <div className={cn('flex gap-3', stack ? 'flex-col' : 'flex-wrap items-end')}>
-      <div className="flex flex-col gap-1">
-        <label htmlFor={`${ids}-periodo`} className="text-xs text-muted-foreground">Periodo</label>
-        <Select
-          value={preset}
-          onValueChange={(v) => {
-            if (v && v !== CUSTOM_PERIOD) onPreset(v);
-          }}
-          items={items}
-        >
-          <SelectTrigger
-            id={`${ids}-periodo`}
-            className={cn('rounded-md border-border bg-card', controlHeight, stack ? 'w-full text-[length:var(--lume-control-text-sm)]' : 'w-52')}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="start">
-            {presets.map((p) => (
-              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-            ))}
-            {preset === CUSTOM_PERIOD && <SelectItem value={CUSTOM_PERIOD}>{CUSTOM_LABEL}</SelectItem>}
-            {pastYears.length > 0 && (
-              <>
-                <SelectSeparator />
-                <SelectGroup className="p-0">
-                  <SelectLabel>Anni precedenti</SelectLabel>
-                  {pastYears.map((y) => (
-                    <SelectItem key={y} value={`anno_${y}`}>{y}</SelectItem>
-                  ))}
-                </SelectGroup>
-              </>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
+      <Field label="Periodo">
+        {({ id }) => (
+          <Select
+            id={id}
+            value={preset}
+            onChange={(v: string) => {
+              if (v && v !== CUSTOM_PERIOD) onPreset(v);
+            }}
+            options={options}
+            labelKey="label"
+            valueKey="value"
+            groupBy={(o: { group?: string }) => o.group}
+            renderValue={(o: { label: string; group?: string }) => (o.group ? `Anno ${o.label}` : o.label)}
+            searchable={false}
+            size={size}
+            className={stack ? 'w-full' : 'w-52'}
+          />
+        )}
+      </Field>
 
-      <div className={cn('flex gap-3', stack ? 'flex-col' : 'items-end')}>
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`${ids}-dal`} className="text-xs text-muted-foreground">Dal</label>
-          <DateField
-            id={`${ids}-dal`}
-            size={size}
-            value={draft.dal}
-            onChange={(v) => setDraft((d) => ({ ...d, dal: v }))}
-            onEnter={apply}
-            className={stack ? 'w-full' : 'w-40'}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`${ids}-al`} className="text-xs text-muted-foreground">Al</label>
-          <DateField
-            id={`${ids}-al`}
-            size={size}
-            value={draft.al}
-            onChange={(v) => setDraft((d) => ({ ...d, al: v }))}
-            onEnter={apply}
-            className={stack ? 'w-full' : 'w-40'}
-          />
-        </div>
+      <div className={cn('flex gap-3', stack ? 'flex-col' : 'flex-wrap items-end')}>
+        <Field label="Dal">
+          {({ id }) => (
+            <DateField
+              id={id}
+              size={size}
+              value={draft.dal}
+              onChange={(v) => setDraft((d) => ({ ...d, dal: v }))}
+              onEnter={apply}
+              className={stack ? 'w-full' : 'w-40'}
+            />
+          )}
+        </Field>
+        <Field label="Al">
+          {({ id }) => (
+            <DateField
+              id={id}
+              size={size}
+              value={draft.al}
+              onChange={(v) => setDraft((d) => ({ ...d, al: v }))}
+              onEnter={apply}
+              className={stack ? 'w-full' : 'w-40'}
+            />
+          )}
+        </Field>
         <Button
           variant={dirty ? 'primary' : 'secondary'}
           size={size}
           leadingIcon={Check}
           loading={isLoading}
           disabled={!canApply}
-          fullWidth={stack}
+          className={stack ? 'w-full' : undefined}
           onClick={apply}
         >
           Applica
@@ -139,7 +122,7 @@ export function PeriodControl({
       <p
         role="status"
         aria-live="polite"
-        className={cn('flex items-center gap-1.5 text-xs', stack ? 'min-h-4' : 'h-[var(--lume-control-h-md)]', reversed ? 'text-danger-strong' : 'text-muted-foreground')}
+        className={cn('flex items-center gap-1.5 text-xs empty:hidden', stack ? 'min-h-4' : 'h-[var(--lume-control-h-md)]', reversed ? 'text-danger-strong' : 'text-[var(--lume-text-muted)]')}
       >
         {reversed ? (
           <>

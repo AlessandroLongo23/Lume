@@ -2,7 +2,9 @@
 
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useManufacturersStore } from '@/lib/stores/manufacturers';
 import { useSuppliersStore } from '@/lib/stores/suppliers';
@@ -42,9 +44,6 @@ export const emptyProductForm = (): ProductFormValue => ({
   quantity_ml: null,
 });
 
-const inputClass = 'w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40';
-const labelClass = 'text-sm font-medium text-zinc-700 dark:text-zinc-300';
-const errorClass = 'text-xs text-red-500 mt-1';
 
 export function ProductForm({ value, onChange, errors, trackInventory = false }: ProductFormProps) {
   const categories = useProductCategoriesStore((s) => s.product_categories);
@@ -56,101 +55,112 @@ export function ProductForm({ value, onChange, errors, trackInventory = false }:
   return (
     <div className="flex flex-col gap-5" data-tour="product-form">
       <div className="flex gap-4 flex-wrap">
-        <div className="flex flex-1 min-w-48 flex-col gap-1.5">
-          <label className={labelClass}>Nome *</label>
-          <input
-            type="text"
-            value={value.name}
-            onChange={(e) => set('name', e.target.value)}
-            className={inputClass}
-            placeholder="Inserisci nome prodotto"
-            data-tour="field-product-name"
-          />
-          {errors?.name && <p className={errorClass}>{errors.name}</p>}
-        </div>
-        <div className="flex w-36 flex-col gap-1.5">
-          <label className={labelClass}>Quantità</label>
-          <NumberInput value={value.quantity_ml} onChange={(v) => set('quantity_ml', v)} min={0} step={50} suffix="mL" />
-        </div>
+        <FormInput
+          fieldClassName="flex-1 min-w-48"
+          label="Nome"
+          required
+          value={value.name}
+          onChange={(e) => set('name', e.target.value)}
+          placeholder="Inserisci nome prodotto"
+          data-tour="field-product-name"
+          error={errors?.name || undefined}
+        />
+        <Field label="Quantità" className="w-36">
+          {({ id, describedBy, invalid }) => (
+            <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.quantity_ml} onChange={(v) => set('quantity_ml', v)} min={0} step={50} suffix="mL" />
+          )}
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass}>Marca</label>
-          <Select
-            options={manufacturers}
-            labelKey="name"
-            valueKey="id"
-            value={value.manufacturer_id}
-            onChange={(v) => set('manufacturer_id', v ?? '')}
-            placeholder="Seleziona marca"
-            isNullable
-          />
-        </div>
+        <Field label="Marca">
+          {({ id }) => (
+            <Select
+              id={id}
+              options={manufacturers}
+              labelKey="name"
+              valueKey="id"
+              value={value.manufacturer_id}
+              onChange={(v) => set('manufacturer_id', v ?? '')}
+              placeholder="Seleziona marca"
+              isNullable
+            />
+          )}
+        </Field>
 
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass}>Categoria</label>
-          <Select
-            options={categories}
-            labelKey="name"
-            valueKey="id"
-            value={value.product_category_id}
-            onChange={(v) => set('product_category_id', v ?? '')}
-            placeholder="Seleziona categoria"
-            isNullable
-          />
-        </div>
+        <Field label="Categoria">
+          {({ id }) => (
+            <Select
+              id={id}
+              options={categories}
+              labelKey="name"
+              valueKey="id"
+              value={value.product_category_id}
+              onChange={(v) => set('product_category_id', v ?? '')}
+              placeholder="Seleziona categoria"
+              isNullable
+            />
+          )}
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass}>Fornitore</label>
-          <Select
-            options={suppliers}
-            labelKey="name"
-            valueKey="id"
-            value={value.supplier_id}
-            onChange={(v) => set('supplier_id', v ?? '')}
-            placeholder="Seleziona fornitore"
-            isNullable
-          />
-        </div>
+        <Field label="Fornitore">
+          {({ id }) => (
+            <Select
+              id={id}
+              options={suppliers}
+              labelKey="name"
+              valueKey="id"
+              value={value.supplier_id}
+              onChange={(v) => set('supplier_id', v ?? '')}
+              placeholder="Seleziona fornitore"
+              isNullable
+            />
+          )}
+        </Field>
 
-        <div className="flex flex-col gap-1.5" data-tour="field-product-price">
-          <label className={labelClass}>Prezzo Acquisto (€) *</label>
-          <NumberInput value={value.price} onChange={(v) => set('price', v)} min={0} step={0.5} decimals={2} suffix="€" />
-          {errors?.price && <p className={errorClass}>{errors.price}</p>}
+        <div data-tour="field-product-price">
+          <Field label="Prezzo Acquisto (€)" required error={errors?.price || undefined}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.price} onChange={(v) => set('price', v)} min={0} step={0.5} decimals={2} suffix="€" />
+            )}
+          </Field>
         </div>
       </div>
 
-      <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50" data-tour="field-product-retail">
-        <div>
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Destinato alla rivendita</p>
-          <p className="text-xs text-zinc-500 mt-0.5">Abilita un prezzo di vendita al pubblico</p>
-        </div>
-        <Switch checked={value.is_for_retail} onChange={() => set('is_for_retail', !value.is_for_retail)} />
+      <div data-tour="field-product-retail">
+        <SwitchRow
+          className="surface-card px-4 py-3"
+          label="Destinato alla rivendita"
+          description="Abilita un prezzo di vendita al pubblico"
+          checked={value.is_for_retail}
+          onChange={() => set('is_for_retail', !value.is_for_retail)}
+        />
       </div>
 
       {value.is_for_retail && (
-        <div className="flex flex-col gap-1.5 sm:max-w-[calc(50%-8px)]">
-          <label className={labelClass}>Prezzo Vendita (€)</label>
-          <NumberInput value={value.sell_price} onChange={(v) => set('sell_price', v)} min={0} step={0.5} decimals={2} suffix="€" />
-        </div>
+        <Field label="Prezzo Vendita (€)" className="sm:max-w-[calc(50%-8px)]">
+          {({ id, describedBy, invalid }) => (
+            <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.sell_price} onChange={(v) => set('sell_price', v)} min={0} step={0.5} decimals={2} suffix="€" />
+          )}
+        </Field>
       )}
 
       {trackInventory && (
-        <div className="flex flex-col gap-4 pt-2 border-t border-zinc-200 dark:border-zinc-700" data-tour="product-stock-section">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Gestione Scorte</p>
+        <div className="flex flex-col gap-4 pt-2 border-t border-line" data-tour="product-stock-section">
+          <p className="text-xs font-medium text-[var(--lume-text-muted)]">Gestione Scorte</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Giacenza Iniziale</label>
-              <NumberInput value={value.stock_quantity} onChange={(v) => set('stock_quantity', v ?? 0)} min={0} step={1} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Soglia Minima</label>
-              <NumberInput value={value.min_threshold} onChange={(v) => set('min_threshold', v ?? 0)} min={0} step={1} />
-              <p className="text-xs text-zinc-500">Alert rosso quando la giacenza scende sotto questa soglia.</p>
-            </div>
+            <Field label="Giacenza Iniziale">
+              {({ id, describedBy, invalid }) => (
+                <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.stock_quantity} onChange={(v) => set('stock_quantity', v ?? 0)} min={0} step={1} />
+              )}
+            </Field>
+            <Field label="Soglia Minima" hint="Alert rosso quando la giacenza scende sotto questa soglia.">
+              {({ id, describedBy, invalid }) => (
+                <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={value.min_threshold} onChange={(v) => set('min_threshold', v ?? 0)} min={0} step={1} />
+              )}
+            </Field>
           </div>
         </div>
       )}

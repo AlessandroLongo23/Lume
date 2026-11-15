@@ -21,8 +21,4 @@ export interface DataColumn {
   getFilterChoice?: (row: Row) => FilterChoice;
   display?: (data: Row) => string;
   onclick?: (data: Row) => void;
-  component?: {
-    is: React.ComponentType<Row>;
-    getProps: (data: Row) => Row;
-  };
 }

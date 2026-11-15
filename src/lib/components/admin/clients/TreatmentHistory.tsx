@@ -7,6 +7,7 @@ import { it } from 'date-fns/locale';
 import { NotebookText } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { tableClass, thClass, trClass, tdClass, cellNumClass, CellEmpty } from '@/lib/components/shared/ui/table/tableStyles';
 
 interface TreatmentHistoryProps {
   clientId: string;
@@ -26,46 +27,48 @@ export function TreatmentHistory({ clientId }: TreatmentHistoryProps) {
 
   if (entries.length === 0) {
     return (
-      <div className="bg-zinc-50 dark:bg-zinc-800 rounded-md p-6 border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
-        <NotebookText className="size-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">Nessuno storico trattamenti</p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-          I trattamenti compilati nelle fiche compariranno qui.
-        </p>
+      <div className="flex items-center gap-3 py-4 shadow-[inset_0_1px_0_var(--lume-line),inset_0_-1px_0_var(--lume-line)]">
+        <NotebookText className="size-4 shrink-0 text-[var(--lume-text-muted)]" aria-hidden />
+        <div>
+          <p className="text-sm text-[var(--lume-text)]">Nessuno storico trattamenti</p>
+          <p className="text-xs text-[var(--lume-text-secondary)] mt-0.5">
+            I trattamenti compilati nelle fiche compariranno qui.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-auto -mx-4">
+      <table className={tableClass}>
         <thead>
-          <tr className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 border-b border-zinc-500/25">
-            <th className="text-left font-medium py-2 pr-3 w-32">Data</th>
-            <th className="text-left font-medium py-2 pr-3">Miscela</th>
-            <th className="text-left font-medium py-2 pr-3">Tecnica</th>
-            <th className="text-left font-medium py-2">Note</th>
+          <tr>
+            <th className={`${thClass()} w-36`}>Data</th>
+            <th className={thClass()}>Miscela</th>
+            <th className={thClass()}>Tecnica</th>
+            <th className={thClass()}>Note</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-500/10">
+        <tbody>
           {entries.map((f) => (
             <tr
               key={f.id}
               onClick={() => router.push(`/admin/fiches?edit=${f.id}`)}
-              className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+              className={trClass()}
             >
-              <td className="py-2 pr-3 text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                {format(new Date(f.datetime), 'd MMM yyyy', { locale: it })}
+              <td className={tdClass}>
+                <span className={cellNumClass}>{format(new Date(f.datetime), 'dd/MM/yyyy', { locale: it })}</span>
               </td>
-              <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100">
-                {f.miscela?.trim() || <span className="text-zinc-400">—</span>}
+              <td className={`${tdClass} whitespace-normal text-[var(--lume-text)]`}>
+                {f.miscela?.trim() || <CellEmpty />}
               </td>
-              <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100">
-                {f.tecnica?.trim() || <span className="text-zinc-400">—</span>}
+              <td className={`${tdClass} whitespace-normal text-[var(--lume-text)]`}>
+                {f.tecnica?.trim() || <CellEmpty />}
               </td>
               <Tooltip label={f.note || undefined}>
-                <td className="py-2 text-zinc-600 dark:text-zinc-300 max-w-65 truncate">
-                  {f.note?.trim() || <span className="text-zinc-400">—</span>}
+                <td className={`${tdClass} max-w-65 truncate`}>
+                  {f.note?.trim() || <CellEmpty />}
                 </td>
               </Tooltip>
             </tr>

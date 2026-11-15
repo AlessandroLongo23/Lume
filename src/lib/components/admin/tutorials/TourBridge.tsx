@@ -11,12 +11,12 @@ import type { LumeTourStep } from '@/lib/tutorials/types';
 /**
  * The single place that performs imperative NextStep control under the provider:
  *
- *  1. Advances an `action` step when the user performs its action —
- *     `advanceOnRoute` (navigation) or `completeOn` (a tour event, e.g. a modal save).
- *  2. Drives chained tutorials: the layout's `onComplete`/`onSkip` only record a
- *     finish via `tourQueue.notifyFinished`; here we read that signal and either
- *     start the next tour in the chain, return to the final help page, or (no
- *     active chain) fall back to the finished tour's own `endRoute`.
+ * 1. Advances an `action` step when the user performs its action —
+ * `advanceOnRoute` (navigation) or `completeOn` (a tour event, e.g. a modal save).
+ * 2. Drives chained tutorials: the layout's `onComplete`/`onSkip` only record a
+ * finish via `tourQueue.notifyFinished`; here we read that signal and either
+ * start the next tour in the chain, return to the final help page, or (no
+ * active chain) fall back to the finished tour's own `endRoute`.
  *
  * Renders nothing; must live inside `<NextStepProvider>`.
  */

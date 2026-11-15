@@ -1,7 +1,8 @@
 'use client';
 
-import { LayoutGrid, TableProperties, Calendar, RotateCcw, Eye } from 'lucide-react';
+import { LayoutGrid, TableProperties, Calendar, RotateCcw } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
+import { OptionGroup, type Option } from '@/lib/components/shared/ui/forms/OptionGroup';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { usePreferencesStore } from '@/lib/stores/preferences';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -13,7 +14,6 @@ import type {
   CalendarioView,
 } from '@/lib/types/Preferences';
 
-type Option<T extends string> = { value: T; label: string; icon: React.ElementType };
 
 const CLIENTI_OPTS: Option<ClientiView>[] = [
   { value: 'table', label: 'Tabella', icon: TableProperties },
@@ -32,43 +32,6 @@ const CALENDARIO_OPTS: Option<CalendarioView>[] = [
   { value: 'week', label: 'Settimana', icon: Calendar },
   { value: 'month', label: 'Mese', icon: Calendar },
 ];
-
-function SegmentedRow<T extends string>({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  value: T;
-  options: Option<T>[];
-  onChange: (v: T) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-2">
-      {options.map(({ value: v, label, icon: Icon }) => {
-        const selected = v === value;
-        return (
-          <button
-            key={v}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(v)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              selected
-                ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
-                : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-            }`}
-          >
-            <Icon className="size-4" />
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export function DefaultVistaPanel() {
   const preferences = usePreferencesStore((s) => s.preferences);
@@ -95,11 +58,10 @@ export function DefaultVistaPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Eye}
         title="Clienti"
         description="Vista predefinita all'apertura della pagina Clienti."
       >
-        <SegmentedRow
+        <OptionGroup
           value={clienti}
           options={CLIENTI_OPTS}
           onChange={(v) => void persist({ defaultViews: { clienti: v } })}
@@ -108,11 +70,10 @@ export function DefaultVistaPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Eye}
         title="Fiches"
         description="Vista predefinita all'apertura della pagina Fiches."
       >
-        <SegmentedRow
+        <OptionGroup
           value={fiches}
           options={FICHES_OPTS}
           onChange={(v) => void persist({ defaultViews: { fiches: v } })}
@@ -121,11 +82,10 @@ export function DefaultVistaPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Eye}
         title="Ordini"
         description="Vista predefinita all'apertura della pagina Ordini."
       >
-        <SegmentedRow
+        <OptionGroup
           value={ordini}
           options={ORDINI_OPTS}
           onChange={(v) => void persist({ defaultViews: { ordini: v } })}
@@ -134,11 +94,10 @@ export function DefaultVistaPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Eye}
         title="Calendario"
         description="Vista predefinita all'apertura del calendario."
       >
-        <SegmentedRow
+        <OptionGroup
           value={calendario}
           options={CALENDARIO_OPTS}
           onChange={(v) => void persist({ defaultViews: { calendario: v } })}
@@ -146,7 +105,7 @@ export function DefaultVistaPanel() {
         />
       </SettingsCard>
 
-      <p className="px-1 text-xs text-zinc-500">
+      <p className="text-xs text-[var(--lume-text-muted)]">
         I valori scelti vengono applicati al prossimo accesso e su nuovi dispositivi. In sessione,
         i toggle in pagina restano locali e non sovrascrivono il default.
       </p>

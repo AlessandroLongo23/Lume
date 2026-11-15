@@ -273,7 +273,7 @@
       "Quietly tactile. Buttons lift one pixel on hover, cards glow at the border with --lume-accent-muted. Every interaction confirms itself without theatrics. No bouncy elastic, no scale-115 zooms, no shimmer passes.",
       "Indigo as a rare event. Lamplight Indigo carries primary actions, the one selected appointment, the focused field, the one active alert. Everywhere else lives in graphite neutrals. A screen with three indigo elements is a screen with a bug.",
       "Two themes, both first-class. Light mode is the default for daytime reception PCs. Dark mode is built deliberately, not as a tinted inversion: a four-tier elevation ramp lifted off pure black, hue 265 carried through for 'indigo-tinted graphite', chromatic feedback borders, shadow alpha pushed to 0.55 so depth stays visible.",
-      "Italian throughout. Geist Sans (Western Latin glyph set), JetBrains Mono for prices and IDs, dates and currencies in Italian formatting. No English borrowings where Italian works."
+      "Italian throughout. Geist Sans (Western Latin glyph set), with tabular figures for prices and IDs, dates and currencies in Italian formatting. No English borrowings where Italian works."
     ],
     "rules": [
       { "name": "The One Voice Rule", "body": "Lamplight Indigo carries less than 10% of any given screen's pixels. Its rarity is the entire point. Two indigo elements means one of them needs to become a ghost button or a graphite chip.", "section": "colors" },

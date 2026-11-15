@@ -10,9 +10,6 @@ interface TooltipProps {
   label?: string;
   shortcut?: string;
   side?: Side;
-  sideOffset?: number;
-  /** Overrides the app-wide delay set by `UiProviders`. */
-  delay?: number;
   children: ReactElement;
 }
 
@@ -20,22 +17,22 @@ export function Tooltip({
   label,
   shortcut,
   side = 'top',
-  sideOffset = 8,
-  delay,
   children,
 }: TooltipProps) {
   if (!label) return children;
   return (
     <BaseTooltip.Root>
-      <BaseTooltip.Trigger delay={delay} render={children} />
+      <BaseTooltip.Trigger render={children} />
       <BaseTooltip.Portal>
         {/* The layer goes on the Positioner: the Popup is static inside it, so a
             z-index there has no effect. */}
-        <BaseTooltip.Positioner side={side} sideOffset={sideOffset} className="z-tooltip">
+        <BaseTooltip.Positioner side={side} sideOffset={8} className="z-tooltip">
           <BaseTooltip.Popup
             className={[
-              'flex items-center gap-2 rounded-md border border-[var(--lume-border-tooltip)] bg-[var(--lume-surface-raised)]',
-              'px-2 py-1 text-xs text-[var(--lume-text)] shadow-md',
+              // Inverted chip: the text colour as the fill reads against any
+              // surface in either theme, without a border.
+              'flex items-center gap-2 rounded-md bg-[var(--lume-text)] text-[var(--lume-bg)]',
+              'px-2 py-1 text-xs font-medium shadow-[var(--shadow-md)]',
               'origin-(--transform-origin) transition-[opacity,scale] duration-[var(--duration-fast)] ease-[var(--ease-out)]',
               'data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
               'motion-safe:data-[starting-style]:scale-95 motion-safe:data-[ending-style]:scale-95',
@@ -45,7 +42,7 @@ export function Tooltip({
           >
             <span>{label}</span>
             {shortcut && (
-              <kbd className="px-1.5 py-0.5 rounded bg-[var(--lume-surface)] border border-[var(--lume-border)] text-2xs text-[var(--lume-text-muted)] font-sans">
+              <kbd className="px-1 py-0.5 rounded-sm bg-[color-mix(in_oklab,var(--lume-bg)_18%,transparent)] text-2xs font-sans font-medium opacity-80">
                 {shortcut}
               </kbd>
             )}

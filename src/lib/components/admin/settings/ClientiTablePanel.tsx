@@ -1,7 +1,8 @@
 'use client';
 
-import { Cake, RotateCcw } from 'lucide-react';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { RotateCcw } from 'lucide-react';
+import { useId } from 'react';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { SettingsCard } from './SettingsCard';
@@ -18,6 +19,7 @@ const FACTORY: BirthdayReminderPreference = {
 export function ClientiTablePanel() {
   const preferences = usePreferencesStore((s) => s.preferences);
   const updatePreferences = usePreferencesStore((s) => s.updatePreferences);
+  const daysId = useId();
 
   const current: BirthdayReminderPreference =
     preferences.clientsTable?.birthdayReminder ?? FACTORY;
@@ -39,41 +41,36 @@ export function ClientiTablePanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Cake}
         title="Promemoria compleanni"
         description="Mostra un badge accanto alla data di nascita in elenco clienti quando il compleanno si avvicina."
       >
-        <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800 -mx-6">
-          <div className="px-6 py-3 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                Mostra promemoria
-              </p>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                Attiva il badge con il conto alla rovescia accanto alla data di nascita.
-              </p>
-            </div>
-            <Switch
-              checked={current.enabled}
-              onChange={() => void persist({ enabled: !current.enabled })}
-            />
-          </div>
+        <div className="flex flex-col divide-y divide-line">
+          <SwitchRow
+            label="Mostra promemoria"
+            description="Attiva il badge con il conto alla rovescia accanto alla data di nascita."
+            checked={current.enabled}
+            onChange={() => void persist({ enabled: !current.enabled })}
+            className="py-3"
+          />
 
           <div
-            className={`px-6 py-3 flex items-center justify-between gap-4 transition-opacity ${
+            className={`py-3 flex items-center justify-between gap-4 transition-opacity ${
               current.enabled ? 'opacity-100' : 'opacity-50'
             }`}
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              {/* ds-ignore: a setting row with the number on the right, matching the SwitchRow above; Field stacks label, control and hint */}
+              <label htmlFor={daysId} className="block text-sm font-medium text-[var(--lume-text)]">
                 Soglia giorni
-              </p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              </label>
+              <p id={`${daysId}-hint`} className="text-xs text-[var(--lume-text-secondary)] mt-0.5">
                 Il badge appare a partire da N giorni prima del compleanno.
               </p>
             </div>
             <div className="w-28 shrink-0">
               <NumberInput
+                id={daysId}
+                aria-describedby={`${daysId}-hint`}
                 value={current.daysAhead}
                 onChange={(v) => {
                   if (v == null) return;

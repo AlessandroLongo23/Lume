@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { X, Mail } from 'lucide-react';
+import { useId, useMemo, useState } from 'react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { DialogHeader } from '@/lib/components/shared/ui/modals/dialogParts';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import {
   renderBookingEmail,
@@ -64,62 +65,34 @@ export function BookingEmailPreviewModal({
   }, [settings, variant]);
 
   const activeVariant = VARIANTS.find((v) => v.value === variant);
+  const titleId = useId();
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      classes="w-full max-w-3xl bg-white dark:bg-zinc-900 rounded-2xl shadow-xl"
-    >
-      <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex items-center justify-center size-9 rounded-lg bg-primary/10 text-primary shrink-0">
-            <Mail className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Anteprima email prenotazioni</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Mostrato con i dati del tuo salone. Le email reali useranno i dati del cliente.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Chiudi"
-          className="size-8 inline-flex items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+    <Modal isOpen={isOpen} onClose={onClose} classes="max-w-3xl" labelledBy={titleId}>
+      <>
+      <DialogHeader
+        titleId={titleId}
+        title="Anteprima email prenotazioni"
+        subtitle="Mostrato con i dati del tuo salone. Le email reali useranno i dati del cliente."
+        onClose={onClose}
+        divider
+      />
 
       <div className="px-6 pt-4 pb-2">
-        <div className="flex flex-wrap gap-1.5">
-          {VARIANTS.map((v) => {
-            const active = v.value === variant;
-            return (
-              <button
-                key={v.value}
-                type="button"
-                onClick={() => setVariant(v.value)}
-                className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-colors ${
-                  active
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-primary/40'
-                }`}
-              >
-                {v.label}
-              </button>
-            );
-          })}
-        </div>
+        <TabBar label="Tipo di email">
+          {VARIANTS.map((v) => (
+            <TabButton key={v.value} active={v.value === variant} onClick={() => setVariant(v.value)}>
+              {v.label}
+            </TabButton>
+          ))}
+        </TabBar>
         {activeVariant && (
-          <p className="mt-3 text-xs text-zinc-500">{activeVariant.hint}</p>
+          <p className="mt-3 text-xs text-[var(--lume-text-secondary)]">{activeVariant.hint}</p>
         )}
         {rendered && (
-          <p className="mt-3 text-xs text-zinc-500">
-            <span className="text-zinc-400">Oggetto:</span>{' '}
-            <span className="text-zinc-700 dark:text-zinc-200 font-medium">{rendered.subject}</span>
+          <p className="mt-3 text-xs text-[var(--lume-text-secondary)]">
+            <span className="text-[var(--lume-text-muted)]">Oggetto:</span>{' '}
+            <span className="text-[var(--lume-text)] font-medium">{rendered.subject}</span>
           </p>
         )}
       </div>
@@ -133,14 +106,16 @@ export function BookingEmailPreviewModal({
             // its frame. allow-same-origin is intentionally omitted to keep
             // the iframe in a null origin.
             sandbox=""
-            className="w-full h-[60vh] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white"
+            // ds-ignore: email preview frame; an email is read on white in every mail client, so it stays white in dark mode too
+            className="w-full h-[60vh] rounded-xl shadow-[inset_0_0_0_1px_var(--lume-line)] bg-white"
           />
         ) : (
-          <p className="text-sm text-zinc-500 text-center py-12">
+          <p className="text-sm text-[var(--lume-text-secondary)] text-center py-12">
             Caricamento impostazioni del salone…
           </p>
         )}
       </div>
+      </>
     </Modal>
   );
 }

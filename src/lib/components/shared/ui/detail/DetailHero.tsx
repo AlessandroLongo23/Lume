@@ -3,6 +3,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 
 interface DetailHeroProps {
   onBack: () => void;
@@ -20,10 +21,10 @@ export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions,
   return (
     <motion.header
       data-tour={dataTour}
-      initial={reduceMotion ? false : { opacity: 0, y: -6, filter: 'blur(4px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
-      className="px-6 lg:px-10 pt-6 pb-5 border-b border-zinc-500/15"
+      initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE_OUT }}
+      className="px-6 lg:px-10 pt-6 pb-5 border-b border-line"
     >
       <div className="max-w-5xl mx-auto w-full flex items-center gap-4">
         <Button
@@ -32,7 +33,6 @@ export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions,
           iconOnly
           aria-label="Torna indietro"
           onClick={onBack}
-          className="rounded-full shrink-0"
         >
           <ArrowLeft />
         </Button>
@@ -41,13 +41,13 @@ export function DetailHero({ onBack, avatar, title, meta, chips, aside, actions,
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
+            <h1 className="text-2xl font-medium tracking-tight leading-tight text-[var(--lume-text)] truncate">
               {title}
             </h1>
             {chips}
           </div>
           {meta && (
-            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-[var(--lume-text-secondary)]">
               {meta}
             </div>
           )}

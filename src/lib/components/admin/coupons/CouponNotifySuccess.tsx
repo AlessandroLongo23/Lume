@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Mail, MessageCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, Mail, MessageCircle } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
 import type { Client } from '@/lib/types/Client';
 import type { Coupon } from '@/lib/types/Coupon';
 import { buildWhatsAppLink } from '@/lib/utils/coupon-notify';
@@ -45,75 +46,55 @@ export function CouponNotifySuccess({
 
   const emailDisabled = !hasEmail || emailStatus === 'sending' || emailStatus === 'sent';
 
-  const emailClass = (() => {
-    const base = 'flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors';
-    if (emailStatus === 'sent') return `${base} bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 cursor-default`;
-    if (!hasEmail) return `${base} bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed`;
-    if (emailStatus === 'sending') return `${base} bg-primary/60 text-white cursor-wait`;
-    return `${base} bg-primary text-white hover:bg-primary/90`;
-  })();
-
   return (
     <div className="flex flex-col gap-5 py-2" data-tour="coupon-notify">
       <div className="flex items-center gap-3">
-        <div className="size-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-          <CheckCircle2 className="size-6 text-emerald-500" />
+        <div className="size-12 rounded-full bg-success-soft flex items-center justify-center">
+          <CheckCircle2 className="size-6 text-success-strong" />
         </div>
         <div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <p className="text-base font-medium text-[var(--lume-text)]">
             {kindLabel} creato per {recipient.firstName} {recipient.lastName}
           </p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-[var(--lume-text-secondary)]">
             Avvisalo subito per fargli sapere del regalo.
           </p>
         </div>
       </div>
 
-      <div className="rounded-lg border border-zinc-500/15 bg-zinc-50 dark:bg-zinc-900/40 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">Messaggio precompilato</p>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{message}</p>
+      <div className="surface-card p-4">
+        <p className="text-xs font-medium text-[var(--lume-text-muted)] mb-2">Messaggio precompilato</p>
+        <p className="text-sm text-[var(--lume-text)] whitespace-pre-wrap">{message}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {waLink ? (
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-          >
-            <MessageCircle className="size-4" />
-            Invia su WhatsApp
-          </a>
+          <Button asChild variant="secondary" className="w-full">
+            <a href={waLink} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="size-4 text-success-strong" aria-hidden />
+              Invia su WhatsApp
+            </a>
+          </Button>
         ) : (
-          <div
-            className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
-            title="Telefono del destinatario mancante"
-          >
-            <MessageCircle className="size-4" />
+          <Button variant="secondary" className="w-full" disabled leadingIcon={MessageCircle} title="Telefono del destinatario mancante">
             Telefono mancante
-          </div>
+          </Button>
         )}
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={handleSendEmail}
           disabled={emailDisabled}
-          className={emailClass}
+          loading={emailStatus === 'sending'}
+          leadingIcon={emailStatus === 'sent' ? CheckCircle2 : Mail}
+          className="w-full min-w-0"
         >
-          {emailStatus === 'sending' ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : emailStatus === 'sent' ? (
-            <CheckCircle2 className="size-4" />
-          ) : (
-            <Mail className="size-4" />
-          )}
           <span className="truncate">{emailLabel}</span>
-        </button>
+        </Button>
       </div>
 
       {emailStatus === 'failed' && emailError && (
-        <p className="text-xs text-red-500 -mt-2">Errore: {emailError}</p>
+        <p className="text-xs text-danger-strong -mt-2">Errore: {emailError}</p>
       )}
     </div>
   );

@@ -15,15 +15,15 @@ export function ConsensoMinore() {
         <tbody>
           <tr>
             <th>Nome e cognome</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
           <tr>
             <th>Data di nascita</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
           <tr>
             <th>Codice fiscale</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
         </tbody>
       </table>
@@ -33,19 +33,19 @@ export function ConsensoMinore() {
         <tbody>
           <tr>
             <th>Nome e cognome</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
           <tr>
             <th>Codice fiscale</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
           <tr>
             <th>Documento di identità (tipo e numero)</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
           <tr>
             <th>Telefono / email</th>
-            <td style={{ height: 24 }}></td>
+            <td className="document-fill"></td>
           </tr>
         </tbody>
       </table>

@@ -70,38 +70,38 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
   }
 
   return (
-    <div className="flex flex-row gap-3 p-4 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800/50">
-      <div className={`flex shrink-0 items-center justify-center size-9 rounded-full text-xs font-semibold ${
+    <div className="surface-card flex flex-row gap-3 p-4">
+      <div className={`flex shrink-0 items-center justify-center size-9 rounded-full text-xs font-medium ${
         isAgent
-          ? 'bg-primary/10 text-primary-hover dark:text-primary/70'
-          : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+          ? 'bg-active text-[var(--lume-text)]'
+          : 'bg-strong text-[var(--lume-text-secondary)]'
       }`}>
         {isAgent ? <Bot className="size-4" /> : initials(comment.getAuthorName())}
       </div>
 
       <div className="flex flex-col gap-2 min-w-0 flex-1">
         <div className="flex flex-row items-center flex-wrap gap-2 text-xs">
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+          <span className="font-medium text-[var(--lume-text)]">
             {comment.getAuthorName()}
           </span>
           {isAgent && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-primary/10 text-primary-hover dark:text-primary/70">
+            <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-md text-2xs font-medium bg-active text-[var(--lume-text)]">
               <Bot className="size-3" /> Team Lume
             </span>
           )}
           {comment.author_salon_name && !isAgent && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            <span className="text-[var(--lume-text-secondary)]">
               {comment.author_salon_name}
             </span>
           )}
-          <span className="text-zinc-400">·</span>
+          <span className="text-[var(--lume-text-muted)]">·</span>
           <Tooltip label={new Date(comment.created_at).toLocaleString('it-IT')}>
-            <span className="text-zinc-500 dark:text-zinc-400">
+            <span className="text-[var(--lume-text-secondary)]">
               {formatDistanceToNow(new Date(comment.created_at), { locale: it, addSuffix: true })}
             </span>
           </Tooltip>
           {wasEdited && (
-            <span className="text-zinc-400 dark:text-zinc-500 text-2xs">(modificato)</span>
+            <span className="text-[var(--lume-text-muted)] text-2xs">(modificato)</span>
           )}
 
           {(canEdit || canDelete) && (
@@ -113,11 +113,10 @@ export function CommentCard({ comment, currentUserId }: CommentCardProps) {
               )}
               {canDelete && (
                 <Button
-                  variant="ghost"
+                  variant="ghost-destructive"
                   size="sm"
                   leadingIcon={Trash2}
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10"
                 >
                   Elimina
                 </Button>

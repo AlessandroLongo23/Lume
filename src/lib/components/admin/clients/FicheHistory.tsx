@@ -7,7 +7,10 @@ import { it } from 'date-fns/locale';
 import { Ticket } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
-import { FicheBucket, FICHE_BUCKET_LABELS, BUCKET_STYLES, getFicheBucket } from '@/lib/types/Fiche';
+import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
+import { FICHE_BUCKET_TONE } from '@/lib/components/admin/fiches/ficheBucketTone';
+import { tableClass, thClass, trClass, tdClass, cellNumClass, CellEmpty } from '@/lib/components/shared/ui/table/tableStyles';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import type { FicheStatus } from '@/lib/types/ficheStatus';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -101,14 +104,14 @@ export function FicheHistory({ clientId }: FicheHistoryProps) {
   if (entries === null && !error) {
     return (
       <div className="flex items-center justify-center py-10">
-        <div className="size-6 border-2 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
+        <div className="size-6 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
+      <p className="text-sm text-[var(--lume-text-muted)]">
         Impossibile caricare lo storico delle fiche.
       </p>
     );
@@ -116,49 +119,47 @@ export function FicheHistory({ clientId }: FicheHistoryProps) {
 
   if (entries!.length === 0) {
     return (
-      <div className="bg-zinc-50 dark:bg-zinc-800 rounded-md p-6 border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
-        <Ticket className="size-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">Nessuna fiche per questo cliente</p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-          Gli appuntamenti del cliente compariranno qui.
-        </p>
+      <div className="flex items-center gap-3 py-4 shadow-[inset_0_1px_0_var(--lume-line),inset_0_-1px_0_var(--lume-line)]">
+        <Ticket className="size-4 shrink-0 text-[var(--lume-text-muted)]" aria-hidden />
+        <div>
+          <p className="text-sm text-[var(--lume-text)]">Nessuna fiche per questo cliente</p>
+          <p className="text-xs text-[var(--lume-text-secondary)] mt-0.5">
+            Gli appuntamenti del cliente compariranno qui.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-h-105 overflow-auto">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-[var(--lume-bg)]">
-          <tr className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 border-b border-zinc-500/25">
-            <th className="text-left font-medium py-2 pr-3 w-32">Data</th>
-            <th className="text-left font-medium py-2 pr-3">Servizi</th>
-            <th className="text-right font-medium py-2 pr-3 w-28">Totale</th>
-            <th className="text-right font-medium py-2 w-28">Stato</th>
+    <div className="max-h-105 overflow-auto -mx-4">
+      <table className={tableClass}>
+        <thead className="sticky top-0 z-sticky bg-[var(--lume-panel)]">
+          <tr>
+            <th className={`${thClass()} w-36`}>Data</th>
+            <th className={thClass()}>Servizi</th>
+            <th className={`${thClass({ align: 'right' })} w-28`}>Totale</th>
+            <th className={`${thClass()} w-32`}>Stato</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-500/10">
+        <tbody>
           {entries!.map((e) => (
             <tr
               key={e.id}
               onClick={() => router.push(`/admin/fiches?edit=${e.id}`)}
-              className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+              className={trClass()}
             >
-              <td className="py-2 pr-3 text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                {format(e.datetime, 'd MMM yyyy', { locale: it })}
+              <td className={tdClass}>
+                <span className={cellNumClass}>{format(e.datetime, 'dd/MM/yyyy', { locale: it })}</span>
               </td>
-              <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-100 max-w-70 truncate">
-                {e.services || <span className="text-zinc-400">—</span>}
+              <td className={`${tdClass} text-[var(--lume-text)] max-w-70 truncate`}>
+                {e.services || <CellEmpty />}
               </td>
-              <td className="py-2 pr-3 text-right text-zinc-800 dark:text-zinc-100 whitespace-nowrap tabular-nums">
-                {formatCurrency(e.total)}
+              <td className={`${tdClass} text-right`}>
+                <span className={cellNumClass}>{formatCurrency(e.total)}</span>
               </td>
-              <td className="py-2 text-right whitespace-nowrap">
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${BUCKET_STYLES[e.bucket]}`}
-                >
-                  {FICHE_BUCKET_LABELS[e.bucket]}
-                </span>
+              <td className={tdClass}>
+                <StatusDot tone={FICHE_BUCKET_TONE[e.bucket]}>{FICHE_BUCKET_LABELS[e.bucket]}</StatusDot>
               </td>
             </tr>
           ))}

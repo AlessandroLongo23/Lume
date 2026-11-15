@@ -64,3 +64,7 @@ docs/
 
 # Supabase CLI cache
 supabase/.temp/
+
+# edl-docs (component docs, see edl-docs/)
+/edl-docs/node_modules
+/edl-docs/edl-docs-static

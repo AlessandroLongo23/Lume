@@ -1,0 +1,21 @@
+/* The app's stylesheet, as the Next.js root layout loads it. */
+@import '../src/app/globals.css';
+
+/* Tailwind scans from the Vite root (this folder): point it at the app. */
+@source '../src';
+
+/* In the app next/font sets these on <html>; here the fonts come from
+   preview-head.html. */
+:root {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* <html> gets the background in sRGB from preview.tsx; body stays clear so
+   the canvas reads that one. */
+html {
+  color: var(--lume-text);
+}
+body {
+  background: transparent;
+}

@@ -7,6 +7,8 @@ import { it } from 'date-fns/locale';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { FeedbackEntry } from '@/lib/types/FeedbackEntry';
+import { Tag } from '@/lib/components/shared/ui/Tag';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { TYPE_META, STATUS_META } from './feedback-meta';
 
 interface FeedbackCardProps {
@@ -50,7 +52,7 @@ export function FeedbackCard({
   return (
     <Link
       href={href}
-      className="group flex flex-row items-start gap-4 w-full text-left p-4 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+      className="surface-card card-interactive group flex flex-row items-start gap-4 w-full text-left p-4"
     >
       {/* Upvote column */}
       {allowUpvote ? (
@@ -63,59 +65,55 @@ export function FeedbackCard({
           }}
           aria-label={hasVoted ? 'Rimuovi voto' : 'Vota'}
           aria-disabled={!canVote}
-          className={`flex shrink-0 flex-col items-center justify-center gap-0.5 w-14 py-2 rounded-lg border transition-colors ${
+          className={`flex shrink-0 flex-col items-center justify-center gap-0.5 w-14 py-2 rounded-lg transition-colors ${
             hasVoted
-              ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/70'
-              : 'border-zinc-500/25 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300'
-          } ${canVote ? 'hover:border-primary/70 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+              ? 'selected'
+              : 'shadow-[inset_0_0_0_1px_var(--lume-edge)] text-[var(--lume-text-secondary)]'
+          } ${canVote ? 'hover:text-[var(--lume-text)] hover:shadow-[inset_0_0_0_1px_var(--lume-edge-hover)] cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
         >
           <ChevronUp className="size-4" strokeWidth={2.5} />
-          <span className="text-sm font-semibold tabular-nums">{entry.upvote_count}</span>
+          <span className="text-sm font-medium tabular-nums">{entry.upvote_count}</span>
         </div>
       ) : (
-        <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 w-14 py-2 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300">
+        <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 w-14 py-2 rounded-lg shadow-[inset_0_0_0_1px_var(--lume-edge)] text-[var(--lume-text-secondary)]">
           <ChevronUp className="size-4" strokeWidth={2.5} />
-          <span className="text-sm font-semibold tabular-nums">{entry.upvote_count}</span>
+          <span className="text-sm font-medium tabular-nums">{entry.upvote_count}</span>
         </div>
       )}
 
       {/* Content */}
       <div className="flex flex-col gap-2 min-w-0 flex-1">
         <div className="flex flex-row items-center flex-wrap gap-2">
-          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${typeMeta.badge}`}>
-            <typeMeta.icon className="size-3.5" strokeWidth={2} />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--lume-text-secondary)]">
+            <typeMeta.icon className={`size-3.5 ${typeMeta.badge}`} strokeWidth={2} />
             {typeMeta.label}
           </span>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusMeta.badge}`}>
-            {statusMeta.label}
-          </span>
+          <StatusDot tone={statusMeta.tone} className="text-xs font-medium">{statusMeta.label}</StatusDot>
           {entry.author_salon_name && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            <span className="inline-flex items-center text-xs text-[var(--lume-text-secondary)]">
               {entry.author_salon_name}
             </span>
           )}
           {isOwnEntry && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-500 dark:text-zinc-400">
-              Tuo
-            </span>
+            <Tag>Tuo</Tag>
           )}
         </div>
 
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2">
+        <h3 className="text-sm font-medium text-[var(--lume-text)] line-clamp-2">
           {entry.title}
         </h3>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 whitespace-pre-wrap">
+        <p className="text-sm text-[var(--lume-text-secondary)] line-clamp-2 whitespace-pre-wrap">
           {excerpt}
         </p>
 
-        <div className="flex flex-row items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="flex flex-row items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
           <span>{entry.getAuthorName()}</span>
-          <span className="text-zinc-300 dark:text-zinc-600">·</span>
+          <span className="text-[var(--lume-text-muted)]">·</span>
           <span>{format(new Date(entry.created_at), 'd MMM yyyy', { locale: it })}</span>
           {entry.comment_count > 0 && (
             <>
-              <span className="text-zinc-300 dark:text-zinc-600">·</span>
+              <span className="text-[var(--lume-text-muted)]">·</span>
               <span className="inline-flex items-center gap-1">
                 <MessageSquare className="size-3" />
                 <span className="tabular-nums">{entry.comment_count}</span>
@@ -124,8 +122,8 @@ export function FeedbackCard({
           )}
           {entry.completed_at && (
             <>
-              <span className="text-zinc-300 dark:text-zinc-600">·</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
+              <span className="text-[var(--lume-text-muted)]">·</span>
+              <span>
                 Completato il {format(new Date(entry.completed_at), 'd MMM yyyy', { locale: it })}
               </span>
             </>

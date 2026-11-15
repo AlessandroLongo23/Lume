@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Clock, Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save } from 'lucide-react';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import type { OperatingHourDay } from '@/lib/stores/salonSettings';
 
 const shiftSchema = z.object({
@@ -136,73 +137,77 @@ export function WorkingHoursForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6">
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
-            <Clock className="size-4 text-primary" />
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</h2>
-          </div>
+      <section>
+        <div className="mb-4">
+          <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">{title}</h3>
           {description && (
-            <p className="mt-1 text-xs text-zinc-500">{description}</p>
+            <p className="mt-1 text-sm text-[var(--lume-text-secondary)] max-w-prose">{description}</p>
           )}
         </div>
 
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <div className="divide-y divide-line border-y border-line">
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className={`px-6 py-4 transition-colors ${
-                field.isOpen ? '' : 'bg-zinc-50/50 dark:bg-zinc-950/30'
-              }`}
+              className="py-3"
             >
               <div className="flex items-start gap-4">
+                {/* Switch before the day name, not SwitchRow: the day column lines up with the shifts beside it. */}
                 <div className="flex items-center gap-3 w-36 shrink-0 pt-1.5">
                   <Switch
+                    id={`day-open-${field.id}`}
                     checked={field.isOpen}
                     onChange={() => toggleDay(index)}
                     disabled={readOnly}
                   />
-                  <span
-                    className={`text-sm font-medium transition-colors ${
+                  <label
+                    // ds-ignore: day name labelling the Switch before it; SwitchRow puts the switch last and CheckboxRow is for checkboxes
+                    htmlFor={`day-open-${field.id}`}
+                    className={`text-sm font-medium transition-colors ${readOnly ? '' : 'cursor-pointer'} ${
                       field.isOpen
-                        ? 'text-zinc-900 dark:text-zinc-100'
-                        : 'text-zinc-400 dark:text-zinc-600'
+                        ? 'text-[var(--lume-text)]'
+                        : 'text-[var(--lume-text-muted)]'
                     }`}
                   >
                     {DAY_NAMES[field.day]}
-                  </span>
+                  </label>
                 </div>
 
                 <div className="flex-1 min-w-0">
                   {!field.isOpen ? (
-                    <span className="text-sm text-zinc-400 dark:text-zinc-600 italic">Chiuso</span>
+                    <span className="inline-block pt-1.5 text-sm text-[var(--lume-text-muted)]">Chiuso</span>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {field.shifts.map((_, shiftIndex) => (
                         <div key={shiftIndex} className="flex items-center gap-2">
-                          <input
+                          <FormInput
                             type="time"
                             lang="it"
+                            size="sm"
+                            aria-label={`${DAY_NAMES[field.day]}, inizio fascia ${shiftIndex + 1}`}
                             disabled={readOnly}
                             {...register(`operating_hours.${index}.shifts.${shiftIndex}.start`)}
-                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
+                            fieldClassName="w-auto"
+                            className="tabular-nums"
                           />
-                          <span className="text-zinc-300 dark:text-zinc-600 text-sm select-none">—</span>
-                          <input
+                          <span className="text-[var(--lume-text-muted)] text-sm select-none">—</span>
+                          <FormInput
                             type="time"
                             lang="it"
+                            size="sm"
+                            aria-label={`${DAY_NAMES[field.day]}, fine fascia ${shiftIndex + 1}`}
                             disabled={readOnly}
                             {...register(`operating_hours.${index}.shifts.${shiftIndex}.end`)}
-                            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
+                            fieldClassName="w-auto"
+                            className="tabular-nums"
                           />
                           {!readOnly && field.shifts.length > 1 && (
                             <Button
-                              variant="ghost"
+                              variant="ghost-destructive"
                               size="sm"
                               iconOnly
                               aria-label="Rimuovi fascia oraria"
                               onClick={() => removeShift(index, shiftIndex)}
-                              className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                             >
                               <Trash2 />
                             </Button>
@@ -216,7 +221,7 @@ export function WorkingHoursForm({
                           size="sm"
                           leadingIcon={Plus}
                           onClick={() => addShift(index)}
-                          className="w-fit text-primary hover:text-primary-active dark:hover:text-primary/70 mt-0.5"
+                          className="w-fit mt-0.5"
                         >
                           Aggiungi fascia oraria
                         </Button>
@@ -228,7 +233,7 @@ export function WorkingHoursForm({
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {!readOnly && (
         <div className="flex justify-end">

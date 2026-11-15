@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Star } from 'lucide-react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 
 interface StarRatingProps {
   value: number;
@@ -49,23 +50,25 @@ export function StarRating({ value, onChange }: StarRatingProps) {
             whileHover={reduceMotion ? undefined : { scale: 1.15 }}
             whileTap={reduceMotion ? undefined : { scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-            className="px-2 py-1 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="px-2 py-1 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]"
           >
             <motion.span
               className="block"
               animate={
                 justClicked === n && !reduceMotion
-                  ? { scale: [1, 1.35, 1], rotate: [0, -8, 6, 0] }
-                  : { scale: 1, rotate: 0 }
+                  ? { scale: [1, 1.15, 1] }
+                  : { scale: 1 }
               }
-              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
               onAnimationComplete={() => {
                 if (justClicked === n) setJustClicked(null);
               }}
             >
               <Star
-                className={`size-9 transition-colors duration-200 ${
-                  filled ? 'fill-amber-400 text-amber-400' : 'text-zinc-300 dark:text-zinc-600'
+                className={`size-9 transition-colors duration-[var(--duration-base)] ${
+                  filled
+                    ? 'fill-[var(--lume-rating)] text-[var(--lume-rating)]'
+                    : 'text-[var(--lume-edge-hover)]'
                 }`}
                 strokeWidth={1.5}
               />
@@ -77,8 +80,8 @@ export function StarRating({ value, onChange }: StarRatingProps) {
         <motion.span
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.25 }}
-          className="ml-2 text-sm text-zinc-500 dark:text-zinc-400 tabular-nums inline-flex items-center"
+          transition={{ duration: DURATION.base }}
+          className="ml-2 text-sm tabular-nums text-[var(--lume-text-secondary)] inline-flex items-center"
         >
           <span className="relative inline-block h-[1.25em] w-[1ch] overflow-hidden">
             <AnimatePresence mode="popLayout" custom={direction}>
@@ -89,7 +92,7 @@ export function StarRating({ value, onChange }: StarRatingProps) {
                 initial={reduceMotion ? false : 'enter'}
                 animate={reduceMotion ? { opacity: 1 } : 'center'}
                 exit={reduceMotion ? { opacity: 0 } : 'exit'}
-                transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
+                transition={{ type: 'spring', duration: DURATION.slow, bounce: 0 }}
                 className="absolute inset-0 flex items-center justify-center"
               >
                 {value}

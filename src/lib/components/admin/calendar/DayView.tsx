@@ -7,6 +7,7 @@ import { useCalendarStore } from '@/lib/stores/calendar';
 import { useOperatorOrder } from '@/lib/hooks/useOperatorOrder';
 import { TimeGrid } from './TimeGrid';
 import { DayViewSlot } from './DayViewSlot';
+import { OperatorAvatar } from './OperatorFilterButton';
 import type { TimeGridColumn } from './TimeGrid';
 import type { Operator } from '@/lib/types/Operator';
 import type { Fiche } from '@/lib/types/Fiche';
@@ -38,7 +39,18 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected, onCreat
   }, [orderedOperators, selectedOperatorIds]);
 
   const columns: TimeGridColumn[] = useMemo(
-    () => activeOperators.map((op) => ({ key: op.id, label: op.getFullName() })),
+    () =>
+      activeOperators.map((op) => ({
+        key: op.id,
+        label: op.getFullName(),
+        header: (
+          <span className="flex items-center gap-2 min-w-0">
+            <OperatorAvatar operator={op} size={24} />
+            <span className="truncate sm:hidden">{op.firstName || op.getFullName()}</span>
+            <span className="truncate hidden sm:inline">{op.getFullName()}</span>
+          </span>
+        ),
+      })),
     [activeOperators]
   );
 
@@ -103,7 +115,7 @@ export function DayView({ selectedDate, onSlotSelected, onFicheSelected, onCreat
 
   if (activeOperators.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center border border-zinc-500/25 rounded-lg p-12 text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-1 items-center justify-center p-12 text-sm text-[var(--lume-text-secondary)]">
         Nessun operatore selezionato.
       </div>
     );

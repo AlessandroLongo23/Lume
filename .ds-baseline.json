@@ -1,0 +1,5 @@
+{
+  "about": "Design-system violations known when recorded. `npm run ds:check` fails only on others. Written by `npm run ds:baseline`; lowered automatically when a check passes with fewer. A violation is matched by rule, value and source line, never by file or line number.",
+  "total": 0,
+  "findings": []
+}

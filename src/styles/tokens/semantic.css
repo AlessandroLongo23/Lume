@@ -2,13 +2,19 @@
    LAYER 3 — SEMANTIC (THEMED) TOKENS
    ═══════════════════════════════════════════════════════════════════════════
    Role-based tokens that DO change between light and dark mode.
-   Every value below is a var(--color-...) reference to palette.css — NEVER
-   a literal. To retint the app, edit palette.css; semantic bindings stay.
+   Every value below is a var(--color-...) reference to palette.css, or a
+   color-mix() of one (a palette step at an alpha), never a literal. To retint
+   the app, edit palette.css; semantic bindings stay. `npm run ds:report`
+   counts any literal that slips in.
 
    Naming: --lume-* (matches existing project convention, so consumers that
    reference var(--lume-bg), var(--lume-accent), etc. keep working without
-   any change). globals.css @theme inline re-exposes these as Tailwind
-   utilities (bg-surface, text-secondary, border-accent, …).
+   any change). globals.css @theme inline re-exposes some of these as Tailwind
+   utilities: the overlay ladder (bg-hover, bg-active, bg-strong, border-line,
+   border-edge), the status pairs (bg-danger-soft, text-danger-strong,
+   border-danger-line, …), accent washes (bg-accent-soft, bg-accent-muted),
+   bg-receipt and text-primary-hover. Where a utility exists, write it;
+   `npm run ds:check` flags the bg-[var(--lume-hover)] spelling.
 
    Two blocks:
      :root { ... }   light mode (also the default)
@@ -19,53 +25,70 @@
   /* ── Surfaces ───────────────────────────────────────────────────────── */
   --lume-bg:             var(--color-neutral-50);
   --lume-surface:        var(--color-neutral-100);
-  --lume-surface-raised: #FFFFFF;
-  --lume-control-bg:     #FFFFFF;
-  --lume-overlay:        oklch(0.171 0.005 265 / 0.45);
+  --lume-surface-raised: var(--color-pure-white);
+  --lume-control-bg:     var(--color-pure-white);
+  /* The rounded content panel the admin pages sit in (AppShell). */
+  --lume-panel:          var(--color-pure-white);
+  --lume-overlay:        color-mix(in oklab, var(--color-neutral-900) 45%, transparent);
 
   /* ── Text ───────────────────────────────────────────────────────────── */
   --lume-text:           var(--color-neutral-950);
   --lume-text-secondary: var(--color-neutral-600);
   --lume-text-muted:     var(--color-neutral-400);
-  --lume-text-on-accent: #FFFFFF;
+  --lume-text-on-accent: var(--color-pure-white);
 
   /* ── Borders ────────────────────────────────────────────────────────── */
-  --lume-border:         var(--color-neutral-200);   /* alias of border-flat */
-  --lume-border-subtle:  var(--color-neutral-100);
-  --lume-border-flat:    var(--color-neutral-200);
-  --lume-border-accent:  var(--color-brand-primary-500);
-  --lume-border-tooltip: var(--color-neutral-200);
+  --lume-border:         var(--color-neutral-200);
 
   /* ── Accent (indigo) — kept for backward compat of legacy --lume-accent */
   --lume-accent:       var(--color-brand-primary-500);
-  --lume-accent-dark:  var(--color-brand-primary-600);
   --lume-accent-light: var(--color-brand-primary-50);
-  --lume-accent-muted: oklch(0.620 0.190 275 / 0.10);
+  --lume-accent-muted: color-mix(in oklab, var(--color-brand-primary-500) 10%, transparent);
 
   /* ── Button — accent (indigo) ───────────────────────────────────────── */
   --lume-button-accent-bg:         var(--color-brand-primary-500);
   --lume-button-accent-bg-hover:   var(--color-brand-primary-600);
   --lume-button-accent-bg-active:  var(--color-brand-primary-700);
-  --lume-button-accent-fg:         #FFFFFF;
+  --lume-button-accent-fg:         var(--color-pure-white);
 
   /* ── Button — secondary ─────────────────────────────────────────────── */
-  --lume-button-secondary-bg:       #FFFFFF;
+  --lume-button-secondary-bg:       var(--color-pure-white);
   --lume-button-secondary-bg-hover: var(--color-neutral-100);
   --lume-button-secondary-fg:       var(--color-neutral-950);
 
   /* ── Button — destructive ───────────────────────────────────────────── */
   --lume-button-destructive-bg:       var(--color-danger-500);
   --lume-button-destructive-bg-hover: var(--color-danger-600);
-  --lume-button-destructive-fg:       #FFFFFF;
-
-  /* ── Button — ghost ─────────────────────────────────────────────────── */
-  --lume-button-ghost-bg:       transparent;
-  --lume-button-ghost-bg-hover: var(--color-neutral-100);
-  --lume-button-ghost-fg:       var(--color-neutral-950);
+  --lume-button-destructive-fg:       var(--color-pure-white);
 
   /* ── States ─────────────────────────────────────────────────────────── */
   --lume-ring-focus: var(--color-brand-primary-500);
-  --lume-selection:  var(--color-brand-primary-100);
+
+  /* ── Overlay ladder ─────────────────────────────────────────────────
+     Translucent fills mixed from the text colour, so the same token reads
+     on every surface step (shell, panel, raised) and in both themes.
+     hover = the pointer is here; active = this item is selected or pressed;
+     strong = hover on top of active. Selected nav items, tabs, segments and
+     chips use `active` + full-strength text, never an indigo wash: indigo
+     is reserved for "act" (primary buttons, focus, the selected
+     appointment). */
+  --lume-hover:  color-mix(in oklab, var(--lume-text) 4%, transparent);
+  --lume-active: color-mix(in oklab, var(--lume-text) 7%, transparent);
+  --lume-strong: color-mix(in oklab, var(--lume-text) 10%, transparent);
+
+  /* Hairline between sections and rows, lighter than a control edge. */
+  --lume-line: color-mix(in oklab, var(--lume-text) 8%, transparent);
+  /* Control edge: drawn as `box-shadow: 0 0 0 1px`, never a CSS border, so
+     36px controls stay 36px. */
+  --lume-edge: color-mix(in oklab, var(--lume-text) 12%, transparent);
+  --lume-edge-hover: color-mix(in oklab, var(--lume-text) 22%, transparent);
+
+  /* Floating layers (menus, popovers, tooltips, dialogs): a shadow ring
+     plus a soft drop, no CSS border. */
+  --lume-shadow-float:
+    0 0 0 1px color-mix(in oklab, var(--lume-text) 7%, transparent),
+    0 2px 4px -1px var(--shadow-color),
+    0 12px 28px -6px var(--shadow-color);
 
   /* ── Feedback ───────────────────────────────────────────────────────── */
   --lume-info-bg:       var(--color-info-50);
@@ -85,12 +108,12 @@
   --lume-danger-border: var(--color-danger-200);
 
   /* ── Shadow color (consumed by --shadow-* in primitives.css) ────────── */
-  --shadow-color: oklch(0.171 0.005 265 / 0.08);
+  --shadow-color: color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
 
   /* ── Aesthetic surfaces (intentional off-palette tints) ─────────────── */
   /* Warm paper-white for thermal-receipt UI (Fiche receipts). Slightly    */
   /* yellower than the main neutral palette to evoke printed paper.       */
-  --lume-receipt-bg: oklch(0.985 0.005 95);
+  --lume-receipt-bg: var(--color-receipt-paper);
 
   /* ── Gradients ──────────────────────────────────────────────────────── */
   --lume-gradient-hero:
@@ -109,6 +132,30 @@
      the light (#FFFFFF) and dark surfaces: indigo 500 + brass amber 700 pass all. */
   --lume-chart-entrate:  var(--color-brand-primary-500);
   --lume-chart-uscite:   var(--color-brand-secondary-700);
+  /* Third donut slice (aqua). 2.8:1 on white, so donuts list values beside them. */
+  --lume-chart-3:        var(--color-aqua-light);
+
+  /* Five categorical series (platform dashboard, prospects donut): the 500
+     step of each hue, the 400 step in dark mode. The shadcn bridge's
+     --chart-1…5 point here until Phase C removes it. */
+  --lume-series-1: var(--color-brand-primary-500);
+  --lume-series-2: var(--color-info-500);
+  --lume-series-3: var(--color-success-500);
+  --lume-series-4: var(--color-warning-500);
+  --lume-series-5: var(--color-danger-500);
+
+  /* Filled stars of a review rating (StarRating): brass amber, the same step in both themes. */
+  --lume-rating: var(--color-brand-secondary-400);
+  /* Brass ink for small icons that carry upgrade prompts or entity hints. */
+  --lume-brass-fg: var(--color-brand-secondary-600);
+
+  /* Photo viewing (ImageLightbox, image thumbnails): a black scrim behind
+     user photos and white controls on it. Theme-invariant on purpose, so
+     not redefined in .dark: a photo needs a near-black surround in both
+     themes. Consumers pick the alpha (bg-[var(--lume-scrim)]/90,
+     bg-[var(--lume-on-scrim)]/10). */
+  --lume-scrim:    var(--color-pure-black);
+  --lume-on-scrim: var(--color-pure-white);
 }
 
 .dark {
@@ -118,103 +165,111 @@
      is actually *perceptible*, not a theoretical "950/900/800" triad
      where the user sees one flat plane. Hue 265 carries the cool
      neutral family from light mode; chroma is nudged up a hair so the
-     surface reads as "indigo-tinted graphite" rather than sterile gray. */
-  --lume-bg:             oklch(0.148 0.007 265);  /* app shell / body */
-  --lume-surface:        oklch(0.192 0.008 265);  /* sidebar, topbar, cards */
-  --lume-surface-raised: oklch(0.232 0.009 265);  /* modals, popovers, hover */
-  --lume-control-bg:     oklch(0.192 0.008 265);
-  --lume-overlay:        oklch(0.050 0 0 / 0.72);
+     surface reads as "indigo-tinted graphite" rather than sterile gray.
+     The values live in palette.css as the midnight family. */
+  --lume-bg:             var(--color-midnight-shell);    /* app shell / body */
+  --lume-surface:        var(--color-midnight-surface);  /* sidebar, topbar, cards */
+  --lume-surface-raised: var(--color-midnight-raised);   /* modals, popovers, hover */
+  /* Content panel (AppShell), between surface and raised. */
+  --lume-panel:          var(--color-midnight-panel);
+  --lume-control-bg:     var(--color-midnight-surface);
+  --lume-overlay:        color-mix(in oklab, var(--color-midnight-overlay) 72%, transparent);
 
   /* ── Text — softened white + readable mutes ─────────────────────────
      Pure 1.0 white on dark bg causes optical buzz and halation. 0.965
      is "near-white" that the eye reads as white without the vibration.
      Secondary was 0.692 (neutral-400) — unreadable as sidebar metadata.
      Muted was 0.421 (neutral-600) — fails WCAG AA on any bg we show.
-     These new values target ~7:1 and ~4.5:1 against bg respectively. */
-  --lume-text:           oklch(0.965 0.004 265);
-  --lume-text-secondary: oklch(0.780 0.010 265);
-  --lume-text-muted:     oklch(0.605 0.012 265);
-  --lume-text-on-accent: #FFFFFF;
+     These values target ~7:1 and ~4.5:1 against bg respectively. */
+  --lume-text:           var(--color-midnight-text);
+  --lume-text-secondary: var(--color-midnight-text-secondary);
+  --lume-text-muted:     var(--color-midnight-text-muted);
+  --lume-text-on-accent: var(--color-pure-white);
 
   /* ── Borders — visible separation, no noise ─────────────────────────
      Was --color-neutral-800 (0.234) on bg 0.106 → ~0.13 ΔL, which does
      render but disappears on a table with many rows. Lifting border to
-     0.285 against the new surface (0.192) gives ~0.09 ΔL — less raw
-     contrast but far more crisp because the *surface* is now clearly
-     separated from the shell. Tooltip border gets a stronger pop so it
-     reads as a detached floating element. */
-  --lume-border:         oklch(0.295 0.010 265);
-  --lume-border-subtle:  oklch(0.232 0.008 265);
-  --lume-border-flat:    oklch(0.295 0.010 265);
-  --lume-border-accent:  var(--color-brand-primary-400);
-  --lume-border-tooltip: oklch(0.355 0.011 265);
+     0.295 against the surface (0.192) gives ~0.10 ΔL — less raw contrast
+     but far more crisp because the *surface* is now clearly separated
+     from the shell. */
+  --lume-border:         var(--color-midnight-border);
 
   /* ── Accent (indigo) ──────────────────────────────────────────────── */
   --lume-accent:       var(--color-brand-primary-500);
-  --lume-accent-dark:  var(--color-brand-primary-600);
   --lume-accent-light: var(--color-brand-primary-950);
-  --lume-accent-muted: oklch(0.620 0.190 275 / 0.20);
+  --lume-accent-muted: color-mix(in oklab, var(--color-brand-primary-500) 20%, transparent);
 
   /* ── Button — accent ──────────────────────────────────────────────── */
   --lume-button-accent-bg:         var(--color-brand-primary-500);
   --lume-button-accent-bg-hover:   var(--color-brand-primary-400);
   --lume-button-accent-bg-active:  var(--color-brand-primary-300);
-  --lume-button-accent-fg:         #FFFFFF;
+  --lume-button-accent-fg:         var(--color-pure-white);
 
   /* ── Button — secondary ───────────────────────────────────────────── */
-  --lume-button-secondary-bg:       oklch(0.232 0.009 265);
-  --lume-button-secondary-bg-hover: oklch(0.285 0.010 265);
-  --lume-button-secondary-fg:       oklch(0.965 0.004 265);
+  --lume-button-secondary-bg:       var(--color-midnight-raised);
+  --lume-button-secondary-bg-hover: var(--color-midnight-hover);
+  --lume-button-secondary-fg:       var(--color-midnight-text);
 
   /* ── Button — destructive ─────────────────────────────────────────── */
   --lume-button-destructive-bg:       var(--color-danger-500);
   --lume-button-destructive-bg-hover: var(--color-danger-400);
-  --lume-button-destructive-fg:       #FFFFFF;
-
-  /* ── Button — ghost ───────────────────────────────────────────────── */
-  --lume-button-ghost-bg:       transparent;
-  --lume-button-ghost-bg-hover: oklch(0.232 0.009 265);
-  --lume-button-ghost-fg:       oklch(0.965 0.004 265);
+  --lume-button-destructive-fg:       var(--color-pure-white);
 
   /* ── States ───────────────────────────────────────────────────────── */
   --lume-ring-focus: var(--color-brand-primary-400);
-  --lume-selection:  var(--color-brand-primary-900);
+
+  /* Overlay ladder: dark steps up by a larger share, because a lighter
+     overlay on a dark fill reads weaker than a darker one on white. */
+  --lume-hover:  color-mix(in oklab, var(--lume-text) 6%, transparent);
+  --lume-active: color-mix(in oklab, var(--lume-text) 10%, transparent);
+  --lume-strong: color-mix(in oklab, var(--lume-text) 14%, transparent);
+  --lume-line:   color-mix(in oklab, var(--lume-text) 8%, transparent);
+  --lume-edge:   color-mix(in oklab, var(--lume-text) 12%, transparent);
+  --lume-edge-hover: color-mix(in oklab, var(--lume-text) 22%, transparent);
+
+  /* Dark floating layers: a faint top highlight and ring lift the layer;
+     the drop uses the 0.55 shadow colour so it stays visible. */
+  --lume-shadow-float:
+    inset 0 1px 0 0 color-mix(in oklab, var(--lume-text) 5%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--lume-text) 9%, transparent),
+    0 12px 32px -8px var(--shadow-color);
 
   /* ── Feedback — tinted surface, chromatic border, bright fg ─────────
      Previous borders were neutral-800 (0.234) — identical to the app
      chrome, so info/success/warn/danger tints were indistinguishable
      from plain cards. Borders now carry the same hue as the fg so the
-     feedback blocks read as a chromatic family. */
-  --lume-info-bg:       oklch(0.300 0.110 245 / 0.22);
+     feedback blocks read as a chromatic family: the 900 step at 22% for
+     the fill, the 750 step at 45% for the border. */
+  --lume-info-bg:       color-mix(in oklab, var(--color-info-900) 22%, transparent);
   --lume-info-fg:       var(--color-info-300);
-  --lume-info-border:   oklch(0.400 0.150 245 / 0.45);
+  --lume-info-border:   color-mix(in oklab, var(--color-info-750) 45%, transparent);
 
-  --lume-success-bg:     oklch(0.330 0.090 148 / 0.22);
+  --lume-success-bg:     color-mix(in oklab, var(--color-success-900) 22%, transparent);
   --lume-success-fg:     var(--color-success-300);
-  --lume-success-border: oklch(0.430 0.130 148 / 0.45);
+  --lume-success-border: color-mix(in oklab, var(--color-success-750) 45%, transparent);
 
-  --lume-warning-bg:     oklch(0.370 0.075 72 / 0.22);
+  --lume-warning-bg:     color-mix(in oklab, var(--color-warning-900) 22%, transparent);
   --lume-warning-fg:     var(--color-warning-300);
-  --lume-warning-border: oklch(0.490 0.110 78 / 0.45);
+  --lume-warning-border: color-mix(in oklab, var(--color-warning-750) 45%, transparent);
 
-  --lume-danger-bg:     oklch(0.330 0.130 25 / 0.22);
+  --lume-danger-bg:     color-mix(in oklab, var(--color-danger-900) 22%, transparent);
   --lume-danger-fg:     var(--color-danger-300);
-  --lume-danger-border: oklch(0.430 0.170 25 / 0.45);
+  --lume-danger-border: color-mix(in oklab, var(--color-danger-750) 45%, transparent);
 
   /* ── Aesthetic surfaces ───────────────────────────────────────────── */
   /* Thermal-receipt surface in dark mode — matches sidebar elevation. */
-  --lume-receipt-bg: oklch(0.192 0.008 265);
+  --lume-receipt-bg: var(--color-midnight-surface);
 
   /* ── Shadow color ──────────────────────────────────────────────────
      Dark mode shadows fall off against dark bg, so we push alpha to .55
      to make raised popovers/modals actually cast visible depth. */
-  --shadow-color: oklch(0 0 0 / 0.55);
+  --shadow-color: color-mix(in oklab, var(--color-pure-black) 55%, transparent);
 
   /* ── Gradients ────────────────────────────────────────────────────── */
   --lume-gradient-hero:
     linear-gradient(135deg,
       var(--color-brand-primary-950) 0%,
-      oklch(0.148 0.007 265) 50%,
+      var(--color-midnight-shell) 50%,
       var(--color-brand-secondary-950) 100%);
   --lume-gradient-accent:
     linear-gradient(135deg,
@@ -225,4 +280,15 @@
   /* Same steps as light: they also pass every check against the dark surface. */
   --lume-chart-entrate:  var(--color-brand-primary-500);
   --lume-chart-uscite:   var(--color-brand-secondary-700);
+  --lume-chart-3:        var(--color-aqua-dark);
+
+  --lume-series-1: var(--color-brand-primary-400);
+  --lume-series-2: var(--color-info-400);
+  --lume-series-3: var(--color-success-400);
+  --lume-series-4: var(--color-warning-400);
+  --lume-series-5: var(--color-danger-400);
+
+  /* Filled stars of a review rating (StarRating): brass amber, the same step in both themes. */
+  --lume-rating: var(--color-brand-secondary-400);
+  --lume-brass-fg: var(--color-brand-secondary-400);
 }

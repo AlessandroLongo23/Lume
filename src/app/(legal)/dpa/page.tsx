@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LUME_LEGAL, formatLumeAddress, formatLumeIdentity } from '@/lib/const/legal';
 import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
+import { LegalPageHeader } from '../_components/LegalPageHeader';
 
 export const metadata: Metadata = {
   title: 'Data Processing Agreement — Lume',
@@ -11,10 +12,7 @@ export const metadata: Metadata = {
 export default function DpaPage() {
   return (
     <>
-      <h1>Data Processing Agreement (DPA)</h1>
-      <p>
-        <em>Versione {LEGAL_VERSIONS.dpa} &mdash; ai sensi dell&apos;art. 28 GDPR.</em>
-      </p>
+      <LegalPageHeader title="Data Processing Agreement (DPA)" meta={<>Versione {LEGAL_VERSIONS.dpa} &mdash; ai sensi dell&apos;art. 28 GDPR.</>} />
       <p>
         Il presente accordo (&laquo;<strong>DPA</strong>&raquo;) regola il trattamento dei dati
         personali che <strong>{formatLumeIdentity()}</strong>

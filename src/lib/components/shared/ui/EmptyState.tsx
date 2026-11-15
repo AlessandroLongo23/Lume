@@ -17,16 +17,22 @@ interface EmptyStateProps {
   secondaryAction?: EmptyStateAction;
 }
 
+/**
+ * A quiet tinted field with a small framed icon, one line of title and the
+ * next step as a button. PRODUCT.md: no empty state without a "do this next".
+ */
 export function EmptyState({ icon: Icon, title, description, action, secondaryAction }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-16 bg-background rounded-lg border border-dashed border-border">
-      <Icon strokeWidth={1} className="size-20 text-muted-foreground/60 mb-4" />
-      <h2 className="text-xl font-semibold text-foreground mb-1">{title}</h2>
+    <div className="flex flex-col items-center justify-center px-6 py-16 rounded-xl bg-hover text-center">
+      <span className="flex items-center justify-center size-11 mb-5 rounded-lg bg-[var(--lume-surface-raised)] shadow-[inset_0_0_0_1px_var(--lume-edge)]">
+        <Icon strokeWidth={1.5} className="size-5 text-[var(--lume-text-secondary)]" />
+      </span>
+      <h2 className="text-lg font-medium text-[var(--lume-text)] mb-1.5">{title}</h2>
       {description && (
-        <p className="text-sm text-muted-foreground text-center max-w-xs mb-6">{description}</p>
+        <p className="text-sm text-[var(--lume-text-secondary)] max-w-sm mb-6 text-pretty">{description}</p>
       )}
       {(action || secondaryAction) && (
-        <div className="flex flex-row items-center gap-3">
+        <div className="flex flex-row flex-wrap items-center justify-center gap-2">
           {secondaryAction && (
             <Button variant="secondary" leadingIcon={secondaryAction.icon} onClick={secondaryAction.onClick}>
               {secondaryAction.label}

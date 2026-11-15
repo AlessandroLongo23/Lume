@@ -3,18 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
+import { DURATION } from '@/lib/const/motion';
 import { StepProgressBar } from './StepProgressBar';
 import { StepOne }   from './steps/StepOne';
 import { StepTwo }   from './steps/StepTwo';
 import { StepThree } from './steps/StepThree';
 import { StepFour }  from './steps/StepFour';
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.2, 0, 0, 1] as const;
 
 const stepVariants = {
-  enter: (d: number) => ({ x: d > 0 ? 80 : -80, opacity: 0 }),
+  enter: (d: number) => ({ x: d > 0 ? 24 : -24, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (d: number) => ({ x: d > 0 ? -80 : 80, opacity: 0 }),
+  exit: (d: number) => ({ x: d > 0 ? -24 : 24, opacity: 0 }),
 };
 
 const STEP_META: Record<1 | 2 | 3 | 4, { label: string; subtitle: string }> = {
@@ -66,7 +67,7 @@ export function StepRouter({ onSubmit }: StepRouterProps) {
         className="relative overflow-x-clip"
         initial={false}
         animate={{ height: contentHeight }}
-        transition={{ duration: 0.35, ease }}
+        transition={{ duration: DURATION.enter, ease }}
       >
         <div ref={contentRef}>
           <AnimatePresence mode="popLayout" initial={false} custom={direction}>
@@ -77,12 +78,12 @@ export function StepRouter({ onSubmit }: StepRouterProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.35, ease }}
+              transition={{ duration: DURATION.enter, ease }}
             >
               {/* Step heading */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-zinc-900">{meta.label}</h2>
-                <p className="text-sm text-zinc-500 mt-0.5">{meta.subtitle}</p>
+                <h2 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">{meta.label}</h2>
+                <p className="text-sm text-[var(--lume-text-secondary)] mt-0.5">{meta.subtitle}</p>
               </div>
 
               {/* Step content */}

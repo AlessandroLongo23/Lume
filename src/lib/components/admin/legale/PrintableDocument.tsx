@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Printer } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -37,11 +38,11 @@ export function PrintableDocument({ documentTitle, documentSubtitle, children }:
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar — hidden when printing. */}
-      <div className="flex items-center justify-between gap-3 print:hidden">
+      <div className="flex flex-col items-start sm:flex-row sm:items-end justify-between gap-3 print:hidden">
         <div>
-          <h2 className="text-base font-semibold text-foreground">{documentTitle}</h2>
+          <h2 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">{documentTitle}</h2>
           {documentSubtitle && (
-            <p className="mt-0.5 text-sm text-muted-foreground">{documentSubtitle}</p>
+            <p className="mt-1 text-sm text-[var(--lume-text-secondary)]">{documentSubtitle}</p>
           )}
         </div>
         <Button
@@ -98,7 +99,7 @@ export function PrintableDocument({ documentTitle, documentSubtitle, children }:
             {!piva && !cf && (
               <li className="document-warning">
                 ⚠ Per stampare un documento valido, completa la sezione{' '}
-                <a href="/admin/impostazioni/salone/fatturazione">Fatturazione</a> con P. IVA o
+                <Link href="/admin/impostazioni/salone/fatturazione">Fatturazione</Link> con P. IVA o
                 Codice Fiscale.
               </li>
             )}
@@ -244,6 +245,10 @@ export function PrintableDocument({ documentTitle, documentSubtitle, children }:
         .document-body th {
           background: #f4f4f5;
           font-weight: 600;
+        }
+        /* An empty cell the client fills in by hand. */
+        .document-body td.document-fill {
+          height: 24px;
         }
         .document-signature {
           margin-top: 32px;

@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@docs/*": ["./edl-docs/*"]
     }
   },
   "include": [
@@ -30,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "video"]
+  "exclude": ["node_modules", "video", "edl-docs/node_modules", "edl-docs/edl-docs-static"]
 }

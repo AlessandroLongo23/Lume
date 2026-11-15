@@ -5,6 +5,7 @@ import { Loader2, UserX } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { Operator } from '@/lib/types/Operator';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { OperatorWorkingHoursPanel } from '@/lib/components/admin/operators/OperatorWorkingHoursPanel';
 
 /**
@@ -36,7 +37,7 @@ export function MyWorkingHoursPanel() {
   if (!authResolved || isStoreLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -47,16 +48,11 @@ export function MyWorkingHoursPanel() {
 
   if (!myOperator) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-12 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-center">
-        <UserX className="size-10 text-zinc-300 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-          Nessun profilo operatore collegato
-        </p>
-        <p className="mt-1 text-xs text-zinc-500 max-w-sm">
-          Solo gli operatori del salone possono configurare orari di lavoro personali.
-          Contatta il titolare se pensi sia un errore.
-        </p>
-      </div>
+      <EmptyState
+        icon={UserX}
+        title="Nessun profilo operatore collegato"
+        description="Solo gli operatori del salone possono configurare orari di lavoro personali. Contatta il titolare se pensi sia un errore."
+      />
     );
   }
 

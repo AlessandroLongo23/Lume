@@ -2,25 +2,24 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
-
-type Variant = 'pill' | 'icon';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 
 interface IncompleteContactBadgeProps {
-  variant?: Variant;
+  /** `dot` beside a word (cards), `icon` alone (table cells). */
+  variant: 'dot' | 'icon';
 }
 
 const TOOLTIP_LABEL = 'Manca email o telefono. Completa quando il cliente torna in salone.';
 
-export function IncompleteContactBadge({ variant = 'pill' }: IncompleteContactBadgeProps) {
+export function IncompleteContactBadge({ variant }: IncompleteContactBadgeProps) {
   if (variant === 'icon') {
     return (
       <Tooltip label={TOOLTIP_LABEL}>
         <span
-          className="inline-flex items-center justify-center"
-          style={{ color: 'var(--lume-warning-fg)' }}
+          className="inline-flex items-center justify-center text-warning-strong"
           aria-label={TOOLTIP_LABEL}
         >
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-3.5" />
         </span>
       </Tooltip>
     );
@@ -28,16 +27,8 @@ export function IncompleteContactBadge({ variant = 'pill' }: IncompleteContactBa
 
   return (
     <Tooltip label={TOOLTIP_LABEL}>
-      <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium"
-        style={{
-          background: 'var(--lume-warning-bg)',
-          color: 'var(--lume-warning-fg)',
-          border: '1px solid var(--lume-warning-border)',
-        }}
-      >
-        <AlertCircle className="size-3" />
-        <span>Dati incompleti</span>
+      <span className="inline-flex">
+        <StatusDot tone="warning" className="text-xs">Dati incompleti</StatusDot>
       </span>
     </Tooltip>
   );

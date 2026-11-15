@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { DURATION } from '@/lib/const/motion';
 import { AnimatedCount } from './AnimatedCount';
 import { FileIcon } from './fileIcons';
 import {
@@ -56,42 +57,42 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-      transition={{ duration: 0.5, ease: EASE_OUT }}
+      transition={{ duration: DURATION.enter, ease: EASE_OUT }}
     >
       <div className="text-center">
         <motion.div
-          className="mx-auto mb-6 flex size-16 items-center justify-center rounded-md border border-border bg-card"
+          className="surface-card mx-auto mb-6 flex size-16 items-center justify-center"
           initial={reduceMotion ? false : { scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.1 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.1 }}
         >
           {isPartial ? (
-            <Sparkles className="size-7 text-primary" strokeWidth={2} />
+            <Sparkles className="size-7 text-[var(--lume-text-secondary)]" strokeWidth={1.75} />
           ) : (
-            <Check className="size-8 text-primary" strokeWidth={2.5} />
+            <Check className="size-8 text-success-strong" strokeWidth={2.25} />
           )}
         </motion.div>
 
         <motion.h1
-          className="text-4xl font-semibold tracking-tight text-foreground"
+          className="text-4xl font-medium tracking-tight text-[var(--lume-text)]"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.2 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.2 }}
         >
           {headline}
         </motion.h1>
 
         <motion.p
-          className="mx-auto mt-3 max-w-md text-sm text-muted-foreground"
+          className="mx-auto mt-3 max-w-md text-sm text-[var(--lume-text-muted)]"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.28 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.28 }}
         >
           {totalRows > 0 ? (
             <>
               Ho importato{' '}
-              <span className="text-foreground tabular-nums">
-                <AnimatedCount value={totalRows} duration={0.9} />
+              <span className="text-[var(--lume-text)] tabular-nums">
+                <AnimatedCount value={totalRows} />
               </span>{' '}
               record nel tuo salone. {tailLine}
             </>
@@ -103,24 +104,24 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
 
       {importedEntries.length > 0 && (
         <motion.section
-          className="mt-8 rounded-md border border-border bg-card p-5"
+          className="surface-card mt-8 p-5"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.4 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.4 }}
         >
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Cosa è entrato</h2>
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <h2 className="text-sm font-medium text-[var(--lume-text)]">Cosa è entrato</h2>
+            <span className="text-xs text-[var(--lume-text-muted)] tabular-nums">
               {totalRows.toLocaleString('it-IT')} record
             </span>
           </div>
           <ul className="grid grid-cols-1 gap-y-1.5 sm:grid-cols-2 sm:gap-x-8">
             {importedEntries.map(([entity, count]) => (
               <li key={entity} className="flex items-baseline justify-between gap-4 text-sm">
-                <span className="text-muted-foreground">
+                <span className="text-[var(--lume-text-muted)]">
                   {ENTITY_LABELS_PLURAL[entity] ?? entity}
                 </span>
-                <span className="text-foreground tabular-nums">
+                <span className="text-[var(--lume-text)] tabular-nums">
                   {count.toLocaleString('it-IT')}
                 </span>
               </li>
@@ -131,16 +132,16 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
 
       {isPartial && (reviewChildren.length > 0 || conciergeChildren.length > 0) && (
         <motion.section
-          className="mt-4 rounded-md border border-border bg-muted/40 p-5"
+          className="surface-card mt-4 p-5"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.5 }}
+          transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.5 }}
         >
-          <h2 className="mb-4 text-sm font-semibold text-foreground">In sospeso</h2>
+          <h2 className="mb-4 text-sm font-medium text-[var(--lume-text)]">In sospeso</h2>
 
           {reviewChildren.length > 0 && (
             <div className="mb-4">
-              <p className="mb-2 text-sm font-medium text-foreground">
+              <p className="mb-2 text-sm font-medium text-[var(--lume-text)]">
                 {reviewChildren.length === 1
                   ? '1 file aspetta la tua occhiata'
                   : `${reviewChildren.length} file aspettano la tua occhiata`}
@@ -150,14 +151,14 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
                   <li key={child.id} className="flex items-start gap-3 text-sm">
                     <FileIcon
                       filename={child.source_filename}
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      className="mt-0.5 size-4 shrink-0 text-[var(--lume-text-muted)]"
                     />
                     <div className="min-w-0 flex-1">
-                      <span className="block truncate text-foreground">
+                      <span className="block truncate text-[var(--lume-text)]">
                         {child.source_filename}
                       </span>
                       {child.mapping_json?.classification?.reason && (
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block text-xs text-[var(--lume-text-muted)]">
                           {child.mapping_json.classification.reason}
                         </span>
                       )}
@@ -170,7 +171,7 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
 
           {conciergeChildren.length > 0 && (
             <div>
-              <p className="mb-2 text-sm font-medium text-foreground">
+              <p className="mb-2 text-sm font-medium text-[var(--lume-text)]">
                 {conciergeChildren.length === 1
                   ? '1 file lo gestisce il team Lume'
                   : `${conciergeChildren.length} file li gestisce il team Lume`}
@@ -178,13 +179,13 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
               <ul className="space-y-2">
                 {conciergeChildren.map((child) => (
                   <li key={child.id} className="flex items-start gap-3 text-sm">
-                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
+                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
                     <div className="min-w-0 flex-1">
-                      <span className="block truncate text-foreground">
+                      <span className="block truncate text-[var(--lume-text)]">
                         {child.source_filename}
                       </span>
                       {(child.failure_reason ?? child.mapping_json?.classification?.reason) && (
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block text-xs text-[var(--lume-text-muted)]">
                           {child.failure_reason ?? child.mapping_json?.classification?.reason}
                         </span>
                       )}
@@ -192,7 +193,7 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-xs text-[var(--lume-text-muted)]">
                 Ti scriviamo via email appena pronti.
               </p>
             </div>
@@ -204,7 +205,7 @@ export function DoneView({ state, jobs, onOpenCalendar, onReviewPending, busy }:
         className="mt-8 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:justify-end"
         initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.6 }}
+        transition={{ duration: DURATION.enter, ease: EASE_OUT, delay: 0.6 }}
       >
         {reviewChildren.length > 0 && (
           <Button

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
+import { DURATION } from '@/lib/const/motion';
 import { Trash2, FlaskConical, Archive, ArchiveRestore, PackageX, ShoppingBag } from 'lucide-react';
 import { useProductsStore } from '@/lib/stores/products';
 import { useProductCategoriesStore } from '@/lib/stores/product_categories';
@@ -22,12 +23,12 @@ import {
 } from '@/lib/components/shared/ui/detail';
 import { DeleteProductModal } from '@/lib/components/admin/magazzino/DeleteProductModal';
 import { ProductForm, emptyProductForm, type ProductFormValue, type ProductFormErrors } from '@/lib/components/admin/magazzino/ProductForm';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import type { Product } from '@/lib/types/Product';
+import { formatCurrency } from '@/lib/utils/format';
 
 function formatEur(amount: number | null): string {
-  if (amount === null) return '—';
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  return amount === null ? '—' : formatCurrency(amount);
 }
 
 function productToDraft(product: Product): ProductFormValue {
@@ -221,26 +222,21 @@ export default function ProductDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-zinc-500/25 border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">Caricamento...</p>
+        <div className="size-8 border-2 border-active border-t-[var(--lume-text-secondary)] rounded-full animate-spin motion-reduce:animate-none" />
+        <p className="mt-4 text-[var(--lume-text-secondary)]">Caricamento...</p>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <PackageX className="size-16 text-zinc-300 dark:text-zinc-600 mb-4" strokeWidth={1.5} />
-        <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Prodotto non trovato</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{error ?? 'Il prodotto non esiste o è stato rimosso.'}</p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push('/admin/magazzino')}
-          className="mt-6"
-        >
-          Torna al magazzino
-        </Button>
+      <div className="p-6">
+        <EmptyState
+          icon={PackageX}
+          title="Prodotto non trovato"
+          description={error ?? 'Il prodotto non esiste o è stato rimosso.'}
+          secondaryAction={{ label: 'Torna al magazzino', onClick: () => router.push('/admin/magazzino') }}
+        />
       </div>
     );
   }
@@ -253,14 +249,14 @@ export default function ProductDetailPage() {
   const minThreshold = product.min_threshold ?? 0;
   const isOut = trackInventory && stock <= 0;
   const isLow = trackInventory && !isOut && stock < minThreshold;
-  const stockTone = isOut ? 'red' : isLow ? 'amber' : 'emerald';
+  const stockTone = isOut ? 'danger' : isLow ? 'warning' : 'success';
   const stockAccent = isOut ? 'Esaurito' : isLow ? 'Sotto soglia' : 'OK';
   const stockDenom = Math.max(stock, minThreshold, 1);
   const stockRatio = stock / stockDenom;
 
   const margin = product.is_for_retail && product.sell_price !== null && product.price !== null ? product.sell_price - product.price : null;
   const marginPct = margin !== null && product.sell_price ? Math.round((margin / product.sell_price) * 100) : null;
-  const marginTone = marginPct === null ? 'neutral' : marginPct >= 50 ? 'emerald' : marginPct >= 25 ? 'sky' : marginPct >= 0 ? 'amber' : 'red';
+  const marginTone = marginPct === null ? 'neutral' : marginPct >= 50 ? 'success' : marginPct >= 25 ? 'info' : marginPct >= 0 ? 'warning' : 'danger';
 
   return (
     <>
@@ -281,14 +277,14 @@ export default function ProductDetailPage() {
       <div className="flex flex-col">
         <DetailHero
           onBack={handleBack}
-          avatar={<HeroIconTile icon={FlaskConical} tone="primary" />}
+          avatar={<HeroIconTile icon={FlaskConical} />}
           title={product.name}
           chips={
             <>
-              {product.isArchived && <DetailChip tone="amber">Archiviato</DetailChip>}
-              {category && <DetailChip tone="zinc">{category.name}</DetailChip>}
+              {product.isArchived && <DetailChip tone="warning">Archiviato</DetailChip>}
+              {category && <DetailChip>{category.name}</DetailChip>}
               {product.is_for_retail && (
-                <DetailChip tone="emerald" icon={ShoppingBag}>
+                <DetailChip tone="success" icon={ShoppingBag}>
                   Vendita
                 </DetailChip>
               )}
@@ -330,7 +326,7 @@ export default function ProductDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: 'easeOut' }}
               >
                 <DetailSection label="Modifica prodotto">
                   <ProductForm value={draft} onChange={setDraft} errors={errors} trackInventory={trackInventory} />
@@ -342,7 +338,7 @@ export default function ProductDetailPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={{ duration: DURATION.base, ease: 'easeOut' }}
                 className="flex flex-col gap-12"
               >
                 <DetailSection index={0} label="Inventario">
@@ -354,7 +350,7 @@ export default function ProductDetailPage() {
                         accent={{ tone: stockTone, text: stockAccent }}
                         hint={minThreshold > 0 ? `Soglia minima: ${minThreshold}` : undefined}
                       >
-                        <ProgressBar ratio={stockRatio} tone={stockTone} delay={0.1} />
+                        <ProgressBar ratio={stockRatio} tone={stockTone} />
                       </StatTile>
                     )}
                     <StatTile label="Costo" value={formatEur(product.price)} />
@@ -370,7 +366,7 @@ export default function ProductDetailPage() {
                 </DetailSection>
 
                 <DetailSection index={1} label="Dettagli">
-                  <dl className="divide-y divide-zinc-500/10 border-y border-zinc-500/10">
+                  <dl className="divide-y divide-line border-y border-line">
                     <DefRow label="Categoria" value={category?.name ?? '—'} />
                     <DefRow label="Marca" value={manufacturer?.name ?? '—'} />
                     <DefRow label="Fornitore" value={supplier?.name ?? '—'} />
@@ -389,8 +385,8 @@ export default function ProductDetailPage() {
 function DefRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <dt className="text-sm text-zinc-500 dark:text-zinc-400">{label}</dt>
-      <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{value}</dd>
+      <dt className="text-sm text-[var(--lume-text-secondary)]">{label}</dt>
+      <dd className="text-sm font-medium text-[var(--lume-text)]">{value}</dd>
     </div>
   );
 }

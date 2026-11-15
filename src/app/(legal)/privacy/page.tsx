@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LUME_LEGAL, formatLumeAddress, formatLumeIdentity } from '@/lib/const/legal';
 import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
+import { LegalPageHeader } from '../_components/LegalPageHeader';
 
 export const metadata: Metadata = {
   title: 'Privacy — Lume',
@@ -12,10 +13,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <h1>Informativa sulla privacy</h1>
-      <p>
-        <em>Versione {LEGAL_VERSIONS.privacy}.</em>
-      </p>
+      <LegalPageHeader title="Informativa sulla privacy" meta={<>Versione {LEGAL_VERSIONS.privacy}.</>} />
       <p>
         Questa informativa descrive come Lume tratta i dati personali degli utenti del Servizio
         ai sensi del Regolamento (UE) 2016/679 (&laquo;GDPR&raquo;), del D.lgs. 196/2003

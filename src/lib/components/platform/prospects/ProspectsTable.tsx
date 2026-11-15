@@ -10,14 +10,25 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2, ExternalLink, Pencil } from 'lucide-react';
+import { Trash2, ExternalLink, Pencil } from 'lucide-react';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
-import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { cardStyle } from '@/lib/const/appearance';
+import {
+  SortIndicator,
+  tableCardClass,
+  tableClass,
+  tableMessageClass,
+  tbodyClass,
+  tdClass,
+  thClass,
+  theadClass,
+  trClass,
+} from '@/lib/components/shared/ui/table/tableStyles';
+import { cn } from '@/lib/utils';
 import { Prospect } from '@/lib/types/Prospect';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import { ProspectStatusChip } from './ProspectStatusChip';
 
 interface ProspectsTableProps {
@@ -26,13 +37,23 @@ interface ProspectsTableProps {
   onDelete:  (p: Prospect) => void;
 }
 
+/** A phone number that opens the WhatsApp chat in a new tab (plain text when it has no digits). */
+function WhatsAppPhone({ phone, url }: { phone: string; url: string | null }) {
+  if (!url) return <span className="tabular-nums text-[var(--lume-text)]">{phone}</span>;
+  return (
+    <TextLink href={url} target="_blank" rel="noopener noreferrer" data-no-row-click className="tabular-nums font-normal">
+      {phone}
+    </TextLink>
+  );
+}
+
 export function useProspectColumns(): ColumnDef<Prospect>[] {
   return useMemo<ColumnDef<Prospect>[]>(() => [
     {
       accessorKey: 'name',
       header: 'Salone',
       cell: ({ row }) => (
-        <span className="font-medium text-foreground truncate max-w-[14rem] inline-block">
+        <span className="font-medium text-[var(--lume-text)] truncate max-w-56 inline-block">
           {row.original.name}
         </span>
       ),
@@ -44,12 +65,12 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       accessorFn: (row) => row.city ?? '',
       cell: ({ row }) => {
         const p = row.original;
-        if (!p.city) return <span className="text-muted-foreground italic">—</span>;
+        if (!p.city) return <span className="text-[var(--lume-text-muted)]">—</span>;
         return (
           <span className="inline-flex items-center gap-1.5">
             <span>{p.city}</span>
             {p.province && (
-              <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              <span className="text-2xs tabular-nums px-1.5 py-0.5 rounded-md bg-active text-[var(--lume-text-secondary)]">
                 {p.province}
               </span>
             )}
@@ -61,7 +82,7 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       accessorKey: 'region',
       header: 'Regione',
       cell: ({ getValue }) =>
-        getValue() ? <span>{getValue() as string}</span> : <span className="text-muted-foreground italic">—</span>,
+        getValue() ? <span>{getValue() as string}</span> : <span className="text-[var(--lume-text-muted)]">—</span>,
     },
     {
       accessorKey: 'phone_shop',
@@ -69,17 +90,8 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       enableSorting: false,
       cell: ({ row }) => {
         const phone = row.original.phone_shop;
-        if (!phone) return <span className="text-muted-foreground italic">—</span>;
-        const link = row.original.whatsappUrl(phone);
-        return (
-          <span
-            data-no-row-click
-            className="cursor-pointer text-foreground hover:text-[var(--lume-accent)] transition-colors"
-            onClick={() => link && window.open(link, '_blank')}
-          >
-            {phone}
-          </span>
-        );
+        if (!phone) return <span className="text-[var(--lume-text-muted)]">—</span>;
+        return <WhatsAppPhone phone={phone} url={row.original.whatsappUrl(phone)} />;
       },
     },
     {
@@ -88,17 +100,8 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       enableSorting: false,
       cell: ({ row }) => {
         const phone = row.original.phone_personal;
-        if (!phone) return <span className="text-muted-foreground italic">—</span>;
-        const link = row.original.whatsappUrl(phone);
-        return (
-          <span
-            data-no-row-click
-            className="cursor-pointer text-foreground hover:text-[var(--lume-accent)] transition-colors"
-            onClick={() => link && window.open(link, '_blank')}
-          >
-            {phone}
-          </span>
-        );
+        if (!phone) return <span className="text-[var(--lume-text-muted)]">—</span>;
+        return <WhatsAppPhone phone={phone} url={row.original.whatsappUrl(phone)} />;
       },
     },
     {
@@ -106,7 +109,7 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       header: 'Titolare',
       cell: ({ getValue }) => {
         const v = getValue() as string | null;
-        return v ? <span>{v}</span> : <span className="text-muted-foreground italic">—</span>;
+        return v ? <span>{v}</span> : <span className="text-[var(--lume-text-muted)]">—</span>;
       },
     },
     {
@@ -120,12 +123,12 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       header: 'Da richiamare',
       cell: ({ getValue }) => {
         const v = getValue() as string | null;
-        if (!v) return <span className="text-muted-foreground italic">—</span>;
+        if (!v) return <span className="text-[var(--lume-text-muted)]">—</span>;
         const d = new Date(v);
         const now = Date.now();
         const overdue = d.getTime() < now;
         return (
-          <span className={overdue ? 'text-[var(--lume-danger-fg)] font-medium tabular-nums' : 'tabular-nums'}>
+          <span className={overdue ? 'text-danger-strong font-medium tabular-nums' : 'tabular-nums'}>
             {d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
           </span>
         );
@@ -138,7 +141,7 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
         const v = getValue() as string | null;
         return v
           ? <span className="tabular-nums">{new Date(v).toLocaleDateString('it-IT')}</span>
-          : <span className="text-muted-foreground italic">—</span>;
+          : <span className="text-[var(--lume-text-muted)]">—</span>;
       },
     },
     {
@@ -152,15 +155,15 @@ export function useProspectColumns(): ColumnDef<Prospect>[] {
       cell: ({ getValue }) => {
         const v = getValue() as string | null;
         return v
-          ? <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{v}</span>
-          : <span className="text-muted-foreground italic">—</span>;
+          ? <span className="text-xs px-1.5 py-0.5 rounded-md bg-active text-[var(--lume-text-secondary)]">{v}</span>
+          : <span className="text-[var(--lume-text-muted)]">—</span>;
       },
     },
     {
       accessorKey: 'created_at',
       header: 'Aggiunto',
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground tabular-nums text-xs">
+        <span className="text-[var(--lume-text-secondary)] tabular-nums text-xs">
           {new Date(getValue() as string).toLocaleDateString('it-IT')}
         </span>
       ),
@@ -204,9 +207,9 @@ export function ProspectsTable({ prospects, onEdit, onDelete }: ProspectsTablePr
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3 w-full">
       <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-        <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 border-b border-border">
+        <div className={cn(tableCardClass, 'max-h-full w-full overflow-x-auto overflow-y-hidden')}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -216,33 +219,25 @@ export function ProspectsTable({ prospects, onEdit, onDelete }: ProspectsTablePr
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={[
-                          'px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide select-none whitespace-nowrap text-left',
-                          canSort ? 'cursor-pointer hover:text-foreground transition-colors' : '',
-                        ].join(' ')}
+                        className={thClass({ sortable: canSort })}
                       >
                         <span className="inline-flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp   className={`size-3   ${sorted === 'asc'  ? 'text-[var(--lume-accent)]' : 'text-muted-foreground/40'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-[var(--lume-accent)]' : 'text-muted-foreground/40'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide text-right w-20">
+                  <th className={cn(thClass({ align: 'right' }), 'w-20')}>
                     Azioni
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className={tbodyClass}>
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Nessun prospect corrispondente ai filtri.
                   </td>
                 </tr>
@@ -259,50 +254,44 @@ export function ProspectsTable({ prospects, onEdit, onDelete }: ProspectsTablePr
                     }}
                     role="button"
                     tabIndex={0}
-                    className="bg-card hover:bg-muted/40 transition-colors cursor-pointer"
+                    className={trClass()}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-foreground whitespace-nowrap">
+                      <td key={cell.id} className={cn(tdClass, 'text-[var(--lume-text)]')}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         {row.original.google_maps_url && (
-                          <Tooltip label="Apri su Maps">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              iconOnly
-                              aria-label="Apri su Maps"
-                              onClick={(e) => { e.stopPropagation(); window.open(row.original.google_maps_url!, '_blank'); }}
-                            >
-                              <ExternalLink />
-                            </Button>
-                          </Tooltip>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            aria-label="Apri su Maps"
+                            onClick={(e) => { e.stopPropagation(); window.open(row.original.google_maps_url!, '_blank'); }}
+                          >
+                            <ExternalLink />
+                          </Button>
                         )}
-                        <Tooltip label="Modifica">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            iconOnly
-                            aria-label="Modifica"
-                            onClick={(e) => { e.stopPropagation(); onEdit(row.original); }}
-                          >
-                            <Pencil />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip label="Elimina">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            iconOnly
-                            aria-label="Elimina"
-                            onClick={(e) => { e.stopPropagation(); onDelete(row.original); }}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </Tooltip>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Modifica"
+                          onClick={(e) => { e.stopPropagation(); onEdit(row.original); }}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          aria-label="Elimina"
+                          onClick={(e) => { e.stopPropagation(); onDelete(row.original); }}
+                        >
+                          <Trash2 />
+                        </Button>
                       </div>
                     </td>
                   </tr>

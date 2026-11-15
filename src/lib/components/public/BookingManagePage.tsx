@@ -1,10 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { AlertCircle, Check, Clock, Hourglass, MapPin, Phone, X } from 'lucide-react';
+import { Clock, Phone, X } from 'lucide-react';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 import type { PublicBookingByToken } from '@/lib/gateway/loadPublicSalon';
+import { PublicHeading } from './PublicHeading';
+import { BookingSummary } from './BookingSummary';
 
 // Public cancel/manage page. Three states the visitor can land in:
 //
@@ -56,18 +60,20 @@ export function BookingManagePage({ booking }: { booking: PublicBookingByToken }
   // Already cancelled — terminal state, only a confirmation card.
   if (state === 'cancelled') {
     return (
-      <article className="rounded-2xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] p-8">
+      <article className="surface-card rounded-2xl px-5 py-7 sm:p-8">
         <Header salonName={booking.salon_name} logoUrl={booking.salon_logo_url} />
         <div className="mt-6 flex flex-col items-center text-center">
           <div className="size-12 rounded-full bg-[var(--lume-surface)] inline-flex items-center justify-center text-[var(--lume-text-secondary)]">
             <X className="size-6" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-[var(--lume-text)]">
+          <PublicHeading
+            as="h2"
+            size="md"
+            className="mt-4 max-w-sm"
+            subtitle="L'orario è di nuovo libero per altri clienti. Puoi prenotare di nuovo quando vuoi."
+          >
             Prenotazione annullata
-          </h2>
-          <p className="mt-2 max-w-sm text-sm text-[var(--lume-text-secondary)]">
-            L&apos;orario è di nuovo libero per altri clienti. Puoi prenotare di nuovo quando vuoi.
-          </p>
+          </PublicHeading>
         </div>
 
         <BookingDetails booking={booking} start={start} muted />
@@ -81,19 +87,20 @@ export function BookingManagePage({ booking }: { booking: PublicBookingByToken }
   const canCancel = booking.can_cancel_now;
 
   return (
-    <article className="rounded-2xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] p-8">
+    <article className="surface-card rounded-2xl px-5 py-7 sm:p-8">
       <Header salonName={booking.salon_name} logoUrl={booking.salon_logo_url} />
 
       <div className="mt-6 flex items-center gap-3">
         <StatusBadge status={booking.status} />
       </div>
 
-      <h1 className="mt-3 text-xl font-semibold text-[var(--lume-text)]">
+      <PublicHeading
+        size="md"
+        className="mt-3"
+        subtitle={`Ecco i dettagli della tua prenotazione presso ${booking.salon_name}.`}
+      >
         {booking.client_first ? `Ciao ${booking.client_first},` : 'La tua prenotazione'}
-      </h1>
-      <p className="mt-2 text-sm text-[var(--lume-text-secondary)]">
-        Ecco i dettagli della tua prenotazione presso {booking.salon_name}.
-      </p>
+      </PublicHeading>
 
       <BookingDetails booking={booking} start={start} />
 
@@ -102,99 +109,52 @@ export function BookingManagePage({ booking }: { booking: PublicBookingByToken }
           <p className="text-xs text-[var(--lume-text-muted)] mb-3">
             Puoi annullare online fino a {booking.cancel_window_hours} ore prima dell&apos;orario.
           </p>
-          <button
-            type="button"
-            onClick={() => setState('confirming')}
-            className="w-full rounded-lg border border-[var(--lume-border)] bg-[var(--lume-surface)] px-4 py-3 text-sm font-medium text-[var(--lume-text)] hover:border-[var(--lume-danger-border)] hover:text-[var(--lume-danger-fg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
-          >
+          <Button variant="secondary" size="lg" className="w-full" onClick={() => setState('confirming')}>
             Annulla la prenotazione
-          </button>
+          </Button>
         </div>
       )}
 
-      {showCancellable && canCancel && state === 'confirming' && (
-        <div className="mt-6 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface)] p-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="size-5 shrink-0 text-[var(--lume-warning-fg)]" />
-            <div>
-              <p className="text-sm font-medium text-[var(--lume-text)]">Sei sicuro?</p>
-              <p className="mt-1 text-sm text-[var(--lume-text-secondary)]">
-                Una volta annullata, l&apos;orario tornerà disponibile per altri clienti.
-              </p>
-            </div>
-          </div>
-          <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setState('idle')}
-              className="rounded-lg border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] px-4 py-2 text-sm font-medium text-[var(--lume-text)] hover:bg-[var(--lume-surface)] transition-colors"
-            >
+      {showCancellable && canCancel && (state === 'confirming' || state === 'submitting') && (
+        <Callout tone="warning" title="Sei sicuro?" className="mt-6">
+          Una volta annullata, l&apos;orario tornerà disponibile per altri clienti.
+          <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button variant="secondary" size="lg" disabled={state === 'submitting'} onClick={() => setState('idle')}>
               Torna indietro
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="rounded-lg bg-[var(--lume-button-destructive-bg)] hover:bg-[var(--lume-button-destructive-bg-hover)] px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
-            >
+            </Button>
+            <Button variant="destructive" size="lg" loading={state === 'submitting'} onClick={handleCancel}>
               Sì, annulla
-            </button>
+            </Button>
           </div>
-        </div>
-      )}
-
-      {showCancellable && state === 'submitting' && (
-        <div className="mt-6 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface)] p-5 text-sm text-[var(--lume-text-secondary)] text-center">
-          Sto annullando…
-        </div>
+        </Callout>
       )}
 
       {showCancellable && state === 'error' && (
-        <div className="mt-6 rounded-xl border border-[var(--lume-danger-border)] bg-[var(--lume-danger-bg)] p-5 text-sm text-[var(--lume-danger-fg)]">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="size-5 shrink-0" />
-            <div>
-              <p className="font-medium">Non sono riuscito ad annullare.</p>
-              <p className="mt-1">{errorMsg}</p>
-              <button
-                type="button"
-                onClick={() => setState('idle')}
-                className="mt-3 inline-flex items-center text-sm font-medium underline"
-              >
-                Riprova
-              </button>
-            </div>
-          </div>
-        </div>
+        <Callout
+          tone="danger"
+          title="Non sono riuscito ad annullare."
+          className="mt-6"
+          action={
+            <Button variant="secondary" size="sm" onClick={() => setState('idle')} className="max-sm:h-11">
+              Riprova
+            </Button>
+          }
+        >
+          {errorMsg}
+        </Callout>
       )}
 
       {showCancellable && !canCancel && (
-        <div className="mt-6 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface)] p-5">
-          <div className="flex items-start gap-3">
-            <Clock className="size-5 shrink-0 text-[var(--lume-text-muted)]" />
-            <div>
-              <p className="text-sm font-medium text-[var(--lume-text)]">
-                Non puoi più annullare online
-              </p>
-              <p className="mt-1 text-sm text-[var(--lume-text-secondary)]">
-                Per modifiche dell&apos;ultimo minuto, contatta direttamente il salone
-                {booking.salon_phone ? (
-                  <>
-                    {' '}al{' '}
-                    <a
-                      href={`tel:${booking.salon_phone}`}
-                      className="text-[var(--lume-accent)] hover:underline"
-                    >
-                      {booking.salon_phone}
-                    </a>
-                    .
-                  </>
-                ) : (
-                  '.'
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Callout tone="info" icon={Clock} title="Non puoi più annullare online" className="mt-6">
+          Per modifiche dell&apos;ultimo minuto, contatta direttamente il salone
+          {booking.salon_phone ? (
+            <>
+              {' '}al <TextLink href={`tel:${booking.salon_phone}`}>{booking.salon_phone}</TextLink>.
+            </>
+          ) : (
+            '.'
+          )}
+        </Callout>
       )}
 
       <FooterContact salonName={booking.salon_name} phone={booking.salon_phone} />
@@ -211,12 +171,12 @@ function Header({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="size-12 rounded-xl overflow-hidden bg-[var(--lume-surface)] border border-[var(--lume-border)] flex items-center justify-center shrink-0">
+      <div className="surface-card size-12 overflow-hidden flex items-center justify-center shrink-0">
         {logoUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element -- public booking page; no image-optimisation domain config */
           <img src={logoUrl} alt={salonName} className="size-full object-contain" />
         ) : (
-          <span className="text-lg font-semibold text-[var(--lume-text-muted)]">
+          <span className="text-lg font-medium tracking-tight text-[var(--lume-text-muted)]">
             {salonName.charAt(0).toUpperCase()}
           </span>
         )}
@@ -229,74 +189,26 @@ function Header({
 function StatusBadge({ status }: { status: PublicBookingByToken['status'] }) {
   switch (status) {
     case 'created':
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lume-success-bg)] px-2.5 py-1 text-xs font-medium text-[var(--lume-success-fg)]">
-          <Check className="size-3" /> Confermata
-        </span>
-      );
+      return <StatusDot tone="success" className="text-sm">Confermata</StatusDot>;
     case 'pending_approval':
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lume-warning-bg)] px-2.5 py-1 text-xs font-medium text-[var(--lume-warning-fg)]">
-          <Hourglass className="size-3" /> In attesa di conferma
-        </span>
-      );
+      return <StatusDot tone="warning" className="text-sm">In attesa di conferma</StatusDot>;
     case 'completed':
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lume-surface)] px-2.5 py-1 text-xs font-medium text-[var(--lume-text-secondary)]">
-          <Check className="size-3" /> Completata
-        </span>
-      );
+      return <StatusDot tone="neutral" className="text-sm">Completata</StatusDot>;
     default:
       return null;
   }
 }
 
-function BookingDetails({
-  booking,
-  start,
-  muted = false,
-}: {
-  booking: PublicBookingByToken;
-  start: Date;
-  muted?: boolean;
-}) {
-  const opName = [booking.operator_first, booking.operator_last].filter(Boolean).join(' ');
-  const location = [booking.salon_address, booking.salon_city, booking.salon_province]
-    .filter(Boolean)
-    .join(', ');
+function BookingDetails({ booking, start, muted }: { booking: PublicBookingByToken; start: Date; muted?: boolean }) {
   return (
-    <dl
-      className={`mt-6 grid grid-cols-1 gap-y-3 rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface)] p-5 text-sm ${
-        muted ? 'opacity-75' : ''
-      }`}
-    >
-      <Row label="Servizio" value={booking.service_name} />
-      <Row
-        label="Quando"
-        value={`${format(start, 'EEEE d MMMM yyyy', { locale: it })} · ${format(start, 'HH:mm')}`}
-      />
-      {opName && <Row label="Operatore" value={opName} />}
-      {location && (
-        <Row
-          label="Dove"
-          value={
-            <span className="inline-flex items-start gap-1.5">
-              <MapPin className="size-3.5 mt-0.5 shrink-0" />
-              {location}
-            </span>
-          }
-        />
-      )}
-    </dl>
-  );
-}
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-[var(--lume-text-muted)]">{label}</dt>
-      <dd className="text-right text-[var(--lume-text)] font-medium">{value}</dd>
-    </div>
+    <BookingSummary
+      serviceName={booking.service_name}
+      start={start}
+      operatorName={[booking.operator_first, booking.operator_last].filter(Boolean).join(' ') || undefined}
+      location={[booking.salon_address, booking.salon_city, booking.salon_province].filter(Boolean).join(', ') || undefined}
+      muted={muted}
+      className="mt-6"
+    />
   );
 }
 
@@ -311,10 +223,10 @@ function FooterContact({
   return (
     <p className="mt-6 text-xs text-[var(--lume-text-muted)] text-center">
       Hai bisogno di aiuto? Chiama {salonName} al{' '}
-      <a href={`tel:${phone}`} className="text-[var(--lume-accent)] hover:underline inline-flex items-center gap-1">
-        <Phone className="size-3" />
+      <TextLink href={`tel:${phone}`} className="font-normal inline-flex items-center gap-1">
+        <Phone className="size-3" aria-hidden />
         {phone}
-      </a>
+      </TextLink>
     </p>
   );
 }

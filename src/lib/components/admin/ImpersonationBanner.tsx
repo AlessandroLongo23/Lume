@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 
 function readImpersonatingCookie(): boolean {
   if (typeof document === 'undefined') return false;
@@ -42,24 +43,27 @@ export function ImpersonationBanner() {
     }
   }
 
+  // A full-width strip across the top of the shell (AppShell gives it its height).
   return (
-    <div className="h-full px-4 md:px-6 flex items-center justify-between gap-3 text-sm bg-primary-hover text-white">
-      <div className="flex items-center gap-2 min-w-0">
-        <Eye className="w-4 h-4 shrink-0" />
-        <span className="truncate">
-          Stai visualizzando <span className="font-semibold">{salonName || 'questo salone'}</span> come admin
-        </span>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        loading={isExiting}
-        leadingIcon={ArrowLeft}
-        onClick={handleExit}
-        className="shrink-0 bg-white/15 hover:bg-white/25 text-white text-xs"
-      >
-        {isExiting ? 'Uscita…' : 'Torna alla piattaforma'}
-      </Button>
-    </div>
+    <Callout
+      tone="info"
+      icon={Eye}
+      className="h-full rounded-none items-center py-0 px-4 md:px-6 [&>svg]:mt-0"
+      action={
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={isExiting}
+          leadingIcon={ArrowLeft}
+          onClick={handleExit}
+        >
+          {isExiting ? 'Uscita…' : 'Torna alla piattaforma'}
+        </Button>
+      }
+    >
+      <p className="truncate text-[var(--lume-text)]">
+        Stai visualizzando <span className="font-medium">{salonName || 'questo salone'}</span> come amministratore
+      </p>
+    </Callout>
   );
 }

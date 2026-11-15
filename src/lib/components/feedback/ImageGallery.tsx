@@ -8,10 +8,9 @@ const BUCKET = 'feedback-attachments';
 
 interface ImageGalleryProps {
   paths: string[];
-  className?: string;
 }
 
-export function ImageGallery({ paths, className = '' }: ImageGalleryProps) {
+export function ImageGallery({ paths }: ImageGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const urls = useMemo(
@@ -23,13 +22,14 @@ export function ImageGallery({ paths, className = '' }: ImageGalleryProps) {
 
   return (
     <>
-      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${className}`}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {urls.map((url, i) => (
           <button
+            // ds-ignore: square image thumbnail that opens the lightbox; Button is a fixed-height control with padding
             key={paths[i]}
             type="button"
             onClick={() => setOpenIndex(i)}
-            className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-500/25 bg-zinc-100 dark:bg-zinc-800 hover:border-primary/50 transition-colors"
+            className="group relative aspect-square rounded-lg overflow-hidden border border-line bg-active hover:border-[var(--lume-border)] transition-colors"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

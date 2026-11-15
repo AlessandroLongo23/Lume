@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, AtSign, Phone, Lock, Eye, EyeOff, Info } from 'lucide-react';
-import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
+import { User, AtSign, Phone, Lock } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
 import { emitTourEvent } from '@/lib/tutorials/tourEvents';
 
 interface AddOperatorModalProps {
@@ -22,7 +24,6 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
   const addOperator = useOperatorsStore((s) => s.addOperator);
   const [op, setOp] = useState(emptyOp());
   const [errors, setErrors] = useState(emptyErrors());
-  const [showPassword, setShowPassword] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -65,8 +66,6 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
     }
   };
 
-  const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100';
-  const labelClass = 'flex flex-row items-center gap-2';
 
   return (
     <AddModal
@@ -82,54 +81,76 @@ export function AddOperatorModal({ isOpen, onClose }: AddOperatorModalProps) {
       onEnterComplete={() => emitTourEvent('operator:modal-open')}
     >
       <div className="flex flex-col gap-6">
-        <div className="flex flex-row items-start gap-6 w-full">
-          <div className="flex grow flex-col gap-2">
-            <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-            <input type="text" data-tour="field-operator-first_name" className={inputClass} value={op.firstName} onChange={(e) => set('firstName', e.target.value)} />
-            {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-          </div>
-          <div className="flex grow flex-col gap-2">
-            <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Cognome *</span></label>
-            <input type="text" data-tour="field-operator-last_name" className={inputClass} value={op.lastName} onChange={(e) => set('lastName', e.target.value)} />
-            {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-          </div>
+        <div className="flex flex-col sm:flex-row items-start gap-6 w-full">
+          <FormInput
+            fieldClassName="grow"
+            label="Nome"
+            labelIcon={User}
+            required
+            data-tour="field-operator-first_name"
+            value={op.firstName}
+            onChange={(e) => set('firstName', e.target.value)}
+            error={errors.firstName || undefined}
+          />
+          <FormInput
+            fieldClassName="grow"
+            label="Cognome"
+            labelIcon={User}
+            required
+            data-tour="field-operator-last_name"
+            value={op.lastName}
+            onChange={(e) => set('lastName', e.target.value)}
+            error={errors.lastName || undefined}
+          />
         </div>
 
-        <div className="flex flex-row items-center gap-6 w-full">
-          <div className="flex flex-1 flex-col gap-2">
-            <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email</span></label>
-            <input type="email" data-tour="field-operator-email" className={inputClass} value={op.email} onChange={(e) => set('email', e.target.value)} autoComplete="off" />
-            {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-          </div>
-          <div className="flex flex-1 flex-col gap-2" data-tour="field-operator-phone">
-            <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono</span></label>
-            <PhoneNumber prefixCode={op.phonePrefix} phoneNumber={op.phoneNumber} onPrefixChange={(v) => set('phonePrefix', v)} onPhoneChange={(v) => set('phoneNumber', v)} />
-            {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+        <div className="flex flex-col sm:flex-row items-start gap-6 w-full">
+          <FormInput
+            fieldClassName="flex-1"
+            label="Email"
+            labelIcon={AtSign}
+            type="email"
+            data-tour="field-operator-email"
+            value={op.email}
+            onChange={(e) => set('email', e.target.value)}
+            autoComplete="off"
+            error={errors.email || undefined}
+          />
+          <div className="flex-1 min-w-0" data-tour="field-operator-phone">
+            <Field label="Telefono" labelIcon={Phone} error={errors.phone || undefined}>
+              {({ id, invalid }) => (
+                <PhoneNumber
+                  id={id}
+                  invalid={invalid}
+                  prefixCode={op.phonePrefix}
+                  phoneNumber={op.phoneNumber}
+                  onPrefixChange={(v) => set('phonePrefix', v)}
+                  onPhoneChange={(v) => set('phoneNumber', v)}
+                />
+              )}
+            </Field>
           </div>
         </div>
 
         {willCreateAccount && (
-          <div className="flex flex-row items-start gap-6 w-full">
-            <div className="flex flex-1 flex-col gap-2">
-              <label className={labelClass}><Lock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Password App *</span></label>
-              <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} className={inputClass} value={op.password} onChange={(e) => set('password', e.target.value)} />
-                <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setShowPassword((v) => !v)}>
-                  <SwapIcon icon={showPassword ? Eye : EyeOff} className="size-5" />
-                </button>
-              </div>
-              {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-            </div>
-          </div>
+          // Shown in clear: the owner reads the generated password to hand it over.
+          <FormInput
+            label="Password App"
+            labelIcon={Lock}
+            required
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={op.password}
+            onChange={(e) => set('password', e.target.value)}
+            error={errors.password || undefined}
+          />
         )}
 
         {!willCreateAccount && (
-          <div className="flex items-start gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2.5 text-xs text-zinc-600 dark:text-zinc-400">
-            <Info className="size-3.5 shrink-0 mt-0.5" />
-            <span>
-              L&apos;operatore esisterà per assegnare prestazioni e statistiche, ma non potrà accedere al gestionale. Potrai aggiungere le credenziali in seguito dalla scheda dell&apos;operatore.
-            </span>
-          </div>
+          <Callout>
+            L&apos;operatore esisterà per assegnare prestazioni e statistiche, ma non potrà accedere al gestionale. Potrai aggiungere le credenziali in seguito dalla scheda dell&apos;operatore.
+          </Callout>
         )}
       </div>
     </AddModal>

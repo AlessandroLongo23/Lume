@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  AlertTriangle, Check, Copy, CreditCard, Gift, Loader2, Crown,
+  Check, Copy, CreditCard, Gift, Loader2, Crown,
   Clock3, Sparkles, Store, ExternalLink,
 } from 'lucide-react';
 import { useSubscriptionStore, type Referral } from '@/lib/stores/subscription';
@@ -13,7 +13,11 @@ import { SubscriptionSummaryCard } from '@/lib/components/admin/subscription/Sub
 import { InvoiceList } from '@/lib/components/admin/subscription/InvoiceList';
 import { CancelSubscriptionModal } from '@/lib/components/admin/subscription/CancelSubscriptionModal';
 import { ReactivateBanner } from '@/lib/components/admin/subscription/ReactivateBanner';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { Stat, StatRow } from '@/lib/components/shared/ui/StatRow';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status badges (trial, past-due, expired) — Active state lives in
@@ -23,10 +27,9 @@ function TrialChip() {
   const trialDaysLeft = useSubscriptionStore((s) => s.trialDaysLeft);
   const daysText = trialDaysLeft === 1 ? '1 giorno' : `${trialDaysLeft} giorni`;
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-sm font-medium text-primary">
-      <Crown className="size-4" />
-      Prova gratuita — {daysText} rimanenti
-    </div>
+    <StatusDot tone="info" className="text-sm">
+      Prova gratuita: {daysText} rimanenti
+    </StatusDot>
   );
 }
 
@@ -41,23 +44,23 @@ function PastDueChip() {
     } catch { setLoading(false); }
   };
   return (
-    <div className="rounded-xl border border-warning-line bg-warning-soft px-4 py-3 flex items-center gap-3">
-      <AlertTriangle className="size-5 text-warning-strong shrink-0" />
-      <div className="flex-1 text-sm text-warning-strong">
-        <strong className="font-medium">Pagamento non riuscito.</strong>{' '}
-        Aggiorna il metodo di pagamento per non perdere l&apos;accesso.
-      </div>
-      <Button
-        variant="primary"
-        size="sm"
-        loading={loading}
-        leadingIcon={CreditCard}
-        onClick={openPortal}
-        className="shrink-0"
-      >
-        Aggiorna metodo
-      </Button>
-    </div>
+    <Callout
+      tone="warning"
+      title="Pagamento non riuscito."
+      action={
+        <Button
+          variant="primary"
+          size="sm"
+          loading={loading}
+          leadingIcon={CreditCard}
+          onClick={openPortal}
+        >
+          Aggiorna metodo
+        </Button>
+      }
+    >
+      Aggiorna il metodo di pagamento per non perdere l&apos;accesso.
+    </Callout>
   );
 }
 
@@ -109,16 +112,17 @@ function PlanCard({
   // Monthly is secondary (graphite-on-white) so we don't burn the indigo budget.
   const isPrimary = !!recommended;
 
-  const borderClass = isCurrentPlan
-    ? 'border-success-line shadow-sm'
-    : recommended
-      ? 'border-primary/40 shadow-sm'
-      : 'border-border';
+  // The featured plan carries the only indigo on the page: its edge and its button.
+  // The featured plan swaps the card's hairline for an accent edge.
+  const cardClass = recommended && !isCurrentPlan
+    // ds-ignore: surface-card's fill and radius with an accent edge in place of its hairline; surface-card's own box-shadow would compete with the accent one
+    ? 'rounded-xl bg-[var(--lume-surface-raised)] shadow-[inset_0_0_0_1.5px_var(--lume-accent)]'
+    : 'surface-card';
 
   const renderButton = () => {
     if (isOperator) {
       return (
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-[var(--lume-text-secondary)]">
           Contatta il proprietario del salone per attivare l&apos;abbonamento.
         </p>
       );
@@ -130,7 +134,7 @@ function PlanCard({
           variant="secondary"
           leadingIcon={Check}
           disabled
-          className="mt-6 bg-success-soft text-success-strong border-success-line"
+          className="mt-6"
         >
           Il tuo piano attuale
         </Button>
@@ -179,28 +183,22 @@ function PlanCard({
     );
   };
 
-  const badgeContent = isCurrentPlan
-    ? 'Piano attivo'
-    : 'badge' in plan && plan.badge
-      ? plan.badge
-      : null;
-
-  const badgeColor = isCurrentPlan
-    ? 'bg-success-strong'
-    : 'bg-primary';
+  const badge = 'badge' in plan && plan.badge ? plan.badge : null;
 
   return (
-    <div className={`relative flex flex-col rounded-xl border bg-card p-6 transition-shadow ${borderClass}`}>
-      {badgeContent && (
-        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full ${badgeColor} px-3 py-1 text-xs font-semibold text-white`}>
-          {badgeContent}
-        </div>
-      )}
-      <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="font-mono text-3xl font-bold text-foreground">€{plan.price}</span>
-        <span className="text-sm text-muted-foreground">/{plan.interval}</span>
+    <div className={`flex flex-col p-6 sm:p-8 ${cardClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">{plan.name}</h3>
+        {isCurrentPlan ? (
+          <StatusDot tone="success" className="text-xs">Piano attivo</StatusDot>
+        ) : badge ? (
+          <span className="text-xs text-[var(--lume-text-secondary)] whitespace-nowrap">{badge}</span>
+        ) : null}
+      </div>
+      <p className="mt-1 text-sm text-[var(--lume-text-secondary)]">{plan.description}</p>
+      <div className="mt-6 flex items-baseline gap-1.5">
+        <span className="tabular-nums text-4xl leading-none font-normal tracking-tight text-[var(--lume-text)]">{plan.price} €</span>
+        <span className="text-sm text-[var(--lume-text-secondary)]">al {plan.interval}</span>
       </div>
       {renderButton()}
     </div>
@@ -216,17 +214,11 @@ function PlanCard({
 function ReferralStatusBadge({ status }: { status: Referral['status'] }) {
   if (status === 'pending') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-2.5 py-1 text-xs font-medium text-warning-strong">
-        <Clock3 className="size-3" />
-        In attesa
-      </span>
+      <StatusDot tone="warning" className="text-sm">In attesa</StatusDot>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-medium text-success-strong">
-      <Check className="size-3" />
-      Riscattato
-    </span>
+    <StatusDot tone="success" className="text-sm">Riscattato</StatusDot>
   );
 }
 
@@ -253,27 +245,23 @@ function ReferralSection() {
   const cap = 6;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      {/* Quiet tonal lift, not a chromatic wash — keeps indigo as a rare event
-          (the Gift icon tile is the only accent the section needs). */}
-      <div className="bg-muted/40 p-6">
+    <section className="overflow-hidden surface-card">
+      <div className="p-6">
         <div className="flex items-start gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-accent-muted text-primary">
-            <Gift className="size-5" />
-          </div>
+          <Gift className="size-5 shrink-0 mt-0.5 text-[var(--lume-text-secondary)]" aria-hidden />
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Invita un collega</h3>
-            <p className="mt-1 text-sm text-muted-foreground max-w-md">
+            <h3 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">Invita un collega</h3>
+            <p className="mt-1 text-sm text-[var(--lume-text-secondary)] max-w-md">
               Quando un collega si abbona, ricevi un mese gratuito. Loro ottengono 15 giorni extra di prova.
             </p>
-            <p className="mt-1 text-xs text-muted-foreground max-w-md">
+            <p className="mt-1 text-xs text-[var(--lume-text-muted)] max-w-md">
               Il credito si attiva quando tu e il tuo collega completate il primo pagamento.
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex items-center gap-2">
-          <div className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 font-mono text-sm font-medium tracking-wider text-foreground">
+          <div className="flex-1 min-w-0 flex items-center h-[var(--lume-control-h-md)] pointer-coarse:h-[var(--lume-control-h-lg)] rounded-lg bg-hover px-3 tabular-nums text-sm tracking-wider text-[var(--lume-text)] truncate select-all">
             {referralCode}
           </div>
           <Button
@@ -281,57 +269,43 @@ function ReferralSection() {
             leadingIcon={copied ? Check : Copy}
             onClick={handleCopy}
             aria-label="Copia codice"
-            className={copied ? 'text-success-strong' : ''}
           >
             {copied ? 'Copiato' : 'Copia'}
           </Button>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-            <div className="text-xs text-muted-foreground">Inviti totali</div>
-            <div className="mt-0.5 text-lg font-semibold text-foreground">{total}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-            <div className="text-xs text-muted-foreground">In attesa</div>
-            <div className="mt-0.5 text-lg font-semibold text-warning-strong">{pendingCredits}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-            <div className="text-xs text-muted-foreground">Riscattati</div>
-            <div className="mt-0.5 text-lg font-semibold text-success-strong">
-              {earnedCredits}<span className="text-sm font-normal text-muted-foreground">/{cap}</span>
-            </div>
-          </div>
-        </div>
+        <StatRow className="mt-6 grid-cols-3!">
+          <Stat label="Inviti totali" value={String(total)} />
+          <Stat label="In attesa" value={String(pendingCredits)}
+            marker={<span className="size-1.5 rounded-full bg-warning-strong" aria-hidden />} />
+          <Stat label="Riscattati" value={`${earnedCredits}/${cap}`}
+            marker={<span className="size-1.5 rounded-full bg-success-strong" aria-hidden />} />
+        </StatRow>
       </div>
 
-      <div className="border-t border-border">
+      <div className="border-t border-line">
         {referrals.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-            <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <Sparkles className="size-5" />
-            </div>
-            <p className="mt-3 text-sm font-medium text-foreground">Nessun invito ancora</p>
-            <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+            <Sparkles className="size-5 text-[var(--lume-text-muted)]" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-[var(--lume-text)]">Nessun invito ancora</p>
+            <p className="mt-1 text-sm text-[var(--lume-text-secondary)] max-w-xs">
               Condividi il tuo codice per iniziare a guadagnare mesi gratuiti.
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-line">
             {referrals.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3 px-6 py-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Store className="size-4" />
-                  </div>
+                  <Store className="size-4 shrink-0 text-[var(--lume-text-muted)]" aria-hidden />
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-foreground">
+                    <div className="truncate text-sm font-medium text-[var(--lume-text)]">
                       {r.salonName}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-[var(--lume-text-secondary)]">
                       Invitato il {formatDateDisplay(r.createdAt)}
                       {r.status === 'applied' && r.newPeriodEnd && (
-                        <span className="text-success-strong">
+                        <span>
                           {' · +1 mese · prossimo addebito al '}
                           {formatDateDisplay(r.newPeriodEnd)}
                         </span>
@@ -345,7 +319,7 @@ function ReferralSection() {
           </ul>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -360,12 +334,12 @@ function TrialState({ trialEndDate }: { trialEndDate: string | null }) {
     <>
       <TrialChip />
       {trialEndDate && (
-        <p className="text-sm text-muted-foreground">
+        <p className="-mt-3 text-sm text-[var(--lume-text-secondary)]">
           Nessun pagamento richiesto fino al {trialEndDate}.
         </p>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <PlanCard
           planKey="monthly"
           isCurrentPlan={false}
@@ -399,19 +373,13 @@ function ExpiredState({ wasCanceled }: { wasCanceled: boolean }) {
 
   return (
     <>
-      <div className="rounded-xl border border-warning-line bg-warning-soft px-4 py-3 flex items-start gap-3">
-        <AlertTriangle className="size-5 text-warning-strong shrink-0 mt-0.5" />
-        <div className="text-sm text-warning-strong">
-          <strong className="font-medium">
-            {wasCanceled ? 'Abbonamento terminato.' : 'Prova gratuita scaduta.'}
-          </strong>{' '}
-          {isOperator
-            ? 'Contatta il proprietario del salone per riattivare l’accesso.'
-            : 'Scegli un piano per riprendere a usare Lume.'}
-        </div>
-      </div>
+      <Callout tone="warning" title={wasCanceled ? 'Abbonamento terminato.' : 'Prova gratuita scaduta.'}>
+        {isOperator
+          ? 'Contatta il proprietario del salone per riattivare l’accesso.'
+          : 'Scegli un piano per riprendere a usare Lume.'}
+      </Callout>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <PlanCard
           planKey="monthly"
           isCurrentPlan={false}
@@ -507,7 +475,6 @@ function ActiveState() {
             loading={portalLoading}
             leadingIcon={ExternalLink}
             onClick={openPortal}
-            className="text-xs"
           >
             Apri portale Stripe per fatturazione, IVA, dati di contatto
           </Button>
@@ -572,7 +539,7 @@ export default function SubscribePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -586,33 +553,26 @@ export default function SubscribePage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Abbonamento</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isActive
-            ? 'Piano, prossimo addebito e storico fatture.'
-            : 'Scegli il piano più adatto al tuo salone.'}
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        title="Abbonamento"
+        subtitle={isActive ? 'Piano, prossimo addebito e storico fatture.' : 'Scegli il piano più adatto al tuo salone.'}
+      />
 
       {success && isPolling && (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-accent-soft px-4 py-3 text-sm text-primary">
-          <Loader2 className="size-4 animate-spin shrink-0" />
-          Stiamo attivando il tuo abbonamento...
-        </div>
+        <Callout tone="info" icon={Loader2} iconClassName="animate-spin motion-reduce:animate-none" title="Stiamo attivando il tuo abbonamento..." />
       )}
 
       {success && isActive && !isPolling && (
-        <div className="rounded-lg border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
-          <strong>Abbonamento attivato con successo!</strong> Ora hai accesso completo a tutte le funzionalità di Lume.
-        </div>
+        <Callout tone="success" title="Abbonamento attivato con successo!">
+          Ora hai accesso completo a tutte le funzionalità di Lume.
+        </Callout>
       )}
 
       {success && pollTimedOut && !isActive && (
-        <div className="rounded-lg border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-strong">
+        <Callout tone="warning" icon={Clock3}>
           L&apos;attivazione potrebbe richiedere qualche istante. Ricarica la pagina tra poco.
-        </div>
+        </Callout>
       )}
 
       {subscriptionStatus === 'past_due' && <PastDueChip />}

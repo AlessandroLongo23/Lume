@@ -9,7 +9,10 @@ import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 export interface TimeGridColumn {
   key: string;
+  /** Plain-text label: used as the header text and as its accessible name. */
   label: string;
+  /** Optional richer header content (avatar, weekday + date). Falls back to `label`. */
+  header?: React.ReactNode;
 }
 
 interface TimeGridProps {
@@ -22,6 +25,16 @@ interface TimeGridProps {
   scheduleBounds?: { startHour: number; endHour: number };
   /** Fired when the cursor enters a cell. Consumers map columnKey → operator/date. */
   onCellHover?: (columnKey: string, timeSlot: Date) => void;
+}
+
+/** Width of the time gutter. Keep in sync with the `w-16` classes below. */
+const GUTTER = '4rem';
+const MIN_COLUMN = '6rem';
+
+function formatMinutes(total: number): string {
+  const hh = Math.floor(total / 60);
+  const mm = total % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
 export function TimeGrid({ columns, date, renderSlot, startHour, endHour, scheduleBounds, onCellHover }: TimeGridProps) {
@@ -68,81 +81,102 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  const gridCols = { gridTemplateColumns: `4rem repeat(${columns.length}, minmax(6rem, 1fr))` };
+  // Rows are as wide as the columns need, so on a phone the grid scrolls
+  // sideways while the time gutter stays pinned on the left.
+  const gridCols = {
+    gridTemplateColumns: `${GUTTER} repeat(${columns.length}, minmax(${MIN_COLUMN}, 1fr))`,
+    minWidth: `calc(${GUTTER} + ${columns.length} * ${MIN_COLUMN})`,
+  };
 
   return (
-    <div className="border border-zinc-500/25 rounded-lg overflow-hidden flex-1 min-h-0 flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto no-scrollbar">
         {/* Header — sticky so operator names stay visible while scrolling */}
         <div
-          className="grid sticky top-0 z-sticky bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-500/25"
+          className="grid sticky top-0 z-sticky bg-[var(--lume-panel)] border-b border-line"
           style={gridCols}
         >
-          <div className="p-2 font-medium border-r border-zinc-500/25 text-center text-sm">
-            Orario
+          <div className="sticky left-0 bg-[var(--lume-panel)]">
+            <span className="sr-only">Orario</span>
           </div>
           {columns.map((col) => (
-            <div
-              key={col.key}
-              className="p-2 font-medium text-center border-r border-zinc-500/25 last:border-r-0 text-sm truncate"
-            >
-              {col.label}
-            </div>
+            <Tooltip key={col.key} label={col.label}>
+              <div className="h-12 px-3 flex items-center min-w-0 text-sm font-medium text-[var(--lume-text)]">
+                {col.header ?? <span className="truncate">{col.label}</span>}
+              </div>
+            </Tooltip>
           ))}
         </div>
 
-        {/* Time rows — `isolate` creates a stacking context so blocks and the
-            now-line can layer relative to each other while staying below the
-            sticky operator header above. */}
-        <div className="relative isolate">
-          {showNowLine && (
-            <div
-              className="absolute left-0 right-0 z-content-floating pointer-events-none flex items-center"
-              style={{ top: `${nowTopRem}rem` }}
-            >
-              <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-              <div className="flex-1 border-t-2 border-red-500 border-dashed" />
-            </div>
-          )}
-          {timeSlots.map((timeSlot, i) => {
-            const isHourMark = timeSlot.getMinutes() === 0;
-            const slotHour = timeSlot.getHours();
-            const isExtended =
-              !!scheduleBounds &&
-              (slotHour < scheduleBounds.startHour || slotHour >= scheduleBounds.endHour);
-            return (
+        {/* Top breathing room so the first hour label is not clipped by the header. */}
+        <div className="pt-2">
+          {/* Time rows — `isolate` creates a stacking context so blocks and the
+              now-line can layer relative to each other while staying below the
+              sticky operator header above. */}
+          <div className="relative isolate">
+            {showNowLine && (
               <div
-                key={i}
-                className="grid"
-                style={gridCols}
+                className="absolute inset-x-0 h-0 z-content-floating pointer-events-none flex items-center"
+                style={{ top: `${nowTopRem}rem` }}
+                aria-hidden
               >
-                {/* Time gutter */}
-                <Tooltip label={isExtended ? 'Fuori orari di apertura' : undefined}>
-                  <div
-                    className={`p-2 h-8 text-xs border-r border-r-zinc-500/25 flex items-center justify-center gap-1 border-t ${
-                      isHourMark ? 'border-t-zinc-500/50' : 'border-t-zinc-500/25'
-                    } ${
-                      isExtended ? 'bg-amber-500/8 text-amber-700 dark:text-amber-400' : ''
-                    }`}
-                  >
-                    {isExtended && <AlertTriangle className="size-3 shrink-0" />}
-                    {formatTimeSlot(timeSlot)}
-                  </div>
-                </Tooltip>
-
-                {/* Slot cells */}
-                {columns.map((col) => (
-                  <div
-                    key={col.key}
-                    className="border-r border-zinc-500/25 last:border-r-0"
-                    onPointerEnter={onCellHover ? () => onCellHover(col.key, timeSlot) : undefined}
-                  >
-                    {renderSlot(col.key, timeSlot)}
-                  </div>
-                ))}
+                <div className="sticky left-0 w-16 shrink-0 flex justify-end pr-1.5">
+                  <span className="tabular-nums text-2xs font-medium leading-none px-1.5 py-1 rounded-full bg-[var(--lume-accent)] text-[var(--lume-text-on-accent)] select-none">
+                    {formatMinutes(nowMinutes)}
+                  </span>
+                </div>
+                <div className="relative flex-1 h-px bg-[var(--lume-accent)]">
+                  <span className="absolute left-0 top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--lume-accent)]" />
+                </div>
               </div>
-            );
-          })}
+            )}
+            {timeSlots.map((timeSlot, i) => {
+              const isHourMark = timeSlot.getMinutes() === 0;
+              // The now chip sits in the gutter: hide an hour label it would collide with.
+              const slotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
+              const hiddenByNow = showNowLine && Math.abs(slotMinutes - nowMinutes) < 12;
+              const slotHour = timeSlot.getHours();
+              const isExtended =
+                !!scheduleBounds &&
+                (slotHour < scheduleBounds.startHour || slotHour >= scheduleBounds.endHour);
+              return (
+                <div
+                  key={i}
+                  className="grid"
+                  style={gridCols}
+                >
+                  {/* Time gutter: labels on the hour only, sitting on the hour line. */}
+                  <Tooltip label={isExtended ? 'Fuori orari di apertura' : undefined}>
+                    <div className="sticky left-0 z-sticky h-8 bg-[var(--lume-panel)]">
+                      {isHourMark && !hiddenByNow && (
+                        <span
+                          className={`absolute right-3 top-0 -translate-y-1/2 flex items-center gap-1 tabular-nums text-2xs leading-none ${
+                            isExtended
+                              ? 'text-warning-strong'
+                              : 'text-[var(--lume-text-secondary)]'
+                          }`}
+                        >
+                          {isExtended && <AlertTriangle className="size-3 shrink-0" aria-label="Fuori orari di apertura" />}
+                          {formatTimeSlot(timeSlot)}
+                        </span>
+                      )}
+                    </div>
+                  </Tooltip>
+
+                  {/* Slot cells */}
+                  {columns.map((col) => (
+                    <div
+                      key={col.key}
+                      className="border-l border-line"
+                      onPointerEnter={onCellHover ? () => onCellHover(col.key, timeSlot) : undefined}
+                    >
+                      {renderSlot(col.key, timeSlot)}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

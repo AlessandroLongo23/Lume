@@ -81,7 +81,6 @@ export default function AbbonamentiPage() {
         <PageHeader
           title="Abbonamenti"
           subtitle="Pacchetti prepagati per chi torna spesso."
-          icon={BadgePercent}
           actions={
             <>
               <Button
@@ -89,7 +88,6 @@ export default function AbbonamentiPage() {
                 variant="primary"
                 leadingIcon={Plus}
                 onClick={() => setAddOpen(true)}
-                className="whitespace-nowrap"
               >
                 Nuovo abbonamento
               </Button>

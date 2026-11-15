@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 4 — COMPONENT RECIPES
+   ═══════════════════════════════════════════════════════════════════════════
+   The visual contract of every shared component, written once. Components in
+   src/lib/components/shared/ui compose these; screens compose components.
+   A screen that needs one of these looks should use the component, and only
+   reach for the bare utility when no component fits (then say why).
+
+   Edges are INSET shadows: they sit inside the box, so a parent with
+   overflow: hidden/auto (modal bodies, scroll panels) can never clip them,
+   and they never change a control's size.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Field: inputs, textareas, select triggers, autocomplete boxes ───────── */
+@utility control {
+	background-color: var(--lume-control-bg);
+	color: var(--lume-text);
+	border: 0;
+	border-radius: var(--radius-lg);
+	box-shadow: inset 0 0 0 1px var(--lume-edge);
+	transition:
+		box-shadow var(--duration-fast) var(--ease-out),
+		background-color var(--duration-fast) var(--ease-out);
+
+	&::placeholder { color: var(--lume-text-muted); }
+	/* iOS zooms into any field under 16px on focus: touch screens get 16px. */
+	@media (pointer: coarse) { font-size: max(1rem, 1em); }
+	&:hover,
+	&[aria-expanded="true"],
+	&[data-popup-open] { box-shadow: inset 0 0 0 1px var(--lume-edge-hover); }
+
+	/* Text entry shows focus on any focus; button-like triggers only on
+	   keyboard focus; wrappers when the input inside is focused. */
+	&:is(input, textarea):focus,
+	&:focus-visible,
+	&:has(:is(input, textarea):focus) {
+		outline: none;
+		box-shadow:
+			inset 0 0 0 1px var(--lume-ring-focus),
+			inset 0 0 0 3px var(--lume-accent-muted);
+	}
+	&[aria-invalid="true"],
+	&:has([aria-invalid="true"]) {
+		box-shadow: inset 0 0 0 1px var(--lume-danger-fg);
+	}
+	&:disabled,
+	&[aria-disabled="true"],
+	&[data-disabled] {
+		opacity: 0.5;
+		cursor: not-allowed;
+		background-color: var(--lume-hover);
+	}
+}
+
+/* Heights on the control ladder. md grows to 44px on touch screens. */
+@utility control-sm {
+	height: var(--lume-control-h-sm);
+	padding-inline: var(--lume-control-px-sm);
+	font-size: var(--lume-control-text-sm);
+}
+@utility control-md {
+	height: var(--lume-control-h-md);
+	padding-inline: var(--lume-control-px-md);
+	font-size: var(--lume-control-text-md);
+	@media (pointer: coarse) { height: var(--lume-control-h-lg); font-size: 1rem; }
+}
+@utility control-lg {
+	height: var(--lume-control-h-lg);
+	padding-inline: var(--lume-control-px-lg);
+	font-size: var(--lume-control-text-lg);
+}
+
+/* ── Surfaces ────────────────────────────────────────────────────────────── */
+/* A card at rest: raised fill, hairline ring, no shadow. */
+@utility surface-card {
+	background-color: var(--lume-surface-raised);
+	border-radius: var(--radius-xl);
+	box-shadow: inset 0 0 0 1px var(--lume-line);
+}
+/* A whole card that is clickable (a client card, a category tile): the
+   hairline darkens on hover, focus draws the indigo ring, press shrinks a
+   hair. Combine with surface-card. */
+@utility card-interactive {
+	cursor: pointer;
+	transition:
+		box-shadow var(--duration-fast) var(--ease-out),
+		scale var(--duration-fast) var(--ease-out);
+	&:hover { box-shadow: inset 0 0 0 1px var(--lume-edge-hover); }
+	&:focus-visible {
+		outline: none;
+		box-shadow: inset 0 0 0 1px var(--lume-ring-focus), inset 0 0 0 3px var(--lume-accent-muted);
+	}
+	&:active { scale: 0.995; }
+	@media (prefers-reduced-motion: reduce) { &:active { scale: 1; } }
+}
+
+/* Anything that floats over the page: menus, popovers, selects, pickers. */
+@utility surface-float {
+	background-color: var(--lume-surface-raised);
+	color: var(--lume-text);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--lume-shadow-float);
+}
+
+/* ── Selection: ONE look for "this one is chosen" ────────────────────────────
+   Nav rows, tabs, segments, list options, date cells, chips. Neutral fill and
+   full-strength text; indigo is for actions, not for "chosen". */
+@utility selected {
+	background-color: var(--lume-active);
+	color: var(--lume-text);
+	font-weight: var(--font-weight-medium);
+}
+/* "Done" / "on": filled with the text colour (checkboxes, switches, done steps). */
+@utility marker-done {
+	background-color: var(--lume-text);
+	color: var(--lume-bg);
+}
+/* "Today" / "current" without being chosen: a ring, no fill. */
+@utility marker-current {
+	box-shadow: inset 0 0 0 1px var(--lume-edge-hover);
+	color: var(--lume-text);
+	font-weight: var(--font-weight-medium);
+}
+
+/* ── List rows: menus, select options, pickers, autocompletes ─────────────── */
+/* Hover has no fill of its own: the list's hover glide travels to the row
+   (<ListBox>). Rows must be positioned so they paint above the glide. */
+@utility list-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	width: 100%;
+	min-height: 2.25rem;
+	padding: 0.375rem 0.75rem;
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+	line-height: var(--leading-snug);
+	text-align: left;
+	color: var(--lume-text-secondary);
+	cursor: pointer;
+	outline: none;
+	transition: color var(--duration-fast) var(--ease-out);
+
+	&:hover,
+	&[data-highlighted],
+	&:focus-visible { color: var(--lume-text); }
+	/* Chosen option. Multi-select rows (aria-checked) show a check, not a fill:
+	   a list that starts all-on would otherwise be entirely grey. */
+	&[aria-selected="true"]:not([data-multi]),
+	&[data-selected] {
+		background-color: var(--lume-active);
+		color: var(--lume-text);
+		font-weight: var(--font-weight-medium);
+	}
+	/* Multi-select rows: chosen = check mark + full text, no fill. */
+	&[data-multi]:is([aria-selected="true"], [aria-checked="true"], [aria-pressed="true"]) { color: var(--lume-text); }
+	&:disabled,
+	&[aria-disabled="true"],
+	&[data-disabled] { opacity: 0.5; pointer-events: none; }
+	@media (pointer: coarse) { min-height: 2.75rem; }
+}
+@utility list-row-danger {
+	color: var(--lume-danger-fg);
+	&:hover,
+	&[data-highlighted],
+	&:focus-visible { color: var(--lume-danger-fg); background-color: var(--lume-danger-bg); }
+}

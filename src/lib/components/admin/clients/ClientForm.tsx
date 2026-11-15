@@ -1,8 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, Eye, EyeOff, FileHeart, Camera, Trash2, Palette } from 'lucide-react';
-import { SwapIcon } from '@/lib/components/shared/ui/SwapIcon';
+import { User, VenusAndMars, AtSign, Phone, Lock, Calendar, Plane, FileHeart, Camera, Trash2, Palette } from 'lucide-react';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { PhoneNumber } from '@/lib/components/shared/ui/forms/PhoneNumber';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
@@ -11,7 +13,7 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { Gender } from '@/lib/types/Gender';
 import type { Client } from '@/lib/types/Client';
 import { supabase } from '@/lib/supabase/client';
-import { ClientColorPicker } from './ClientColorPicker';
+import { ColorSwatchPicker } from '@/lib/components/shared/ui/forms/ColorSwatchPicker';
 
 export type ClientFormValue = Partial<Client> & { password?: string };
 
@@ -70,9 +72,6 @@ export const validateBirthDate = (date: string): string => {
   return '';
 };
 
-const inputClass = 'w-full p-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-shadow';
-const labelClass = 'flex flex-row items-center gap-2';
-
 export function ClientForm({
   value,
   onChange,
@@ -84,7 +83,6 @@ export function ClientForm({
   salonId,
   clientId,
 }: ClientFormProps) {
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof ClientFormValue>(key: K, v: ClientFormValue[K]) => onChange({ ...value, [key]: v });
@@ -130,12 +128,12 @@ export function ClientForm({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-5">
-        <div className="size-20 rounded-full overflow-hidden bg-primary/15 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+        <div className="size-20 rounded-full overflow-hidden bg-active flex items-center justify-center">
           {value.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value.photoUrl} alt="" className="size-full object-cover" />
           ) : (
-            <span className="text-lg font-semibold text-primary-hover dark:text-primary/80">
+            <span className="text-lg font-medium text-[var(--lume-text-secondary)]">
               {photoInitials || '·'}
             </span>
           )}
@@ -153,16 +151,15 @@ export function ClientForm({
             </Button>
             {value.photoUrl && !uploading && (
               <Button
-                variant="ghost"
+                variant="ghost-destructive"
                 leadingIcon={Trash2}
                 onClick={onRemovePhoto}
-                className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
               >
                 Rimuovi
               </Button>
             )}
           </div>
-          <p className="text-xs text-zinc-400">L&apos;immagine viene compressa automaticamente.</p>
+          <p className="text-xs text-[var(--lume-text-muted)]">L&apos;immagine viene compressa automaticamente.</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -174,60 +171,79 @@ export function ClientForm({
       </div>
 
       <div className="flex flex-row items-start gap-4 w-full flex-wrap">
-        <div className="flex flex-1 min-w-40 flex-col gap-2">
-          <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Nome *</span></label>
-          <input type="text" data-tour="field-client-first_name" className={inputClass} value={value.firstName ?? ''} onChange={(e) => set('firstName', e.target.value)} />
-          {errors?.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-        </div>
-        <div className="flex flex-1 min-w-40 flex-col gap-2">
-          <label className={labelClass}><User className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Cognome *</span></label>
-          <input type="text" data-tour="field-client-last_name" className={inputClass} value={value.lastName ?? ''} onChange={(e) => set('lastName', e.target.value)} />
-          {errors?.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-        </div>
-        <div className="flex shrink-0 flex-col gap-2">
-          <label className={labelClass}><VenusAndMars className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Genere</span></label>
-          <ToggleButton
-            options={[Gender.MALE, Gender.FEMALE]}
-            value={value.gender ?? Gender.MALE}
-            onChange={(v) => set('gender', v)}
-            className="h-10"
-          />
-          {errors?.gender && <p className="text-xs text-red-500">{errors.gender}</p>}
-        </div>
-        <div className="flex shrink-0 flex-col items-center gap-2">
-          <label className={labelClass}><Plane className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Turista</span></label>
-          <Checkbox checked={value.isTourist ?? false} onChange={(e) => set('isTourist', e.target.checked)} />
-        </div>
+        <FormInput
+          fieldClassName="flex-1 min-w-40"
+          label="Nome"
+          labelIcon={User}
+          required
+          type="text"
+          data-tour="field-client-first_name"
+          value={value.firstName ?? ''}
+          error={errors?.firstName}
+          onChange={(e) => set('firstName', e.target.value)}
+        />
+        <FormInput
+          fieldClassName="flex-1 min-w-40"
+          label="Cognome"
+          labelIcon={User}
+          required
+          type="text"
+          data-tour="field-client-last_name"
+          value={value.lastName ?? ''}
+          error={errors?.lastName}
+          onChange={(e) => set('lastName', e.target.value)}
+        />
+        <Field className="shrink-0" label="Genere" labelIcon={VenusAndMars} error={errors?.gender}>
+          {() => (
+            <ToggleButton
+              ariaLabel="Genere"
+              options={[Gender.MALE, Gender.FEMALE]}
+              value={value.gender ?? Gender.MALE}
+              onChange={(v) => set('gender', v)}
+            />
+          )}
+        </Field>
+        <Field className="shrink-0 items-center" label="Turista" labelIcon={Plane}>
+          {({ id }) => (
+            <Checkbox id={id} checked={value.isTourist ?? false} onChange={(e) => set('isTourist', e.target.checked)} />
+          )}
+        </Field>
       </div>
 
       <div className="flex flex-col gap-2 w-full">
         <div className="flex flex-row items-start gap-4 w-full flex-wrap">
-          <div className="flex flex-1 min-w-48 flex-col gap-2">
-            <label className={labelClass}><AtSign className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Email{lockEmail ? '' : ' (opzionale)'}</span></label>
-            <input
-              type="email"
-              className={`${inputClass} ${lockEmail ? 'opacity-60 cursor-not-allowed' : ''}`}
-              value={value.email ?? ''}
-              onChange={(e) => set('email', e.target.value)}
-              autoComplete="off"
-              disabled={lockEmail}
-            />
-            {errors?.email && <p className="text-xs text-red-500">{errors.email}</p>}
-          </div>
-          <div className="flex flex-1 min-w-48 flex-col gap-2">
-            <label className={labelClass}><Phone className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Telefono{lockPhone ? '' : ' (opzionale)'}</span></label>
-            <PhoneNumber
-              prefixCode={value.phonePrefix ?? '+39'}
-              phoneNumber={value.phoneNumber ?? ''}
-              onPrefixChange={(v) => set('phonePrefix', v)}
-              onPhoneChange={(v) => set('phoneNumber', v)}
-              disabled={lockPhone}
-            />
-            {errors?.phoneNumber && <p className="text-xs text-red-500">{errors.phoneNumber}</p>}
-          </div>
+          <FormInput
+            fieldClassName="flex-1 min-w-48"
+            label={`Email${lockEmail ? '' : ' (opzionale)'}`}
+            labelIcon={AtSign}
+            type="email"
+            value={value.email ?? ''}
+            error={errors?.email}
+            onChange={(e) => set('email', e.target.value)}
+            autoComplete="off"
+            disabled={lockEmail}
+          />
+          <Field
+            className="flex-1 min-w-48"
+            label={`Telefono${lockPhone ? '' : ' (opzionale)'}`}
+            labelIcon={Phone}
+            error={errors?.phoneNumber}
+          >
+            {({ id, invalid }) => (
+              <PhoneNumber
+                id={id}
+                invalid={invalid}
+                prefixCode={value.phonePrefix ?? '+39'}
+                phoneNumber={value.phoneNumber ?? ''}
+                onPrefixChange={(v) => set('phonePrefix', v)}
+                onPhoneChange={(v) => set('phoneNumber', v)}
+                disabled={lockPhone}
+              />
+            )}
+          </Field>
         </div>
         {!lockEmail && !lockPhone && (
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-[var(--lume-text-muted)]">
             Senza email o telefono il cliente non potrà accedere o prenotare online. Potrai aggiungere queste informazioni in seguito.
           </p>
         )}
@@ -235,60 +251,45 @@ export function ClientForm({
 
       <div className="flex flex-row items-start gap-4 w-full flex-wrap">
         {showPasswordField && (
-          <div className="flex flex-1 min-w-48 flex-col gap-2">
-            <label className={labelClass}><Lock className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Password App *</span></label>
-            <div className="relative">
-              <input
-                type={passwordVisible ? 'text' : 'password'}
-                className={inputClass}
-                value={value.password ?? ''}
-                onChange={(e) => set('password', e.target.value)}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                aria-label={passwordVisible ? 'Nascondi password' : 'Mostra password'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                onClick={() => setPasswordVisible((v) => !v)}
-              >
-                <SwapIcon icon={passwordVisible ? Eye : EyeOff} className="size-5" />
-              </button>
-            </div>
-            {errors?.password && <p className="text-xs text-red-500">{errors.password}</p>}
-          </div>
-        )}
-        <div className="flex flex-1 min-w-48 flex-col gap-2">
-          <label className={labelClass}><Calendar className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Data di nascita</span></label>
-          <input
-            type="text"
-            className={inputClass}
-            placeholder="GG/MM/AAAA"
-            value={value.birthDate ?? ''}
-            onChange={(e) => set('birthDate', e.target.value)}
+          <FormInput
+            fieldClassName="flex-1 min-w-48"
+            label="Password App"
+            labelIcon={Lock}
+            required
+            type="password"
+            value={value.password ?? ''}
+            error={errors?.password}
+            onChange={(e) => set('password', e.target.value)}
+            autoComplete="off"
           />
-          {errors?.birthDate && <p className="text-xs text-red-500">{errors.birthDate}</p>}
-        </div>
+        )}
+        <FormInput
+          fieldClassName="flex-1 min-w-48"
+          label="Data di nascita"
+          labelIcon={Calendar}
+          type="text"
+          placeholder="GG/MM/AAAA"
+          value={value.birthDate ?? ''}
+          error={errors?.birthDate}
+          onChange={(e) => set('birthDate', e.target.value)}
+        />
       </div>
 
       {showNote && (
-        <div className="flex flex-col gap-2">
-          <label className={labelClass}><FileHeart className="size-4 text-zinc-900 dark:text-zinc-100" /><span className="text-sm">Note</span></label>
-          <textarea className={inputClass} rows={3} value={value.note ?? ''} onChange={(e) => set('note', e.target.value)} />
-        </div>
+        <TextArea label="Note" labelIcon={FileHeart} rows={3} value={value.note ?? ''} onChange={(e) => set('note', e.target.value)} />
       )}
 
-      <div className="flex flex-col gap-2">
-        <label className={labelClass}>
-          <Palette className="size-4 text-zinc-900 dark:text-zinc-100" />
-          <span className="text-sm">Colore cliente</span>
-        </label>
-        <ClientColorPicker
-          value={value.color ?? null}
-          onChange={(color) => set('color', color)}
-          clientId={clientId}
-          showResetToAuto={!!clientId}
-        />
-      </div>
+      <Field label="Colore cliente" labelIcon={Palette}>
+        {() => (
+          <ColorSwatchPicker
+            value={value.color ?? null}
+            onChange={(color) => set('color', color)}
+            allowAuto={!!clientId}
+            ariaLabel="Colore cliente"
+            hint="Puoi cambiare il colore in qualsiasi momento."
+          />
+        )}
+      </Field>
     </div>
   );
 }

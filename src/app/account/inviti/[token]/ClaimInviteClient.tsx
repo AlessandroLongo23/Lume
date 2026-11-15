@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, Clock, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { AuthCard } from '@/lib/components/auth/AuthCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 
 type InviteState =
   | 'invalid'
@@ -58,127 +61,98 @@ export function ClaimInviteClient({
     }
   }
 
-  const cardClass =
-    'max-w-md w-full bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 text-center shadow-sm';
-
   if (claimed) {
     return (
-      <div className={cardClass}>
-        <CheckCircle className="size-12 text-green-500 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Invito accettato!
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Benvenuto in <strong>{salonName}</strong>. Stai per essere reindirizzato...
-        </p>
-      </div>
+      <AuthCard
+        align="center"
+        title="Invito accettato!"
+        subtitle={<>Benvenuto in <strong className="font-medium text-[var(--lume-text)]">{salonName}</strong>. Stai per essere reindirizzato...</>}
+      >
+        {null}
+      </AuthCard>
     );
   }
 
   if (state === 'invalid') {
     return (
-      <div className={cardClass}>
-        <XCircle className="size-12 text-red-500 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Invito non trovato
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Questo link non è valido o l&apos;invito è già stato utilizzato.
-        </p>
-      </div>
+      <AuthCard align="center" title="Invito non trovato" subtitle="Questo link non è valido o l'invito è già stato utilizzato.">
+        <Button variant="secondary" asChild className="w-full">
+          <Link href="/">Torna alla home</Link>
+        </Button>
+      </AuthCard>
     );
   }
 
   if (state === 'expired') {
     return (
-      <div className={cardClass}>
-        <Clock className="size-12 text-amber-500 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Invito scaduto
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Questo invito è scaduto. Chiedi al titolare del salone di inviarne uno nuovo.
-        </p>
-      </div>
+      <AuthCard align="center" title="Invito scaduto" subtitle="Questo invito è scaduto. Chiedi al titolare del salone di inviarne uno nuovo.">
+        <Button variant="secondary" asChild className="w-full">
+          <Link href="/">Torna alla home</Link>
+        </Button>
+      </AuthCard>
     );
   }
 
   if (state === 'already_claimed') {
     return (
-      <div className={cardClass}>
-        <CheckCircle className="size-12 text-zinc-400 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Invito già accettato
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-          Hai già accettato questo invito.
-        </p>
-        <Button variant="primary" onClick={() => router.push('/admin/calendario')}>
+      <AuthCard align="center" title="Invito già accettato" subtitle="Hai già accettato questo invito.">
+        <Button variant="primary" className="w-full" onClick={() => router.push('/admin/calendario')}>
           Vai al gestionale
         </Button>
-      </div>
+      </AuthCard>
     );
   }
 
   if (state === 'wrong_user') {
     return (
-      <div className={cardClass}>
-        <XCircle className="size-12 text-red-500 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Account sbagliato
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Questo invito è destinato a <strong>{email}</strong>, ma sei collegato come{' '}
-          <strong>{currentUserEmail}</strong>. Accedi con l&apos;account corretto per continuare.
-        </p>
-      </div>
+      <AuthCard
+        align="center"
+        title="Account sbagliato"
+        subtitle={
+          <>
+            Questo invito è destinato a <strong className="font-medium text-[var(--lume-text)]">{email}</strong>, ma sei collegato come{' '}
+            <strong className="font-medium text-[var(--lume-text)]">{currentUserEmail}</strong>. Accedi con l&apos;account corretto per continuare.
+          </>
+        }
+      >
+        <Button variant="secondary" asChild className="w-full">
+          <Link href="/">Torna alla home</Link>
+        </Button>
+      </AuthCard>
     );
   }
 
   if (!isLoggedIn) {
     return (
-      <div className={cardClass}>
-        <LogIn className="size-12 text-indigo-500 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Accedi per continuare
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-          Sei stato invitato a unirti a <strong>{salonName}</strong>. Accedi al tuo account Lume
-          per accettare l&apos;invito.
-        </p>
-        <Button
-          variant="primary"
-          leadingIcon={LogIn}
-          onClick={() => router.push('/login')}
-          className="w-full"
-        >
+      <AuthCard
+        align="center"
+        title="Accedi per continuare"
+        subtitle={
+          <>
+            Sei stato invitato a unirti a <strong className="font-medium text-[var(--lume-text)]">{salonName}</strong>. Accedi al tuo account Lume
+            per accettare l&apos;invito.
+          </>
+        }
+      >
+        <Button variant="primary" leadingIcon={LogIn} className="w-full" onClick={() => router.push('/login')}>
           Accedi a Lume
         </Button>
-      </div>
+      </AuthCard>
     );
   }
 
   return (
-    <div className={cardClass}>
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-        Invito ricevuto
-      </h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-        Sei stato invitato a unirti a <strong>{salonName}</strong> come operatore.
-      </p>
-      {error && (
-        <p className="mb-4 text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
-      <Button
-        variant="primary"
-        onClick={handleAccept}
-        disabled={isLoading}
-        className="w-full"
-      >
-        {isLoading ? 'Accettando...' : 'Accetta invito'}
-      </Button>
-    </div>
+    <AuthCard
+      align="center"
+      title="Invito ricevuto"
+      subtitle={<>Sei stato invitato a unirti a <strong className="font-medium text-[var(--lume-text)]">{salonName}</strong> come operatore.</>}
+    >
+      <div className="flex flex-col gap-4">
+        {error && <Callout tone="danger">{error}</Callout>}
+        <Button variant="primary" loading={isLoading} onClick={handleAccept} className="w-full">
+          {isLoading ? 'Accettando...' : 'Accetta invito'}
+        </Button>
+      </div>
+    </AuthCard>
   );
 }

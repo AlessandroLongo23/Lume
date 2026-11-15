@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ChevronDown, Globe, Loader2, Scissors } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { useOperatorServicesStore } from '@/lib/stores/operatorServices';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import type { Service } from '@/lib/types/Service';
+import { formatCurrency } from '@/lib/utils/format';
+import { DURATION } from '@/lib/const/motion';
 import type { Operator } from '@/lib/types/Operator';
 
 const UNCATEGORIZED_KEY = '__uncategorized__';
@@ -36,7 +40,7 @@ interface Props {
 function OperatorAvatar({ operator }: { operator: Operator }) {
   if (operator.avatar_url) {
     return (
-      <span className="block size-7 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0">
+      <span className="block size-7 rounded-full overflow-hidden bg-active shrink-0">
         <Image
           src={operator.avatar_url}
           alt=""
@@ -49,7 +53,7 @@ function OperatorAvatar({ operator }: { operator: Operator }) {
     );
   }
   return (
-    <span className="size-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-semibold text-zinc-700 dark:text-zinc-200 select-none shrink-0">
+    <span className="size-7 rounded-full bg-active flex items-center justify-center text-xs font-medium text-[var(--lume-text-secondary)] select-none shrink-0">
       {(operator.firstName?.[0] ?? '·').toUpperCase()}
     </span>
   );
@@ -281,34 +285,31 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
 
   return (
     <SettingsCard
-      icon={Scissors}
       title="Servizi prenotabili online"
       description="Attiva i servizi da mostrare nella vetrina pubblica. Espandi un servizio per scegliere chi può svolgerlo — se sono tutti attivi, può farlo chiunque."
       rightSlot={
-        <span className="text-xs text-zinc-500 tabular-nums">
+        <span className="text-xs text-[var(--lume-text-secondary)] tabular-nums">
           {bookableCount} / {totalCount}
         </span>
       }
     >
       {isLoading ? (
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="size-4 animate-spin text-zinc-400" />
+          <Loader2 className="size-4 animate-spin text-[var(--lume-text-muted)]" />
         </div>
       ) : visibleServices.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nessun servizio attivo. Aggiungine uno dalla sezione Servizi.</p>
+        <p className="text-sm text-[var(--lume-text-secondary)]">Nessun servizio attivo. Aggiungine uno dalla sezione Servizi.</p>
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between gap-4 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Tutti i servizi</p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {allOn
-                  ? 'Tutti i servizi sono prenotabili online.'
-                  : 'Attiva tutti i servizi in un colpo solo.'}
-              </p>
-            </div>
-            <Switch checked={allOn} onChange={() => setAllBookable(!allOn)} />
-          </div>
+          <SwitchRow
+            className="pb-3 border-b border-line"
+            label="Tutti i servizi"
+            description={allOn
+              ? 'Tutti i servizi sono prenotabili online.'
+              : 'Attiva tutti i servizi in un colpo solo.'}
+            checked={allOn}
+            onChange={() => setAllBookable(!allOn)}
+          />
 
           {groups.map((group) => {
             const groupOn = group.services.filter((s) => draftBookable[s.id] ?? false).length;
@@ -316,25 +317,27 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
             const groupAllOn = groupOn === groupTotal;
             return (
               <section key={group.id}>
-                <header className="flex items-center justify-between gap-4 pb-1.5 mb-1 border-b border-zinc-100 dark:border-zinc-800">
-                  <div className="min-w-0 flex items-center gap-2">
-                    {group.color && (
-                      <span
-                        aria-hidden
-                        className="inline-block size-2 rounded-full"
-                        style={{ backgroundColor: group.color }}
-                      />
-                    )}
-                    <p className="text-2xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <SwitchRow
+                  className="pb-1.5 mb-1 border-b border-line"
+                  leading={group.color ? (
+                    <span
+                      aria-hidden
+                      className="block size-2 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                  ) : undefined}
+                  label={
+                    <span className="flex items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
                       {group.name}
-                    </p>
-                    <span className="text-2xs text-zinc-400 tabular-nums">
-                      {groupOn}/{groupTotal}
+                      <span className="tabular-nums font-normal text-[var(--lume-text-muted)]">
+                        {groupOn}/{groupTotal}
+                      </span>
                     </span>
-                  </div>
-                  <Switch checked={groupAllOn} onChange={() => setGroupBookable(group, !groupAllOn)} />
-                </header>
-                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  }
+                  checked={groupAllOn}
+                  onChange={() => setGroupBookable(group, !groupAllOn)}
+                />
+                <ul className="divide-y divide-line">
                   {group.services.map((svc) => {
                     const isBookable = draftBookable[svc.id] ?? false;
                     const isOpen = isBookable && openServiceId === svc.id;
@@ -344,49 +347,45 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                     const canExpand = isBookable && activeOperators.length > 0;
                     return (
                       <li key={svc.id}>
-                        <div className="flex items-center justify-between gap-3 py-2.5">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {canExpand ? (
-                              <button
-                                type="button"
-                                onClick={() => setOpenServiceId(isOpen ? null : svc.id)}
-                                aria-expanded={isOpen}
-                                aria-controls={`svc-operators-${svc.id}`}
-                                aria-label={isOpen ? 'Nascondi operatori' : 'Mostra operatori'}
-                                className="inline-flex items-center justify-center size-6 rounded-md text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors shrink-0"
-                              >
-                                <ChevronDown
-                                  className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                                />
-                              </button>
-                            ) : (
-                              <span aria-hidden className="inline-block size-6 shrink-0" />
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                                {svc.name}
-                              </p>
-                              <p className="mt-0.5 text-xs text-zinc-500 truncate">
-                                {svc.duration} min · {svc.price.toFixed(2)} €
-                                {isBookable && (
-                                  <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-2xs font-medium text-zinc-600 dark:text-zinc-300">
-                                    {isUnrestricted
-                                      ? 'Tutti'
-                                      : `${allowedCount} ${allowedCount === 1 ? 'operatore' : 'operatori'}`}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {isBookable && (
-                              <span className="hidden sm:inline-flex items-center gap-1 text-2xs font-medium text-primary">
-                                <Globe className="size-3" /> online
-                              </span>
-                            )}
-                            <Switch checked={isBookable} onChange={() => setBookable(svc, !isBookable)} />
-                          </div>
-                        </div>
+                        <SwitchRow
+                          className="py-2.5 gap-3"
+                          leading={canExpand ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              onClick={() => setOpenServiceId(isOpen ? null : svc.id)}
+                              aria-expanded={isOpen}
+                              aria-controls={`svc-operators-${svc.id}`}
+                              aria-label={isOpen ? 'Nascondi operatori' : 'Mostra operatori'}
+                              className="size-6"
+                            >
+                              <ChevronDown
+                                className={`transition-transform duration-[var(--duration-fast)] motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
+                              />
+                            </Button>
+                          ) : (
+                            <span aria-hidden className="block size-6" />
+                          )}
+                          label={<span className="block truncate">{svc.name}</span>}
+                          description={
+                            <span className="block truncate">
+                              <span className="tabular-nums">{svc.duration} min · {formatCurrency(svc.price)}</span>
+                              {isBookable && (
+                                <span className="ml-2">· 
+                                  {isUnrestricted
+                                    ? 'Tutti'
+                                    : `${allowedCount} ${allowedCount === 1 ? 'operatore' : 'operatori'}`}
+                                </span>
+                              )}
+                            </span>
+                          }
+                          trailing={isBookable ? (
+                            <StatusDot tone="success" className="hidden sm:inline-flex text-xs text-[var(--lume-text-secondary)]">online</StatusDot>
+                          ) : undefined}
+                          checked={isBookable}
+                          onChange={() => setBookable(svc, !isBookable)}
+                        />
                         <AnimatePresence initial={false}>
                           {isOpen && (
                             <motion.div
@@ -394,25 +393,26 @@ export function BookableServicesPanel({ ref, onDirtyChange }: Props) {
                               initial={reduceMotion ? false : { height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                              transition={{ duration: 0.18, ease: 'easeOut' }}
+                              transition={{ duration: DURATION.base, ease: 'easeOut' }}
                               style={{ overflow: 'hidden' }}
                             >
-                              <div className="mb-2.5 ml-8 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800 px-3 py-2">
-                                <p className="text-2xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+                              <div className="mb-3 ml-8 pl-3 border-l border-line py-1">
+                                <p className="text-xs text-[var(--lume-text-secondary)] mb-2">
                                   Chi può svolgerlo
                                 </p>
                                 <ul className="flex flex-col gap-1.5">
                                   {activeOperators.map((op) => {
                                     const visualOn = isUnrestricted || explicitOps.includes(op.id);
                                     return (
-                                      <li key={op.id} className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                          <OperatorAvatar operator={op} />
-                                          <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                                            {op.getFullName()}
-                                          </span>
-                                        </div>
-                                        <Switch
+                                      <li key={op.id}>
+                                        <SwitchRow
+                                          className="gap-3"
+                                          label={
+                                            <span className="flex items-center gap-2.5 min-w-0 font-normal">
+                                              <OperatorAvatar operator={op} />
+                                              <span className="truncate">{op.getFullName()}</span>
+                                            </span>
+                                          }
                                           checked={visualOn}
                                           onChange={() => setOperatorEnabled(svc.id, op.id, visualOn)}
                                         />

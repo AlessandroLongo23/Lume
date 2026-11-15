@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SplitText } from '@/lib/components/shared/ui/SplitText';
+import { EASE_OUT } from '@/lib/const/motion';
 
 const FADE_DURATION = 0.5;
 const DISPLAY_DURATION = 2400;
@@ -42,20 +43,10 @@ export function ReadyView({ onComplete }: ReadyViewProps) {
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: FADE_DURATION, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: FADE_DURATION, ease: EASE_OUT }}
         >
           <SplitText
-            tag="p"
-            className="text-2xl font-light tracking-wide text-foreground"
-            splitType="chars"
-            delay={22}
-            duration={0.55}
-            ease="power3.out"
-            from={{ opacity: 0, y: 14 }}
-            to={{ opacity: 1, y: 0 }}
-            threshold={0}
-            rootMargin="0px"
-            textAlign="center"
+            className="text-2xl font-light tracking-wide text-[var(--lume-text)]"
           >
             Tutto pronto. Iniziamo.
           </SplitText>

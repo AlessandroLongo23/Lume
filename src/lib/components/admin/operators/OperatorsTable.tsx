@@ -10,7 +10,18 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, Trash2, ArchiveRestore, Clock } from 'lucide-react';
+import { Trash2, ArchiveRestore, Clock } from 'lucide-react';
+import {
+  tableCardClass,
+  tableClass,
+  theadClass,
+  thClass,
+  trClass,
+  tdClass,
+  cellStrongClass,
+  tableMessageClass,
+  SortIndicator,
+} from '@/lib/components/shared/ui/table/tableStyles';
 import { useRouter } from 'next/navigation';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -23,7 +34,8 @@ import { Button } from '@/lib/components/shared/ui/Button';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { DeleteOperatorModal } from './DeleteOperatorModal';
-import { cardStyle } from '@/lib/const/appearance';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
 
 interface OperatorsTableProps {
   operators: Operator[];
@@ -71,7 +83,7 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       accessorKey: 'firstName',
       header: 'Nome',
       cell: ({ getValue }) => (
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+        <span className={cellStrongClass}>{getValue() as string}</span>
       ),
       meta: { requiredVisible: true },
     },
@@ -87,19 +99,17 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       cell: ({ row }) => {
         const email = row.original.email;
         if (!email) {
-          return <span className="text-zinc-400 dark:text-zinc-500">—</span>;
+          return <span className="text-[var(--lume-text-muted)]">—</span>;
         }
         return (
-          <span
+          <TextLink
             data-no-row-click
-            className="cursor-pointer text-primary-hover dark:text-primary/70 hover:underline"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(`mailto:${email}`, '_blank');
-            }}
+            href={`mailto:${email}`}
+            className="font-normal"
+            onClick={(e) => e.stopPropagation()}
           >
             {email}
-          </span>
+          </TextLink>
         );
       },
     },
@@ -110,8 +120,8 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
         const email = row.original.email?.toLowerCase();
         if (!email || !pendingEmailSet.has(email)) return null;
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400 whitespace-nowrap">
-            <Clock className="size-3 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--lume-text-secondary)] whitespace-nowrap">
+            <Clock className="size-3.5 shrink-0 text-warning-strong" />
             Invito in attesa
           </span>
         );
@@ -123,18 +133,18 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
       header: 'Telefono',
       cell: ({ row }) => {
         const url = row.original.getWhatsAppUrl();
-        if (!url) return <span className="text-muted-foreground">—</span>;
+        if (!url) return <span className="text-[var(--lume-text-muted)]">—</span>;
         return (
-          <span
+          <TextLink
             data-no-row-click
-            className="cursor-pointer hover:text-primary-hover dark:hover:text-primary/70 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(url, '_blank');
-            }}
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-normal"
+            onClick={(e) => e.stopPropagation()}
           >
             {row.original.getPhoneNumber()}
-          </span>
+          </TextLink>
         );
       },
       enableSorting: false,
@@ -186,29 +196,8 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
     <>
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center flex-1 max-w-sm">
-            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Cerca operatore..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                border-zinc-200 dark:border-zinc-800
-                focus:border-zinc-300 dark:focus:border-zinc-700
-                text-zinc-900 dark:text-zinc-100
-                placeholder:text-zinc-400 outline-none transition-colors"
-            />
-            {globalFilter && (
-              <button
-                onClick={() => setGlobalFilter('')}
-                className="absolute right-2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-colors"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Searchbar placeholder="Cerca operatore..." value={globalFilter} onChange={setGlobalFilter} bindShortcut={false} className="flex-1 basis-full sm:basis-auto sm:max-w-sm" />
           <div className="ml-auto flex items-center gap-2">
             <ExportMenu
               rows={filteredData}
@@ -222,9 +211,9 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
 
         {/* Table */}
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -234,39 +223,31 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                        ].join(' ')}
+                        className={thClass({ sortable: canSort })}
                       >
                         <span className="inline-flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-24">
+                  <th className={`${thClass({ align: 'right' })} w-24`}>
                     Azioni
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Caricando operatori...
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Nessun operatore trovato.
                   </td>
                 </tr>
@@ -285,14 +266,14 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                     }}
                     role="button"
                     tabIndex={0}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    className={trClass()}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      <td key={cell.id} className={tdClass}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived && (
                           <Button
@@ -300,18 +281,16 @@ export function OperatorsTable({ operators, showArchived = false }: OperatorsTab
                             size="sm"
                             iconOnly
                             aria-label="Ripristina"
-                            title="Ripristina"
                             onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
                           >
                             <ArchiveRestore />
                           </Button>
                         )}
                         <Button
-                          variant="ghost"
+                          variant="ghost-destructive"
                           size="sm"
                           iconOnly
                           aria-label="Elimina"
-                          title="Elimina"
                           onClick={(e) => { e.stopPropagation(); setSelectedOperator(row.original); setShowDelete(true); }}
                         >
                           <Trash2 />

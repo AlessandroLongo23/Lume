@@ -22,7 +22,7 @@ export function FullscreenToggle() {
         await document.documentElement.requestFullscreen();
       }
     } catch {
-      // Ignore — some browsers reject without a recent user gesture.
+      // Ignore: some browsers reject without a recent user gesture.
     }
   };
 
@@ -35,16 +35,16 @@ export function FullscreenToggle() {
       onClick={toggle}
       data-capture-hide=""
     >
-      <span className="relative size-5 flex items-center justify-center">
+      <span className="relative size-4 flex items-center justify-center">
         <Maximize
           strokeWidth={1.5}
-          className={`absolute size-5 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] text-zinc-950 dark:text-zinc-50 ${
+          className={`absolute size-4 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none text-[var(--lume-text)] ${
             isFullscreen ? 'rotate-90 scale-50 opacity-0' : 'rotate-0 scale-100 opacity-100'
           }`}
         />
         <Minimize
           strokeWidth={1.5}
-          className={`absolute size-5 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] text-zinc-950 dark:text-zinc-50 ${
+          className={`absolute size-4 transition-[rotate,scale,opacity] duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none text-[var(--lume-text)] ${
             isFullscreen ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-50 opacity-0'
           }`}
         />

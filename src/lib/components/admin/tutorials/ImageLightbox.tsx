@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Maximize2, X } from 'lucide-react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 
 /**
  * Click-to-expand for tutorial screenshots. The inline thumbnail
@@ -17,10 +18,10 @@ import { Portal } from '@/lib/components/shared/ui/Portal';
  * ancestor would otherwise trap its z-index) at the `z-lightbox` tier.
  */
 
-// Mirrors the `--ease-out` token (cubic-bezier(0.22, 1, 0.36, 1)) in JS form, the
-// quartic ease-out the design system mandates for motion. No spring: a layout
-// animation defaults to one, and DESIGN.md bans bouncy curves.
-const MORPH_TRANSITION = { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const };
+// The `--ease-out` token, the quartic ease-out the design system mandates for
+// motion. No spring: a layout animation defaults to one, and DESIGN.md bans
+// bouncy curves.
+const MORPH_TRANSITION = { duration: DURATION.slow, ease: EASE_OUT };
 
 export interface LightboxImage {
   src: string;
@@ -40,20 +41,22 @@ export function ArticleImage({
   const reduceMotion = useReducedMotion();
   return (
     <button
+      // ds-ignore: thumbnail trigger, the screenshot itself is the click target; Button would add a height, padding and fill around the image
       type="button"
       onClick={onOpen}
       aria-label={alt ? `Ingrandisci l’immagine: ${alt}` : 'Ingrandisci l’immagine'}
       className="group relative my-5 block w-full max-w-2xl cursor-zoom-in rounded-xl p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
     >
+      {/* A border, not the inset edge: an inset shadow paints under an <img>'s pixels. */}
       <motion.img
         layoutId={reduceMotion ? undefined : src}
         transition={MORPH_TRANSITION}
         src={src}
         alt={alt}
         loading="lazy"
-        className="w-full rounded-xl border border-[var(--lume-border)] shadow-sm"
+        className="w-full rounded-xl border border-line"
       />
-      <span className="pointer-events-none absolute right-2 top-2 flex size-8 items-center justify-center rounded-md border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] text-[var(--lume-text-secondary)] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+      <span className="pointer-events-none absolute right-2 top-2 flex size-8 items-center justify-center surface-float rounded-md text-[var(--lume-text-secondary)] opacity-0 transition-opacity duration-[var(--duration-fast)] group-hover:opacity-100 group-focus-visible:opacity-100">
         <Maximize2 className="size-4" />
       </span>
     </button>
@@ -111,17 +114,18 @@ export function ImageLightbox({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: DURATION.base, ease: 'easeOut' }}
           />,
           <motion.img
             key="picture"
             src={image.src}
             alt={image.alt}
-            className="fixed inset-0 z-lightbox m-auto h-fit w-fit max-h-[calc(100dvh-3rem)] max-w-[calc(100vw-3rem)] rounded-xl border border-[var(--lume-border)] object-contain shadow-[var(--shadow-xl)]"
+            // ds-ignore: the enlarged screenshot itself, not a panel; surface-float would put a raised fill behind it and change its radius
+            className="fixed inset-0 z-lightbox m-auto h-fit w-fit max-h-[calc(100dvh-3rem)] max-w-[calc(100vw-3rem)] rounded-xl object-contain shadow-[var(--shadow-xl)]"
             // Reduced motion: a plain fade, no morph. Otherwise the shared
             // layoutId drives the inline-to-fullscreen morph both ways.
             {...(reduceMotion
-              ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
+              ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: DURATION.fast } }
               : { layoutId: image.src, transition: MORPH_TRANSITION })}
           />,
           <motion.button
@@ -130,11 +134,11 @@ export function ImageLightbox({
             type="button"
             onClick={onClose}
             aria-label="Chiudi anteprima"
-            className="fixed right-3 top-3 z-lightbox flex size-10 items-center justify-center rounded-md border border-[var(--lume-border)] bg-[var(--lume-surface-raised)] text-[var(--lume-text-secondary)] shadow-md transition-colors hover:text-[var(--lume-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
+            className="fixed right-3 top-3 z-lightbox flex size-10 items-center justify-center surface-float text-[var(--lume-text-secondary)] transition-colors hover:text-[var(--lume-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: DURATION.base, ease: 'easeOut' }}
           >
             <X className="size-5" />
           </motion.button>,

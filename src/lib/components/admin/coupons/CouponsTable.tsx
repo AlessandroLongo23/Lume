@@ -10,7 +10,18 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2, Search, X } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import {
+  tableCardClass,
+  tableClass,
+  theadClass,
+  thClass,
+  trClass,
+  tdClass,
+  cellStrongClass,
+  tableMessageClass,
+  SortIndicator,
+} from '@/lib/components/shared/ui/table/tableStyles';
 import { useCouponsStore } from '@/lib/stores/coupons';
 import { useClientsStore } from '@/lib/stores/clients';
 import { Button } from '@/lib/components/shared/ui/Button';
@@ -22,16 +33,17 @@ import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { DeleteCouponModal } from './DeleteCouponModal';
 import { Coupon } from '@/lib/types/Coupon';
-import { cardStyle } from '@/lib/const/appearance';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 
 type CouponStatus = 'attivo' | 'scaduto' | 'esaurito' | 'in attesa' | 'inattivo';
 
-const STATUS_STYLES: Record<CouponStatus, string> = {
-  attivo: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  scaduto: 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/20',
-  esaurito: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  'in attesa': 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-  inattivo: 'bg-zinc-500/10 text-zinc-400 dark:text-zinc-500 border-zinc-500/20 line-through',
+// Status as a dot beside a neutral word: colour carries the state only.
+const STATUS_DOT: Record<CouponStatus, string> = {
+  attivo: 'bg-success-strong',
+  scaduto: 'bg-[var(--lume-text-muted)]',
+  esaurito: 'bg-warning-strong',
+  'in attesa': 'bg-info-strong',
+  inattivo: 'bg-[var(--lume-text-muted)]',
 };
 
 interface CouponsTableProps {
@@ -80,7 +92,7 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         id: 'recipient',
         header: 'Destinatario',
         cell: ({ row }) => (
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+          <span className={cellStrongClass}>
             {clientName(row.original.recipient_client_id)}
           </span>
         ),
@@ -98,7 +110,7 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         id: 'purchaser',
         header: 'Acquirente',
         cell: ({ row }) => (
-          <span className="text-zinc-700 dark:text-zinc-300">
+          <span className="text-[var(--lume-text)]">
             {clientName(row.original.purchaser_client_id)}
           </span>
         ),
@@ -107,7 +119,7 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         id: 'balance',
         header: 'Saldo',
         cell: ({ row }) => (
-          <span className="font-mono text-zinc-900 dark:text-zinc-100">{row.original.displayDiscount()}</span>
+          <span className="tabular-nums text-compact text-[var(--lume-text)]">{row.original.displayDiscount()}</span>
         ),
         sortingFn: (a, b) => (a.original.remaining_value ?? 0) - (b.original.remaining_value ?? 0),
       });
@@ -116,15 +128,15 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         header: 'Incasso',
         cell: ({ row }) =>
           row.original.sale_amount != null
-            ? <span className="font-mono">€ {row.original.sale_amount.toFixed(2)}</span>
-            : <span className="text-zinc-400">—</span>,
+            ? <span className="tabular-nums text-compact">€ {row.original.sale_amount.toFixed(2)}</span>
+            : <span className="text-[var(--lume-text-muted)]">—</span>,
       });
     } else {
       baseCols.push({
         id: 'discount',
         header: 'Sconto',
         cell: ({ row }) => (
-          <span className="font-mono text-zinc-900 dark:text-zinc-100">{row.original.displayDiscount()}</span>
+          <span className="tabular-nums text-compact text-[var(--lume-text)]">{row.original.displayDiscount()}</span>
         ),
       });
       baseCols.push({
@@ -133,14 +145,14 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         cell: ({ row }) => {
           const c = row.original;
           if (c.hasUnlimitedScope) {
-            return <span className="text-zinc-400 italic">tutto</span>;
+            return <span className="text-[var(--lume-text-muted)] italic">tutto</span>;
           }
           const parts: string[] = [];
           if (c.scope_service_ids?.length) parts.push(`${c.scope_service_ids.length} servizi`);
           if (c.scope_service_category_ids?.length) parts.push(`${c.scope_service_category_ids.length} cat. servizi`);
           if (c.scope_product_ids?.length) parts.push(`${c.scope_product_ids.length} prodotti`);
           if (c.scope_product_category_ids?.length) parts.push(`${c.scope_product_category_ids.length} cat. prodotti`);
-          return <span className="text-xs text-zinc-500">{parts.join(' · ')}</span>;
+          return <span className="text-xs text-[var(--lume-text-secondary)]">{parts.join(' · ')}</span>;
         },
       });
     }
@@ -148,7 +160,7 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
     baseCols.push({
       id: 'valid_until',
       header: 'Scadenza',
-      cell: ({ row }) => new Date(row.original.valid_until).toLocaleDateString('it-IT'),
+      cell: ({ row }) => <span className="tabular-nums text-compact">{new Date(row.original.valid_until).toLocaleDateString('it-IT')}</span>,
       sortingFn: (a, b) =>
         new Date(a.original.valid_until).getTime() - new Date(b.original.valid_until).getTime(),
     });
@@ -156,7 +168,7 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
     baseCols.push({
       id: 'created',
       header: 'Creato',
-      cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString('it-IT'),
+      cell: ({ row }) => <span className="tabular-nums text-compact">{new Date(row.original.created_at).toLocaleDateString('it-IT')}</span>,
       sortingFn: (a, b) =>
         new Date(a.original.created_at).getTime() - new Date(b.original.created_at).getTime(),
     });
@@ -167,7 +179,8 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
       cell: ({ row }) => {
         const status = row.original.displayStatus();
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_STYLES[status]}`}>
+          <span className={`inline-flex items-center gap-1.5 ${status === 'inattivo' || status === 'scaduto' ? 'text-[var(--lume-text-secondary)]' : 'text-[var(--lume-text)]'}`}>
+            <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${STATUS_DOT[status]}`} />
             {status}
           </span>
         );
@@ -220,33 +233,8 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
     <>
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center flex-1 max-w-sm">
-            <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder={variant === 'gift_card' ? 'Cerca per cliente...' : 'Cerca per destinatario...'}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full py-2 pl-9 pr-8 text-sm bg-transparent border rounded-lg
-                border-zinc-200 dark:border-zinc-800
-                focus:border-zinc-300 dark:focus:border-zinc-700
-                text-zinc-900 dark:text-zinc-100
-                placeholder:text-zinc-400 outline-none transition-colors"
-            />
-            {globalFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                aria-label="Cancella ricerca"
-                onClick={() => setGlobalFilter('')}
-                className="absolute right-1"
-              >
-                <X />
-              </Button>
-            )}
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Searchbar placeholder={variant === 'gift_card' ? 'Cerca per cliente...' : 'Cerca per destinatario...'} value={globalFilter} onChange={setGlobalFilter} bindShortcut={false} className="flex-1 basis-full sm:basis-auto sm:max-w-sm" />
           <div className="ml-auto flex items-center gap-2">
             <ExportMenu
               rows={filteredData}
@@ -259,9 +247,9 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
         </div>
 
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-            <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+            <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -271,39 +259,31 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                        ].join(' ')}
+                        className={thClass({ sortable: canSort })}
                       >
                         <span className="inline-flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-24">
+                  <th className={`${thClass({ align: 'right' })} w-24`}>
                     Azioni
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Caricamento…
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     {emptyLabel}
                   </td>
                 </tr>
@@ -311,23 +291,21 @@ export function CouponsTable({ coupons, variant }: CouponsTableProps) {
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    className={trClass({ interactive: false })}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      <td key={cell.id} className={tdClass}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         <Button
-                          variant="ghost"
+                          variant="ghost-destructive"
                           size="sm"
                           iconOnly
                           aria-label="Elimina"
-                          title="Elimina"
                           onClick={() => { setSelected(row.original); setShowDelete(true); }}
-                          className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                           <Trash2 />
                         </Button>

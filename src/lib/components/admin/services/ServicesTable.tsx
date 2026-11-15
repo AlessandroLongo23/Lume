@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,12 +11,11 @@ import {
   type SortingState,
   type RowSelectionState,
 } from '@tanstack/react-table';
-import { Search, X, ChevronUp, ChevronDown, SlidersHorizontal, Check, Trash2, ArchiveRestore } from 'lucide-react';
+import { X, Trash2, ArchiveRestore } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Service } from '@/lib/types/Service';
 import { CategoryBadge } from './CategoryBadge';
@@ -27,11 +26,25 @@ import { ExportMenu } from '@/lib/components/shared/ui/ExportMenu';
 import type { ExportColumn } from '@/lib/utils/tableExport';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
-import { cardStyle } from '@/lib/const/appearance';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
-import { Portal } from '@/lib/components/shared/ui/Portal';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
+import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
+import {
+  tableCardClass,
+  tableClass,
+  theadClass,
+  thClass,
+  trClass,
+  tdClass,
+  cellStrongClass,
+  cellNumClass,
+  tableMessageClass,
+  SortIndicator,
+} from '@/lib/components/shared/ui/table/tableStyles';
 import { DeleteAllModal } from '@/lib/components/shared/ui/modals/DeleteAllModal';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { formatCurrency } from '@/lib/utils/format';
 
 interface ServicesTableProps {
   services: Service[];
@@ -53,7 +66,6 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pageIndex, setPageIndex] = useState(0);
 
@@ -66,19 +78,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
   const selectedIds = Object.keys(rowSelection);
   const hasSelection = selectedIds.length > 0;
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
   const { ref: tableCardRef, pageSize } = useFitPageSize<HTMLDivElement>({ rowPx: 41 });
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setCategoryDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -154,7 +154,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         accessorKey: 'name',
         header: 'Nome',
         cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{getValue() as string}</span>
+          <span className={cellStrongClass}>{getValue() as string}</span>
         ),
         meta: { requiredVisible: true },
       },
@@ -162,7 +162,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         accessorKey: 'duration',
         header: () => <span className="block w-full text-right">Durata</span>,
         cell: ({ getValue }) => (
-          <span className="block text-right tabular-nums">{getValue() as number} min</span>
+          <span className={`block text-right ${cellNumClass}`}>{getValue() as number} min</span>
         ),
         meta: { pickerLabel: 'Durata' },
       },
@@ -170,7 +170,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         accessorKey: 'price',
         header: () => <span className="block w-full text-right">Prezzo</span>,
         cell: ({ getValue }) => (
-          <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
+          <span className={`block text-right ${cellNumClass}`}>{formatCurrency(getValue() as number)}</span>
         ),
         meta: { pickerLabel: 'Prezzo' },
       },
@@ -178,7 +178,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         accessorKey: 'product_cost',
         header: () => <span className="block w-full text-right">Costo prodotti</span>,
         cell: ({ getValue }) => (
-          <span className="block text-right tabular-nums">{(getValue() as number).toFixed(2)} €</span>
+          <span className={`block text-right ${cellNumClass}`}>{formatCurrency(getValue() as number)}</span>
         ),
         meta: { pickerLabel: 'Costo prodotti' },
       },
@@ -187,7 +187,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         accessorFn: (row) => usageCounts?.get(row.id) ?? 0,
         header: () => <span className="block w-full text-right">Esecuzioni</span>,
         cell: ({ getValue }) => (
-          <span className="block text-right tabular-nums">{getValue() as number}</span>
+          <span className={`block text-right ${cellNumClass}`}>{getValue() as number}</span>
         ),
         meta: { pickerLabel: 'Esecuzioni' },
       },
@@ -244,12 +244,6 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     setShowDelete(true);
   };
 
-  const toggleCategory = (id: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
-  };
-
   const handleRestore = async (service: Service) => {
     try {
       await restoreService(service.id);
@@ -259,6 +253,8 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
     }
   };
 
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+
   const numericColumns = new Set(['duration', 'price', 'product_cost', 'usage_count']);
 
   return (
@@ -267,10 +263,10 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         {/* Toolbar — transforms to action bar when rows are selected */}
         {hasSelection ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-primary">
+            <span className="text-sm font-medium text-[var(--lume-text)]">
               {selectedIds.length} {selectedIds.length === 1 ? 'selezionato' : 'selezionati'}
             </span>
-            <span className="text-zinc-400 dark:text-zinc-600">·</span>
+            <span className="text-[var(--lume-text-muted)]">·</span>
 
             <Select
               value={null}
@@ -290,144 +286,52 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
               valueKey="id"
               placeholder="Categoria"
               disabled={bulkLoading}
-              size="md"
-              width="w-36"
+              className="w-36"
             />
 
             {showArchived ? (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkRestoreConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Ripristina
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                leadingIcon={ArchiveRestore}
                 onClick={() => setBulkArchiveConfirm(true)}
                 disabled={bulkLoading}
-                className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
               >
-                <ArchiveRestore className="size-4" />
                 Archivia
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="ghost-destructive"
+              leadingIcon={Trash2}
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkLoading}
-              className="inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="size-4" />
               Elimina
-            </button>
+            </Button>
 
-            <button
-              onClick={() => setRowSelection({})}
-              className="ml-auto inline-flex items-center h-[var(--lume-control-h-md)] gap-[var(--lume-control-gap-md)] px-[var(--lume-control-px-md)] text-[length:var(--lume-control-text-md)] rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-            >
-              <X className="size-4" />
+            <Button variant="ghost" leadingIcon={X} onClick={() => setRowSelection({})} className="ml-auto">
               Annulla
-            </button>
+            </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center flex-1 max-w-sm">
-              <Search className="absolute left-2.5 size-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cerca servizio..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
-                  border-zinc-200 dark:border-zinc-800
-                  focus:border-zinc-300 dark:focus:border-zinc-700
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 outline-none transition-colors"
-              />
-              {globalFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  aria-label="Azzera ricerca"
-                  onClick={() => setGlobalFilter('')}
-                  className="absolute right-1"
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Searchbar placeholder="Cerca servizio..." value={globalFilter} onChange={setGlobalFilter} bindShortcut={false} className="flex-1 basis-full sm:basis-auto sm:max-w-sm" />
 
-            {/* Category faceted filter */}
-            <div ref={dropdownRef} className="relative">
-              <button
-                onClick={() => setCategoryDropdownOpen((o) => !o)}
-                className={[
-                  'inline-flex items-center rounded-lg border transition-colors',
-                  'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
-                  'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
-                  selectedCategories.length > 0
-                    ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
-                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-                ].join(' ')}
-              >
-                <SlidersHorizontal className="size-4" />
-                <span>Categoria</span>
-                {selectedCategories.length > 0 && (
-                  <NumberBadge value={selectedCategories.length} variant="solid" size="md" />
-                )}
-              </button>
-
-              {categoryDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-dropdown w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
-                  <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                      Filtra per categoria
-                    </span>
-                  </div>
-                  <div className="py-1 max-h-56 overflow-y-auto">
-                    {categories.length === 0 ? (
-                      <p className="px-3 py-2 text-xs text-zinc-400">Nessuna categoria</p>
-                    ) : (
-                      categories.map((cat) => {
-                        const checked = selectedCategories.includes(cat.id);
-                        return (
-                          <button
-                            key={cat.id}
-                            onClick={() => toggleCategory(cat.id)}
-                            className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                          >
-                            <span
-                              className={[
-                                'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
-                                checked
-                                  ? 'bg-primary border-primary'
-                                  : 'border-zinc-300 dark:border-zinc-600',
-                              ].join(' ')}
-                            >
-                              {checked && <Check className="size-3 text-white" />}
-                            </span>
-                            {cat.name}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                  {selectedCategories.length > 0 && (
-                    <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                      <button
-                        onClick={() => setSelectedCategories([])}
-                        className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                      >
-                        Azzera filtri
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <FacetedFilter
+              label="Categoria"
+              options={categoryOptions}
+              selected={selectedCategories}
+              onChange={setSelectedCategories}
+            />
 
             <div className="ml-auto flex items-center gap-2">
               <ExportMenu
@@ -443,11 +347,11 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
 
         {/* Table */}
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="group">
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
@@ -458,40 +362,29 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                         className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                          isNumeric ? 'text-right' : 'text-left',
+                          thClass({ sortable: canSort, align: isNumeric ? 'right' : 'left' }),
                           isSelect ? 'w-10' : '',
                         ].join(' ')}
                       >
                         <span className={['inline-flex items-center gap-1', isNumeric ? 'flex-row-reverse' : ''].join(' ')}>
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp
-                                className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`}
-                              />
-                              <ChevronDown
-                                className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`}
-                              />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-20">
+                  <th className={`${thClass({ align: 'right' })} w-20`}>
                     Azioni
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
                   <td
                     colSpan={columns.length + 1}
-                    className="px-4 py-10 text-center text-sm text-zinc-400"
+                    className={tableMessageClass}
                   >
                     Caricando servizi...
                   </td>
@@ -500,7 +393,7 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
                 <tr>
                   <td
                     colSpan={columns.length + 1}
-                    className="px-4 py-10 text-center text-sm text-zinc-400"
+                    className={tableMessageClass}
                   >
                     Nessun servizio trovato.
                   </td>
@@ -521,23 +414,20 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
                     }}
                     role="button"
                     tabIndex={0}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    className={trClass({ selected: row.getIsSelected() })}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isNumeric = numericColumns.has(cell.column.id);
                       return (
                         <td
                           key={cell.id}
-                          className={[
-                            'px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap',
-                            isNumeric ? 'text-right' : '',
-                          ].join(' ')}
+                          className={[tdClass, isNumeric ? 'text-right' : ''].join(' ')}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       );
                     })}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         {showArchived ? (
                           <Button
@@ -545,21 +435,17 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
                             size="sm"
                             iconOnly
                             aria-label="Ripristina"
-                            title="Ripristina"
                             onClick={(e) => { e.stopPropagation(); handleRestore(row.original); }}
-                            className="text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                           >
                             <ArchiveRestore />
                           </Button>
                         ) : (
                           <Button
-                            variant="ghost"
+                            variant="ghost-destructive"
                             size="sm"
                             iconOnly
                             aria-label="Elimina"
-                            title="Elimina"
                             onClick={(e) => handleDeleteClick(e, row.original)}
-                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 />
                           </Button>
@@ -589,79 +475,49 @@ export function ServicesTable({ services, showArchived = false, usageCounts }: S
         selectedService={selectedService}
       />
 
-      {/* Bulk archive confirm */}
-      {bulkArchiveConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Archivia {selectedIds.length} {selectedIds.length === 1 ? 'servizio' : 'servizi'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I servizi archiviati non saranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkArchiveConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkArchiveConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkArchiveServices(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} servizi archiviati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante l\'archiviazione');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Archivia
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkArchiveConfirm}
+        onClose={() => setBulkArchiveConfirm(false)}
+        tone="default"
+        title={`Archivia ${selectedIds.length} ${selectedIds.length === 1 ? 'servizio' : 'servizi'}?`}
+        description="I servizi archiviati non saranno visibili nella lista principale."
+        confirmLabel="Archivia"
+        onConfirm={async () => {
+          setBulkArchiveConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkArchiveServices(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} servizi archiviati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante l\'archiviazione');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
-      {/* Bulk restore confirm */}
-      {bulkRestoreConfirm && (
-        <Portal>
-          <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Ripristina {selectedIds.length} {selectedIds.length === 1 ? 'servizio' : 'servizi'}?
-              </h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                I servizi torneranno visibili nella lista principale.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={() => setBulkRestoreConfirm(false)}>Annulla</Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    setBulkRestoreConfirm(false);
-                    setBulkLoading(true);
-                    try {
-                      await bulkRestoreServices(selectedIds);
-                      messagePopup.getState().success(`${selectedIds.length} servizi ripristinati`);
-                      setRowSelection({});
-                    } catch {
-                      messagePopup.getState().error('Errore durante il ripristino');
-                    } finally {
-                      setBulkLoading(false);
-                    }
-                  }}
-                >
-                  Ripristina
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ConfirmDialog
+        isOpen={bulkRestoreConfirm}
+        onClose={() => setBulkRestoreConfirm(false)}
+        tone="default"
+        title={`Ripristina ${selectedIds.length} ${selectedIds.length === 1 ? 'servizio' : 'servizi'}?`}
+        description="I servizi torneranno visibili nella lista principale."
+        confirmLabel="Ripristina"
+        onConfirm={async () => {
+          setBulkRestoreConfirm(false);
+          setBulkLoading(true);
+          try {
+            await bulkRestoreServices(selectedIds);
+            messagePopup.getState().success(`${selectedIds.length} servizi ripristinati`);
+            setRowSelection({});
+          } catch {
+            messagePopup.getState().error('Errore durante il ripristino');
+          } finally {
+            setBulkLoading(false);
+          }
+        }}
+      />
 
       <DeleteAllModal
         isOpen={bulkDeleteConfirm}

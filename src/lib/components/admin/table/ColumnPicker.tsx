@@ -1,23 +1,34 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Reorder } from 'motion/react';
-import { Columns3, GripVertical, Check, RotateCcw } from 'lucide-react';
+import { useMemo, useRef } from 'react';
+import { AnimatePresence, Reorder } from 'motion/react';
+import { Columns3, RotateCcw } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListGroupLabel, ListSeparator } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
 import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
+import { ReorderListRow } from './ReorderListRow';
+import { cn } from '@/lib/utils';
+
+const PANEL_WIDTH = 288;
 
 interface ColumnPickerProps<T> {
   tableId: string;
   columns: ColumnDef<T>[];
-  labels?: Record<string, string>;
-  className?: string;
 }
 
-export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnPickerProps<T>) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+export function ColumnPicker<T>({ tableId, columns }: ColumnPickerProps<T>) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { open, toggle: togglePanel, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 400,
+    offset: 6,
+    align: 'end',
+    panelWidth: PANEL_WIDTH,
+  });
 
   const {
     columns: meta,
@@ -27,21 +38,6 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
     setColumnVisibility,
     resetToDefault,
   } = useTableColumnPrefs(tableId, columns);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('keydown', esc);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('keydown', esc);
-    };
-  }, []);
 
   const metaById = useMemo(() => new Map(meta.map((c) => [c.id, c])), [meta]);
 
@@ -73,99 +69,76 @@ export function ColumnPicker<T>({ tableId, columns, labels, className }: ColumnP
     setColumnVisibility({ ...columnVisibility, [id]: !nextHidden });
   };
 
-  const resolveLabel = (id: string) => labels?.[id] ?? metaById.get(id)?.label ?? id;
+  const resolveLabel = (id: string) => metaById.get(id)?.label ?? id;
 
   return (
-    <div ref={ref} className={['relative', className].filter(Boolean).join(' ')}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={[
-          'inline-flex items-center rounded-lg border font-medium whitespace-nowrap',
-          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
-          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
-          'transition-colors duration-[var(--duration-base)] ease-[var(--ease-in-out)]',
-          'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]',
-          hiddenCount > 0
-            ? 'bg-[var(--lume-accent-muted)] border-[color-mix(in_oklch,var(--lume-accent)_30%,transparent)] text-[var(--lume-accent)]'
-            : 'bg-[var(--lume-button-secondary-bg)] border-[var(--lume-border)] text-[var(--lume-button-secondary-fg)] hover:bg-[var(--lume-button-secondary-bg-hover)]',
-        ].join(' ')}
+    <div className="relative">
+      <Button
+        ref={triggerRef}
+        variant="secondary"
+        size="md"
+        leadingIcon={Columns3}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        pressed={hiddenCount > 0}
+        onClick={togglePanel}
       >
-        <Columns3 className="size-4 shrink-0" />
         <span>Colonne</span>
-        {hiddenCount > 0 && <NumberBadge value={hiddenCount} variant="solid" size="md" />}
-      </button>
+        {hiddenCount > 0 && <NumberBadge value={hiddenCount} variant="strong" />}
+      </Button>
 
-      {open && (
-        <div className="absolute top-full right-0 mt-1.5 z-dropdown w-72 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
-          <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Colonne visibili</span>
-          </div>
-
-          <Reorder.Group
-            axis="y"
-            values={visibleIds}
-            onReorder={onReorder}
-            className="py-1 max-h-80 overflow-y-auto overflow-x-hidden"
-          >
-            {visibleIds.map((id) => {
-              const info = metaById.get(id);
-              if (!info) return null;
-              const checked = !isHidden(id) || info.requiredVisible;
-              const checkboxDisabled = info.requiredVisible;
-              return (
-                <Reorder.Item
-                  key={id}
-                  value={id}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                  whileDrag={{ scale: 1.01, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
-                >
-                  <span className="text-zinc-300 dark:text-zinc-600 cursor-grab active:cursor-grabbing">
-                    <GripVertical className="size-4" />
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toggle(id)}
-                    disabled={checkboxDisabled}
-                    aria-label={checked ? 'Nascondi' : 'Mostra'}
-                    className={[
-                      'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
-                      checked ? 'bg-primary border-primary' : 'border-zinc-300 dark:border-zinc-600',
-                      checkboxDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
-                    ].join(' ')}
-                  >
-                    {checked && <Check className="size-3 text-white" />}
-                  </button>
-                  <span
-                    className={[
-                      'flex-1 truncate text-zinc-700 dark:text-zinc-300',
-                      !checked ? 'text-zinc-400 dark:text-zinc-600 line-through' : '',
-                    ].join(' ')}
-                  >
-                    {resolveLabel(id)}
-                  </span>
-                  {info.requiredVisible && (
-                    <span className="text-2xs uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
-                      sempre
-                    </span>
-                  )}
-                </Reorder.Item>
-              );
-            })}
-          </Reorder.Group>
-
-          <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              leadingIcon={RotateCcw}
-              onClick={resetToDefault}
-              className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              layer="dropdown"
+              style={{
+                position: 'fixed',
+                left: Math.max(16, Math.min(position.left, window.innerWidth - PANEL_WIDTH - 16)),
+                top: position.top,
+                bottom: position.bottom,
+                width: PANEL_WIDTH,
+              }}
             >
-              Ripristina default
-            </Button>
-          </div>
-        </div>
-      )}
+              <ListGroupLabel className="px-4 pt-3">Colonne visibili</ListGroupLabel>
+              {/* Multi-select: rows show a check, not a fill. Only the columns scroll. */}
+              <ListBox role="listbox" multiple aria-label="Colonne visibili">
+                <Reorder.Group
+                  as="div"
+                  axis="y"
+                  values={visibleIds}
+                  onReorder={onReorder}
+                  className="flex flex-col gap-px max-h-80 overflow-y-auto overflow-x-hidden"
+                >
+                  {visibleIds.map((id) => {
+                    const info = metaById.get(id);
+                    if (!info) return null;
+                    return (
+                      <ReorderListRow
+                        key={id}
+                        value={id}
+                        selected={!isHidden(id) || !!info.requiredVisible}
+                        onActivate={() => toggle(id)}
+                      >
+                        <span className={cn('flex-1 truncate', isHidden(id) && !info.requiredVisible && 'text-[var(--lume-text-muted)] line-through')}>
+                          {resolveLabel(id)}
+                        </span>
+                        {info.requiredVisible && <span className="text-2xs font-normal text-[var(--lume-text-muted)]">sempre</span>}
+                      </ReorderListRow>
+                    );
+                  })}
+                </Reorder.Group>
+              </ListBox>
+              <ListSeparator className="mx-3" />
+              <ListBox className="pt-0">
+                <ListRow icon={RotateCcw} onClick={resetToDefault}>Ripristina default</ListRow>
+              </ListBox>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </div>
   );
 }

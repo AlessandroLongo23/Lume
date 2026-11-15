@@ -5,7 +5,7 @@ import { Save } from 'lucide-react';
 import { PrenotazioniPanel, type PrenotazioniPanelHandle } from '@/lib/components/admin/settings/PrenotazioniPanel';
 import { BookableServicesPanel, type BookableServicesPanelHandle } from '@/lib/components/admin/settings/BookableServicesPanel';
 import { Button } from '@/lib/components/shared/ui/Button';
-import { UnsavedChangesDialog } from '@/lib/components/shared/ui/modals/UnsavedChangesDialog';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { useUnsavedNavGuard } from '@/lib/hooks/useUnsavedNavGuard';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
@@ -75,12 +75,15 @@ export function PrenotazioniSettingsClient() {
         </div>
       </div>
 
-      <UnsavedChangesDialog
+      <ConfirmDialog
         isOpen={nav.isPrompting}
-        saving={nav.isSaving}
-        onCancel={nav.cancel}
-        onDiscard={nav.discardAndLeave}
-        onSave={nav.saveAndLeave}
+        onClose={nav.cancel}
+        onConfirm={nav.saveAndLeave}
+        title="Modifiche non salvate"
+        description="Hai modifiche non salvate. Cosa vuoi fare prima di lasciare la pagina?"
+        confirmLabel={nav.isSaving ? 'Salvataggio…' : 'Salva'}
+        alternative={{ label: 'Scarta', onClick: nav.discardAndLeave }}
+        busy={nav.isSaving}
       />
     </>
   );

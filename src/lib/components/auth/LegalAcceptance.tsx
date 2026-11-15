@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
+import { CheckboxRow } from '@/lib/components/shared/ui/forms/CheckboxRow';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 
 // Three required gates for compliant signup:
@@ -17,68 +17,62 @@ export function LegalAcceptance() {
   const setField = useOnboardingStore((s) => s.setField);
 
   return (
-    <fieldset className="space-y-3 rounded-lg border border-border bg-muted/40 p-4">
-      <legend className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <fieldset className="space-y-3 rounded-xl bg-hover p-4">
+      <legend className="px-1 text-xs font-medium text-[var(--lume-text-secondary)]">
         Accettazione contrattuale
       </legend>
 
-      <label className="flex items-start gap-3 cursor-pointer">
-        <Checkbox
-          size="sm"
-          checked={acceptedTerms}
-          onChange={(e) => setField('acceptedTerms', e.target.checked)}
-          className="mt-0.5 shrink-0"
-        />
-        <span className="text-sm leading-snug text-foreground">
-          Ho letto e accetto i{' '}
-          <Link href="/terms" target="_blank" className="text-primary underline underline-offset-2">
-            Termini di servizio
-          </Link>{' '}
-          e l&apos;
-          <Link href="/privacy" target="_blank" className="text-primary underline underline-offset-2">
-            Informativa sulla privacy
-          </Link>
-          .
-        </span>
-      </label>
+      <CheckboxRow
+        checked={acceptedTerms}
+        onChange={(v) => setField('acceptedTerms', v)}
+        label={
+          <>
+            Ho letto e accetto i{' '}
+            <TextLink href="/terms" target="_blank">
+              Termini di servizio
+            </TextLink>{' '}
+            e l&apos;
+            <TextLink href="/privacy" target="_blank">
+              Informativa sulla privacy
+            </TextLink>
+            .
+          </>
+        }
+      />
 
-      <label className="flex items-start gap-3 cursor-pointer">
-        <Checkbox
-          size="sm"
-          checked={acceptedVessatorie}
-          onChange={(e) => setField('acceptedVessatorie', e.target.checked)}
-          className="mt-0.5 shrink-0"
-        />
-        <span className="text-sm leading-snug text-foreground">
-          Ai sensi e per gli effetti degli artt. <strong>1341 e 1342 c.c.</strong>, dopo averne
-          presa attenta visione, approvo specificamente le seguenti clausole dei{' '}
-          <Link href="/terms#16" target="_blank" className="text-primary underline underline-offset-2">
-            Termini
-          </Link>
-          : <strong>5</strong> (sospensione per mancato pagamento), <strong>6</strong> (rinnovo
-          tacito ed esclusione recesso consumeristico), <strong>7</strong> (sospensione e
-          cessazione unilaterali), <strong>10</strong> (assenza SLA), <strong>12</strong>{' '}
-          (limitazione di responsabilit&agrave;), <strong>13</strong> (modifiche unilaterali),{' '}
-          <strong>14</strong> (legge danese e foro di Copenhagen).
-        </span>
-      </label>
+      <CheckboxRow
+        checked={acceptedVessatorie}
+        onChange={(v) => setField('acceptedVessatorie', v)}
+        label={
+          <>
+            Ai sensi e per gli effetti degli artt. <strong>1341 e 1342 c.c.</strong>, dopo averne
+            presa attenta visione, approvo specificamente le seguenti clausole dei{' '}
+            <TextLink href="/terms#16" target="_blank">
+              Termini
+            </TextLink>
+            : <strong>5</strong> (sospensione per mancato pagamento), <strong>6</strong> (rinnovo
+            tacito ed esclusione recesso consumeristico), <strong>7</strong> (sospensione e
+            cessazione unilaterali), <strong>10</strong> (assenza SLA), <strong>12</strong>{' '}
+            (limitazione di responsabilit&agrave;), <strong>13</strong> (modifiche unilaterali),{' '}
+            <strong>14</strong> (legge danese e foro di Copenhagen).
+          </>
+        }
+      />
 
-      <label className="flex items-start gap-3 cursor-pointer">
-        <Checkbox
-          size="sm"
-          checked={acceptedDpa}
-          onChange={(e) => setField('acceptedDpa', e.target.checked)}
-          className="mt-0.5 shrink-0"
-        />
-        <span className="text-sm leading-snug text-foreground">
-          Nomino Lume <strong>responsabile del trattamento</strong> dei dati dei miei clienti ai
-          sensi dell&apos;art. 28 GDPR e accetto il{' '}
-          <Link href="/dpa" target="_blank" className="text-primary underline underline-offset-2">
-            Data Processing Agreement
-          </Link>
-          .
-        </span>
-      </label>
+      <CheckboxRow
+        checked={acceptedDpa}
+        onChange={(v) => setField('acceptedDpa', v)}
+        label={
+          <>
+            Nomino Lume <strong>responsabile del trattamento</strong> dei dati dei miei clienti ai
+            sensi dell&apos;art. 28 GDPR e accetto il{' '}
+            <TextLink href="/dpa" target="_blank">
+              Data Processing Agreement
+            </TextLink>
+            .
+          </>
+        }
+      />
     </fieldset>
   );
 }

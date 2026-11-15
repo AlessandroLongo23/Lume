@@ -12,7 +12,7 @@ import { OnboardingHalo } from '@/lib/components/onboarding/OnboardingHalo';
  */
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[var(--lume-bg)]">
       <OnboardingHalo />
       <div className="absolute top-6 left-8">
         <LumeLogo size="md" />

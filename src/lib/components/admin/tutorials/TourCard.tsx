@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import type { CardComponentProps } from 'nextstepjs';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Tag } from '@/lib/components/shared/ui/Tag';
 import { cn } from '@/lib/utils';
 import type { LumeTourStep } from '@/lib/tutorials/types';
 
@@ -46,8 +47,13 @@ export function TourCard({
     let raf = 0;
     let last: boolean | null = null;
     const tick = () => {
-      const el = document.querySelector(gate) as HTMLInputElement | null;
-      const filled = !!el?.value?.trim();
+      // The gate is an input, or a wrapper around a composite field (date + time):
+      // a wrapper counts as filled once every input inside it has a value.
+      const el = document.querySelector(gate);
+      const inputs = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+        ? [el]
+        : Array.from(el?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea') ?? []);
+      const filled = inputs.length > 0 && inputs.every((i) => !!i.value.trim());
       if (filled !== last) {
         last = filled;
         setGateFilled(filled);
@@ -66,54 +72,53 @@ export function TourCard({
   return (
     <div
       className={cn(
-        'relative w-80 max-w-[calc(100vw-2rem)] rounded-xl p-4',
-        'border border-zinc-200 bg-white shadow-xl',
-        'dark:border-zinc-800 dark:bg-zinc-900',
+        // The shared floating surface; NextStep positions and layers the card.
+        'surface-float relative w-80 max-w-[calc(100vw-2rem)] rounded-xl p-4',
       )}
       role="dialog"
       aria-label={step.title}
     >
       {/* NextStep's arrow is a `fill="currentColor"` triangle — colour it to the
           card surface so it reads as a tail of the tooltip, not a black wedge. */}
-      <span className="text-white dark:text-zinc-900">{arrow}</span>
+      <span className="text-[var(--lume-surface-raised)]">{arrow}</span>
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          {step.icon && <span className="shrink-0 text-primary">{step.icon}</span>}
-          <h3 className="truncate text-sm font-semibold text-foreground">{step.title}</h3>
+          {step.icon && <span className="shrink-0 text-[var(--lume-text-secondary)]">{step.icon}</span>}
+          <h3 className="truncate text-sm font-medium text-[var(--lume-text)]">{step.title}</h3>
           {optional && (
-            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Facoltativo
-            </span>
+            <Tag className="shrink-0">Facoltativo</Tag>
           )}
         </div>
         {skipTour && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             onClick={skipTour}
             aria-label="Chiudi guida"
-            className="-mr-1 -mt-1 shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground dark:hover:bg-zinc-800"
+            className="-mr-1.5 -mt-1.5"
           >
-            <X className="size-4" />
-          </button>
+            <X />
+          </Button>
         )}
       </div>
 
-      <div className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.content}</div>
+      <div className="mt-2 text-sm leading-relaxed text-[var(--lume-text-secondary)]">{step.content}</div>
 
       {mode === 'action' && !gate && !optional && (
-        <div className="mt-3 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+        <div className="mt-3 rounded-lg bg-hover px-3 py-2 text-xs font-medium text-[var(--lume-text)]">
           Completa l’azione evidenziata per continuare.
         </div>
       )}
       {gate && !gateFilled && (
-        <div className="mt-3 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+        <div className="mt-3 rounded-lg bg-hover px-3 py-2 text-xs font-medium text-[var(--lume-text)]">
           Compila il campo evidenziato per continuare.
         </div>
       )}
 
       <div className="mt-4 flex items-center justify-between gap-2">
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span className="text-xs tabular-nums text-[var(--lume-text-muted)]">
           {currentStep + 1} / {totalSteps}
         </span>
         <div className="flex items-center gap-2">

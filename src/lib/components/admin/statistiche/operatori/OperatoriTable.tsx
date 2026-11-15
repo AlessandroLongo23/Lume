@@ -1,33 +1,34 @@
 import { formatCurrency } from '@/lib/utils/format';
 import type { OperatorSummaryRow } from '../statHelpers';
+import { cellNumClass, cellStrongClass, tableClass, tbodyClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 
 interface Props { rows: OperatorSummaryRow[] }
 
 export function OperatoriTable({ rows }: Props) {
   if (rows.length === 0) {
-    return <p className="text-xs text-zinc-400 px-5 pb-5">Nessun operatore nel periodo.</p>;
+    return <p className="text-sm text-[var(--lume-text-muted)] px-5 pb-5">Nessun operatore nel periodo.</p>;
   }
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-zinc-100 dark:border-zinc-800">
-          <th className="text-left px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Operatore</th>
-          <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Fiches</th>
-          <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Incasso</th>
-          <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Scontr. medio</th>
-          <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Servizio top</th>
-          <th className="text-right px-5 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Clienti</th>
+    <table className={`${tableClass} min-w-128`}>
+      <thead className={theadClass}>
+        <tr>
+          <th className={`${thClass()} first:pl-5 last:pr-5`}>Operatore</th>
+          <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Fiches</th>
+          <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Incasso</th>
+          <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Scontrino medio</th>
+          <th className={`${thClass()} first:pl-5 last:pr-5`}>Servizio top</th>
+          <th className={`${thClass({ align: 'right' })} first:pl-5 last:pr-5`}>Clienti</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className={tbodyClass}>
         {rows.map((row) => (
-          <tr key={row.operatorId} className="border-b border-zinc-50 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-            <td className="px-5 py-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{row.name}</td>
-            <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.ficheCount}</td>
-            <td className="px-3 py-2.5 text-sm text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">{formatCurrency(row.incasso)}</td>
-            <td className="px-3 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{formatCurrency(row.avgTicket)}</td>
-            <td className="px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400 max-w-35 truncate">{row.topService}</td>
-            <td className="px-5 py-2.5 text-sm text-right tabular-nums text-zinc-600 dark:text-zinc-400">{row.clientCount}</td>
+          <tr key={row.operatorId} className={trClass({ interactive: false })}>
+            <td className={`${tdClass} ${cellStrongClass} first:pl-5 last:pr-5`}>{row.name}</td>
+            <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.ficheCount}</td>
+            <td className={`${tdClass} ${cellNumClass} text-[var(--lume-text)] text-right first:pl-5 last:pr-5`}>{formatCurrency(row.incasso)}</td>
+            <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{formatCurrency(row.avgTicket)}</td>
+            <td className={`${tdClass} max-w-35 truncate first:pl-5 last:pr-5`}>{row.topService}</td>
+            <td className={`${tdClass} ${cellNumClass} text-right first:pl-5 last:pr-5`}>{row.clientCount}</td>
           </tr>
         ))}
       </tbody>

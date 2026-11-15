@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
+import { Button } from '@/lib/components/shared/ui/Button';
 
 export function SubscriptionCTA() {
   const isTrialing = useSubscriptionStore((s) => s.isTrialing);
@@ -13,13 +14,14 @@ export function SubscriptionCTA() {
   // it's redundant and adds a third indigo element to the same viewport.
   if (!isTrialing || pathname === '/admin/subscribe') return null;
 
+  // Secondary button with a brass icon (DESIGN.md: brass carries upgrade
+  // prompts), so the page's own primary action keeps the indigo.
   return (
-    <Link
-      href="/admin/subscribe"
-      className="inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-hover transition-colors"
-    >
-      <Sparkles className="w-4 h-4" />
-      <span className="hidden sm:inline">Attiva abbonamento</span>
-    </Link>
+    <Button asChild variant="secondary">
+      <Link href="/admin/subscribe" aria-label="Attiva abbonamento">
+        <Sparkles className="text-[var(--lume-brass-fg)]" aria-hidden />
+        <span className="hidden sm:inline">Attiva abbonamento</span>
+      </Link>
+    </Button>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { isSameDay } from 'date-fns';
+import { isSameDay, isToday } from 'date-fns';
 import { getWeekDays, formatDateString } from '@/lib/utils/date';
 import { capitalize } from '@/lib/utils/string';
 import { useOperatorsStore } from '@/lib/stores/operators';
@@ -41,10 +41,28 @@ export function WeekView({ selectedDate, selectedOperatorId, onSlotSelected, onF
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
   const columns: TimeGridColumn[] = useMemo(
-    () => weekDays.map((day) => ({
-      key: day.toISOString(),
-      label: capitalize(formatDateString(day, 'EEE d')),
-    })),
+    () => weekDays.map((day) => {
+      const today = isToday(day);
+      return {
+        key: day.toISOString(),
+        label: capitalize(formatDateString(day, 'EEEE d MMMM')),
+        header: (
+          <span className="flex items-center gap-1.5">
+            <span className="text-[var(--lume-text-secondary)] font-normal">
+              {capitalize(formatDateString(day, 'EEE'))}
+            </span>
+            <span
+              className={`tabular-nums inline-flex items-center justify-center min-w-6 h-6 px-1 rounded-full ${
+                today ? 'marker-current' : 'text-[var(--lume-text)]'
+              }`}
+              aria-current={today ? 'date' : undefined}
+            >
+              {formatDateString(day, 'd')}
+            </span>
+          </span>
+        ),
+      };
+    }),
     [weekDays]
   );
 

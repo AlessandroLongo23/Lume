@@ -4,4 +4,4 @@ export { DetailHeroActions } from './DetailHeroActions';
 export { DetailChip } from './DetailChip';
 export { HeroAvatar, HeroIconTile } from './HeroAvatar';
 export { ContactRow } from './ContactRow';
-export { StatTile, SegmentedBar, ProgressBar } from './StatTile';
+export { StatTile, ProgressBar } from './StatTile';

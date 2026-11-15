@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Save, Loader2, Ban, Palette } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 
@@ -65,7 +67,7 @@ export function CalendarioSalonePanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -73,76 +75,57 @@ export function CalendarioSalonePanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Calendar}
         title="Granularità slot"
         description="Lunghezza minima degli intervalli mostrati nel calendario."
       >
-        <div role="radiogroup" aria-label="Granularità slot" className="flex flex-wrap gap-2">
-          {SLOT_OPTIONS.map((m) => {
-            const selected = m === slotMin;
-            return (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setSlotMin(m)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  selected
-                    ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
-                    : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-                }`}
-              >
-                {m} min
-              </button>
-            );
-          })}
-        </div>
+        <ToggleButton
+          ariaLabel="Granularità slot"
+          options={[...SLOT_OPTIONS]}
+          labels={SLOT_OPTIONS.map((m) => `${m} min`)}
+          value={slotMin}
+          onChange={setSlotMin}
+          className="tabular-nums"
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Calendar}
         title="Durata appuntamento predefinita"
         description="Durata iniziale di un nuovo appuntamento creato dal calendario."
       >
-        <div className="flex items-center gap-3">
-          <input
-            type="number"
-            min={5}
-            max={480}
-            step={5}
-            value={defaultDuration}
-            onChange={(e) => setDefaultDuration(Math.max(5, Math.min(480, Number(e.target.value) || 5)))}
-            className="w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-          />
-          <span className="text-sm text-zinc-500">minuti</span>
-        </div>
+        <FormInput
+          type="number"
+          aria-label="Durata appuntamento predefinita in minuti"
+          suffix="minuti"
+          min={5}
+          max={480}
+          step={5}
+          value={defaultDuration}
+          onChange={(e) => setDefaultDuration(Math.max(5, Math.min(480, Number(e.target.value) || 5)))}
+          fieldClassName="w-36"
+          className="tabular-nums"
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Ban}
         title="Non disponibilità operatori"
         description="Quando attivo, ogni operatore può aggiungere e modificare le proprie ferie e non disponibilità dal calendario."
       >
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm text-zinc-700 dark:text-zinc-200">
-            Permetti agli operatori di gestire le proprie non disponibilità
-          </span>
-          <Switch checked={allowSelfUnavail} onChange={() => setAllowSelfUnavail((v) => !v)} />
-        </div>
+        <SwitchRow
+          label="Permetti agli operatori di gestire le proprie non disponibilità"
+          checked={allowSelfUnavail}
+          onChange={() => setAllowSelfUnavail((v) => !v)}
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Palette}
         title="Colore appuntamenti"
         description="Quando attivo, tutti gli appuntamenti dello stesso cliente hanno lo stesso colore — utile per riconoscere a colpo d’occhio una visita divisa tra più operatori. Disattiva per colorare gli appuntamenti in base alla categoria del servizio."
       >
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm text-zinc-700 dark:text-zinc-200">
-            Stesso colore per cliente
-          </span>
-          <Switch checked={colorByClient} onChange={() => setColorByClient((v) => !v)} />
-        </div>
+        <SwitchRow
+          label="Stesso colore per cliente"
+          checked={colorByClient}
+          onChange={() => setColorByClient((v) => !v)}
+        />
       </SettingsCard>
 
       <div className="flex justify-end">

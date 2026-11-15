@@ -25,17 +25,17 @@ export function describeColumns<T>(columns: ColumnDef<T>[]): ColumnMetaInfo[] {
   for (const def of columns) {
     const id = getColumnId(def);
     if (!id) continue;
-    const meta = (def.meta ?? {}) as { pickerLabel?: string; lockedInPicker?: boolean; requiredVisible?: boolean; pinned?: 'start' };
+    const meta = def.meta;
     const label =
-      meta.pickerLabel ??
+      meta?.pickerLabel ??
       (typeof def.header === 'string' ? def.header : '') ??
       id;
     out.push({
       id,
       label: label || id,
-      lockedInPicker: meta.lockedInPicker === true,
-      requiredVisible: meta.requiredVisible === true,
-      pinned: meta.pinned,
+      lockedInPicker: meta?.lockedInPicker === true,
+      requiredVisible: meta?.requiredVisible === true,
+      pinned: meta?.pinned,
     });
   }
   return out;

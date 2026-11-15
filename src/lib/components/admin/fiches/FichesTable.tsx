@@ -10,14 +10,14 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useServicesStore } from '@/lib/stores/services';
 import { useServiceCategoriesStore } from '@/lib/stores/service_categories';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
-import { Fiche, FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
+import { Fiche, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { Pagination } from '@/lib/components/admin/table/Pagination';
@@ -28,7 +28,10 @@ import { useTableColumnPrefs } from '@/lib/hooks/useTableColumnPrefs';
 import { useFitPageSize } from '@/lib/hooks/useFitPageSize';
 import { FicheModal } from '@/lib/components/admin/fiches/FicheModal';
 import { DeleteFicheModal } from './DeleteFicheModal';
-import { cardStyle } from '@/lib/const/appearance';
+import { tableCardClass, tableClass, theadClass, thClass, trClass, tdClass, cellStrongClass, cellNumClass, tableMessageClass, CellEmpty, SortIndicator } from '@/lib/components/shared/ui/table/tableStyles';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { FICHE_BUCKET_TONE } from './ficheBucketTone';
 
 interface FichesTableProps {
   fiches: Fiche[];
@@ -37,11 +40,7 @@ interface FichesTableProps {
   emptyText?: string;
 }
 
-const BUCKET_STYLES: Record<FicheBucket, string> = {
-  [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
-  [FicheBucket.ARRETRATA]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  [FicheBucket.CONCLUSA]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-};
+
 
 export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyText }: FichesTableProps) {
   const isLoading = useFichesStore((s) => s.isLoading);
@@ -84,8 +83,8 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
         cell: ({ row }) => {
           const client = clientMap.get(row.original.client_id);
           return (
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {client ? `${client.firstName} ${client.lastName}` : <span className="text-zinc-400">—</span>}
+            <span className={cellStrongClass}>
+              {client ? `${client.firstName} ${client.lastName}` : <CellEmpty />}
             </span>
           );
         },
@@ -101,7 +100,11 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
       {
         id: 'date',
         header: 'Data',
-        cell: ({ row }) => new Date(row.original.datetime).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        cell: ({ row }) => (
+          <span className={cellNumClass}>
+            {new Date(row.original.datetime).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+          </span>
+        ),
         enableSorting: true,
         sortingFn: (a, b) =>
           new Date(a.original.datetime).getTime() - new Date(b.original.datetime).getTime(),
@@ -109,7 +112,11 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
       {
         id: 'time',
         header: 'Ora',
-        cell: ({ row }) => new Date(row.original.datetime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        cell: ({ row }) => (
+          <span className={cellNumClass}>
+            {new Date(row.original.datetime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        ),
         enableSorting: true,
         sortingFn: (a, b) =>
           new Date(a.original.datetime).getTime() - new Date(b.original.datetime).getTime(),
@@ -128,7 +135,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
               return { id: fs.id, name: svc.name, color };
             })
             .filter((e): e is { id: string; name: string; color: string } => e !== null);
-          if (entries.length === 0) return <span className="text-zinc-400">—</span>;
+          if (entries.length === 0) return <CellEmpty />;
           // Keep every row exactly one line tall: chips never wrap. Variable row
           // heights make useFitPageSize's "rows that fit" count oscillate and the
           // table flicker on narrow screens. Surplus services collapse into a +N
@@ -141,23 +148,22 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
               {shown.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap"
+                  className="inline-flex shrink-0 items-center h-6 px-2 rounded-md text-xs text-[var(--lume-text)] whitespace-nowrap"
+                  // Category colour as a soft tint, same recipe as the calendar's FicheBlock.
                   style={{
-                    backgroundColor: `${entry.color}1A`,
-                    borderColor: `${entry.color}33`,
-                    color: entry.color,
+                    backgroundColor: `color-mix(in oklab, ${entry.color} 16%, transparent)`,
+                    boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${entry.color} 28%, transparent)`,
                   }}
                 >
                   {entry.name}
                 </span>
               ))}
               {overflow > 0 && (
-                <span
-                  className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 whitespace-nowrap"
-                  title={entries.slice(MAX_CHIPS).map((e) => e.name).join(', ')}
-                >
-                  +{overflow}
-                </span>
+                <Tooltip label={entries.slice(MAX_CHIPS).map((e) => e.name).join(', ')}>
+                  <span className="inline-flex shrink-0 items-center h-6 px-1.5 rounded-md bg-active tabular-nums text-xs text-[var(--lume-text-secondary)] whitespace-nowrap">
+                    +{overflow}
+                  </span>
+                </Tooltip>
               )}
             </div>
           );
@@ -171,7 +177,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
         cell: ({ row }) => {
           const total = row.original.getTotal();
           return (
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            <span className={`${cellNumClass} text-[var(--lume-text)]`}>
               {total.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
             </span>
           );
@@ -184,9 +190,7 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
         cell: ({ row }) => {
           const bucket = getFicheBucket(row.original);
           return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${BUCKET_STYLES[bucket]}`}>
-              {FICHE_BUCKET_LABELS[bucket]}
-            </span>
+            <StatusDot tone={FICHE_BUCKET_TONE[bucket]}>{FICHE_BUCKET_LABELS[bucket]}</StatusDot>
           );
         },
       },
@@ -244,10 +248,10 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
     <>
       <div className="flex-1 min-h-0 flex flex-col gap-4 w-full">
         {/* Toolbar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {showSearch && (
             <Searchbar
-              className="flex-1 max-w-sm"
+              className="basis-full sm:basis-auto sm:flex-1 sm:max-w-sm"
               placeholder="Cerca fiche..."
               value={globalFilter ?? ''}
               onChange={(v) => onGlobalFilterChange?.(v)}
@@ -266,9 +270,9 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
 
         {/* Table */}
         <div ref={tableCardRef} className="flex-1 min-h-0 w-full">
-          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${cardStyle}`}>
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-700">
+          <div className={`max-h-full w-full overflow-x-auto overflow-y-hidden ${tableCardClass}`}>
+          <table className={tableClass}>
+            <thead className={theadClass}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -278,39 +282,32 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
                       <th
                         key={header.id}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={[
-                          'px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide select-none whitespace-nowrap text-left',
-                          canSort ? 'cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors' : '',
-                        ].join(' ')}
+                        aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
+                        className={thClass({ sortable: canSort })}
                       >
                         <span className="inline-flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span className="flex flex-col">
-                              <ChevronUp className={`size-3 ${sorted === 'asc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                              <ChevronDown className={`size-3 -mt-1 ${sorted === 'desc' ? 'text-primary' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                            </span>
-                          )}
+                          {canSort && <SortIndicator direction={sorted} />}
                         </span>
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-right w-24">
-                    Azioni
+                  <th className={`${thClass({ align: 'right' })} w-24`}>
+                    <span className="sr-only">Azioni</span>
                   </th>
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     Caricando fiches...
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={columns.length + 1} className={tableMessageClass}>
                     {emptyText ?? 'Nessuna fiche trovata.'}
                   </td>
                 </tr>
@@ -319,23 +316,21 @@ export function FichesTable({ fiches, globalFilter, onGlobalFilterChange, emptyT
                   <tr
                     key={row.id}
                     onClick={() => { setSelectedFiche(row.original); setShowEdit(true); }}
-                    className="bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    className={trClass()}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      <td key={cell.id} className={tdClass}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={tdClass}>
                       <div className="flex flex-row items-center justify-end gap-1">
                         <Button
-                          variant="ghost"
+                          variant="ghost-destructive"
                           size="sm"
                           iconOnly
                           aria-label="Elimina"
-                          title="Elimina"
                           onClick={(e) => { e.stopPropagation(); setSelectedFiche(row.original); setShowDelete(true); }}
-                          className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                           <Trash2 />
                         </Button>

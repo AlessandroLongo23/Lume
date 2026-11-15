@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TriangleAlert, Trash2, X } from 'lucide-react';
-import { Modal } from '@/lib/components/shared/ui/modals/Modal';
-import { Button } from '@/lib/components/shared/ui/Button';
+import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 
 interface DeletePlatformSalonModalProps {
   isOpen:    boolean;
@@ -15,20 +14,16 @@ interface DeletePlatformSalonModalProps {
 
 export function DeletePlatformSalonModal({ isOpen, onClose, salonId, salonName }: DeletePlatformSalonModalProps) {
   const router = useRouter();
-  const [confirmInput, setConfirmInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const isConfirmed = confirmInput === salonName;
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isOpen) setConfirmInput('');
     if (isOpen) setErrorMsg(null);
   }, [isOpen]);
 
   const handleDelete = async () => {
-    if (!isConfirmed || isDeleting) return;
+    if (isDeleting) return;
     setIsDeleting(true);
     setErrorMsg(null);
 
@@ -54,96 +49,30 @@ export function DeletePlatformSalonModal({ isOpen, onClose, salonId, salonName }
     }
   };
 
+  // Type-to-confirm: the delete button stays disabled until the salon name is typed.
   return (
-    <Modal isOpen={isOpen} onClose={isDeleting ? () => {} : onClose} classes="max-w-lg" closeOnOutsideClick={false}>
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
-
-        {/* Header */}
-        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25">
-          <div className="flex flex-row items-center gap-3 min-w-0">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-red-500/10">
-              <TriangleAlert className="size-5 text-red-500" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Elimina salone dalla piattaforma</h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Azione irreversibile — leggi attentamente</p>
-            </div>
-          </div>
-          {!isDeleting && (
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              aria-label="Chiudi"
-              onClick={onClose}
-              className="shrink-0 ml-4"
-            >
-              <X />
-            </Button>
-          )}
-        </div>
-
-        {/* Body */}
-        <div className="p-6 flex flex-col gap-5">
-          <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
-            <p className="text-sm text-red-800 dark:text-red-300 leading-relaxed">
-              <strong>Attenzione:</strong> eliminando il salone{' '}
-              <strong>{salonName}</strong> verranno cancellati permanentemente{' '}
-              <strong>tutti i clienti, le schede, i servizi, i prodotti, gli ordini, i coupon e gli operatori</strong>{' '}
-              associati a questo salone. Se il titolare non possiede altri saloni, anche il suo account verrà rimosso.
-            </p>
-            <p className="mt-3 text-sm text-red-800 dark:text-red-300 leading-relaxed">
-              I <strong>clienti e gli operatori condivisi</strong> con altri saloni NON verranno eliminati dagli altri saloni.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400">
-              Digita{' '}
-              <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
-                {salonName}
-              </strong>{' '}
-              per confermare l&apos;eliminazione
-            </label>
-            <input
-              type="text"
-              value={confirmInput}
-              onChange={(e) => { setConfirmInput(e.target.value); setErrorMsg(null); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && isConfirmed) handleDelete(); }}
-              placeholder={salonName}
-              autoComplete="off"
-              disabled={isDeleting}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          {errorMsg && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <Button
-            variant="secondary"
-            leadingIcon={X}
-            disabled={isDeleting}
-            onClick={onClose}
-          >
-            Annulla
-          </Button>
-          <Button
-            variant="destructive"
-            leadingIcon={Trash2}
-            loading={isDeleting}
-            disabled={!isConfirmed}
-            onClick={handleDelete}
-          >
-            {isDeleting ? 'Eliminazione in corso...' : 'Conferma ed Elimina'}
-          </Button>
-        </div>
-
-      </div>
-    </Modal>
+    <DeleteModal
+      isOpen={isOpen}
+      onClose={isDeleting ? () => {} : onClose}
+      onConfirm={handleDelete}
+      title="Elimina salone dalla piattaforma"
+      subtitle="L'eliminazione non si può annullare."
+      warning={
+        <>
+          <p>
+            Eliminando il salone <span className="font-medium text-[var(--lume-text)]">{salonName}</span>{' '}
+            verranno cancellati per sempre{' '}
+            <span className="font-medium text-[var(--lume-text)]">tutti i clienti, le schede, i servizi, i prodotti, gli ordini, i coupon e gli operatori</span>{' '}
+            associati a questo salone. Se il titolare non possiede altri saloni, anche il suo account verrà rimosso.
+          </p>
+          <p className="mt-2">I clienti e gli operatori condivisi con altri saloni restano negli altri saloni.</p>
+        </>
+      }
+      confirmPhrase={salonName}
+      confirmText={isDeleting ? 'Eliminazione in corso…' : 'Elimina salone'}
+      busy={isDeleting}
+    >
+      {errorMsg && <Callout tone="danger">{errorMsg}</Callout>}
+    </DeleteModal>
   );
 }

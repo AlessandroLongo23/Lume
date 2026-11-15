@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback, useId } from 'react';
-import { MapPin, X, AlertCircle } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { MapPin, X } from 'lucide-react';
 import { Portal } from './Portal';
+import { Field } from './forms/Field';
 import { cn } from '@/lib/utils';
 
 type ComuneRecord = {
@@ -37,25 +38,16 @@ function loadComuni(): Promise<ComuneRecord[]> {
 }
 
 interface ComuneAutocompleteProps {
-  value:        ComuneSelection | null;
-  onChange:     (c: ComuneSelection | null) => void;
-  label?:       string;
-  placeholder?: string;
-  error?:       string;
-  required?:    boolean;
-  disabled?:    boolean;
+  value:    ComuneSelection | null;
+  onChange: (c: ComuneSelection | null) => void;
+  label?:   string;
 }
 
-export function ComuneAutocomplete({
-  value,
-  onChange,
-  label,
-  placeholder = 'Inizia a scrivere il comune…',
-  error,
-  required,
-  disabled,
-}: ComuneAutocompleteProps) {
-  const id = useId();
+/**
+ * Pick an Italian comune by typing its name, laid out by <Field> on the shared
+ * `control` surface. The chosen comune's province and region show as the hint.
+ */
+export function ComuneAutocomplete({ value, onChange, label }: ComuneAutocompleteProps) {
   const inputRef    = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -156,125 +148,104 @@ export function ComuneAutocomplete({
 
   const isStale = !!value && value.city !== query;
 
+  const hint = value && (
+    <span className="flex items-center gap-1.5">
+      <span className="rounded-sm bg-active px-1.5 py-0.5 tabular-nums font-medium text-[var(--lume-text-secondary)]">{value.province}</span>
+      <span aria-hidden>·</span>
+      <span>{value.region}</span>
+    </span>
+  );
+
   return (
-    <div className="space-y-2">
-      {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-foreground">
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </label>
-      )}
+    <Field label={label} hint={hint}>
+      {({ id, describedBy }) => (
+        <>
+          <div className="relative">
+            <MapPin aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--lume-text-muted)]" />
+            <input
+              ref={inputRef}
+              id={id}
+              type="text"
+              autoComplete="off"
+              value={query}
+              placeholder="Inizia a scrivere il comune…"
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setOpen(true);
+                setHighlighted(0);
+                if (value && e.target.value !== value.city) onChange(null);
+              }}
+              onFocus={() => setOpen(true)}
+              onKeyDown={onKeyDown}
+              role="combobox"
+              aria-invalid={isStale || undefined}
+              aria-describedby={describedBy}
+              aria-autocomplete="list"
+              aria-expanded={open}
+              aria-controls={`${id}-listbox`}
+              className="control control-md w-full pl-9 pr-9"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={clear}
+                tabIndex={-1}
+                aria-label="Cancella comune"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--lume-text-muted)] transition-colors hover:text-[var(--lume-text)]"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
 
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-          <MapPin className="size-4" />
-        </div>
-        <input
-          ref={inputRef}
-          id={id}
-          type="text"
-          autoComplete="off"
-          value={query}
-          placeholder={placeholder}
-          disabled={disabled}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-            setHighlighted(0);
-            if (value && e.target.value !== value.city) onChange(null);
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={onKeyDown}
-          role="combobox"
-          aria-invalid={!!error || undefined}
-          aria-autocomplete="list"
-          aria-expanded={open}
-          aria-controls={`${id}-listbox`}
-          className={cn(
-            'w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground',
-            'h-[var(--lume-control-h-md)] pl-9 pr-9 text-[length:var(--lume-control-text-md)]',
-            'transition-[border-color,box-shadow] duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-ring/20',
-            error || isStale
-              ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
-              : 'border-input focus:border-ring',
-            disabled && 'opacity-50 cursor-not-allowed bg-muted',
+          {open && position && matches.length > 0 && (
+            <Portal>
+              <div
+                ref={dropdownRef}
+                id={`${id}-listbox`}
+                role="listbox"
+                className="surface-float fixed z-dropdown max-h-72 overflow-y-auto overscroll-contain p-1"
+                style={{ top: position.top, left: position.left, width: position.width }}
+              >
+                {matches.map((c, idx) => {
+                  const active = idx === highlighted;
+                  return (
+                    <button
+                      key={c.codice}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      onMouseEnter={() => setHighlighted(idx)}
+                      onMouseDown={(e) => { e.preventDefault(); select(c); }}
+                      className={cn(
+                        'flex h-9 w-full items-center justify-between gap-3 rounded-md px-2.5 text-left text-sm transition-colors duration-[var(--duration-fast)] pointer-coarse:h-11',
+                        active ? 'bg-active' : 'hover:bg-hover',
+                      )}
+                    >
+                      <span className="truncate">{c.nome}</span>
+                      <span className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--lume-text-secondary)]">
+                        <span className="tabular-nums font-medium">{c.sigla}</span>
+                        <span className="max-w-32 truncate">{c.regione}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Portal>
           )}
-        />
-        {query && !disabled && (
-          <button
-            type="button"
-            onClick={clear}
-            tabIndex={-1}
-            aria-label="Cancella comune"
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-      </div>
 
-      {value && (
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-          <span className="px-1.5 py-0.5 rounded bg-muted font-medium">{value.province}</span>
-          <span>·</span>
-          <span>{value.region}</span>
-        </div>
+          {open && position && query.trim() && matches.length === 0 && comuni.length > 0 && (
+            <Portal>
+              <div
+                className="surface-float fixed z-dropdown p-3 text-sm text-[var(--lume-text-secondary)]"
+                style={{ top: position.top, left: position.left, width: position.width }}
+              >
+                Nessun comune corrispondente.
+              </div>
+            </Portal>
+          )}
+        </>
       )}
-
-      {error && (
-        <div className="flex items-center gap-2 text-destructive text-sm" role="alert">
-          <AlertCircle className="size-4 flex-shrink-0" aria-hidden="true" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {open && position && matches.length > 0 && (
-        <Portal>
-          <div
-            ref={dropdownRef}
-            id={`${id}-listbox`}
-            role="listbox"
-            className="fixed z-dropdown bg-popover text-popover-foreground border border-border rounded-lg shadow-lg max-h-72 overflow-y-auto py-1"
-            style={{ top: position.top, left: position.left, width: position.width }}
-          >
-            {matches.map((c, idx) => {
-              const active = idx === highlighted;
-              return (
-                <button
-                  key={c.codice}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  onMouseEnter={() => setHighlighted(idx)}
-                  onMouseDown={(e) => { e.preventDefault(); select(c); }}
-                  className={cn(
-                    'w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-3 transition-colors',
-                    active ? 'bg-muted' : 'hover:bg-muted/60',
-                  )}
-                >
-                  <span className="font-medium truncate">{c.nome}</span>
-                  <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 rounded bg-muted/80 font-medium">{c.sigla}</span>
-                    <span className="truncate max-w-[8rem]">{c.regione}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </Portal>
-      )}
-
-      {open && position && query.trim() && matches.length === 0 && comuni.length > 0 && (
-        <Portal>
-          <div
-            className="fixed z-dropdown bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 text-sm text-muted-foreground"
-            style={{ top: position.top, left: position.left, width: position.width }}
-          >
-            Nessun comune corrispondente.
-          </div>
-        </Portal>
-      )}
-    </div>
+    </Field>
   );
 }

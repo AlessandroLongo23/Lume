@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import {
   ArrowLeft,
-  Check,
   ChevronUp,
   CircleDot,
   ExternalLink,
@@ -24,6 +23,12 @@ import { supabase } from '@/lib/supabase/client';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { TextLink } from '@/lib/components/shared/ui/TextLink';
+import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { Tag as LabelTag } from '@/lib/components/shared/ui/Tag';
+import { ListBox, ListRow, ListSeparator } from '@/lib/components/shared/ui/list/ListBox';
+import { cn } from '@/lib/utils';
 import { useFeedbackStore } from '@/lib/stores/feedback';
 import { useFeedbackCommentsStore } from '@/lib/stores/feedbackComments';
 import type { FeedbackEntry, FeedbackStatus, FeedbackType } from '@/lib/types/FeedbackEntry';
@@ -43,16 +48,9 @@ interface FeedbackDetailViewProps {
 const STATUS_OPTIONS: FeedbackStatus[] = ['open', 'in_progress', 'completed', 'closed'];
 
 const TYPE_TEXT_COLOR: Record<FeedbackType, string> = {
-  suggestion: 'text-indigo-600 dark:text-indigo-400',
-  bug: 'text-red-600 dark:text-red-400',
-  idea: 'text-amber-600 dark:text-amber-400',
-};
-
-const STATUS_DOT_CLASS: Record<FeedbackStatus, string> = {
-  open: 'bg-zinc-400',
-  in_progress: 'bg-blue-500',
-  completed: 'bg-emerald-500',
-  closed: 'bg-zinc-500',
+  suggestion: 'text-info-strong',
+  bug: 'text-danger-strong',
+  idea: 'text-warning-strong',
 };
 
 export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = true }: FeedbackDetailViewProps) {
@@ -152,28 +150,26 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
         <div className="flex flex-col gap-8 min-w-0">
           {/* Header */}
           <header className="flex flex-col gap-3">
-            <div className={`flex flex-row items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.12em] ${typeColor}`}>
-              <typeMeta.icon className="size-3.5" strokeWidth={2.25} />
+            <div className="flex flex-row items-center gap-1.5 text-xs font-medium text-[var(--lume-text-secondary)]">
+              <typeMeta.icon className={`size-3.5 ${typeColor}`} strokeWidth={2.25} />
               <span>{typeMeta.label}</span>
             </div>
 
-            <h1 className="text-[2rem] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 break-words leading-[1.15]">
-              {entry.title}
-            </h1>
+            <PageHeader title={entry.title} wrap />
 
-            <div className="flex flex-row items-center flex-wrap gap-x-2.5 gap-y-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="flex flex-row items-center flex-wrap gap-x-2.5 gap-y-1.5 text-sm text-[var(--lume-text-secondary)]">
               <div className="flex flex-row items-center gap-2">
-                <div className="flex items-center justify-center size-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-2xs font-semibold text-zinc-600 dark:text-zinc-300">
+                <div className="flex items-center justify-center size-6 rounded-full bg-active text-2xs font-medium text-[var(--lume-text-secondary)]">
                   {initials(entry.getAuthorName())}
                 </div>
-                <span className="text-zinc-700 dark:text-zinc-200">{entry.getAuthorName()}</span>
+                <span className="text-[var(--lume-text)]">{entry.getAuthorName()}</span>
               </div>
-              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <span className="text-[var(--lume-text-muted)]">·</span>
               <span>{format(new Date(entry.created_at), 'd MMMM yyyy', { locale: it })}</span>
               {entry.completed_at && (
                 <>
-                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[var(--lume-text-muted)]">·</span>
+                  <span>
                     Completato il {format(new Date(entry.completed_at), 'd MMM yyyy', { locale: it })}
                   </span>
                 </>
@@ -182,18 +178,18 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           </header>
 
           {/* Description */}
-          <div className="flex flex-col gap-5 text-[0.9375rem] leading-relaxed text-zinc-700 dark:text-zinc-200">
+          <div className="flex flex-col gap-5 text-[var(--lume-text)]">
             <MarkdownBody content={entry.description} />
             {entry.image_paths.length > 0 && <ImageGallery paths={entry.image_paths} />}
           </div>
 
           {/* Discussion */}
           <section className="flex flex-col gap-5 mt-2">
-            <div className="flex flex-row items-baseline gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="flex flex-row items-baseline gap-3 pb-3 border-b border-line">
+              <h2 className="text-lg font-medium tracking-tight text-[var(--lume-text)]">
                 Discussione
               </h2>
-              <span className="text-sm text-zinc-500 dark:text-zinc-400 tabular-nums">
+              <span className="text-sm text-[var(--lume-text-secondary)] tabular-nums">
                 {entry.comment_count} {entry.comment_count === 1 ? 'commento' : 'commenti'}
               </span>
             </div>
@@ -203,7 +199,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
             {canComment ? (
               <CommentForm onSubmit={handleAddComment} submitLabel="Commenta" />
             ) : (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 italic">
+              <p className="text-sm text-[var(--lume-text-secondary)] italic">
                 Accedi per partecipare alla discussione.
               </p>
             )}
@@ -216,40 +212,41 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           <div className="grid grid-cols-2 gap-3">
             {allowUpvote ? (
               <button
+                // ds-ignore: vote tile, a clickable surface-card stat (arrow, count, label) the size of its neighbour tile; Button is a fixed-height control
                 type="button"
                 onClick={handleVote}
                 disabled={!canVote}
-                className={`flex flex-col items-center justify-center gap-1 py-4 rounded-xl border transition-colors shadow-sm ${
-                  hasVoted
-                    ? 'border-primary bg-primary/10 text-primary-hover dark:text-primary/80'
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 hover:border-primary/60'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                aria-pressed={hasVoted}
+                className={cn(
+                  'surface-card card-interactive flex flex-col items-center justify-center gap-1 py-4 text-[var(--lume-text)] disabled:opacity-50 disabled:cursor-not-allowed',
+                  hasVoted && 'selected',
+                )}
               >
                 <ChevronUp className="size-4" strokeWidth={2.5} />
-                <span className="text-2xl font-semibold tabular-nums leading-none">
+                <span className="text-2xl font-medium tabular-nums leading-none">
                   {entry.upvote_count}
                 </span>
-                <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                <span className="text-xs text-[var(--lume-text-secondary)]">
                   {hasVoted ? 'Votato' : 'Vota'}
                 </span>
               </button>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-1 py-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 shadow-sm">
+              <div className="surface-card flex flex-col items-center justify-center gap-1 py-4 text-[var(--lume-text)]">
                 <ChevronUp className="size-4" strokeWidth={2.5} />
-                <span className="text-2xl font-semibold tabular-nums leading-none">
+                <span className="text-2xl font-medium tabular-nums leading-none">
                   {entry.upvote_count}
                 </span>
-                <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                <span className="text-xs text-[var(--lume-text-secondary)]">
                   {entry.upvote_count === 1 ? 'voto' : 'voti'}
                 </span>
               </div>
             )}
-            <div className="flex flex-col items-center justify-center gap-1 py-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 shadow-sm">
+            <div className="surface-card flex flex-col items-center justify-center gap-1 py-4 text-[var(--lume-text)]">
               <MessageSquare className="size-4" />
-              <span className="text-2xl font-semibold tabular-nums leading-none">
+              <span className="text-2xl font-medium tabular-nums leading-none">
                 {entry.comment_count}
               </span>
-              <span className="text-2xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+              <span className="text-xs text-[var(--lume-text-secondary)]">
                 {entry.comment_count === 1 ? 'commento' : 'commenti'}
               </span>
             </div>
@@ -258,52 +255,49 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           {/* Dettagli card */}
           <Card>
             <CardHeader icon={Info} title="Dettagli" />
-            <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className="flex flex-col divide-y divide-line">
               <DetailRow icon={Tag} label="Tipo">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${typeMeta.badge}`}>
-                  <typeMeta.icon className="size-3.5" strokeWidth={2} />
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--lume-text-secondary)]">
+                  <typeMeta.icon className={`size-3.5 ${typeMeta.badge}`} strokeWidth={2} />
                   {typeMeta.label}
                 </span>
               </DetailRow>
               <DetailRow icon={CircleDot} label="Stato">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${statusMeta.badge}`}>
-                  <span className={`size-1.5 rounded-full ${STATUS_DOT_CLASS[entry.status]}`} />
+                <StatusDot tone={statusMeta.tone} className="text-xs font-medium">
                   {statusMeta.label}
-                </span>
+                </StatusDot>
               </DetailRow>
               {entry.author_salon_name && (
                 <DetailRow icon={Store} label="Salone">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 max-w-[10.5rem] truncate">
+                  <span className="text-xs font-medium text-[var(--lume-text)] max-w-42 truncate">
                     {entry.author_salon_name}
                   </span>
                 </DetailRow>
               )}
               {isOwnEntry && (
                 <DetailRow icon={User} label="Autore">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-600 dark:text-zinc-300">
-                    Tuo
-                  </span>
+                  <LabelTag>Tuo</LabelTag>
                 </DetailRow>
               )}
             </div>
             {(entry.linked_branch || entry.linked_pr_url) && (
-              <div className="flex flex-col gap-1.5 px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30">
+              <div className="flex flex-col gap-1.5 px-4 py-3 border-t border-line bg-hover">
                 {entry.linked_branch && (
-                  <div className="flex flex-row items-center gap-1.5 text-xs text-primary-hover dark:text-primary/80 min-w-0">
+                  <div className="flex flex-row items-center gap-1.5 text-xs text-[var(--lume-text-secondary)] min-w-0">
                     <GitBranch className="size-3.5 shrink-0" />
                     <code className="font-mono truncate">{entry.linked_branch}</code>
                   </div>
                 )}
                 {entry.linked_pr_url && (
-                  <a
+                  <TextLink
                     href={entry.linked_pr_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-row items-center gap-1.5 text-xs text-primary-hover dark:text-primary/80 hover:underline"
+                    className="inline-flex flex-row items-center gap-1.5 self-start text-xs font-normal"
                   >
-                    <ExternalLink className="size-3.5 shrink-0" />
+                    <ExternalLink className="size-3.5 shrink-0" aria-hidden />
                     Apri PR
-                  </a>
+                  </TextLink>
                 )}
               </div>
             )}
@@ -311,60 +305,37 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
 
           {/* Admin status editor */}
           {isAdmin && (
-            <div className="flex flex-col rounded-xl border border-primary/25 bg-primary/[0.04] dark:bg-primary/[0.07] shadow-sm overflow-hidden">
-              <div className="flex flex-row items-center gap-2 px-4 py-2.5 border-b border-primary/15">
-                <div className="flex items-center justify-center rounded-md bg-primary/10 p-1">
-                  <Settings2 className="size-3.5 text-primary-hover dark:text-primary/80" strokeWidth={2.25} />
-                </div>
-                <h3 className="text-2xs font-semibold uppercase tracking-[0.12em] text-primary-hover dark:text-primary/80">
-                  Stato · Admin
-                </h3>
-              </div>
-              <div className="flex flex-col gap-1 p-2">
-                {STATUS_OPTIONS.map((s) => {
-                  const isSelected = entry.status === s;
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => handleStatusChange(s)}
-                      className={`group flex flex-row items-center justify-between gap-2 w-full px-2.5 py-2 rounded-lg text-sm transition-all ${
-                        isSelected
-                          ? 'bg-white dark:bg-zinc-900 text-primary-hover dark:text-primary/80 font-medium shadow-sm ring-1 ring-primary/30'
-                          : 'text-zinc-600 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-900/40'
-                      }`}
-                    >
-                      <span className="flex flex-row items-center gap-2.5">
-                        <span className={`size-2 rounded-full ${STATUS_DOT_CLASS[s]}`} />
-                        {STATUS_META[s].label}
-                      </span>
-                      {isSelected && <Check className="size-3.5" strokeWidth={2.5} />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <Card>
+              <CardHeader icon={Settings2} title="Stato · Admin" />
+              <ListBox role="listbox" aria-label="Stato del feedback" className="p-2">
+                {STATUS_OPTIONS.map((s) => (
+                  <ListRow
+                    key={s}
+                    selected={entry.status === s}
+                    check
+                    onClick={() => handleStatusChange(s)}
+                  >
+                    <StatusDot tone={STATUS_META[s].tone}>{STATUS_META[s].label}</StatusDot>
+                  </ListRow>
+                ))}
+              </ListBox>
+            </Card>
           )}
 
           {/* Actions card */}
-          <div className="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="flex flex-row items-center gap-2.5 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors text-left"
-            >
-              <Link2 className="size-4 text-zinc-500 dark:text-zinc-400" /> Copia link
-            </button>
-            {canDelete && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                className="flex flex-row items-center gap-2.5 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-500/5 transition-colors text-left border-t border-zinc-100 dark:border-zinc-800"
-              >
-                <Trash2 className="size-4" /> Elimina feedback
-              </button>
-            )}
-          </div>
+          <Card>
+            <ListBox role="list" aria-label="Azioni">
+              <ListRow icon={Link2} onClick={handleCopyLink}>Copia link</ListRow>
+              {canDelete && (
+                <>
+                  <ListSeparator />
+                  <ListRow icon={Trash2} destructive onClick={() => setShowDeleteModal(true)}>
+                    Elimina feedback
+                  </ListRow>
+                </>
+              )}
+            </ListBox>
+          </Card>
         </aside>
       </div>
 
@@ -378,20 +349,22 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
           title="Elimina feedback"
           subtitle="Questa azione è irreversibile"
           confirmText={isDeleting ? 'Eliminazione…' : 'Elimina'}
-        >
-          <div className="flex flex-col gap-3 text-sm">
-            <p>
-              Stai per eliminare definitivamente{' '}
-              <strong className="text-foreground">{entry.title}</strong>.
-            </p>
-            <p className="text-muted-foreground">
-              Verranno rimossi anche tutti i commenti, i voti e le immagini allegate
-              ({entry.comment_count} {entry.comment_count === 1 ? 'commento' : 'commenti'}
-              {entry.upvote_count > 0 ? `, ${entry.upvote_count} ${entry.upvote_count === 1 ? 'voto' : 'voti'}` : ''}
-              {entry.image_paths.length > 0 ? `, ${entry.image_paths.length} ${entry.image_paths.length === 1 ? 'immagine' : 'immagini'}` : ''}).
-            </p>
-          </div>
-        </DeleteModal>
+          busy={isDeleting}
+          warning={
+            <>
+              <p>
+                Stai per eliminare definitivamente{' '}
+                <strong className="font-medium text-[var(--lume-text)]">{entry.title}</strong>.
+              </p>
+              <p className="mt-2">
+                Verranno rimossi anche tutti i commenti, i voti e le immagini allegate
+                ({entry.comment_count} {entry.comment_count === 1 ? 'commento' : 'commenti'}
+                {entry.upvote_count > 0 ? `, ${entry.upvote_count} ${entry.upvote_count === 1 ? 'voto' : 'voti'}` : ''}
+                {entry.image_paths.length > 0 ? `, ${entry.image_paths.length} ${entry.image_paths.length === 1 ? 'immagine' : 'immagini'}` : ''}).
+              </p>
+            </>
+          }
+        />
       )}
     </div>
   );
@@ -399,7 +372,7 @@ export function FeedbackDetailView({ entry, isAdmin, backHref, allowUpvote = tru
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+    <div className="surface-card flex flex-col overflow-hidden">
       {children}
     </div>
   );
@@ -413,11 +386,9 @@ function CardHeader({
   title: string;
 }) {
   return (
-    <div className="flex flex-row items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
-      <div className="flex items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800 p-1">
-        <Icon className="size-3.5 text-zinc-500 dark:text-zinc-400" strokeWidth={2.25} />
-      </div>
-      <h3 className="text-2xs font-semibold uppercase tracking-[0.12em] text-zinc-700 dark:text-zinc-200">
+    <div className="flex flex-row items-center gap-2 px-4 py-2.5 border-b border-line">
+      <Icon className="size-3.5 text-[var(--lume-text-muted)]" strokeWidth={2.25} />
+      <h3 className="text-xs font-medium text-[var(--lume-text)]">
         {title}
       </h3>
     </div>
@@ -435,7 +406,7 @@ function DetailRow({
 }) {
   return (
     <div className="flex flex-row items-center justify-between gap-2 px-4 py-2.5">
-      <div className="flex flex-row items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-row items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
         <Icon className="size-3.5" strokeWidth={2} />
         <span>{label}</span>
       </div>

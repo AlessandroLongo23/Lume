@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ImagePlus, Save, Trash2, Loader2, Palette } from 'lucide-react';
+import { ImagePlus, Save, Trash2, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { ColorSwatchPicker } from '@/lib/components/shared/ui/forms/ColorSwatchPicker';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -79,15 +81,15 @@ function ImageUploader({
 
   return (
     <div className="flex items-center gap-5">
-      <div className="size-20 rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+      <div className="surface-card size-20 shrink-0 overflow-hidden flex items-center justify-center">
         {url ? (
           <Image src={url} alt={kind} width={80} height={80} className="size-full object-contain" />
         ) : (
-          <ImagePlus className="size-6 text-zinc-300 dark:text-zinc-600" />
+          <ImagePlus className="size-6 text-[var(--lume-text-muted)]" />
         )}
       </div>
       <div className="flex flex-col gap-2 flex-1 min-w-0">
-        <p className="text-xs text-zinc-500">{description}</p>
+        <p className="text-sm text-[var(--lume-text-secondary)]">{description}</p>
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
@@ -99,11 +101,10 @@ function ImageUploader({
           </Button>
           {url && (
             <Button
-              variant="ghost"
+              variant="ghost-destructive"
               leadingIcon={Trash2}
               disabled={busy}
               onClick={onRemove}
-              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             >
               Rimuovi
             </Button>
@@ -153,7 +154,7 @@ export function BrandingPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -163,7 +164,6 @@ export function BrandingPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={ImagePlus}
         title="Logo"
         description="Mostrato nella barra laterale, ricevute e pagine pubbliche."
       >
@@ -176,7 +176,6 @@ export function BrandingPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={ImagePlus}
         title="Favicon"
         description="L'icona mostrata nella scheda del browser."
       >
@@ -189,37 +188,34 @@ export function BrandingPanel() {
       </SettingsCard>
 
       <SettingsCard
-        icon={Palette}
         title="Colore principale"
         description="Usato per accenti su ricevute e materiali brandizzati. Lascia vuoto per il default Lume."
       >
         <div className="flex flex-wrap items-center gap-3">
+          {/* Native colour well: the system picker for any colour; no library piece wraps it. */}
           <input
             type="color"
+            aria-label="Scegli il colore"
             value={color || '#6366F1'}
             onChange={(e) => setColor(e.target.value)}
-            className="size-10 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent cursor-pointer"
+            className="size-[var(--lume-control-h-md)] pointer-coarse:size-[var(--lume-control-h-lg)] rounded-lg border-0 edge bg-transparent cursor-pointer"
           />
-          <input
-            type="text"
+          <FormInput
+            aria-label="Colore esadecimale"
             value={color}
             onChange={(e) => setColor(e.target.value)}
             placeholder="#6366F1"
             maxLength={9}
-            className="w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+            fieldClassName="w-32"
+            className="tabular-nums"
           />
-          <div className="flex items-center gap-1.5">
-            {SWATCHES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setColor(s)}
-                aria-label={`Imposta ${s}`}
-                className="size-6 rounded-full border-2 border-white dark:border-zinc-800 shadow-sm transition-transform hover:scale-110"
-                style={{ backgroundColor: s }}
-              />
-            ))}
-          </div>
+          <ColorSwatchPicker
+            value={color.toUpperCase() || null}
+            onChange={(c) => setColor(c ?? '')}
+            colors={SWATCHES}
+            columns={SWATCHES.length}
+            ariaLabel="Colori suggeriti"
+          />
           <Button
             variant="primary"
             leadingIcon={Save}

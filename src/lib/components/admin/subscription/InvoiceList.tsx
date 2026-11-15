@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { Download, FileText, Loader2 } from 'lucide-react';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import type { Invoice, InvoiceStatus } from '@/lib/types/Subscription';
+import { StatusDot, type StatusTone } from '@/lib/components/shared/ui/StatusDot';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { formatCurrency } from '@/lib/utils/format';
 
 // `refunded` and `partially_refunded` are UI-only states derived from
 // invoice.refundedAmount; Stripe itself keeps invoice.status = 'paid' after
@@ -20,20 +23,20 @@ const STATUS_LABEL: Record<DisplayStatus, string> = {
   partially_refunded: 'Parzialmente rimborsata',
 };
 
-function statusClasses(status: DisplayStatus): string {
+function statusTone(status: DisplayStatus): StatusTone {
   switch (status) {
     case 'paid':
-      return 'bg-success-soft text-success-strong';
+      return 'success';
     case 'open':
-      return 'bg-warning-soft text-warning-strong';
+      return 'warning';
     case 'uncollectible':
-      return 'bg-danger-soft text-danger-strong';
+      return 'danger';
     case 'refunded':
     case 'partially_refunded':
     case 'void':
     case 'draft':
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'neutral';
   }
 }
 
@@ -48,7 +51,7 @@ const formatInvoiceDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
 
 const formatAmount = (amount: number, currency: string): string => {
-  if (currency === 'EUR') return `${amount.toFixed(2).replace('.', ',')} €`;
+  if (currency === 'EUR') return formatCurrency(amount);
   return `${amount.toFixed(2)} ${currency}`;
 };
 
@@ -57,46 +60,44 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
   const isRefunded = status === 'refunded' || status === 'partially_refunded';
 
   return (
-    <li className="flex items-center gap-4 px-5 py-3 hover:bg-muted/40 transition-colors">
+    <li className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-1 px-5 py-3">
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-foreground">
+        <div className="text-sm text-[var(--lume-text)]">
           {formatInvoiceDate(invoice.createdAt)}
         </div>
         {invoice.number && (
-          <div className="font-mono text-2xs text-muted-foreground mt-0.5">
+          <div className="tabular-nums text-xs text-[var(--lume-text-muted)] mt-0.5">
             {invoice.number}
           </div>
         )}
       </div>
 
-      <div className="font-mono text-sm tabular-nums w-32 text-right">
-        <div className={isRefunded ? 'text-muted-foreground line-through' : 'text-foreground'}>
+      <div className="tabular-nums text-sm w-28 text-right">
+        <div className={isRefunded ? 'text-[var(--lume-text-muted)] line-through' : 'text-[var(--lume-text)]'}>
           {formatAmount(invoice.amount, invoice.currency)}
         </div>
         {status === 'partially_refunded' && (
-          <div className="text-2xs text-muted-foreground mt-0.5 no-underline">
+          <div className="text-xs text-[var(--lume-text-muted)] mt-0.5">
             −{formatAmount(invoice.refundedAmount, invoice.currency)}
           </div>
         )}
       </div>
 
-      <div className="w-40 flex justify-center">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium ${statusClasses(status)}`}>
-          {STATUS_LABEL[status]}
-        </span>
+      <div className="w-40 flex">
+        <StatusDot tone={statusTone(status)} className="text-sm">{STATUS_LABEL[status]}</StatusDot>
       </div>
 
       <div className="w-12 flex justify-end">
         {invoice.invoicePdfUrl ? (
-          <a
-            href={invoice.invoicePdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center size-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label={`Scarica fattura del ${formatInvoiceDate(invoice.createdAt)}`}
-          >
-            <Download className="size-4" />
-          </a>
+          <Button asChild variant="ghost" size="sm" iconOnly aria-label={`Scarica fattura del ${formatInvoiceDate(invoice.createdAt)}`}>
+            <a
+              href={invoice.invoicePdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Download />
+            </a>
+          </Button>
         ) : (
           <span className="size-8" aria-hidden />
         )}
@@ -123,24 +124,24 @@ export function InvoiceList() {
   return (
     // Receipt-Paper aesthetic: deliberately off-palette warm white in light mode
     // (matches the Fiche thermal-receipt surface), neutral surface in dark.
-    <div className="rounded-xl border border-border bg-receipt overflow-hidden">
-      <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-card/40">
+    <section className="rounded-xl bg-receipt shadow-[inset_0_0_0_1px_var(--lume-line)] overflow-hidden">
+      <header className="flex items-center justify-between px-5 py-3 border-b border-line">
         <div className="flex items-center gap-2">
-          <FileText className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">Fatture</h3>
+          <FileText className="size-4 text-[var(--lume-text-muted)]" aria-hidden />
+          <h3 className="text-sm font-medium text-[var(--lume-text)]">Fatture</h3>
         </div>
-        <span className="text-2xs text-muted-foreground">Ultime 12</span>
+        <span className="text-xs text-[var(--lume-text-muted)]">Ultime 12</span>
       </header>
 
       {isLoading && invoices.length === 0 ? (
         <div className="flex items-center justify-center py-10">
-          <Loader2 className="size-5 text-muted-foreground animate-spin" />
+          <Loader2 className="size-5 text-[var(--lume-text-muted)] animate-spin motion-reduce:animate-none" />
         </div>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-line">
           {invoices.map((inv) => <InvoiceRow key={inv.id} invoice={inv} />)}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

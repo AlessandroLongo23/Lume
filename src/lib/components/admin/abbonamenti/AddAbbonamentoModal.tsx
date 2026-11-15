@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { BadgePercent, User, Hash, Percent, Wallet, Banknote, CreditCard, Landmark, Calendar, FileText } from 'lucide-react';
+import { User, Hash, Percent, Wallet, Banknote, CreditCard, Landmark, Calendar, FileText } from 'lucide-react';
 import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
 import { useServicesStore } from '@/lib/stores/services';
@@ -9,6 +9,9 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateField } from '@/lib/components/shared/ui/forms/DateField';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { Switch } from '@/lib/components/shared/ui/Switch';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { ServicesMultiSelect } from './ServicesMultiSelect';
@@ -97,6 +100,8 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
       return 'Percentuale di sconto non valida (0–100)';
     }
     if (pricingMode === 'manual' && (totalPaid == null || totalPaid < 0)) return 'Inserisci l\'importo incassato';
+    if (!validFrom) return 'Inserisci una data di inizio valida';
+    if (hasExpiry && !validUntil) return 'Inserisci una data di scadenza valida';
     if (hasExpiry && new Date(validFrom) > new Date(validUntil)) {
       return 'La data di inizio deve precedere la scadenza';
     }
@@ -135,10 +140,6 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
     }
   }
 
-  const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50';
-  const labelClass =
-    'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   return (
     <AddModal
@@ -147,153 +148,163 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
       onSubmit={handleSubmit}
       title="Nuovo abbonamento"
       subtitle="Pacchetto di sedute prepagato"
-      icon={BadgePercent}
       classes="max-w-2xl"
-      contentClasses="overflow-y-auto"
       confirmText={isSubmitting ? 'Creazione…' : 'Crea abbonamento'}
       confirmDataTour="save-abbonamento"
       onEnterComplete={() => emitTourEvent('abbonamento:modal-open')}
     >
       <div data-tour="abbonamento-form" className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass}><User className="size-3.5" />Cliente *</label>
-          <Select
-            options={clientOptions}
-            labelKey="fullName"
-            valueKey="id"
-            value={clientId}
-            onChange={(v) => { setClientId(v); emitTourEvent('abbonamento:client-selected'); }}
-            placeholder="Cerca cliente…"
-          />
-        </div>
+        <Field label="Cliente" labelIcon={User} required>
+          {({ id }) => (
+            <Select
+              id={id}
+              options={clientOptions}
+              labelKey="fullName"
+              valueKey="id"
+              value={clientId}
+              onChange={(v) => { setClientId(v); emitTourEvent('abbonamento:client-selected'); }}
+              placeholder="Cerca cliente…"
+            />
+          )}
+        </Field>
 
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass}>Servizi inclusi *</label>
-          <ServicesMultiSelect
-            selectedIds={scopeIds}
-            onChange={(ids) => { setScopeIds(ids); if (ids.length > 0) emitTourEvent('abbonamento:service-added'); }}
-          />
-          {scopeIds.length > 0 && (
-            <p className="text-xs text-zinc-500">
-              {scopeIds.length === 1
+        <Field
+          label="Servizi inclusi"
+          required
+          hint={
+            scopeIds.length === 0
+              ? undefined
+              : scopeIds.length === 1
                 ? 'Una sola seduta di questo servizio per ogni utilizzo.'
-                : `${scopeIds.length} servizi: il cliente può usare una seduta per uno qualsiasi.`}
-            </p>
+                : `${scopeIds.length} servizi: il cliente può usare una seduta per uno qualsiasi.`
+          }
+        >
+          {() => (
+            <ServicesMultiSelect
+              selectedIds={scopeIds}
+              onChange={(ids) => { setScopeIds(ids); if (ids.length > 0) emitTourEvent('abbonamento:service-added'); }}
+            />
           )}
-        </div>
+        </Field>
 
-        <div data-tour="field-abbonamento-treatments" className="flex flex-col gap-1.5">
-          <label className={labelClass}><Hash className="size-3.5" />Sedute totali *</label>
-          <NumberInput
-            value={totalTreatments}
-            onChange={setTotalTreatments}
-            min={1}
-            step={1}
-            decimals={0}
-            size="lg"
-            width="w-36"
-          />
-        </div>
-
-        <div data-tour="field-abbonamento-pricing" className="flex flex-col gap-2">
-          <label className={labelClass}>Prezzo *</label>
-          <ToggleButton
-            options={['percent', 'manual'] as AbbonamentoPricingMode[]}
-            labels={['Sconto %', 'Totale manuale']}
-            icons={[Percent, Wallet]}
-            value={pricingMode}
-            onChange={(v) => setPricingMode(v as AbbonamentoPricingMode)}
-            className="w-full"
-          />
-
-          {pricingMode === 'percent' ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <NumberInput
-                  value={discountPercent}
-                  onChange={setDiscountPercent}
-                  min={0}
-                  max={100}
-                  step={1}
-                  decimals={0}
-                  suffix="%"
-                  size="lg"
-                  width="w-32"
-                />
-                <span className="text-xs text-zinc-400">di sconto sul listino</span>
-              </div>
-              {referenceListPrice > 0 && (
-                <div className="flex flex-col gap-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 px-3 py-2 text-xs">
-                  <span className="text-zinc-500">
-                    Prezzo di listino: <span className="font-mono">€ {referenceListPrice.toFixed(2)}</span>
-                  </span>
-                  <span className="text-zinc-900 dark:text-zinc-100 font-medium">
-                    Totale da incassare: <span className="font-mono">€ {(computedFromPercent ?? 0).toFixed(2)}</span>
-                  </span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <NumberInput
-                value={totalPaid}
-                onChange={setTotalPaid}
-                min={0}
+        <div data-tour="field-abbonamento-treatments">
+          <Field label="Sedute totali" labelIcon={Hash} required>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid}
+                value={totalTreatments}
+                onChange={setTotalTreatments}
+                min={1}
                 step={1}
-                decimals={2}
-                suffix="€"
-                size="lg"
-                width="w-36"
+                className="w-36"
               />
-              <span className="text-xs text-zinc-400">totale incassato</span>
-            </div>
-          )}
+            )}
+          </Field>
         </div>
 
-        <div data-tour="field-abbonamento-payment" className="flex flex-col gap-1.5">
-          <label className={labelClass}>Metodo di pagamento *</label>
-          <ToggleButton
-            options={['cash', 'card', 'transfer'] as AbbonamentoPaymentMethod[]}
-            labels={['Contanti', 'Carta', 'Bonifico']}
-            icons={[Banknote, CreditCard, Landmark]}
-            value={paymentMethod}
-            onChange={(v) => setPaymentMethod(v as AbbonamentoPaymentMethod)}
-            className="w-full"
-          />
+        <div data-tour="field-abbonamento-pricing">
+          <Field label="Prezzo" required>
+            {() => (
+              <div className="flex flex-col gap-2">
+                <ToggleButton
+                  ariaLabel="Modalità di prezzo"
+                  options={['percent', 'manual'] as AbbonamentoPricingMode[]}
+                  labels={['Sconto %', 'Totale manuale']}
+                  icons={[Percent, Wallet]}
+                  value={pricingMode}
+                  onChange={(v) => setPricingMode(v as AbbonamentoPricingMode)}
+                  className="w-full"
+                />
+
+                {pricingMode === 'percent' ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <NumberInput aria-label="Sconto sul listino in percentuale"
+                        value={discountPercent}
+                        onChange={setDiscountPercent}
+                        min={0}
+                        max={100}
+                        step={1}
+                        suffix="%"
+                        className="w-32"
+                      />
+                      <span className="text-xs text-[var(--lume-text-muted)]">di sconto sul listino</span>
+                    </div>
+                    {referenceListPrice > 0 && (
+                      <div className="flex flex-col gap-0.5 surface-card px-3 py-2 text-xs">
+                        <span className="text-[var(--lume-text-secondary)]">
+                          Prezzo di listino: <span className="tabular-nums">€ {referenceListPrice.toFixed(2)}</span>
+                        </span>
+                        <span className="text-[var(--lume-text)] font-medium">
+                          Totale da incassare: <span className="tabular-nums">€ {(computedFromPercent ?? 0).toFixed(2)}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <NumberInput aria-label="Totale incassato"
+                      value={totalPaid}
+                      onChange={setTotalPaid}
+                      min={0}
+                      step={1}
+                      decimals={2}
+                      suffix="€"
+                      className="w-36"
+                    />
+                    <span className="text-xs text-[var(--lume-text-muted)]">totale incassato</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </Field>
+        </div>
+
+        <div data-tour="field-abbonamento-payment">
+          <Field label="Metodo di pagamento" required>
+            {() => (
+              <ToggleButton
+                ariaLabel="Metodo di pagamento"
+                options={['cash', 'card', 'transfer'] as AbbonamentoPaymentMethod[]}
+                labels={['Contanti', 'Carta', 'Bonifico']}
+                icons={[Banknote, CreditCard, Landmark]}
+                value={paymentMethod}
+                onChange={(v) => setPaymentMethod(v as AbbonamentoPaymentMethod)}
+                className="w-full"
+              />
+            )}
+          </Field>
         </div>
 
         <div data-tour="field-abbonamento-validity" className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}><Calendar className="size-3.5" />Valido dal *</label>
-            <input
-              type="date"
-              className={inputClass}
-              value={validFrom}
-              onChange={(e) => setValidFrom(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className={labelClass}><Calendar className="size-3.5" />Scadenza</label>
-              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span>Imposta</span>
-                <Switch checked={hasExpiry} onChange={() => setHasExpiry((v) => !v)} />
-              </div>
-            </div>
-            <input
-              type="date"
-              className={`${inputClass} ${hasExpiry ? '' : 'opacity-40 pointer-events-none'}`}
-              value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
-              disabled={!hasExpiry}
-            />
-          </div>
+          <Field label="Valido dal" labelIcon={Calendar} required>
+            {({ id }) => <DateField id={id} value={validFrom} onChange={setValidFrom} />}
+          </Field>
+          <Field
+            label="Scadenza"
+            labelIcon={Calendar}
+            labelAction={
+              <span className="flex items-center gap-2 text-xs text-[var(--lume-text-secondary)]">
+                Imposta
+                <Switch aria-label="Imposta una scadenza" checked={hasExpiry} onChange={() => setHasExpiry((v) => !v)} />
+              </span>
+            }
+          >
+              {({ id }) => (
+                <DateField
+                  id={id}
+                  value={validUntil}
+                  onChange={setValidUntil}
+                  min={validFrom || undefined}
+                  disabled={!hasExpiry}
+                />
+              )}
+            </Field>
         </div>
 
-        <div data-tour="field-abbonamento-notes" className="flex flex-col gap-1.5">
-          <label className={labelClass}><FileText className="size-3.5" />Note</label>
-          <textarea
-            className={`${inputClass} resize-none`}
+        <div data-tour="field-abbonamento-notes">
+          <TextArea
+            label="Note"
+            labelIcon={FileText}
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -301,7 +312,7 @@ export function AddAbbonamentoModal({ isOpen, onClose }: AddAbbonamentoModalProp
           />
         </div>
 
-        {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+        {errorMessage && <p className="text-sm text-danger-strong">{errorMessage}</p>}
       </div>
     </AddModal>
   );

@@ -15,18 +15,18 @@ export function TaxSimulatorCard({ utile, taxRate, onTaxRateChange }: TaxSimulat
   const resta = utile - tasse;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6 flex flex-col gap-5">
+    <div className="surface-card p-6 flex flex-col gap-5">
       <div>
-        <h3 className="text-base font-semibold text-foreground">Stima delle tasse</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">Stima delle tasse</h3>
+        <p className="text-sm text-[var(--lume-text-secondary)] mt-1">
           Calcolata sull&apos;utile senza IVA, al netto delle spese.
         </p>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Aliquota stimata</span>
-          <span className="text-sm font-semibold tabular-nums text-foreground">{taxRate}%</span>
+          <span className="text-sm text-[var(--lume-text-secondary)]">Aliquota stimata</span>
+          <span className="text-sm tabular-nums text-[var(--lume-text)]">{taxRate}%</span>
         </div>
         <Slider
           min={0}
@@ -38,25 +38,25 @@ export function TaxSimulatorCard({ utile, taxRate, onTaxRateChange }: TaxSimulat
         />
       </div>
 
-      <dl className="flex flex-col divide-y divide-border rounded-md border border-border text-sm">
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <dt className="text-muted-foreground">Utile</dt>
-          <dd className="font-mono tabular-nums text-foreground">{formatCurrency(utile)}</dd>
+      <dl className="flex flex-col divide-y divide-line border-y border-line text-sm">
+        <div className="flex items-center justify-between py-2.5">
+          <dt className="text-[var(--lume-text-secondary)]">Utile</dt>
+          <dd className="tabular-nums text-[var(--lume-text)]">{formatCurrency(utile)}</dd>
         </div>
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <dt className="text-muted-foreground">Tasse stimate ({taxRate}%)</dt>
-          <dd className="font-mono tabular-nums text-foreground">− {formatCurrency(tasse)}</dd>
+        <div className="flex items-center justify-between py-2.5">
+          <dt className="text-[var(--lume-text-secondary)]">Tasse stimate ({taxRate}%)</dt>
+          <dd className="tabular-nums text-[var(--lume-text)]">− {formatCurrency(tasse)}</dd>
         </div>
       </dl>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">Ti resta</span>
-        <span className={`font-mono text-lg font-semibold tabular-nums ${resta < 0 ? 'text-danger-strong' : 'text-foreground'}`}>
+        <span className="text-sm font-medium text-[var(--lume-text)]">Ti resta</span>
+        <span className={`tabular-nums text-2xl font-normal tracking-tight ${resta < 0 ? 'text-danger-strong' : 'text-[var(--lume-text)]'}`}>
           {formatCurrency(resta)}
         </span>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-xs text-[var(--lume-text-muted)] leading-relaxed">
         È una stima indicativa: il calcolo esatto dipende dalla tua situazione fiscale completa.
       </p>
     </div>

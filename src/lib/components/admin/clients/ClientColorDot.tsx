@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useRef } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Portal } from '@/lib/components/shared/ui/Portal';
-import { ClientColorPicker } from './ClientColorPicker';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { ColorSwatchPicker } from '@/lib/components/shared/ui/forms/ColorSwatchPicker';
 import { colorForClient } from '@/lib/utils/clientColor';
 
 interface ClientColorDotProps {
@@ -12,10 +14,6 @@ interface ClientColorDotProps {
   color: string | null;
   /** Called when the user picks a swatch or resets to auto. */
   onChange: (color: string | null) => void | Promise<void>;
-  /** Render size in px. Default 12. */
-  size?: number;
-  /** Accessible label for the trigger. */
-  ariaLabel?: string;
 }
 
 /**
@@ -27,59 +25,19 @@ export function ClientColorDot({
   clientId,
   color,
   onChange,
-  size = 12,
-  ariaLabel = 'Cambia colore cliente',
 }: ClientColorDotProps) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
+  const { open, toggle, hide, position, panelRef, side } = useAnchoredPopover(triggerRef, { panelMaxHeight: 200, offset: 6 });
 
   const displayed = colorForClient({ id: clientId, color });
-
-  useLayoutEffect(() => {
-    if (!open || !triggerRef.current) return;
-    const update = () => {
-      const r = triggerRef.current!.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
 
   return (
     <>
       <button
+        // ds-ignore: a 12px colour swatch that opens the colour picker, sitting inside the fiche block header; Button's smallest size is 32px and would change the look
         ref={triggerRef}
         type="button"
-        aria-label={ariaLabel}
+        aria-label="Cambia colore cliente"
         aria-haspopup="dialog"
         aria-expanded={open}
         onPointerDown={(e) => {
@@ -89,39 +47,39 @@ export function ClientColorDot({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          setOpen((v) => !v);
+          toggle();
         }}
-        className="shrink-0 rounded-full ring-1 ring-black/15 dark:ring-white/20 hover:ring-2 hover:ring-zinc-400 transition-[box-shadow] cursor-pointer"
-        style={{ width: size, height: size, backgroundColor: displayed }}
+        className="size-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_var(--lume-edge)] hover:shadow-[inset_0_0_0_2px_var(--lume-edge-hover)] transition-[box-shadow] cursor-pointer"
+        style={{ backgroundColor: displayed }}
       />
-      <AnimatePresence>
-        {open && pos && (
-          <Portal>
-            <motion.div
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
               ref={panelRef}
+              side={side}
+              layer="dropdown"
               role="dialog"
               aria-label="Colore cliente"
-              className="fixed z-dropdown bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3"
-              style={{ top: pos.top, left: pos.left, transformOrigin: '0% 0%' }}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -6 }}
-              transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.22, 1, 0.36, 1] }}
+              className="p-3"
+              style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom }}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              <ClientColorPicker
+              <ColorSwatchPicker
                 value={color}
                 onChange={(next) => {
                   void onChange(next);
-                  setOpen(false);
+                  hide();
                 }}
-                clientId={clientId}
+                allowAuto
+                ariaLabel="Colore cliente"
+                hint="Puoi cambiare il colore in qualsiasi momento."
               />
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </>
   );
 }

@@ -147,7 +147,6 @@ export default function ProspectsPage() {
         <PageHeader
           title="Prospect"
           subtitle="Gestisci le chiamate commerciali ai saloni italiani."
-          icon={Building2}
           actions={
             <>
               <Button

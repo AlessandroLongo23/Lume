@@ -2,8 +2,9 @@
 //
 // Owners pick a single hex color in BrandingPanel; the public salon page
 // derives hover/active/light/muted variants from it via CSS `color-mix(in
-// oklch, ...)` so a salon's accent flows through buttons, focus rings, chips,
-// and selection backgrounds without any extra owner input.
+// oklch, ...)` so a salon's accent flows through buttons, focus rings and
+// chips without any extra owner input. Only tokens something reads belong
+// here: `npm run ds:report` lists --lume-* tokens nothing references.
 //
 // Mechanism mirrors how ThemeProvider swaps the light/dark token set: we
 // write a `<style>` tag that re-declares a handful of `--lume-*` semantic
@@ -23,14 +24,11 @@ export function getBrandStyleCSS(brandColor: string | null | undefined): string 
 
   return `:root {
   --lume-accent: ${hex};
-  --lume-accent-dark: color-mix(in oklch, ${hex} 88%, black);
   --lume-accent-light: color-mix(in oklch, ${hex} 12%, white);
   --lume-accent-muted: color-mix(in oklch, ${hex} 12%, transparent);
-  --lume-border-accent: ${hex};
   --lume-button-accent-bg: ${hex};
   --lume-button-accent-bg-hover: color-mix(in oklch, ${hex} 88%, black);
   --lume-button-accent-bg-active: color-mix(in oklch, ${hex} 76%, black);
   --lume-ring-focus: ${hex};
-  --lume-selection: color-mix(in oklch, ${hex} 18%, white);
 }`;
 }

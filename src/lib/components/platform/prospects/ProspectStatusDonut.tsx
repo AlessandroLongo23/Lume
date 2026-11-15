@@ -9,37 +9,36 @@ import {
   STATUS_LABEL,
   type ProspectStatus,
 } from '@/lib/types/Prospect';
-import { cn } from '@/lib/utils';
 import { ProspectStatusChip } from './ProspectStatusChip';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { StatRow, Stat } from '@/lib/components/shared/ui/StatRow';
 
 const readVar = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-// Status → CSS variable used for that slice's color. Chart-* vars are bridged
-// to the Lume palette (see globals.css) and adapt to dark/light mode.
+// Status → CSS variable used for that slice's color. The --lume-series-*
+// tokens (semantic.css) adapt to dark/light mode.
 const STATUS_VAR: Record<ProspectStatus, string> = {
-  not_contacted:      '--muted-foreground',
-  no_answer:          '--color-neutral-400',
-  callback_scheduled: '--chart-4',
-  not_interested:     '--chart-5',
-  no_pc:              '--color-danger-400',
-  interested:         '--chart-1',
-  materials_sent:     '--chart-2',
-  signed_up:          '--chart-3',
+  not_contacted:      '--lume-text-muted',
+  no_answer:          '--color-neutral-400', // ds-ignore: a grey slice beside text-muted, the same step in both themes
+  callback_scheduled: '--lume-series-4',
+  not_interested:     '--lume-series-5',
+  no_pc:              '--color-danger-400', // ds-ignore: a red slice apart from series 5, the same step in both themes
+  interested:         '--lume-series-1',
+  materials_sent:     '--lume-series-2',
+  signed_up:          '--lume-series-3',
 };
 
 interface ProspectStatusDonutProps {
   prospects:        Prospect[];
   activeStatuses:   ProspectStatus[];
   onToggleStatus:   (s: ProspectStatus) => void;
-  className?:       string;
 }
 
 export function ProspectStatusDonut({
   prospects,
   activeStatuses,
   onToggleStatus,
-  className,
 }: ProspectStatusDonutProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
@@ -72,7 +71,7 @@ export function ProspectStatusDonut({
       svg.append('circle')
         .attr('r', radius - 4)
         .attr('fill', 'none')
-        .attr('stroke', readVar('--border') || '#e4e4e7')
+        .attr('stroke', readVar('--lume-border') || '#e4e4e7')
         .attr('stroke-width', radius - innerRadius)
         .attr('stroke-dasharray', '4 4');
 
@@ -80,7 +79,7 @@ export function ProspectStatusDonut({
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
         .attr('font-size', '14px')
-        .attr('fill', readVar('--muted-foreground') || '#71717a')
+        .attr('fill', readVar('--lume-text-muted') || '#71717a')
         .text('Nessun dato');
       return;
     }
@@ -107,29 +106,28 @@ export function ProspectStatusDonut({
       .attr('tabindex', 0)
       .attr('aria-label', (d) => `${STATUS_LABEL[d.data.status]}: ${d.data.count}`);
 
-    // Tooltip
-    const tooltip = d3.select(container)
+    // Tooltip: appended to <body> and fixed to the pointer, the d3 equivalent
+    // of <Portal>, so no ancestor's overflow or stacking context can trap it.
+    const tooltip = d3.select(document.body)
       .append('div')
-      .attr('class', 'pointer-events-none absolute hidden z-tooltip rounded-md border border-border bg-popover text-popover-foreground text-xs px-2.5 py-1.5 shadow-lg')
+      .attr('class', 'surface-float pointer-events-none fixed hidden z-tooltip text-xs px-2.5 py-1.5')
       .style('top', '0px')
       .style('left', '0px');
 
     slices
       .on('mouseenter', function (event, d) {
-        d3.select(this).attr('opacity', 1).attr('stroke-width', 2).attr('stroke', readVar('--background'));
-        const containerRect = container.getBoundingClientRect();
+        d3.select(this).attr('opacity', 1).attr('stroke-width', 2).attr('stroke', readVar('--lume-bg'));
         const pct = stats.total > 0 ? (d.data.count / stats.total) * 100 : 0;
         tooltip
           .classed('hidden', false)
-          .html(`<div class="font-medium">${STATUS_LABEL[d.data.status]}</div><div class="text-muted-foreground tabular-nums">${d.data.count} · ${pct.toFixed(0)}%</div>`)
-          .style('top',  `${(event as MouseEvent).clientY - containerRect.top + 12}px`)
-          .style('left', `${(event as MouseEvent).clientX - containerRect.left + 12}px`);
+          .html(`<div class="font-medium">${STATUS_LABEL[d.data.status]}</div><div class="tabular-nums text-[var(--lume-text-secondary)]">${d.data.count} · ${pct.toFixed(0)}%</div>`)
+          .style('top',  `${(event as MouseEvent).clientY + 12}px`)
+          .style('left', `${(event as MouseEvent).clientX + 12}px`);
       })
       .on('mousemove', function (event) {
-        const containerRect = container.getBoundingClientRect();
         tooltip
-          .style('top',  `${(event as MouseEvent).clientY - containerRect.top + 12}px`)
-          .style('left', `${(event as MouseEvent).clientX - containerRect.left + 12}px`);
+          .style('top',  `${(event as MouseEvent).clientY + 12}px`)
+          .style('left', `${(event as MouseEvent).clientX + 12}px`);
       })
       .on('mouseleave', function () {
         d3.select(this)
@@ -155,8 +153,8 @@ export function ProspectStatusDonut({
       .attr('dominant-baseline', 'central')
       .attr('y', -6)
       .attr('font-size', '24px')
-      .attr('font-weight', 600)
-      .attr('fill', readVar('--foreground'))
+      .attr('font-weight', 500)
+      .attr('fill', readVar('--lume-text'))
       .style('font-variant-numeric', 'tabular-nums')
       .text(stats.total);
 
@@ -165,49 +163,40 @@ export function ProspectStatusDonut({
       .attr('dominant-baseline', 'central')
       .attr('y', 14)
       .attr('font-size', '11px')
-      .attr('fill', readVar('--muted-foreground'))
+      .attr('fill', readVar('--lume-text-muted'))
       .text('prospect');
+
+    return () => { tooltip.remove(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prospects, stats, activeStatuses, resolvedTheme]);
 
   const fmtPct = (v: number | null) => v === null ? '—' : `${(v * 100).toFixed(0)}%`;
 
   return (
-    <div className={cn('flex flex-col md:flex-row items-center gap-6', className)}>
+    <div className="flex flex-col md:flex-row items-center gap-6">
       <div ref={containerRef} className="relative shrink-0" />
 
-      <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-        <KpiCard label="Tasso di risposta" value={fmtPct(stats.answerRate)}
-                 sub={`${stats.reached} su ${stats.called} chiamati`} />
-        <KpiCard label="Tasso di interesse" value={fmtPct(stats.interestedRate)}
-                 sub={`${stats.positive} su ${stats.reached} raggiunti`} />
-        <KpiCard label="Materiali inviati"  value={String(stats.sent)}
-                 sub={stats.reached > 0 ? `${fmtPct(stats.sentRate)} dei raggiunti` : '—'} />
-      </div>
+      <StatRow className="flex-1 min-w-0 w-full sm:grid-cols-3">
+        <Stat label="Tasso di risposta" value={fmtPct(stats.answerRate)}>
+          {`${stats.reached} su ${stats.called} chiamati`}
+        </Stat>
+        <Stat label="Tasso di interesse" value={fmtPct(stats.interestedRate)}>
+          {`${stats.positive} su ${stats.reached} raggiunti`}
+        </Stat>
+        <Stat label="Materiali inviati" value={String(stats.sent)}>
+          {stats.reached > 0 ? `${fmtPct(stats.sentRate)} dei raggiunti` : '—'}
+        </Stat>
+      </StatRow>
 
       {/* Inline legend (clickable) — kept compact under the KPI on small screens */}
       <div className="md:hidden flex flex-wrap gap-1.5 w-full">
         {PROSPECT_STATUSES.filter((s) => stats.byStatus[s] > 0).map((s) => (
-          <button
-            key={s}
-            onClick={() => onToggleStatus(s)}
-            className="inline-flex items-center gap-1.5 text-xs"
-          >
+          <Button key={s} variant="ghost" size="sm" pressed={activeStatuses.includes(s)} onClick={() => onToggleStatus(s)} className="h-11 px-2">
             <ProspectStatusChip status={s} size="xs" />
-            <span className="tabular-nums text-muted-foreground">{stats.byStatus[s]}</span>
-          </button>
+            <span className="tabular-nums text-[var(--lume-text-secondary)]">{stats.byStatus[s]}</span>
+          </Button>
         ))}
       </div>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-foreground tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-muted-foreground tabular-nums">{sub}</div>}
     </div>
   );
 }

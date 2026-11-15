@@ -1,9 +1,14 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
-import { SlidersHorizontal, Check } from 'lucide-react';
+import { useRef } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListGroupLabel, ListEmpty, ListSeparator } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
 
 export interface FacetedFilterOption {
   value: string;
@@ -18,87 +23,79 @@ interface FacetedFilterProps {
   onChange: (selected: string[]) => void;
 }
 
-export function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+const PANEL_WIDTH = 224;
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+export function FacetedFilter({ label, options, selected, onChange }: FacetedFilterProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { open, toggle: togglePanel, position, panelRef, side } = useAnchoredPopover(triggerRef, {
+    panelMaxHeight: 300,
+    offset: 6,
+    panelWidth: PANEL_WIDTH,
+  });
 
   const toggle = (value: string) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
 
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={[
-          'inline-flex items-center rounded-lg border transition-colors',
-          'h-[var(--lume-control-h-md)] px-[var(--lume-control-px-md)]',
-          'gap-[var(--lume-control-gap-md)] text-[length:var(--lume-control-text-md)]',
-          selected.length > 0
-            ? 'bg-primary/10 border-primary/30 text-primary-hover dark:text-primary/70'
-            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-        ].join(' ')}
-      >
-        <SlidersHorizontal className="size-4" />
-        <span>{label}</span>
-        {selected.length > 0 && (
-          <NumberBadge value={selected.length} variant="solid" size="md" />
-        )}
-      </button>
+  const active = selected.length > 0;
 
-      {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-dropdown w-52 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden">
-          <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{label}</span>
-          </div>
-          <div className="py-1 max-h-56 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-zinc-400">Nessuna opzione</p>
-            ) : (
-              options.map((opt) => {
-                const checked = selected.includes(opt.value);
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => toggle(opt.value)}
-                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <span
-                      className={[
-                        'shrink-0 size-4 rounded border transition-colors flex items-center justify-center',
-                        checked ? 'bg-primary border-primary' : 'border-zinc-300 dark:border-zinc-600',
-                      ].join(' ')}
-                    >
-                      {checked && <Check className="size-3 text-white" />}
-                    </span>
-                    {opt.prefix}
-                    {opt.label}
-                  </button>
-                );
-              })
-            )}
-          </div>
-          {selected.length > 0 && (
-            <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange([])}
-                className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-              >
-                Azzera filtri
-              </Button>
-            </div>
+  return (
+    <>
+      <Button
+        ref={triggerRef}
+        variant="secondary"
+        size="md"
+        leadingIcon={SlidersHorizontal}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        pressed={active}
+        onClick={togglePanel}
+      >
+        <span>{label}</span>
+        {active && <NumberBadge value={selected.length} variant="strong" />}
+      </Button>
+
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              layer="dropdown"
+              style={{
+                position: 'fixed',
+                left: Math.max(16, Math.min(position.left, window.innerWidth - PANEL_WIDTH - 16)),
+                top: position.top,
+                bottom: position.bottom,
+                width: PANEL_WIDTH,
+              }}
+            >
+              <ListGroupLabel className="px-4 pt-3">{label}</ListGroupLabel>
+              {options.length === 0 ? (
+                <ListEmpty>Nessuna opzione</ListEmpty>
+              ) : (
+                <ListBox role="listbox" multiple aria-label={label} className="max-h-56 overflow-y-auto">
+                  {options.map((opt) => (
+                    <ListRow key={opt.value} selected={selected.includes(opt.value)} onClick={() => toggle(opt.value)}>
+                      <span className="inline-flex items-center gap-2 align-middle">
+                        {opt.prefix}
+                        {opt.label}
+                      </span>
+                    </ListRow>
+                  ))}
+                </ListBox>
+              )}
+              {active && (
+                <>
+                  <ListSeparator className="mx-3" />
+                  <ListBox className="pt-0">
+                    <ListRow onClick={() => onChange([])}>Azzera filtri</ListRow>
+                  </ListBox>
+                </>
+              )}
+            </FloatingPanel>
           )}
-        </div>
-      )}
-    </div>
+        </AnimatePresence>
+      </Portal>
+    </>
   );
 }

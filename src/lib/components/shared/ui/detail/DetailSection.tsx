@@ -1,33 +1,30 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
 
 interface DetailSectionProps {
   label: string;
   index?: number;
   id?: string;
-  trailing?: React.ReactNode;
   children: React.ReactNode;
   dataTour?: string;
 }
 
-export function DetailSection({ label, index = 0, id, trailing, children, dataTour }: DetailSectionProps) {
+export function DetailSection({ label, index = 0, id, children, dataTour }: DetailSectionProps) {
   const reduceMotion = useReducedMotion();
   return (
     <motion.section
       id={id}
       data-tour={dataTour}
       className="scroll-mt-6"
-      initial={reduceMotion ? false : { opacity: 0, y: 8, filter: 'blur(4px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ type: 'spring', duration: 0.5, bounce: 0, delay: 0.08 + index * 0.06 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE_OUT, delay: 0.04 + index * 0.04 }}
     >
-      <div className="flex items-baseline justify-between mb-3">
-        <h2 className="text-2xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
-          {label}
-        </h2>
-        {trailing}
-      </div>
+      <h2 className="mb-3 text-xs font-medium text-[var(--lume-text-secondary)]">
+        {label}
+      </h2>
       {children}
     </motion.section>
   );

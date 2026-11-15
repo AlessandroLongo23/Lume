@@ -4,16 +4,18 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/onboarding';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { LegalAcceptance, useLegalAccepted } from '@/lib/components/auth/LegalAcceptance';
+import { DURATION } from '@/lib/const/motion';
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.2, 0, 0, 1] as const;
 
 const fieldVariants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 6 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, delay: i * 0.1, ease },
+    transition: { duration: DURATION.enter, delay: i * 0.1, ease },
   }),
 };
 
@@ -32,47 +34,40 @@ export function StepFour({ onSubmit }: StepFourProps) {
       </motion.div>
 
       <AnimatePresence>
-        {error && errorCode === 'EMAIL_EXISTS_WRONG_PASSWORD' && (
+        {error && (
           <motion.div
-            className="text-sm bg-amber-50 border border-amber-200 rounded-lg px-4 py-3"
+            key={errorCode ?? 'error'}
+            className="overflow-hidden"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
             animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.slow }}
           >
-            <p className="text-amber-800 font-medium">Hai già un account con questa email.</p>
-            <p className="text-amber-700 mt-1">
-              Torna al passaggio precedente e inserisci la password del tuo account esistente per collegare una nuova attività.
-            </p>
+            {errorCode === 'EMAIL_EXISTS_WRONG_PASSWORD' ? (
+              <Callout tone="warning" title="Hai già un account con questa email.">
+                Torna al passaggio precedente e inserisci la password del tuo account esistente per collegare una nuova attività.
+              </Callout>
+            ) : (
+              <Callout tone="danger" title={error} />
+            )}
           </motion.div>
-        )}
-        {error && !errorCode && (
-          <motion.p
-            className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {error}
-          </motion.p>
         )}
       </AnimatePresence>
 
       <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
         <div className="flex gap-3 mt-2">
-          <Button type="button" variant="ghost" onClick={prevStep} disabled={isLoading} className="flex-1">
-            <ArrowLeft className="size-4" aria-hidden />
+          <Button type="button" variant="ghost" size="lg" onClick={prevStep} disabled={isLoading} className="flex-1" leadingIcon={ArrowLeft}>
             Indietro
           </Button>
           <Button
             type="submit"
             variant="primary"
+            size="lg"
             loading={isLoading}
             disabled={!canSubmit}
             className="flex-2"
           >
-            Crea Account
+            Crea account
           </Button>
         </div>
       </motion.div>

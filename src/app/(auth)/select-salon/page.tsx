@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ChevronRight, Crown, User } from 'lucide-react';
 import { useWorkspaceStore } from '@/lib/stores/workspace';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
+import { AuthCard } from '@/lib/components/auth/AuthCard';
+import { DURATION } from '@/lib/const/motion';
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.2, 0, 0, 1] as const;
 
 export default function SelectSalonPage() {
   const router = useRouter();
@@ -36,51 +39,39 @@ export default function SelectSalonPage() {
   }
 
   return (
-    <>
-      <motion.div
-        className="mb-6"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease }}
-      >
-        <h1 className="text-xl font-semibold text-zinc-900">Scegli l&apos;attività</h1>
-        <p className="text-sm text-zinc-500 mt-1">In quale salone vuoi lavorare?</p>
-      </motion.div>
-
-      <div className="space-y-2">
+    <AuthCard title="Scegli l'attività" subtitle="In quale salone vuoi lavorare?">
+      <ListBox className="-mx-1 p-0 gap-1">
         {businessContexts.map((ctx, i) => (
-          <motion.button
-            key={ctx.salonId}
-            type="button"
-            onClick={() => handleSelect(ctx.salonId)}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: i * 0.07, ease }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-zinc-200
-              bg-white text-left cursor-pointer transition-all duration-200
-              hover:border-primary/40 hover:bg-primary/30 hover:shadow-sm
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
-              {ctx.role === 'owner'
-                ? <Crown className="w-4 h-4 text-primary-hover" />
-                : <User  className="w-4 h-4 text-zinc-500" />
-              }
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-900 truncate">{ctx.salonName}</p>
-              <p className="text-xs text-zinc-500">
-                {ctx.role === 'owner' ? 'Proprietario' : 'Operatore'}
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0" />
-          </motion.button>
+          <ListRow key={ctx.salonId} asChild>
+            <motion.button
+              type="button"
+              onClick={() => handleSelect(ctx.salonId)}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DURATION.enter, delay: i * 0.07, ease }}
+              className="min-h-14 gap-3 px-3 py-2.5"
+            >
+              <div className="size-9 rounded-lg bg-hover flex items-center justify-center shrink-0">
+                {ctx.role === 'owner'
+                  ? <Crown className="size-4 text-[var(--lume-text-secondary)]" />
+                  : <User  className="size-4 text-[var(--lume-text-secondary)]" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[var(--lume-text)] truncate">{ctx.salonName}</p>
+                <p className="text-xs text-[var(--lume-text-secondary)]">
+                  {ctx.role === 'owner' ? 'Proprietario' : 'Operatore'}
+                </p>
+              </div>
+              <ChevronRight className="size-4 text-[var(--lume-text-muted)] group-hover/row:text-[var(--lume-text)] shrink-0" />
+            </motion.button>
+          </ListRow>
         ))}
-      </div>
+      </ListBox>
 
       {isLoading && (
-        <p className="text-center text-sm text-zinc-400 mt-4">Caricamento...</p>
+        <p className="text-center text-sm text-[var(--lume-text-muted)] mt-4">Caricamento…</p>
       )}
-    </>
+    </AuthCard>
   );
 }

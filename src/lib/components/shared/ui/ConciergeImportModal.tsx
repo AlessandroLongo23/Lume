@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, X, Upload, Paperclip, FileX, Send, Plus } from 'lucide-react';
+import { Sparkles, Upload, Paperclip, FileX, Send, Plus } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { DialogFooter, DialogHeader } from '@/lib/components/shared/ui/modals/dialogParts';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { supabase } from '@/lib/supabase/client';
@@ -37,6 +38,7 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
 
   const handleClose = () => {
     setFiles([]);
@@ -157,60 +159,52 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
   const showAutoHint = !!entity && files.length === 1 && isAutoCandidate(files[0].file);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} classes="max-w-lg" closeOnOutsideClick>
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-800 rounded-lg shadow-xl w-full">
-
-        {/* Header */}
-        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-zinc-500/25">
-          <div className="flex flex-row items-center gap-3 min-w-0">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
-              <Sparkles className="size-5 text-primary" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Migrazione Gratuita</h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Inclusa nel tuo abbonamento</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={handleClose} className="shrink-0 ml-4">
-            <X />
-          </Button>
-        </div>
+    <Modal isOpen={isOpen} onClose={handleClose} classes="max-w-lg" labelledBy={titleId}>
+      <>
+        <DialogHeader
+          titleId={titleId}
+          title="Migrazione gratuita"
+          subtitle="Inclusa nel tuo abbonamento"
+          onClose={handleClose}
+          divider
+        />
 
         {/* Body */}
         <div className="p-6 flex flex-col gap-5">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+          <p className="text-sm text-[var(--lume-text-secondary)] leading-relaxed">
             Non perdere tempo a ricopiare i dati a mano. Carica il PDF o l&apos;Excel del tuo vecchio gestionale
             {entity ? ' e Lume mappa automaticamente i dati sul tuo salone.' : ' e il nostro team si occuperà di importare tutto '}
-            {!entity && <strong className="text-zinc-900 dark:text-zinc-100">in meno di 24 ore</strong>}{!entity && '.'}
+            {!entity && <span className="font-medium text-[var(--lume-text)]">in meno di 24 ore</span>}{!entity && '.'}
           </p>
 
           {showAutoHint && (
-            <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
-              <Sparkles className="size-4 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 text-sm text-[var(--lume-text)]">
+              <Sparkles className="size-4 shrink-0 mt-0.5 text-info-strong" aria-hidden />
               <span>Importazione automatica disponibile per questo file. Vedrai un&apos;anteprima prima di confermare.</span>
             </div>
           )}
 
           {/* File upload */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              File da importare <span className="font-normal text-zinc-400">(PDF, CSV o Excel — max 50 MB ciascuno)</span>
-            </label>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-[var(--lume-text)]">
+              File da importare{' '}
+              <span className="font-normal text-[var(--lume-text-muted)]">(PDF, CSV o Excel, massimo 50 MB ciascuno)</span>
+            </p>
 
             {/* Attached files list */}
             {files.length > 0 && (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col rounded-lg shadow-[inset_0_0_0_1px_var(--lume-line)] divide-y divide-line">
                 {files.map((f) => (
-                  <div key={f.fileName} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900">
-                    <Paperclip className="size-4 shrink-0 text-primary" />
-                    <span className="flex-1 text-sm text-zinc-700 dark:text-zinc-300 truncate">{f.fileName}</span>
+                  <div key={f.fileName} className="flex items-center gap-2 pl-3 pr-1 py-1">
+                    <Paperclip className="size-4 shrink-0 text-[var(--lume-text-muted)]" aria-hidden />
+                    <span className="flex-1 text-sm text-[var(--lume-text)] truncate">{f.fileName}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       iconOnly
                       aria-label={`Rimuovi ${f.fileName}`}
                       onClick={() => handleRemoveFile(f.fileName)}
-                      className="shrink-0"
+                      className="pointer-coarse:size-11"
                     >
                       <FileX />
                     </Button>
@@ -223,11 +217,11 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 px-3 py-5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm text-zinc-500 dark:text-zinc-400 hover:border-primary/70 hover:text-primary transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-5 rounded-lg border border-dashed border-[var(--lume-edge-hover)] text-sm text-[var(--lume-text-secondary)] hover:bg-hover hover:text-[var(--lume-text)] transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lume-ring-focus)]"
             >
               {files.length === 0
-                ? <><Upload className="size-4 shrink-0" /> Clicca per scegliere i file</>
-                : <><Plus className="size-4 shrink-0" /> Aggiungi un altro file</>
+                ? <><Upload className="size-4 shrink-0" aria-hidden /> Clicca per scegliere i file</>
+                : <><Plus className="size-4 shrink-0" aria-hidden /> Aggiungi un altro file</>
               }
             </button>
 
@@ -242,24 +236,23 @@ export function ConciergeImportModal({ isOpen, onClose, entity }: ConciergeImpor
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex flex-row items-center justify-end gap-3 p-6 border-t border-zinc-500/25">
-          <Button variant="secondary" leadingIcon={X} onClick={handleClose}>
+        <DialogFooter>
+          <Button variant="ghost" onClick={handleClose}>
             Annulla
           </Button>
           <Button
             variant="primary"
             leadingIcon={Send}
-            disabled={files.length === 0 || isSubmitting}
+            disabled={files.length === 0}
+            loading={isSubmitting}
             onClick={handleSubmit}
           >
             {isSubmitting
-              ? (showAutoHint ? 'Caricamento...' : 'Invio...')
+              ? (showAutoHint ? 'Caricamento…' : 'Invio…')
               : (showAutoHint ? 'Importa subito' : 'Invia al team')}
           </Button>
-        </div>
-
-      </div>
+        </DialogFooter>
+      </>
     </Modal>
   );
 }

@@ -1,33 +1,48 @@
-import type { ReactNode, ElementType } from 'react';
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-  icon?: ElementType;
+  title: ReactNode;
+  subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Parent page, shown above the title (detail pages). */
+  back?: { href: string; label: string };
+  /** Small content beside the title: a status, a count. */
+  meta?: ReactNode;
+  /** Let a long title wrap onto more lines instead of truncating it. */
+  wrap?: boolean;
 }
 
-export function PageHeader({ title, subtitle, icon: Icon, actions }: PageHeaderProps) {
+/**
+ * Title and one quiet line. Hierarchy comes from size and tight tracking,
+ * not weight or an icon tile. Every page title in the admin uses it.
+ */
+export function PageHeader({ title, subtitle, actions, back, meta, wrap = false }: PageHeaderProps) {
   return (
-    // Phones stack the actions under the title: side by side, the actions
-    // (which never shrink) squeeze the title to nothing and overflow the page.
-    <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-4 w-full">
-      <div className="flex items-center gap-4 min-w-0 max-w-full">
-        {Icon && (
-          <span className="flex items-center justify-center shrink-0 size-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800">
-            <Icon className="size-5 text-zinc-900 dark:text-zinc-50" />
-          </span>
-        )}
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight leading-tight text-zinc-900 dark:text-zinc-50 truncate">{title}</h1>
-          {subtitle && (
-            <p className="text-sm font-normal text-zinc-500 dark:text-zinc-400 mt-1.5 truncate">{subtitle}</p>
-          )}
-        </div>
-      </div>
-      {actions && (
-        <div className="flex flex-row flex-wrap items-center gap-2 max-sm:w-full sm:shrink-0">{actions}</div>
+    <div className="flex flex-col gap-2 w-full">
+      {back && (
+        <Link
+          href={back.href}
+          className="inline-flex items-center gap-1.5 self-start -ml-1 px-1 h-8 pointer-coarse:h-11 rounded-md text-sm text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] transition-colors"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          {back.label}
+        </Link>
       )}
+      {/* The actions share the title's row and centre on it; the subtitle runs
+          full width below. Phones stack title, subtitle, actions: side by
+          side, the actions (which never shrink) squeeze the title to nothing. */}
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-x-4 w-full">
+        <div className="flex items-center gap-3 min-w-0 sm:self-center">
+          <h1 className={`text-headline font-medium tracking-tight leading-tight text-[var(--lume-text)] ${wrap ? 'text-balance' : 'truncate'}`}>{title}</h1>
+          {meta && <div className="shrink-0">{meta}</div>}
+        </div>
+        {actions && (
+          <div className="flex flex-row flex-wrap items-center gap-2 max-sm:order-last max-sm:mt-4 sm:self-center">{actions}</div>
+        )}
+        {subtitle && <p className={`sm:col-span-2 text-sm text-[var(--lume-text-secondary)] mt-1.5 ${wrap ? 'text-pretty' : 'truncate'}`}>{subtitle}</p>}
+      </div>
     </div>
   );
 }

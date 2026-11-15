@@ -94,9 +94,9 @@ export function TutorialVideo({ videoPath, title }: { videoPath: string; title: 
       tabIndex={0}
       onKeyDown={onKeyDown}
       className={cn(
-        'flex w-full flex-col overflow-hidden rounded-xl border border-[var(--lume-border)] bg-[var(--lume-surface-raised)]',
+        'surface-card flex w-full flex-col overflow-hidden',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lume-ring-focus)]',
-        fullscreen && 'rounded-none border-0',
+        fullscreen && 'rounded-none shadow-none',
       )}
     >
       <div className={cn('relative w-full', fullscreen ? 'min-h-0 flex-1' : 'aspect-video')}>
@@ -120,30 +120,30 @@ export function TutorialVideo({ videoPath, title }: { videoPath: string; title: 
             clear of the title on the poster, which is set on the left. */}
         {!started && (
           <button
+            // ds-ignore: play overlay, the whole poster is the hit area; Button would size and fill it like a control
             type="button"
             onClick={toggle}
             aria-label="Riproduci il video"
             className="absolute inset-0 flex items-center justify-end pr-[18%] focus-visible:outline-none"
           >
-            <span className="flex size-16 items-center justify-center rounded-full bg-[var(--lume-button-accent-bg)] text-[var(--lume-button-accent-fg)] shadow-md transition-colors duration-[var(--duration-base)] hover:bg-[var(--lume-button-accent-bg-hover)]">
+            {/* ds-ignore: the round play disc darkens on hover like the accent button it imitates; not a list row */}
+            <span className="flex size-16 items-center justify-center rounded-full bg-[var(--lume-button-accent-bg)] text-[var(--lume-button-accent-fg)] shadow-md transition-colors duration-[var(--duration-base)] hover:bg-primary-hover">
               <Play className="ml-1 size-7" fill="currentColor" />
             </span>
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[var(--lume-border)] px-2 py-1.5">
-        <Tooltip label={playing ? 'Pausa' : 'Riproduci'}>
-          <Button
-            variant="ghost"
-            iconOnly
-            leadingIcon={playing ? Pause : Play}
-            aria-label={playing ? 'Pausa' : 'Riproduci'}
-            onClick={toggle}
-          />
-        </Tooltip>
+      <div className="flex items-center gap-2 border-t border-line px-2 py-1.5">
+        <Button
+          variant="ghost"
+          iconOnly
+          leadingIcon={playing ? Pause : Play}
+          aria-label={playing ? 'Pausa' : 'Riproduci'}
+          onClick={toggle}
+        />
 
-        <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--lume-text-secondary)]">
+        <span className="shrink-0 tabular-nums text-xs text-[var(--lume-text-secondary)]">
           {clock(time)} / {clock(duration)}
         </span>
 
@@ -154,21 +154,19 @@ export function TutorialVideo({ videoPath, title }: { videoPath: string; title: 
             variant="ghost"
             aria-label={`Velocità ${speed}×, cambia`}
             onClick={nextSpeed}
-            className="w-14 shrink-0 font-mono tabular-nums"
+            className="w-14 tabular-nums"
           >
             {speed}×
           </Button>
         </Tooltip>
 
-        <Tooltip label={fullscreen ? 'Esci da schermo intero' : 'Schermo intero'}>
-          <Button
-            variant="ghost"
-            iconOnly
-            leadingIcon={fullscreen ? Minimize : Maximize}
-            aria-label={fullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
-            onClick={toggleFullscreen}
-          />
-        </Tooltip>
+        <Button
+          variant="ghost"
+          iconOnly
+          leadingIcon={fullscreen ? Minimize : Maximize}
+          aria-label={fullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+          onClick={toggleFullscreen}
+        />
       </div>
     </div>
   );

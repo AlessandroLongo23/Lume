@@ -10,8 +10,6 @@ import { TourWelcome } from './TourWelcome';
 interface StartGuideButtonProps {
   /** Tutorial id — its prerequisite chain is resolved against live data on click. */
   tutorialId: string;
-  label?: string;
-  fullWidth?: boolean;
   /** Centred welcome splash shown before the tour (intro tutorials use this). */
   welcome?: { title: string; body: string };
 }
@@ -25,8 +23,6 @@ interface StartGuideButtonProps {
  */
 export function StartGuideButton({
   tutorialId,
-  label = 'Avvia guida interattiva',
-  fullWidth = false,
   welcome,
 }: StartGuideButtonProps) {
   const runChain = useStartTutorialChain();
@@ -49,8 +45,8 @@ export function StartGuideButton({
 
   return (
     <>
-      <Button variant="primary" leadingIcon={PlayCircle} fullWidth={fullWidth} onClick={launch}>
-        {label}
+      <Button variant="primary" leadingIcon={PlayCircle} onClick={launch}>
+        Avvia guida interattiva
       </Button>
       <TourWelcome
         open={open}

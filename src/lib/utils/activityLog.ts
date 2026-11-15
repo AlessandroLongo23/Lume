@@ -219,7 +219,7 @@ function subjectPhrase(entry: ActivityLog): string {
 const TIME_FIELDS = new Set(['datetime', 'start_time', 'end_time']);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Numeric fields, rendered in JetBrains Mono and with their natural unit.
+// Numeric fields, rendered with tabular figures and with their natural unit.
 const CURRENCY_FIELDS = new Set([
   'price', 'sell_price', 'product_cost', 'list_price', 'final_price', 'amount',
   'total_paid', 'total_override', 'sale_amount', 'amount_applied', 'remaining_after',

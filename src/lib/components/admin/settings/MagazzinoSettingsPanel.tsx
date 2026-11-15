@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Warehouse, Save, Loader2 } from 'lucide-react';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { Save, Loader2 } from 'lucide-react';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { SettingsCard } from './SettingsCard';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
@@ -51,7 +52,7 @@ export function MagazzinoSettingsPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -59,37 +60,32 @@ export function MagazzinoSettingsPanel() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={Warehouse}
         title="Gestione scorte"
         description="Mostra colonne di giacenza e soglia minima nel magazzino prodotti."
       >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Tracciamento avanzato</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Disattivalo se non vuoi tracciare quantità e soglie.
-            </p>
-          </div>
-          <Switch checked={trackInventory} onChange={() => setTrackInventory((v) => !v)} />
-        </div>
+        <SwitchRow
+          label="Tracciamento avanzato"
+          description="Disattivalo se non vuoi tracciare quantità e soglie."
+          checked={trackInventory}
+          onChange={() => setTrackInventory((v) => !v)}
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Warehouse}
         title="Soglia di scorta minima predefinita"
         description="Soglia iniziale quando crei un nuovo prodotto. Modificabile per ogni prodotto."
       >
-        <div className="flex items-center gap-3">
-          <input
-            type="number"
-            min={0}
-            max={9999}
-            value={threshold}
-            onChange={(e) => setThreshold(Math.max(0, Math.min(9999, Number(e.target.value) || 0)))}
-            className="w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
-          />
-          <span className="text-sm text-zinc-500">unità</span>
-        </div>
+        <FormInput
+          type="number"
+          aria-label="Soglia di scorta minima predefinita"
+          suffix="unità"
+          min={0}
+          max={9999}
+          value={threshold}
+          onChange={(e) => setThreshold(Math.max(0, Math.min(9999, Number(e.target.value) || 0)))}
+          fieldClassName="w-36"
+          className="tabular-nums"
+        />
       </SettingsCard>
 
       <div className="flex justify-end">

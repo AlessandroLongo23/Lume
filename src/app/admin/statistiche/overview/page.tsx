@@ -1,9 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Euro, Receipt, TrendingUp, Users } from 'lucide-react';
 import { useStatisticheStore } from '@/lib/stores/statistiche';
-import { StatKpiCard } from '@/lib/components/admin/statistiche/StatKpiCard';
+import { Stat, StatRow } from '@/lib/components/shared/ui/StatRow';
 import { StatSectionCard } from '@/lib/components/admin/statistiche/StatSectionCard';
 import { StatRevenueAreaChart } from '@/lib/components/admin/statistiche/overview/StatRevenueAreaChart';
 import { PaymentMethodsDonut } from '@/lib/components/admin/statistiche/overview/PaymentMethodsDonut';
@@ -29,10 +28,10 @@ export default function OverviewPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+            <div key={i} className="h-24 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />
           ))}
         </div>
-        <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+        <div className="h-64 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />
       </div>
     );
   }
@@ -40,28 +39,12 @@ export default function OverviewPage() {
   return (
     <div className="space-y-4">
       {/* KPI row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatKpiCard
-          label="Incasso"
-          displayValue={formatCurrency(kpis.totalRevenue)}
-          icon={Euro}
-        />
-        <StatKpiCard
-          label="Fiches chiuse"
-          displayValue={String(kpis.ficheCount)}
-          icon={Receipt}
-        />
-        <StatKpiCard
-          label="Scontrino medio"
-          displayValue={formatCurrency(kpis.avgTicket)}
-          icon={TrendingUp}
-        />
-        <StatKpiCard
-          label="Clienti attivi"
-          displayValue={String(kpis.activeClients)}
-          icon={Users}
-        />
-      </div>
+      <StatRow className="sm:grid-cols-4">
+        <Stat label="Incasso" value={formatCurrency(kpis.totalRevenue)} />
+        <Stat label="Fiches chiuse" value={String(kpis.ficheCount)} />
+        <Stat label="Scontrino medio" value={formatCurrency(kpis.avgTicket)} />
+        <Stat label="Clienti attivi" value={String(kpis.activeClients)} />
+      </StatRow>
 
       {/* Revenue trend */}
       <StatSectionCard title="Andamento incassi" subtitle="Ultimi 13 mesi">
@@ -69,7 +52,7 @@ export default function OverviewPage() {
       </StatSectionCard>
 
       {/* Two-column row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StatSectionCard title="Metodi di pagamento" subtitle="Nel periodo selezionato">
           <PaymentMethodsDonut data={paymentBreakdown} />
         </StatSectionCard>

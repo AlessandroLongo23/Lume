@@ -4,20 +4,22 @@ import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { makeRechartsTooltip } from '@/lib/components/graphs/RechartsTooltip';
+import { AXIS_TICK, CURSOR_FILL, GRID_STROKE, SERIES_PRIMARY, SERIES_SECONDARY, compactEuro } from '@/lib/components/graphs/chartTheme';
 import { formatCurrency } from '@/lib/utils/format';
 import type { BilancioMese } from '@/lib/types/Bilancio';
+import { cellNumClass, cellStrongClass, tableClass, tbodyClass, tdClass, thClass, theadClass, trClass } from '@/lib/components/shared/ui/table/tableStyles';
 
 // Validated pair (dataviz palette checker, light + dark): see semantic.css.
-const ENTRATE = 'var(--lume-chart-entrate)';
-const USCITE = 'var(--lume-chart-uscite)';
+const ENTRATE = SERIES_PRIMARY;
+const USCITE = SERIES_SECONDARY;
 
 const tooltip = makeRechartsTooltip((v, name) => [formatCurrency(Number(v)), name]);
 
 const meseLabel = (mese: string) => format(parseISO(`${mese}-01`), 'MMM yyyy', { locale: it });
 
-// axis ticks stay on one line: "16,5k"; the subtitle says the unit is euro
-const compactEuro = (v: number) =>
-  Math.abs(v) >= 1000 ? `${(v / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })}k` : `${v}`;
+// Outer cells of the month table pad in to the card's p-6.
+const EDGE = 'first:pl-6 last:pr-6';
+
 
 /** Monthly revenue vs costs, both without VAT. One axis (€), grouped columns. */
 export function EntrateUsciteChart({ mesi }: { mesi: BilancioMese[] }) {
@@ -28,18 +30,18 @@ export function EntrateUsciteChart({ mesi }: { mesi: BilancioMese[] }) {
   }));
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6 flex flex-col gap-4">
+    <div className="surface-card p-6 flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-foreground">Entrate e uscite per mese</h3>
-          <p className="text-xs text-muted-foreground">Importi in euro, senza IVA</p>
+          <h3 className="text-base font-medium tracking-tight text-[var(--lume-text)]">Entrate e uscite per mese</h3>
+          <p className="text-sm text-[var(--lume-text-secondary)] mt-1">Importi in euro, senza IVA</p>
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground" aria-hidden>
+        <div className="flex items-center gap-4 text-xs text-[var(--lume-text-secondary)]" aria-hidden>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2.5 rounded-sm" style={{ background: ENTRATE }} /> Entrate
+            <span className="size-2 rounded-full" style={{ background: ENTRATE }} /> Entrate
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2.5 rounded-sm" style={{ background: USCITE }} /> Uscite
+            <span className="size-2 rounded-full" style={{ background: USCITE }} /> Uscite
           </span>
         </div>
       </div>
@@ -47,23 +49,23 @@ export function EntrateUsciteChart({ mesi }: { mesi: BilancioMese[] }) {
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barGap={2} barCategoryGap="28%">
-            <CartesianGrid vertical={false} stroke="var(--lume-border)" strokeWidth={1} />
+            <CartesianGrid vertical={false} stroke={GRID_STROKE} />
             <XAxis
               dataKey="mese"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: 'var(--lume-text-muted)' }}
+              tick={AXIS_TICK}
               interval="preserveStartEnd"
               minTickGap={12}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              width={40}
-              tick={{ fontSize: 11, fill: 'var(--lume-text-muted)' }}
+              width={56}
+              tick={AXIS_TICK}
               tickFormatter={compactEuro}
             />
-            <Tooltip content={tooltip} cursor={{ fill: 'var(--lume-border)', opacity: 0.35 }} />
+            <Tooltip content={tooltip} cursor={CURSOR_FILL} />
             <Bar dataKey="Entrate" fill={ENTRATE} radius={[4, 4, 0, 0]} maxBarSize={24} />
             <Bar dataKey="Uscite" fill={USCITE} radius={[4, 4, 0, 0]} maxBarSize={24} />
           </BarChart>
@@ -71,29 +73,39 @@ export function EntrateUsciteChart({ mesi }: { mesi: BilancioMese[] }) {
       </div>
 
       <details className="group text-sm">
-        <summary className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground">
+        <summary className="cursor-pointer select-none text-sm text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] pointer-coarse:py-3">
           Vedi i numeri mese per mese
         </summary>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm tabular-nums">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th className="py-1.5 pr-4 font-medium">Mese</th>
-                <th className="py-1.5 pr-4 font-medium text-right">Entrate</th>
-                <th className="py-1.5 pr-4 font-medium text-right">Uscite</th>
-                <th className="py-1.5 font-medium text-right">Utile</th>
+        {/* Bleeds to the card's edges (-mx-6); the outer cells pad back in so
+            the text lines up with the title above. */}
+        <div className="-mx-6 mt-3 overflow-x-auto">
+          <table className={tableClass}>
+            <thead className={theadClass}>
+              <tr>
+                <th className={`${thClass()} ${EDGE}`}>Mese</th>
+                <th className={`${thClass({ align: 'right' })} ${EDGE}`}>Entrate</th>
+                <th className={`${thClass({ align: 'right' })} ${EDGE}`}>Uscite</th>
+                <th className={`${thClass({ align: 'right' })} ${EDGE}`}>Utile</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className={tbodyClass}>
               {mesi.map((m) => {
                 const utile = m.entrate_netto - m.uscite_netto;
                 return (
-                  <tr key={m.mese}>
-                    <td className="py-1.5 pr-4 text-foreground capitalize">{meseLabel(m.mese)}</td>
-                    <td className="py-1.5 pr-4 text-right font-mono">{formatCurrency(m.entrate_netto)}</td>
-                    <td className="py-1.5 pr-4 text-right font-mono">{formatCurrency(m.uscite_netto)}</td>
-                    <td className={`py-1.5 text-right font-mono ${utile < 0 ? 'text-danger-strong' : 'text-foreground'}`}>
-                      {formatCurrency(utile)}
+                  <tr key={m.mese} className={trClass({ interactive: false })}>
+                    <td className={`${tdClass} ${EDGE}`}>
+                      <span className={`${cellStrongClass} capitalize`}>{meseLabel(m.mese)}</span>
+                    </td>
+                    <td className={`${tdClass} ${EDGE} text-right`}>
+                      <span className={cellNumClass}>{formatCurrency(m.entrate_netto)}</span>
+                    </td>
+                    <td className={`${tdClass} ${EDGE} text-right`}>
+                      <span className={cellNumClass}>{formatCurrency(m.uscite_netto)}</span>
+                    </td>
+                    <td className={`${tdClass} ${EDGE} text-right`}>
+                      <span className={`${cellNumClass} ${utile < 0 ? 'text-danger-strong' : 'text-[var(--lume-text)]'}`}>
+                        {formatCurrency(utile)}
+                      </span>
                     </td>
                   </tr>
                 );

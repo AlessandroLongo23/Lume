@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale, Wallet } from 'lucide-react';
+import { AlertCircle, Wallet } from 'lucide-react';
 import { useBilancioStore } from '@/lib/stores/bilancio';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { BilancioSkeleton } from '@/lib/components/admin/bilancio/BilancioSkeleton';
 import { BilancioPeriodControl } from '@/lib/components/admin/bilancio/BilancioPeriodControl';
 import { KpiCard } from '@/lib/components/admin/bilancio/KpiCard';
+import { SeriesDot, StatRow } from '@/lib/components/shared/ui/StatRow';
+import { SERIES_PRIMARY, SERIES_SECONDARY } from '@/lib/components/graphs/chartTheme';
 import { EntrateUsciteChart } from '@/lib/components/admin/bilancio/EntrateUsciteChart';
 import { EntrateCard, UsciteCard } from '@/lib/components/admin/bilancio/BilancioVociCard';
 import { TaxSimulatorCard } from '@/lib/components/admin/bilancio/TaxSimulatorCard';
@@ -44,15 +46,15 @@ export function BilancioPanoramicaTab() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <BilancioPeriodControl />
         {data && (
-          <p className="text-xs text-muted-foreground max-w-sm">
+          <p className="text-xs text-[var(--lume-text-secondary)] max-w-sm sm:h-[var(--lume-control-h-md)] flex items-center">
             Contano solo le fiche concluse. Gli importi sono senza IVA ({data.iva_pct}%), con l&apos;importo IVA inclusa accanto.
           </p>
         )}
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-danger-line bg-danger-soft p-4 flex flex-wrap items-center gap-3 text-sm text-danger-strong">
-          <AlertCircle className="size-4 shrink-0" aria-hidden />
+        <div className="surface-card p-4 flex flex-wrap items-center gap-3 text-sm text-[var(--lume-text)]">
+          <AlertCircle className="size-4 shrink-0 text-danger-strong" aria-hidden />
           <span className="flex-1">{error}</span>
           <Button variant="secondary" onClick={() => void fetchBilancio()}>Riprova</Button>
         </div>
@@ -66,15 +68,15 @@ export function BilancioPanoramicaTab() {
           action={{ label: 'Vai alle fiche', onClick: () => router.push('/admin/fiches') }}
         />
       ) : (
-        <div className={`flex flex-col gap-6 transition-opacity ${isLoading ? 'opacity-60' : ''}`} aria-busy={isLoading}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <KpiCard label="Entrate" icon={ArrowUpRight} netto={data.entrate.netto} lordo={data.entrate.lordo}
+        <div className={`flex flex-col gap-6 transition-opacity motion-reduce:transition-none ${isLoading ? 'opacity-60' : ''}`} aria-busy={isLoading}>
+          <StatRow className="grid-cols-1! min-[420px]:grid-cols-2! sm:grid-cols-3!">
+            <KpiCard label="Entrate" marker={<SeriesDot color={SERIES_PRIMARY} />} netto={data.entrate.netto} lordo={data.entrate.lordo}
               trend={change(data.entrate.netto, previous?.entrate.netto)} />
-            <KpiCard label="Uscite" icon={ArrowDownRight} netto={data.uscite.netto} lordo={data.uscite.lordo}
+            <KpiCard label="Uscite" marker={<SeriesDot color={SERIES_SECONDARY} />} netto={data.uscite.netto} lordo={data.uscite.lordo}
               trend={change(data.uscite.netto, previous?.uscite.netto)} higherIsWorse />
-            <KpiCard label="Utile" icon={Scale} netto={data.utile.netto} lordo={data.utile.lordo}
+            <KpiCard label="Utile" netto={data.utile.netto} lordo={data.utile.lordo}
               trend={change(data.utile.netto, previous?.utile.netto)} />
-          </div>
+          </StatRow>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">

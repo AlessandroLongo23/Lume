@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, Archive, Users, ArrowDownToLine, UserCog, Trash2 } from 'lucide-react';
+import { UserPlus, Archive, Users, ArrowDownToLine, Trash2 } from 'lucide-react';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
@@ -108,14 +108,12 @@ export default function OperatoriPage() {
         <PageHeader
           title={showArchived ? 'Operatori archiviati' : 'Operatori'}
           subtitle="Il tuo team, turni e permessi sotto controllo."
-          icon={UserCog}
           actions={
             <>
               <Button
                 variant="primary"
                 leadingIcon={UserPlus}
                 onClick={() => setShowAdd(true)}
-                className="whitespace-nowrap"
                 data-tour="action-operator-create"
               >
                 Nuovo operatore

@@ -129,7 +129,7 @@ export function ImageUploader({ kind, paths, onChange, disabled = false }: Image
         {paths.map((path) => (
           <div
             key={path}
-            className="relative size-20 rounded-lg overflow-hidden border border-zinc-500/25 bg-zinc-100 dark:bg-zinc-800"
+            className="relative size-20 rounded-lg overflow-hidden border border-line bg-active"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={publicUrlFor(path)} alt="" className="size-full object-cover" />
@@ -138,7 +138,8 @@ export function ImageUploader({ kind, paths, onChange, disabled = false }: Image
                 type="button"
                 aria-label="Rimuovi immagine"
                 onClick={() => handleRemove(path)}
-                className="absolute top-1 right-1 size-5 rounded-full bg-black/60 text-white hover:bg-black/80 flex items-center justify-center"
+                // ds-ignore: 20px remove chip on the scrim over an 80px thumbnail, darker on hover; Button's smallest icon size is 32px
+                className="absolute top-1 right-1 size-5 rounded-full bg-[var(--lume-scrim)]/60 text-[var(--lume-on-scrim)] hover:bg-[var(--lume-scrim)]/80 flex items-center justify-center"
               >
                 <X className="size-3" />
               </button>
@@ -148,10 +149,11 @@ export function ImageUploader({ kind, paths, onChange, disabled = false }: Image
 
         {remaining > 0 && !disabled && (
           <button
+            // ds-ignore: add-image tile, an 80px dashed square beside the thumbnails with icon and count; Button is a fixed-height control
             type="button"
             onClick={handlePick}
             disabled={isUploading}
-            className="flex flex-col items-center justify-center gap-1 size-20 rounded-lg border border-dashed border-zinc-500/40 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-500/70 transition-colors disabled:opacity-40"
+            className="flex flex-col items-center justify-center gap-1 size-20 rounded-lg border border-dashed border-line bg-hover text-[var(--lume-text-secondary)] hover:text-[var(--lume-text)] hover:border-line transition-colors disabled:opacity-40"
           >
             {isUploading ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
             <span className="text-2xs">{isUploading ? 'Carico…' : `${paths.length}/${MAX_IMAGES}`}</span>
@@ -160,7 +162,7 @@ export function ImageUploader({ kind, paths, onChange, disabled = false }: Image
       </div>
 
       {paths.length === 0 && !disabled && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-[var(--lume-text-secondary)]">
           Fino a {MAX_IMAGES} immagini · JPEG, PNG, WebP o GIF · max 5 MB ciascuna
         </p>
       )}

@@ -6,6 +6,8 @@ declare module '@tanstack/react-table' {
     pickerLabel?: string;
     lockedInPicker?: boolean;
     requiredVisible?: boolean;
+    /** 'start' keeps the column first and out of the picker's reorder list. */
+    pinned?: 'start';
   }
 }
 

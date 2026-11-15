@@ -4,6 +4,7 @@ import { useAbbonamentiStore } from '@/lib/stores/abbonamenti';
 import { useClientsStore } from '@/lib/stores/clients';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import type { Abbonamento } from '@/lib/types/Abbonamento';
 
 interface DeleteAbbonamentoModalProps {
@@ -37,12 +38,12 @@ export function DeleteAbbonamentoModal({ isOpen, onClose, abbonamento }: DeleteA
         {client ? <> di <strong>{client.firstName} {client.lastName}</strong></> : null}?
       </p>
       {usedCount > 0 && (
-        <p className="mt-3 rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+        <Callout tone="warning">
           <strong>{usedCount}</strong> sedute sono già state utilizzate. Eliminando
           l&apos;abbonamento, le fiches esistenti resteranno ma perderanno il collegamento.
-        </p>
+        </Callout>
       )}
-      <p className="mt-2 text-sm text-zinc-500">L&apos;azione è irreversibile.</p>
+      <p className="text-[var(--lume-text-secondary)]">L&apos;azione è irreversibile.</p>
     </DeleteModal>
   );
 }

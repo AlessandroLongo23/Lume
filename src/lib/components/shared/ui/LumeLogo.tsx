@@ -15,8 +15,10 @@ export function LumeLogo({ size = 'md' }: LumeLogoProps) {
 
   return (
     <span className={`inline-flex items-center gap-1.5 ${text} font-semibold tracking-tight`}>
-      <Lightbulb size={icon} className="text-primary" strokeWidth={2.25} />
-      Lume<span className="text-primary">.</span>
+      <Lightbulb size={icon} className="text-[var(--lume-accent)]" strokeWidth={2.25} />
+      <span>
+        Lume<span className="text-[var(--lume-accent)]">.</span>
+      </span>
     </span>
   );
 }

@@ -278,7 +278,7 @@ export default function OnboardingImportClient({
         />
       )}
       {renderedStep === 'magic' && !state && (
-        <div key="magic-loading" className="text-sm text-muted-foreground">
+        <div key="magic-loading" className="text-sm text-[var(--lume-text-muted)]">
           Sto avviando…
         </div>
       )}

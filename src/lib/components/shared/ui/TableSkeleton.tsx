@@ -1,5 +1,5 @@
 function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-700/60 ${className}`} />;
+  return <div className={`motion-safe:animate-pulse rounded-md bg-active ${className}`} />;
 }
 
 const ROW_PATTERNS = [
@@ -17,14 +17,14 @@ export function TableSkeleton() {
     <div className="flex flex-col gap-3">
       {/* Toolbar */}
       <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-56 shrink-0" />
-        <Skeleton className="h-9 w-28 ml-auto shrink-0" />
+        <Skeleton className="h-[var(--lume-control-h-md)] w-56 shrink-0" />
+        <Skeleton className="h-[var(--lume-control-h-md)] w-28 ml-auto shrink-0" />
       </div>
 
       {/* Table card */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+      <div className="rounded-xl overflow-hidden shadow-[inset_0_0_0_1px_var(--lume-line)]">
         {/* Header row */}
-        <div className="flex items-center gap-6 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-6 px-4 py-3 border-b border-line">
           {HEADER_WIDTHS.map((w, i) => (
             <Skeleton key={i} className={`h-3 ${w}`} />
           ))}
@@ -34,7 +34,7 @@ export function TableSkeleton() {
         {ROW_PATTERNS.map((cols, i) => (
           <div
             key={i}
-            className="flex items-center gap-6 px-4 py-3.5 border-b border-zinc-200 dark:border-zinc-800 last:border-0"
+            className="flex items-center gap-6 px-4 py-3.5 border-b border-line last:border-0"
           >
             {cols.map((w, j) => (
               <Skeleton key={j} className={`h-4 ${w}`} />

@@ -1,18 +1,21 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { Search, X, ChevronDown, ArrowRight } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { DURATION, EASE_OUT } from '@/lib/const/motion';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 import { isToday, isYesterday } from 'date-fns';
 import { FacetedFilter, type FacetedFilterOption } from '@/lib/components/admin/table/FacetedFilter';
-import { Button } from '@/lib/components/shared/ui/Button';
 import { formatDateDisplay } from '@/lib/utils/format';
 import { describeActivity, activityChanges, entityLabel, actionLabel } from '@/lib/utils/activityLog';
 import type { ActivityLog, ActivityAction } from '@/lib/types/ActivityLog';
+import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
+import { ListBox } from '@/lib/components/shared/ui/list/ListBox';
+import { cn } from '@/lib/utils';
 
 const ACTION_DOT: Record<ActivityAction, string> = {
   create: 'bg-success-strong',
-  update: 'bg-primary',
+  update: 'bg-info-strong',
   delete: 'bg-danger-strong',
   bulk: 'bg-warning-strong',
 };
@@ -32,34 +35,35 @@ function dayLabel(d: Date): string {
 
 function ActivityRow({ entry }: { entry: ActivityLog }) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const changes = activityChanges(entry);
   const hasDetail = changes.length > 0;
   const actor = entry.actor_name ?? 'Sistema';
   const time = formatDateDisplay(entry.created_at, 'HH:mm');
 
   return (
-    <div className="border-t border-border/60 first:border-t-0">
+    <div className="border-t border-line first:border-t-0">
+      {/* A list row (the card's glide is its hover) only when it expands. */}
       <button
+        // ds-ignore: activity row that expands its detail; ListRow would cut the sentence to one line and glide on rows that cannot expand
         type="button"
+        data-list-row={hasDetail ? '' : undefined}
         onClick={() => hasDetail && setOpen((o) => !o)}
         aria-expanded={hasDetail ? open : undefined}
-        className={[
-          'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
-          hasDetail ? 'hover:bg-muted/60 cursor-pointer' : 'cursor-default',
-        ].join(' ')}
+        className={cn('list-row gap-3 px-3 py-2.5', !hasDetail && 'cursor-default')}
       >
         <span
-          className={`shrink-0 size-2 rounded-full ${ACTION_DOT[entry.action] ?? 'bg-muted-foreground'}`}
+          className={`shrink-0 size-1.5 rounded-full ${ACTION_DOT[entry.action] ?? 'bg-[var(--lume-text-muted)]'}`}
           aria-hidden
         />
-        <span className="flex-1 text-sm text-foreground">
+        <span className="flex-1 text-sm text-[var(--lume-text)]">
           <span className="font-medium">{actor}</span>{' '}
           {describeActivity(entry)}{' '}
-          <span className="text-muted-foreground">alle {time}</span>
+          <span className="text-[var(--lume-text-secondary)]">alle <span className="tabular-nums text-compact">{time}</span></span>
         </span>
         {hasDetail && (
           <ChevronDown
-            className={`shrink-0 size-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`shrink-0 size-4 text-[var(--lume-text-muted)] transition-transform motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
           />
         )}
       </button>
@@ -70,24 +74,24 @@ function ActivityRow({ entry }: { entry: ActivityLog }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={reduceMotion ? { duration: 0 } : { duration: DURATION.base, ease: EASE_OUT }}
             className="overflow-hidden"
           >
-            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 px-4 pb-3.5 pl-9 text-[0.8125rem] leading-relaxed">
+            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 px-3 pb-3.5 pl-8 text-compact leading-relaxed">
               {changes.map((ch, i) => (
                 <Fragment key={i}>
-                  <dt className="text-muted-foreground">{ch.label}</dt>
-                  <dd className="min-w-0 text-foreground">
+                  <dt className="text-[var(--lume-text-secondary)]">{ch.label}</dt>
+                  <dd className="min-w-0 text-[var(--lume-text)]">
                     {ch.isDiff ? (
                       <span className="inline-flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-muted-foreground line-through decoration-border ${ch.mono ? 'font-mono' : ''}`}>
+                        <span className={`text-[var(--lume-text-secondary)] line-through decoration-[var(--lume-border)] ${ch.mono ? 'tabular-nums' : ''}`}>
                           {ch.before}
                         </span>
-                        <ArrowRight className="size-3 text-muted-foreground shrink-0" aria-hidden />
-                        <span className={`font-medium ${ch.mono ? 'font-mono' : ''}`}>{ch.after}</span>
+                        <ArrowRight className="size-3 text-[var(--lume-text-muted)] shrink-0" aria-hidden />
+                        <span className={`font-medium ${ch.mono ? 'tabular-nums' : ''}`}>{ch.after}</span>
                       </span>
                     ) : (
-                      <span className={ch.mono ? 'font-mono' : ''}>{ch.after}</span>
+                      <span className={ch.mono ? 'tabular-nums' : ''}>{ch.after}</span>
                     )}
                   </dd>
                 </Fragment>
@@ -161,30 +165,7 @@ export function ActivityFeed({ items }: { items: ActivityLog[] }) {
     <div className="flex-1 min-h-0 flex flex-col gap-4">
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex items-center flex-1 max-w-sm">
-          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Cerca nell'attività..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-[var(--lume-control-h-md)] pl-9 pr-8 text-[length:var(--lume-control-text-md)] bg-transparent border rounded-lg
-              border-border focus:border-foreground/30
-              text-foreground placeholder:text-muted-foreground outline-none transition-colors"
-          />
-          {query && (
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              aria-label="Azzera ricerca"
-              onClick={() => setQuery('')}
-              className="absolute right-1"
-            >
-              <X />
-            </Button>
-          )}
-        </div>
+        <Searchbar placeholder="Cerca nell'attività..." value={query} onChange={setQuery} bindShortcut={false} className="flex-1 basis-full sm:basis-auto sm:max-w-sm" />
         <FacetedFilter label="Operatore" options={operatoreOptions} selected={operatore} onChange={setOperatore} />
         <FacetedFilter label="Tipo" options={tipoOptions} selected={tipo} onChange={setTipo} />
         <FacetedFilter label="Azione" options={azioneOptions} selected={azione} onChange={setAzione} />
@@ -193,20 +174,20 @@ export function ActivityFeed({ items }: { items: ActivityLog[] }) {
       {/* Feed grouped by day */}
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5">
         {groups.length === 0 ? (
-          <p className="text-sm text-muted-foreground px-1 py-6 text-center">
+          <p className="text-sm text-[var(--lume-text-secondary)] px-1 py-6 text-center">
             {hasFilters ? 'Nessuna attività corrisponde ai filtri.' : 'Nessuna attività.'}
           </p>
         ) : (
           groups.map((group) => (
             <div key={group.key} className="flex flex-col gap-2">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground px-1">
+              <h3 className="text-xs font-medium text-[var(--lume-text-secondary)] px-1">
                 {group.label}
               </h3>
-              <div className="overflow-hidden bg-card border border-border rounded-xl">
+              <ListBox role="list" aria-label={group.label} className="surface-card gap-0">
                 {group.items.map((entry) => (
                   <ActivityRow key={entry.id} entry={entry} />
                 ))}
-              </div>
+              </ListBox>
             </div>
           ))
         )}

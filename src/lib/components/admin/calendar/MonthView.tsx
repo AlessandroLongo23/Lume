@@ -84,12 +84,12 @@ export function MonthView({ currentMonth, selectedDate, onDayClick }: MonthViewP
     <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="grid grid-cols-7">
         {weekDays.map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 py-2 uppercase tracking-wider border-b border-zinc-500/25">
+          <div key={day} className="px-2 py-2 text-xs text-[var(--lume-text-secondary)] border-b border-line">
             {day}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-0 border border-zinc-500/25 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-7 gap-0 border-b border-line">
         {monthDays.map((day, i) => {
           const metrics = dayMetrics.get(day.date.toDateString())
             ?? { totalMinutes: 0, totalEarnings: 0, operatorMinutes: 0, operatorEarnings: 0 };

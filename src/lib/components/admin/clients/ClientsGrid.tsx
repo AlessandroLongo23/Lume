@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Users } from 'lucide-react';
+import { SearchX } from 'lucide-react';
+import { EmptyState } from '@/lib/components/shared/ui/EmptyState';
 import { ClientCard } from './ClientCard';
 import { FacetedFilter } from '@/lib/components/admin/table/FacetedFilter';
 import { SortMenu } from '@/lib/components/admin/table/SortMenu';
@@ -156,11 +157,16 @@ export function ClientsGrid({ clients, showArchived = false }: ClientsGridProps)
       </div>
 
       {isEmpty ? (
-        <div className="min-h-[18.75rem] flex flex-col items-center justify-center p-8 bg-muted/40 rounded-lg border border-dashed border-border">
-          <Users className="w-16 h-16 text-muted-foreground/60 mb-3" />
-          <h3 className="text-lg font-medium text-foreground mb-1">Nessun cliente trovato</h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md">Nessun cliente soddisfa i criteri di ricerca.</p>
-        </div>
+        <EmptyState
+          icon={SearchX}
+          title="Nessun cliente trovato"
+          description="Nessun cliente soddisfa i criteri di ricerca."
+          action={
+            globalFilter || selectedGenders.length > 0
+              ? { label: 'Azzera ricerca', onClick: () => { setGlobalFilter(''); setSelectedGenders([]); } }
+              : undefined
+          }
+        />
       ) : (
         <div
           ref={scrollRef}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CookieManageLink } from '@/lib/components/shared/cookieConsent/CookieManageLink';
 import { LUME_LEGAL } from '@/lib/const/legal';
 import { LEGAL_VERSIONS } from '@/lib/const/legalVersions';
+import { LegalPageHeader } from '../_components/LegalPageHeader';
 
 export const metadata: Metadata = {
   title: 'Cookie policy — Lume',
@@ -12,10 +13,7 @@ export const metadata: Metadata = {
 export default function CookiePolicyPage() {
   return (
     <>
-      <h1>Cookie policy</h1>
-      <p>
-        <em>Versione {LEGAL_VERSIONS.cookiePolicy}.</em>
-      </p>
+      <LegalPageHeader title="Cookie policy" meta={<>Versione {LEGAL_VERSIONS.cookiePolicy}.</>} />
 
       <h2>Cosa sono i cookie</h2>
       <p>
@@ -134,7 +132,7 @@ export default function CookiePolicyPage() {
         pulsante qui sotto:
       </p>
       <p>
-        <CookieManageLink variant="secondary">Gestisci cookie</CookieManageLink>
+        <CookieManageLink button>Gestisci cookie</CookieManageLink>
       </p>
       <p>
         &Egrave; inoltre possibile bloccare o cancellare i cookie direttamente dalle impostazioni

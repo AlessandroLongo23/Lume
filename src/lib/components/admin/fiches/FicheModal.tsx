@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import {
-  Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar,
-  Check, AlertTriangle, Package, Plus, Pencil, ReceiptText, ArrowLeft, ArrowRight, Gift,
-  FlaskConical, Sparkles, RotateCcw, History,
-} from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
+import { Search, Scissors, User, Clock, Euro, Trash2, FileText, Calendar, Check, Package, Pencil, ReceiptText, ArrowLeft, ArrowRight, Gift, FlaskConical, Sparkles, RotateCcw, History } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useFichesStore } from '@/lib/stores/fiches';
@@ -20,18 +17,32 @@ import { useProductCategoriesStore } from '@/lib/stores/product_categories';
 import { useFicheProductsStore } from '@/lib/stores/fiche_products';
 import { useSubscriptionStore } from '@/lib/stores/subscription';
 import { FicheStatus } from '@/lib/types/ficheStatus';
-import { FicheBucket, FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
+import { FICHE_BUCKET_LABELS, getFicheBucket } from '@/lib/types/Fiche';
 import { FichePaymentMethod } from '@/lib/types/fichePaymentMethod';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
+import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
+import { FICHE_BUCKET_TONE } from './ficheBucketTone';
 import { validateFicheConflicts } from '@/lib/actions/fiches';
 import { callServerAction } from '@/lib/utils/serverAction';
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { DeleteModal } from '@/lib/components/shared/ui/modals/DeleteModal';
+import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { QuickAddClientModal } from '@/lib/components/admin/clients/QuickAddClientModal';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateTimeField } from '@/lib/components/shared/ui/forms/DateTimeField';
+import { Callout } from '@/lib/components/shared/ui/Callout';
+import { Portal } from '@/lib/components/shared/ui/Portal';
+import { FloatingPanel } from '@/lib/components/shared/ui/FloatingPanel';
+import { ListBox, ListRow, ListEmpty } from '@/lib/components/shared/ui/list/ListBox';
+import { useAnchoredPopover } from '@/lib/hooks/useAnchoredPopover';
+import { useListNavigation } from '@/lib/hooks/useListNavigation';
 import { FicheReceipt } from '@/lib/components/admin/fiches/FicheReceipt';
 import {
   FichePaymentPanel,
@@ -94,88 +105,153 @@ interface CategoryGroup<T> {
 /** Group id for catalogue items without a category (shown as "Altro"). */
 const UNCATEGORISED = 'uncategorised';
 
-interface CategoryDropdownProps<T> {
-  groups: CategoryGroup<T>[];
+interface CatalogSearchProps<T> {
   query: string;
+  onQueryChange: (query: string) => void;
+  placeholder: string;
+  groups: CategoryGroup<T>[];
   onSelect: (item: T) => void;
-  renderItem: (item: T) => ReactNode;
   getKey: (item: T) => string;
+  renderLabel: (item: T) => ReactNode;
+  renderTrailing: (item: T) => ReactNode;
   emptyText: string;
 }
 
-function CategoryDropdown<T>({
-  groups,
+/**
+ * Search box that opens the catalogue under it: categories on the left (the
+ * hovered one shows its items on the right), or a flat list of matches while
+ * typing. The panel floats through a portal, so the modal body never clips it.
+ */
+function CatalogSearch<T>({
   query,
+  onQueryChange,
+  placeholder,
+  groups,
   onSelect,
-  renderItem,
   getKey,
+  renderLabel,
+  renderTrailing,
   emptyText,
-}: CategoryDropdownProps<T>) {
+}: CatalogSearchProps<T>) {
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
+  const { open, show, hide, position, panelRef, side } = useAnchoredPopover(fieldRef, { panelMaxHeight: 300 });
 
-  if (groups.length === 0) {
-    return <p className="p-4 text-sm text-center text-zinc-500">{emptyText}</p>;
-  }
+  const searching = query.trim() !== '';
+  const matches = searching ? groups.flatMap((g) => g.items) : [];
 
-  if (query.trim()) {
-    const allItems = groups.flatMap((g) => g.items);
-    return (
-      <div className="max-h-72 overflow-y-auto">
-        {allItems.map((item) => (
-          <button
-            key={getKey(item)}
-            type="button"
-            onClick={() => onSelect(item)}
-            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer"
-          >
-            {renderItem(item)}
-          </button>
-        ))}
-      </div>
-    );
-  }
+  const pick = (item: T) => {
+    onSelect(item);
+    hide();
+  };
+
+  const nav = useListNavigation({
+    count: matches.length,
+    onPick: (i) => pick(matches[i]),
+    onEscape: hide,
+    listRef,
+    pickFirstOnEnter: true,
+  });
 
   const activeId =
     hoveredCategoryId && groups.some((g) => g.categoryId === hoveredCategoryId)
       ? hoveredCategoryId
-      : groups[0].categoryId;
+      : groups[0]?.categoryId;
   const activeGroup = groups.find((g) => g.categoryId === activeId);
 
+  const itemRow = (item: T, i?: number) => (
+    <ListRow
+      key={getKey(item)}
+      highlighted={i !== undefined && nav.active === i}
+      trailing={renderTrailing(item)}
+      onClick={() => pick(item)}
+      onMouseEnter={i !== undefined ? () => nav.setActive(i) : undefined}
+    >
+      {renderLabel(item)}
+    </ListRow>
+  );
+
   return (
-    <div className="grid max-h-72" style={{ gridTemplateColumns: '1fr 2.5fr' }}>
-      <div className="overflow-y-auto border-r border-zinc-500/15 bg-zinc-50/50 dark:bg-zinc-700/20">
-        {groups.map((g) => {
-          const isActive = g.categoryId === activeId;
-          return (
-            <button
-              key={g.categoryId}
-              type="button"
-              onMouseEnter={() => setHoveredCategoryId(g.categoryId)}
-              onFocus={() => setHoveredCategoryId(g.categoryId)}
-              className={`w-full px-3 py-2 text-left text-sm truncate transition-colors cursor-default ${
-                isActive
-                  ? 'bg-primary/10 text-primary-hover dark:text-primary/70 font-medium'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-500/5'
-              }`}
+    <div ref={fieldRef} className="shrink-0">
+      <FormInput
+        type="text"
+        icon={<Search className="size-4" />}
+        aria-label={placeholder}
+        placeholder={placeholder}
+        value={query}
+        aria-expanded={open}
+        onChange={(e) => { onQueryChange(e.target.value); nav.setActive(-1); show(); }}
+        onFocus={show}
+        onKeyDown={(e) => {
+          if (!open) return;
+          if (e.key === 'Tab') { hide(); return; }
+          nav.onKeyDown(e);
+        }}
+      />
+      <Portal>
+        <AnimatePresence>
+          {open && position && (
+            <FloatingPanel
+              ref={panelRef}
+              side={side}
+              style={{ position: 'fixed', left: position.left, top: position.top, bottom: position.bottom, width: position.width }}
             >
-              {g.categoryName}
-            </button>
-          );
-        })}
-      </div>
-      <div className="overflow-y-auto">
-        {activeGroup?.items.map((item) => (
-          <button
-            key={getKey(item)}
-            type="button"
-            onClick={() => onSelect(item)}
-            className="w-full px-3 py-2.5 text-left flex items-center justify-between gap-2 text-sm transition-colors hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer"
-          >
-            {renderItem(item)}
-          </button>
-        ))}
-      </div>
+              {groups.length === 0 ? (
+                <ListEmpty>{emptyText}</ListEmpty>
+              ) : searching ? (
+                <ListBox ref={listRef} role="listbox" className="max-h-72 overflow-y-auto">
+                  {matches.map((item, i) => itemRow(item, i))}
+                </ListBox>
+              ) : (
+                <div className="grid max-h-72" style={{ gridTemplateColumns: '1fr 2.5fr' }}>
+                  <ListBox
+                    role="list"
+                    aria-label="Categorie"
+                    className="overflow-y-auto border-r border-line"
+                  >
+                    {groups.map((g) => (
+                      <ListRow
+                        key={g.categoryId}
+                        selected={g.categoryId === activeId}
+                        className="cursor-default"
+                        onMouseEnter={() => setHoveredCategoryId(g.categoryId)}
+                        onFocus={() => setHoveredCategoryId(g.categoryId)}
+                      >
+                        {g.categoryName}
+                      </ListRow>
+                    ))}
+                  </ListBox>
+                  <ListBox role="list" aria-label={activeGroup?.categoryName} className="overflow-y-auto">
+                    {activeGroup?.items.map((item) => itemRow(item))}
+                  </ListBox>
+                </div>
+              )}
+            </FloatingPanel>
+          )}
+        </AnimatePresence>
+      </Portal>
     </div>
+  );
+}
+
+/** "Omaggio" switch on a service or product line: a ghost icon button, tinted while on. */
+function GiftToggle({ active, disabled, onClick }: { active: boolean; disabled?: boolean; onClick: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      iconOnly
+      aria-label="Segna come omaggio"
+      aria-pressed={active}
+      tooltip={active ? 'Omaggio attivo (clicca per ripristinare)' : 'Segna come omaggio'}
+      disabled={disabled}
+      onClick={onClick}
+      // ds-ignore: Omaggio toggle; the warning tint marks a free line and holds on hover, while Button pressed would paint it neutral grey
+      className={active ? 'text-warning-strong bg-warning-soft hover:bg-warning-soft hover:text-warning-strong' : undefined}
+    >
+      <Gift />
+    </Button>
   );
 }
 
@@ -226,9 +302,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddPrefill, setQuickAddPrefill] = useState<{ firstName: string; lastName: string }>({ firstName: '', lastName: '' });
   const [svcQuery, setSvcQuery] = useState('');
-  const [svcOpen, setSvcOpen] = useState(false);
   const [prodQuery, setProdQuery] = useState('');
-  const [prodOpen, setProdOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   const [activeTopTab, setActiveTopTab] = useState<'edit' | 'payment' | 'history'>('edit');
   const [treatmentTab, setTreatmentTab] = useState<'new' | 'last'>('new');
@@ -247,10 +321,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [splits, setSplits] = useState<Split[]>(INITIAL_SPLITS.map((s) => ({ ...s })));
   const [selectedCoupons, setSelectedCoupons] = useState<SelectedCoupon[]>([]);
 
-  const svcInputRef = useRef<HTMLInputElement>(null);
-  const svcDropdownRef = useRef<HTMLDivElement>(null);
-  const prodInputRef = useRef<HTMLInputElement>(null);
-  const prodDropdownRef = useRef<HTMLDivElement>(null);
   const lastValidBaseRef = useRef<Date | null>(null);
 
   // Initialise state when the modal opens
@@ -320,9 +390,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     setErrors({});
     setErrorMessage('');
     setSvcQuery('');
-    setSvcOpen(false);
     setProdQuery('');
-    setProdOpen(false);
     setActiveTab('services');
     setActiveTopTab(initialView ?? 'edit');
     setTreatmentTab('new');
@@ -374,28 +442,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   }, [isCompleted, fiche]);
   const paymentDelta = closedFicheCurrentTotal - paidSum;
   const showPaymentMismatch = isCompleted && Math.abs(paymentDelta) >= 0.01;
-
-  // Close service dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (svcDropdownRef.current && !svcDropdownRef.current.contains(e.target as Node)) {
-        setSvcOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  // Close product dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (prodDropdownRef.current && !prodDropdownRef.current.contains(e.target as Node)) {
-        setProdOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -501,7 +547,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       ];
     });
     setSvcQuery('');
-    setSvcOpen(false);
     // Advances the "aggiungi un servizio" step of the booking guide (no-op without a tour).
     emitTourEvent('fiche:service-added');
   }
@@ -614,7 +659,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       return [...prev, { product_id: prod.id, name: prod.name, quantity: 1, list_price: snapPrice, final_price: snapPrice }];
     });
     setProdQuery('');
-    setProdOpen(false);
     // Advances the "aggiungi un prodotto" step of the registra-fiche guide (no-op without a tour).
     emitTourEvent('fiche:product-added');
   }
@@ -622,16 +666,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   // A product line's final_price is the LINE TOTAL (all pieces), exact to the cent;
   // list_price is the price of one piece. Readers never multiply final_price by quantity.
   // Changing the quantity resets the line to list price x quantity.
-  function updateProductQuantity(productId: string, delta: number) {
-    setFicheProducts((prev) =>
-      prev.map((p) => {
-        if (p.product_id !== productId) return p;
-        const qty = Math.max(1, p.quantity + delta);
-        return { ...p, quantity: qty, final_price: p.list_price * qty };
-      }),
-    );
-  }
-
   function setProductQuantity(productId: string, raw: string) {
     const qty = Math.max(1, parseInt(raw, 10) || 1);
     setFicheProducts((prev) =>
@@ -960,24 +994,14 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   // ── Styles ────────────────────────────────────────────────────────────────
 
-  const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:border-primary/50 transition-shadow';
   const readOnlyFieldClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-zinc-50 dark:bg-zinc-700/30 text-sm whitespace-pre-wrap min-h-[4.75rem]';
-  const labelClass =
-    'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
+    'w-full px-3 py-2 rounded-lg bg-hover text-sm whitespace-pre-wrap min-h-19';
 
   const isEdit = mode === 'edit';
   const currentBucket = getFicheBucket({
     datetime: baseTime,
     status: fiche?.status ?? FicheStatus.CREATED,
   });
-  const bucketChipClass: Record<FicheBucket, string> =
-    {
-      [FicheBucket.PRENOTATA]: 'bg-primary/10 text-primary-hover dark:text-primary/70 border-primary/20',
-      [FicheBucket.ARRETRATA]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-      [FicheBucket.CONCLUSA]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    };
   const paymentValid = isPaymentValid(paymentView, effectiveTotal, cashGiven, splits);
 
   // Per-tab footer derivations. The Modifica tab demotes "Salva" into the
@@ -1076,16 +1100,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                 : "Aggiorna i dettagli dell'appuntamento"
             : 'Crea un nuovo appuntamento'
         }
-        icon={
-          isEdit
-            ? activeTopTab === 'payment'
-              ? ReceiptText
-              : activeTopTab === 'history'
-                ? History
-                : Pencil
-            : Plus
-        }
-        classes="max-w-7xl w-[95vw] h-[92vh]"
+        classes="max-w-7xl w-[95vw] h-[92dvh]"
         confirmText={confirmText}
         confirmDisabled={confirmDisabled}
         hideConfirm={hideConfirm}
@@ -1095,18 +1110,18 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           showFooterTotals ? (
             <div className="flex flex-col gap-1 min-w-50">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Subtotale</span>
-                <span className={`text-xs font-mono ${hasOverride ? 'text-zinc-400 line-through' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                <span className="text-xs text-[var(--lume-text-secondary)]">Subtotale</span>
+                <span className={`text-xs tabular-nums ${hasOverride ? 'text-[var(--lume-text-muted)] line-through' : 'text-[var(--lume-text)]'}`}>
                   € {subtotal.toFixed(2)}
                 </span>
               </div>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Durata</span>
-                <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300">{totalDuration} min</span>
+                <span className="text-xs text-[var(--lume-text-secondary)]">Durata</span>
+                <span className="text-xs tabular-nums text-[var(--lume-text)]">{totalDuration} min</span>
               </div>
               {isEdit && (
-                <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 mt-1 pt-1.5 flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Totale</span>
+                <div className="border-t border-dashed border-line mt-1 pt-1.5 flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[var(--lume-text)]">Totale</span>
                   <div className="flex items-center gap-1">
                     <NumberInput
                       value={totalOverride}
@@ -1117,7 +1132,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                       placeholder={subtotal.toFixed(2)}
                       suffix="€"
                       size="sm"
-                      width="w-24"
+                      className="w-24"
                       hideSteppers
                     />
                     {totalOverride !== null && (
@@ -1126,7 +1141,6 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         size="sm"
                         iconOnly
                         aria-label="Rimuovi sconto"
-                        title="Rimuovi sconto"
                         onClick={() => setTotalOverride(null)}
                       >
                         <RotateCcw />
@@ -1145,9 +1159,9 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                 variant="secondary"
                 leadingIcon={Check}
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                loading={isSubmitting}
               >
-                {isSubmitting ? 'Salvataggio…' : 'Salva'}
+                Salva
               </Button>
               {!isCompleted && (
                 <Button
@@ -1162,7 +1176,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                 </Button>
               )}
               <Button
-                variant="destructive-outline"
+                variant="ghost-destructive"
                 leadingIcon={Trash2}
                 onClick={() => setShowDeleteConfirm(true)}
                 data-tour="fiche-delete"
@@ -1184,7 +1198,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         <div className="flex flex-col gap-4 h-full min-h-0">
 
           {isEdit && (
-            <div role="tablist" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+            <TabBar label="Sezioni della fiche" className="shrink-0">
               {(
                 [
                   { id: 'edit' as const, label: 'Modifica', icon: Pencil, show: true },
@@ -1196,13 +1210,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                 .map(({ id, label, icon: Icon }) => {
                   const isActive = activeTopTab === id;
                   return (
-                    <button
+                    <TabButton
                       key={id}
-                      type="button"
-                      role="tab"
+                      active={isActive}
                       id={`fiche-tab-${id}`}
                       aria-controls={`fiche-panel-${id}`}
-                      aria-selected={isActive}
                       onClick={() => {
                         // Going TO the payment tab from "edit" still requires
                         // a valid form for not-yet-closed fiches (so the
@@ -1214,18 +1226,13 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         }
                         setActiveTopTab(id);
                       }}
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                        isActive
-                          ? 'border-primary text-primary-hover dark:text-primary/70'
-                          : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                      }`}
                     >
-                      <Icon className="size-4" />
+                      <Icon />
                       {label}
-                    </button>
+                    </TabButton>
                   );
                 })}
-            </div>
+            </TabBar>
           )}
 
           {activeTopTab === 'edit' ? (
@@ -1242,20 +1249,19 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                 {/* Row 1: Data, Cliente, Stato — 3-col below 2xl when there's room, stacked at 2xl (narrow column) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-5">
-                  <div data-tour="fiche-field-datetime" className="flex flex-col gap-1.5">
-                    <label className={labelClass}><Calendar className="size-3.5" />Data e ora *</label>
-                    <input
-                      type="datetime-local"
-                      className={inputClass}
-                      value={datetimeStr}
-                      onChange={(e) => handleDatetimeChange(e.target.value)}
-                    />
-                    {errors.datetime && <p className="mt-0.5 text-xs text-red-500">{errors.datetime}</p>}
+                  <div data-tour="fiche-field-datetime">
+                    <Field label="Data e ora" labelIcon={Calendar} required error={errors.datetime}>
+                      {({ id }) => (
+                        <DateTimeField id={id} aria-label="Data e ora" value={datetimeStr} onChange={handleDatetimeChange} />
+                      )}
+                    </Field>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className={labelClass}><User className="size-3.5" />Cliente *</label>
+                  <Field label="Cliente" labelIcon={User} required error={errors.client_id}>
+                    {({ id, invalid }) => (
                     <Select
+                      id={id}
+                      invalid={invalid}
                       options={clientOptions}
                       labelKey="fullName"
                       valueKey="id"
@@ -1283,81 +1289,65 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                         setQuickAddOpen(true);
                       }}
                     />
-                    {errors.client_id && <p className="mt-0.5 text-xs text-red-500">{errors.client_id}</p>}
-                  </div>
+                    )}
+                  </Field>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className={labelClass}><Check className="size-3.5" />Stato</label>
-                    <span
-                      className={`self-start inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${bucketChipClass[currentBucket]}`}
-                      title="Lo stato è derivato dalla data e dal pagamento"
-                    >
-                      {FICHE_BUCKET_LABELS[currentBucket]}
-                    </span>
-                  </div>
+                  <Field label="Stato" labelIcon={Check}>
+                    {({ id }) => (
+                      <Tooltip label="Lo stato è derivato dalla data e dal pagamento">
+                        <span id={id} className="self-start inline-flex items-center h-[var(--lume-control-h-md)]">
+                          <StatusDot tone={FICHE_BUCKET_TONE[currentBucket]} className="text-sm">
+                            {FICHE_BUCKET_LABELS[currentBucket]}
+                          </StatusDot>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Field>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+                  <TabBar label="Scheda tecnica">
                     {([
                       { id: 'new', label: 'Scheda tecnica' },
                       { id: 'last', label: 'Ultima scheda' },
-                    ] as { id: 'new' | 'last'; label: string }[]).map(({ id, label }) => {
-                      const isActive = treatmentTab === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setTreatmentTab(id)}
-                          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                            isActive
-                              ? 'border-primary text-zinc-900 dark:text-zinc-100'
-                              : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                    ] as { id: 'new' | 'last'; label: string }[]).map(({ id, label }) => (
+                      <TabButton key={id} active={treatmentTab === id} onClick={() => setTreatmentTab(id)}>
+                        {label}
+                      </TabButton>
+                    ))}
+                  </TabBar>
 
                   {treatmentTab === 'new' ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-3 pt-1">
-                      <div className="flex flex-col gap-1.5">
-                        <label className={labelClass}><FlaskConical className="size-3.5" />Miscela</label>
-                        <textarea
-                          className={`${inputClass} resize-none`}
-                          rows={3}
-                          value={miscela}
-                          onChange={(e) => setMiscela(e.target.value)}
-                          placeholder="Codice colore…"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className={labelClass}><Sparkles className="size-3.5" />Tecnica</label>
-                        <textarea
-                          className={`${inputClass} resize-none`}
-                          rows={3}
-                          value={tecnica}
-                          onChange={(e) => setTecnica(e.target.value)}
-                          placeholder="Es. balayage…"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className={labelClass}><FileText className="size-3.5" />Nota appuntamento</label>
-                        <textarea
-                          className={`${inputClass} resize-none`}
-                          rows={3}
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          placeholder="Note per questo appuntamento…"
-                        />
-                      </div>
+                      <TextArea
+                        label="Miscela"
+                        labelIcon={FlaskConical}
+                        rows={3}
+                        value={miscela}
+                        onChange={(e) => setMiscela(e.target.value)}
+                        placeholder="Codice colore…"
+                      />
+                      <TextArea
+                        label="Tecnica"
+                        labelIcon={Sparkles}
+                        rows={3}
+                        value={tecnica}
+                        onChange={(e) => setTecnica(e.target.value)}
+                        placeholder="Es. balayage…"
+                      />
+                      <TextArea
+                        label="Nota appuntamento"
+                        labelIcon={FileText}
+                        rows={3}
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Note per questo appuntamento…"
+                      />
                     </div>
                   ) : (
                     <div className="flex flex-col gap-3 pt-1">
                       {lastTreatment && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs text-[var(--lume-text-secondary)]">
                           {format(new Date(lastTreatment.datetime), "d MMMM yyyy", { locale: it })}
                         </p>
                       )}
@@ -1372,14 +1362,16 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                           const value = lastTreatment?.[field] ?? '';
                           const placeholder = selectedClient ? config.empty : 'Seleziona un cliente…';
                           return (
-                            <div key={field} className="flex flex-col gap-1.5">
-                              <label className={labelClass}><Icon className="size-3.5" />{config.label}</label>
-                              <div
-                                className={`${readOnlyFieldClass} ${value ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500'}`}
-                              >
-                                {value || placeholder}
-                              </div>
-                            </div>
+                            <Field key={field} label={config.label} labelIcon={Icon}>
+                              {({ id }) => (
+                                <div
+                                  id={id}
+                                  className={`${readOnlyFieldClass} ${value ? 'text-[var(--lume-text-secondary)]' : 'text-[var(--lume-text-muted)]'}`}
+                                >
+                                  {value || placeholder}
+                                </div>
+                              )}
+                            </Field>
                           );
                         })}
                       </div>
@@ -1393,85 +1385,54 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               <div data-tour="fiche-services" className="flex flex-col gap-4 min-h-0">
 
                 {/* Tab switcher (nested) */}
-                <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+                <TabBar label="Servizi e prodotti" className="shrink-0">
                     {([
                       { id: 'services', label: 'Servizi', icon: Scissors, count: ficheServices.length },
                       { id: 'products', label: 'Prodotti', icon: Package, count: ficheProducts.length },
                     ] as { id: 'services' | 'products'; label: string; icon: React.ElementType; count: number }[]).map(({ id, label, icon: Icon, count }) => {
                       const isActive = activeTab === id;
                       return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setActiveTab(id)}
-                          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                            isActive
-                              ? 'border-primary text-primary-hover dark:text-primary/70'
-                              : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300'
-                          }`}
-                        >
-                          <Icon className="size-4" />
+                        <TabButton key={id} active={isActive} count={count > 0 ? count : undefined} onClick={() => setActiveTab(id)}>
+                          <Icon />
                           {label}
-                          {count > 0 && (
-                            <NumberBadge value={count} variant={isActive ? 'primary' : 'neutral'} size="md" />
-                          )}
-                        </button>
+                        </TabButton>
                       );
                     })}
-                  </div>
+                  </TabBar>
 
                   {/* ── SERVICES TAB ── */}
                   {activeTab === 'services' && (
                     <>
-                      <div ref={svcDropdownRef} className="relative shrink-0">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                          <input
-                            ref={svcInputRef}
-                            type="text"
-                            className={`${inputClass} pl-8`}
-                            placeholder="Cerca e aggiungi servizi…"
-                            value={svcQuery}
-                            onChange={(e) => { setSvcQuery(e.target.value); setSvcOpen(true); }}
-                            onFocus={() => setSvcOpen(true)}
-                          />
-                        </div>
-
-                        {svcOpen && (
-                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-popover overflow-hidden">
-                            <CategoryDropdown
-                              groups={groupedServices}
-                              query={svcQuery}
-                              onSelect={addServiceToList}
-                              getKey={(s) => s.id}
-                              emptyText="Nessun servizio trovato"
-                              renderItem={(svc) => (
-                                <>
-                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{svc.name}</span>
-                                  <div className="flex items-center gap-2.5 text-xs text-zinc-400 shrink-0">
-                                    <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
-                                    <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
-                                  </div>
-                                </>
-                              )}
-                            />
-                          </div>
+                      <CatalogSearch
+                        query={svcQuery}
+                        onQueryChange={setSvcQuery}
+                        placeholder="Cerca e aggiungi servizi…"
+                        groups={groupedServices}
+                        onSelect={addServiceToList}
+                        getKey={(svc) => svc.id}
+                        emptyText="Nessun servizio trovato"
+                        renderLabel={(svc) => svc.name}
+                        renderTrailing={(svc) => (
+                          <span className="flex items-center gap-2.5 text-xs font-normal text-[var(--lume-text-muted)] shrink-0">
+                            <span className="flex items-center gap-1"><Clock className="size-3" />{svc.duration} min</span>
+                            <span className="flex items-center gap-1"><Euro className="size-3" />{svc.price.toFixed(2)}</span>
+                          </span>
                         )}
-                      </div>
+                      />
 
-                      {errors.services && <p className="text-xs text-red-500 -mt-2">{errors.services}</p>}
+                      {errors.services && <p className="text-xs text-danger-strong -mt-2">{errors.services}</p>}
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 xl:flex-1 xl:min-h-0">
+                      <div className="surface-card flex flex-col xl:flex-1 xl:min-h-0">
                         {ficheServices.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
-                            <Scissors className="size-8 opacity-20" />
+                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-[var(--lume-text-muted)]">
+                            <Scissors className="size-6 text-[var(--lume-text-muted)]" strokeWidth={1.5} />
                             <p className="text-sm">Nessun servizio aggiunto</p>
                             <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
                           </div>
                         ) : (
                           <>
                             <div
-                              className="grid items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg"
+                              className="grid items-center px-3 py-2 border-b border-line text-xs font-medium text-[var(--lume-text-secondary)] shrink-0 rounded-t-xl"
                               style={{ gridTemplateColumns: TABLE_COLS }}
                             >
                               <span className="flex items-center gap-1"><Scissors className="size-3" />Servizio</span>
@@ -1481,11 +1442,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                               <span className="text-center">Fine</span>
                               <span className="flex items-center gap-1 justify-end"><Euro className="size-3" />Prezzo</span>
                               <span />
-                              <span className="text-center">Abb.</span>
+                              <Tooltip label="Abbonamento"><span className="text-center">Abb.</span></Tooltip>
                               <span />
                             </div>
 
-                            <div className="divide-y divide-zinc-500/10 xl:overflow-y-auto xl:overscroll-contain">
+                            <div className="divide-y divide-line xl:overflow-y-auto xl:overscroll-contain">
                               {servicesWithTimes.map((svc, i) => (
                                 <div
                                   key={svc.id ?? i}
@@ -1497,11 +1458,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                     const isOverridden = catalogName !== '' && svc.name !== catalogName;
                                     return (
                                       <div className="flex items-center gap-1 pr-2 min-w-0">
-                                        <input
+                                        <FormInput
                                           type="text"
+                                          size="sm"
                                           value={svc.name}
                                           onChange={(e) => updateServiceName(i, e.target.value)}
-                                          className="w-full min-w-0 h-[var(--lume-control-h-sm)] px-[var(--lume-control-px-sm)] text-[length:var(--lume-control-text-sm)] rounded-md border border-transparent hover:border-zinc-500/25 focus:border-primary/50 focus:ring-2 focus:ring-inset focus:ring-primary/50 focus:outline-none bg-transparent text-zinc-900 dark:text-zinc-100 transition-colors"
+                                          fieldClassName="flex-1"
                                           aria-label="Nome servizio"
                                         />
                                         {isOverridden && (
@@ -1510,9 +1472,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                             size="sm"
                                             iconOnly
                                             aria-label="Ripristina nome originale"
-                                            title="Ripristina nome originale"
                                             onClick={() => resetServiceName(i)}
-                                            className="shrink-0 text-zinc-400 hover:text-primary hover:bg-primary/10"
                                           >
                                             <RotateCcw />
                                           </Button>
@@ -1544,10 +1504,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                     />
                                   </div>
 
-                                  <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
+                                  <span className="text-sm text-center tabular-nums text-[var(--lume-text-secondary)]">
                                     {format(svc.start_time, 'HH:mm', { locale: it })}
                                   </span>
-                                  <span className="text-sm text-center font-mono text-zinc-600 dark:text-zinc-400">
+                                  <span className="text-sm text-center tabular-nums text-[var(--lume-text-secondary)]">
                                     {format(svc.end_time, 'HH:mm', { locale: it })}
                                   </span>
 
@@ -1565,21 +1525,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                                   </div>
 
                                   <div className="flex justify-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => updateServicePrice(i, svc.final_price === 0 ? svc.list_price : 0)}
+                                    <GiftToggle
+                                      active={svc.final_price === 0}
                                       disabled={!!svc.abbonamento_id}
-                                      aria-pressed={svc.final_price === 0}
-                                      className={`p-1 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                                        svc.final_price === 0
-                                          ? 'text-pink-500 bg-pink-50 dark:bg-pink-500/10'
-                                          : 'text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'
-                                      }`}
-                                      title={svc.final_price === 0 ? 'Omaggio attivo (clicca per ripristinare)' : 'Segna come omaggio'}
-                                      aria-label="Segna come omaggio"
-                                    >
-                                      <Gift className="size-3.5" />
-                                    </button>
+                                      onClick={() => updateServicePrice(i, svc.final_price === 0 ? svc.list_price : 0)}
+                                    />
                                   </div>
 
                                   <AbbonamentoCell
@@ -1592,12 +1542,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
                                   <div className="flex justify-end">
                                     <Button
-                                      variant="ghost"
+                                      variant="ghost-destructive"
                                       size="sm"
                                       iconOnly
                                       aria-label="Rimuovi servizio"
                                       onClick={() => removeService(i)}
-                                      className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                                     >
                                       <Trash2 />
                                     </Button>
@@ -1614,44 +1563,25 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                   {/* ── PRODUCTS TAB ── */}
                   {activeTab === 'products' && (
                     <>
-                      <div ref={prodDropdownRef} className="relative shrink-0">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                          <input
-                            ref={prodInputRef}
-                            type="text"
-                            className={`${inputClass} pl-8`}
-                            placeholder="Cerca e aggiungi prodotti…"
-                            value={prodQuery}
-                            onChange={(e) => { setProdQuery(e.target.value); setProdOpen(true); }}
-                            onFocus={() => setProdOpen(true)}
-                          />
-                        </div>
-
-                        {prodOpen && (
-                          <div className="absolute w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-500/25 rounded-lg shadow-xl z-popover overflow-hidden">
-                            <CategoryDropdown
-                              groups={groupedProducts}
-                              query={prodQuery}
-                              onSelect={addProductToList}
-                              getKey={(p) => p.id}
-                              emptyText="Nessun prodotto trovato"
-                              renderItem={(prod) => (
-                                <>
-                                  <span className="text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                                  <span className="flex items-center gap-1 text-xs text-zinc-400 shrink-0">
-                                    <Euro className="size-3" />{(prod.sell_price ?? prod.price)?.toFixed(2) ?? '—'}
-                                  </span>
-                                </>
-                              )}
-                            />
-                          </div>
+                      <CatalogSearch
+                        query={prodQuery}
+                        onQueryChange={setProdQuery}
+                        placeholder="Cerca e aggiungi prodotti…"
+                        groups={groupedProducts}
+                        onSelect={addProductToList}
+                        getKey={(prod) => prod.id}
+                        emptyText="Nessun prodotto trovato"
+                        renderLabel={(prod) => prod.name}
+                        renderTrailing={(prod) => (
+                          <span className="flex items-center gap-1 text-xs font-normal text-[var(--lume-text-muted)] shrink-0">
+                            <Euro className="size-3" />{(prod.sell_price ?? prod.price)?.toFixed(2) ?? '—'}
+                          </span>
                         )}
-                      </div>
+                      />
 
-                      <div className="flex flex-col rounded-lg border border-zinc-500/25 xl:flex-1 xl:min-h-0">
+                      <div className="surface-card flex flex-col xl:flex-1 xl:min-h-0">
                         {ficheProducts.length > 0 && (
-                          <div className="flex items-center px-3 py-2 bg-zinc-50 dark:bg-zinc-700/40 border-b border-zinc-500/15 text-xs font-medium text-zinc-400 uppercase tracking-wide shrink-0 rounded-t-lg">
+                          <div className="flex items-center px-3 py-2 border-b border-line text-xs font-medium text-[var(--lume-text-secondary)] shrink-0 rounded-t-xl">
                             <span className="flex items-center gap-1 flex-1 min-w-0"><Package className="size-3" />Prodotto</span>
                             <span className="flex items-center gap-1 shrink-0 mr-4">Qtà</span>
                             <span className="flex items-center gap-1 shrink-0 mr-6"><Euro className="size-3" />Totale</span>
@@ -1659,80 +1589,54 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                           </div>
                         )}
                         {ficheProducts.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
-                            <Package className="size-8 opacity-20" />
+                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-[var(--lume-text-muted)]">
+                            <Package className="size-6 text-[var(--lume-text-muted)]" strokeWidth={1.5} />
                             <p className="text-sm">Nessun prodotto aggiunto</p>
                             <p className="text-xs opacity-60">Cerca e clicca per aggiungere</p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-zinc-500/10 xl:overflow-y-auto xl:overscroll-contain">
+                          <div className="divide-y divide-line xl:overflow-y-auto xl:overscroll-contain">
                             {ficheProducts.map((prod) => (
                               <div key={prod.product_id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</span>
-                                  <span className="text-xs text-zinc-400 dark:text-zinc-500">{prod.list_price.toFixed(2)} € / pz</span>
+                                  <span className="text-sm text-[var(--lume-text)] truncate">{prod.name}</span>
+                                  <span className="text-xs text-[var(--lume-text-muted)]">{prod.list_price.toFixed(2)} € / pz</span>
                                 </div>
 
                                 <div className="flex items-center gap-4 shrink-0">
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => updateProductQuantity(prod.product_id, -1)}
-                                      className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                                    >
-                                      −
-                                    </button>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      value={prod.quantity}
-                                      size={Math.max(2, String(prod.quantity).length)}
-                                      onChange={(e) => setProductQuantity(prod.product_id, e.target.value)}
-                                      className="min-w-7 text-center text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => updateProductQuantity(prod.product_id, 1)}
-                                      className="size-6 flex items-center justify-center rounded-md border border-zinc-500/25 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm leading-none"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
+                                  <NumberInput
+                                    value={prod.quantity}
+                                    onChange={(v) => setProductQuantity(prod.product_id, String(v ?? 1))}
+                                    min={1}
+                                    step={1}
+                                    size="sm"
+                                    className="w-16"
+                                  />
 
                                   <div className="flex items-center gap-1 shrink-0">
-                                    <button
-                                      type="button"
+                                    <GiftToggle
+                                      active={prod.final_price === 0}
                                       onClick={() => setProductLineTotal(prod.product_id, prod.final_price === 0 ? String(prod.list_price * prod.quantity) : '0')}
-                                      aria-pressed={prod.final_price === 0}
-                                      className={`p-1 rounded-md transition-colors ${
-                                        prod.final_price === 0
-                                          ? 'text-pink-500 bg-pink-50 dark:bg-pink-500/10'
-                                          : 'text-zinc-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'
-                                      }`}
-                                      title={prod.final_price === 0 ? 'Omaggio attivo (clicca per ripristinare)' : 'Segna come omaggio'}
-                                      aria-label="Segna come omaggio"
-                                    >
-                                      <Gift className="size-3.5" />
-                                    </button>
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      step={0.01}
-                                      value={prod.final_price.toFixed(2)}
-                                      size={Math.max(4, prod.final_price.toFixed(2).length)}
-                                      onChange={(e) => setProductLineTotal(prod.product_id, e.target.value)}
-                                      className="min-w-12 text-right text-sm font-mono text-zinc-500 dark:text-zinc-400 bg-transparent border border-zinc-500/25 rounded-md focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none py-0.5 px-1.5"
                                     />
-                                    <span className="text-sm text-zinc-400 dark:text-zinc-500">€</span>
+                                    <NumberInput
+                                      value={prod.final_price}
+                                      onChange={(v) => setProductLineTotal(prod.product_id, v === null ? '' : String(v))}
+                                      min={0}
+                                      step={0.5}
+                                      decimals={2}
+                                      suffix="€"
+                                      hideSteppers
+                                      size="sm"
+                                      className="w-24"
+                                    />
                                   </div>
 
                                   <Button
-                                    variant="ghost"
+                                    variant="ghost-destructive"
                                     size="sm"
                                     iconOnly
                                     aria-label="Rimuovi prodotto"
                                     onClick={() => removeProduct(prod.product_id)}
-                                    className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                                   >
                                     <Trash2 />
                                   </Button>
@@ -1745,7 +1649,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                     </>
                   )}
 
-                {errorMessage && <p className="text-xs text-red-500 shrink-0">{errorMessage}</p>}
+                {errorMessage && <p className="text-xs text-danger-strong shrink-0">{errorMessage}</p>}
               </div>
             </div>
           ) : activeTopTab === 'history' ? (
@@ -1759,7 +1663,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               {fiche?.id ? (
                 <FicheHistoryTab ficheId={fiche.id} />
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 text-zinc-400">
+                <div className="flex flex-col items-center justify-center py-16 gap-3 text-[var(--lume-text-muted)]">
                   <History className="size-10 opacity-30" />
                   <p className="text-sm">Cronologia non disponibile.</p>
                 </div>
@@ -1793,36 +1697,28 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
               </div>
               <div className="flex flex-col gap-4 overflow-y-auto min-h-0">
                 {showPaymentMismatch && (
-                  <div
-                    role="status"
-                    className="rounded-lg border border-[var(--lume-warning-border)] bg-[var(--lume-warning-bg)] px-4 py-3 text-sm text-[var(--lume-warning-fg)]"
-                  >
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-                      <p>
-                        Incassato <span className="font-semibold">{formatCurrency(paidSum)}</span>,
-                        totale ora <span className="font-semibold">{formatCurrency(closedFicheCurrentTotal)}</span>.{' '}
-                        {paymentDelta > 0
-                          ? `Mancano ${formatCurrency(paymentDelta)}.`
-                          : `Cliente in credito di ${formatCurrency(Math.abs(paymentDelta))}.`}
-                      </p>
-                    </div>
-                  </div>
+                  <Callout tone="warning">
+                    Incassato <span className="font-medium tabular-nums text-[var(--lume-text)]">{formatCurrency(paidSum)}</span>,
+                    totale ora <span className="font-medium tabular-nums text-[var(--lume-text)]">{formatCurrency(closedFicheCurrentTotal)}</span>.{' '}
+                    {paymentDelta > 0
+                      ? `Mancano ${formatCurrency(paymentDelta)}.`
+                      : `Cliente in credito di ${formatCurrency(Math.abs(paymentDelta))}.`}
+                  </Callout>
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-[var(--lume-text-secondary)]">
                     Pagamenti registrati
                   </p>
                   {existingPayments.length === 0 ? (
-                    <p className="text-sm text-zinc-400">Nessun pagamento registrato.</p>
+                    <p className="text-sm text-[var(--lume-text-muted)]">Nessun pagamento registrato.</p>
                   ) : (
                     <ul className="flex flex-col gap-2 list-none pl-0">
                       {existingPayments.map((p) => {
                         return (
                           <li
                             key={p.id}
-                            className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-zinc-500/20 bg-zinc-50/60 dark:bg-zinc-800/40 text-sm"
+                            className="surface-card flex items-center justify-between gap-3 px-3 py-2 text-sm"
                           >
                             <Select
                               value={p.method}
@@ -1837,12 +1733,12 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
                               searchable={false}
                               disabled={updatingPaymentId !== null}
                               size="sm"
-                              width="w-36"
+                              className="w-36"
                             />
-                            <span className="text-zinc-700 dark:text-zinc-200 font-mono">
+                            <span className="text-[var(--lume-text)] tabular-nums">
                               {formatCurrency(p.amount)}
                             </span>
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-auto">
+                            <span className="text-xs text-[var(--lume-text-secondary)] ml-auto">
                               {format(new Date(p.created_at), 'd MMM yyyy', { locale: it })}
                             </span>
                           </li>
@@ -1909,46 +1805,33 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={handleDelete}
-          mainIcon={AlertTriangle}
         >
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm text-[var(--lume-text-secondary)]">
             Sei sicuro di voler eliminare questa fiche? L&apos;azione è irreversibile.
           </p>
         </DeleteModal>
       )}
 
-      <DeleteModal
+      <ConfirmDialog
         isOpen={pendingAction !== null}
         onClose={() => setPendingAction(null)}
         onConfirm={handleSubmit}
         title="Fuori orari di lavoro"
-        subtitle="L'appuntamento è fuori dagli orari configurati"
-        mainIcon={AlertTriangle}
-        confirmIcon={Check}
-        confirmText="Conferma comunque"
-      >
-        {servicesWithTimes.length > 0 && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            L&apos;appuntamento è previsto dalle{' '}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {format(
+        description={
+          servicesWithTimes.length > 0
+            ? `L'appuntamento è previsto dalle ${format(
                 servicesWithTimes.reduce((m, s) => (s.start_time < m ? s.start_time : m), servicesWithTimes[0].start_time),
                 'HH:mm',
                 { locale: it },
-              )}
-            </span>{' '}
-            alle{' '}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {format(
+              )} alle ${format(
                 servicesWithTimes.reduce((m, s) => (s.end_time > m ? s.end_time : m), servicesWithTimes[0].end_time),
                 'HH:mm',
                 { locale: it },
-              )}
-            </span>
-            , fuori dagli orari di apertura del salone. Confermi di voler creare l&apos;appuntamento comunque?
-          </p>
-        )}
-      </DeleteModal>
+              )}, fuori dagli orari di apertura del salone. Confermi di voler creare l'appuntamento comunque?`
+            : "L'appuntamento è fuori dagli orari configurati"
+        }
+        confirmLabel="Conferma comunque"
+      />
 
       <ConfirmEditClosedFicheDialog
         isOpen={showEditConfirm}

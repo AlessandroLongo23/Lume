@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Pencil, Plus, X, Check, Trash2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useId, useRef } from 'react';
+import { Check, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
 
 const GMAPS_RE = /^https?:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)/;
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
+import { DialogFooter, DialogHeader } from '@/lib/components/shared/ui/modals/dialogParts';
 import { ComuneAutocomplete, type ComuneSelection } from '@/lib/components/shared/ui/ComuneAutocomplete';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useProspectsStore, type ProspectInput } from '@/lib/stores/prospects';
-import { Prospect, PROSPECT_STATUSES, STATUS_LABEL, STATUS_TONE, type ProspectStatus } from '@/lib/types/Prospect';
+import { Prospect, PROSPECT_STATUSES, type ProspectStatus } from '@/lib/types/Prospect';
 import { ProspectStatusChip } from './ProspectStatusChip';
-import { cn } from '@/lib/utils';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 
 interface ProspectFormModalProps {
   isOpen:    boolean;
@@ -58,20 +61,12 @@ const comuneFromProspect = (p: Prospect): ComuneSelection | null => {
   };
 };
 
-const TONE_DOT: Record<(typeof STATUS_TONE)[ProspectStatus], string> = {
-  neutral: 'bg-muted-foreground',
-  muted:   'bg-muted-foreground/60',
-  warning: 'bg-[var(--lume-warning-fg)]',
-  danger:  'bg-[var(--lume-danger-fg)]',
-  success: 'bg-[var(--lume-success-fg)]',
-  accent:  'bg-[var(--lume-accent)]',
-};
-
 export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }: ProspectFormModalProps) {
   const add       = useProspectsStore((s) => s.add);
   const update    = useProspectsStore((s) => s.update);
   const prospects = useProspectsStore((s) => s.prospects);
   const isEdit = !!prospect;
+  const titleId = useId();
 
   const [form, setForm]       = useState<FormState>(emptyForm());
   const [comune, setComune]   = useState<ComuneSelection | null>(null);
@@ -202,58 +197,38 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
     }
   };
 
-  const Icon = isEdit ? Pencil : Plus;
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} classes="max-w-2xl">
-      <div className="flex flex-col bg-muted rounded-lg shadow-xl w-full h-full max-h-[92vh]">
-        <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <div className="flex flex-row items-center gap-3 truncate">
-            <div className="flex shrink-0 items-center justify-center size-10 rounded-lg bg-primary/10">
-              <Icon className="size-5 text-primary" />
-            </div>
-            <div className="flex flex-col truncate">
-              <h2 className="text-lg font-semibold text-foreground">
-                {isEdit ? prospect.name : 'Nuovo prospect'}
-              </h2>
-              <p className="text-sm text-muted-foreground truncate">
-                {isEdit ? 'Modifica i dettagli o aggiorna lo stato' : 'Aggiungi un salone alla lista da chiamare'}
-              </p>
-            </div>
-          </div>
-          <Button variant="ghost" size="md" iconOnly aria-label="Chiudi" onClick={onClose}>
-            <X />
-          </Button>
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose} classes="max-w-2xl" labelledBy={titleId}>
+      <>
+        <DialogHeader
+          titleId={titleId}
+          title={isEdit ? prospect.name : 'Nuovo prospect'}
+          subtitle={isEdit ? 'Modifica i dettagli o aggiorna lo stato' : 'Aggiungi un salone alla lista da chiamare'}
+          onClose={onClose}
+          className="pb-4"
+        />
 
         {isEdit && (
-          <div role="tablist" className="flex flex-row gap-1 px-6 pt-4 shrink-0">
+          <TabBar label="Sezioni del prospect" className="px-6 pb-2 shrink-0 border-b border-line">
             {(
               [
                 { key: 'post_call', label: 'Dopo la chiamata' },
                 { key: 'pre_call',  label: 'Prima della chiamata' },
               ] as const
             ).map(({ key, label }) => (
-              <button
+              <TabButton
                 key={key}
-                type="button"
-                role="tab"
                 id={`tab-${key}`}
                 aria-controls={`panel-${key}`}
-                aria-selected={activeTab === key}
+                active={activeTab === key}
                 onClick={() => setActiveTab(key)}
-                className={cn(
-                  'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                  activeTab === key
-                    ? 'bg-[var(--lume-accent-light)] text-[var(--lume-accent-dark)]'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                )}
               >
                 {label}
-              </button>
+              </TabButton>
             ))}
-          </div>
+          </TabBar>
         )}
+        {!isEdit && <div className="border-b border-line" aria-hidden />}
 
         <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-6">
 
@@ -263,11 +238,11 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
               {/* Status section */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-medium text-foreground">Stato</h3>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>Chiamate: <span className="tabular-nums font-medium text-foreground">{prospect.call_count}</span></span>
+                  <h3 className="text-sm font-medium tracking-tight text-[var(--lume-text)]">Stato</h3>
+                  <div className="flex items-center gap-3 text-xs text-[var(--lume-text-secondary)]">
+                    <span>Chiamate: <span className="tabular-nums text-[var(--lume-text)]">{prospect.call_count}</span></span>
                     {prospect.last_call_at && (
-                      <span>Ultima: <span className="tabular-nums font-medium text-foreground">{new Date(prospect.last_call_at).toLocaleDateString('it-IT')}</span></span>
+                      <span>Ultima: <span className="tabular-nums text-[var(--lume-text)]">{new Date(prospect.last_call_at).toLocaleDateString('it-IT')}</span></span>
                     )}
                   </div>
                 </div>
@@ -275,38 +250,34 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   {PROSPECT_STATUSES.map((s) => {
                     const active = prospect.status === s;
                     return (
-                      <button
+                      <Button
                         key={s}
-                        type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => handleStatusChange(s)}
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
-                          active
-                            ? 'border-[var(--lume-accent)] bg-[var(--lume-accent-light)] text-[var(--lume-accent-dark)]'
-                            : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
-                        )}
+                        pressed={active}
+                        className="max-md:h-11"
                       >
-                        <span className={cn('size-1.5 rounded-full', TONE_DOT[STATUS_TONE[s]])} />
-                        {STATUS_LABEL[s]}
-                      </button>
+                        <ProspectStatusChip status={s} />
+                      </Button>
                     );
                   })}
                 </div>
                 {prospect.status === 'callback_scheduled' && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-[var(--lume-text-secondary)]">
                     Per impostare/aggiornare la data di richiamo, usa la sessione di chiamata.
                   </div>
                 )}
                 {prospect.callback_at && (
-                  <div className="text-xs text-muted-foreground">
-                    Da richiamare il <span className="font-medium text-foreground tabular-nums">
+                  <div className="text-xs text-[var(--lume-text-secondary)]">
+                    Da richiamare il <span className="tabular-nums text-[var(--lume-text)]">
                       {new Date(prospect.callback_at).toLocaleString('it-IT')}
                     </span>
                   </div>
                 )}
               </section>
 
-              <div className="border-t border-border" />
+              <div className="border-t border-line" />
 
               {/* Post-call fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -344,27 +315,27 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Maps URL first — paste to auto-fill everything */}
               <div className="md:col-span-2 space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  Link Google Maps
-                  {prefilling && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
-                      <Loader2 className="size-3 animate-spin" />
-                      Ricerca in corso…
-                    </span>
-                  )}
-                  {prefillDone && !prefilling && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--lume-success-fg)] font-normal">
-                      <CheckCircle2 className="size-3" />
-                      Compilato automaticamente
-                    </span>
-                  )}
-                  {prefillError && !prefilling && (
-                    <span className="text-xs text-[var(--lume-danger-fg)] font-normal">
-                      {prefillError}
-                    </span>
-                  )}
-                </label>
                 <FormInput
+                  label={
+                    <span className="inline-flex items-center gap-2">
+                      Link Google Maps
+                      {prefilling && (
+                        <span className="flex items-center gap-1 text-xs text-[var(--lume-text-secondary)]">
+                          <Loader2 className="size-3 animate-spin" />
+                          Ricerca in corso…
+                        </span>
+                      )}
+                      {prefillDone && !prefilling && (
+                        <span className="flex items-center gap-1 text-xs text-success-strong">
+                          <CheckCircle2 className="size-3" />
+                          Compilato automaticamente
+                        </span>
+                      )}
+                      {prefillError && !prefilling && (
+                        <span className="text-xs text-danger-strong">{prefillError}</span>
+                      )}
+                    </span>
+                  }
                   value={form.google_maps_url}
                   onChange={(e) => handleMapsUrlChange(e.target.value)}
                   placeholder="Incolla il link di Google Maps per compilare i campi in automatico…"
@@ -373,14 +344,13 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                   disabled={prefilling}
                 />
                 {duplicateProspect && (
-                  <div className="flex items-start gap-2 rounded-md border border-[var(--lume-warning-fg)]/30 bg-[var(--lume-warning-bg)] px-3 py-2 text-sm text-[var(--lume-warning-fg)]">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    <span>
+                  <Callout tone="warning">
+                    <span className="text-[var(--lume-text)]">
                       Questo link è già in lista come{' '}
                       <span className="font-medium">{duplicateProspect.name}</span>.
                       Salvataggio non consentito.
                     </span>
-                  </div>
+                  </Callout>
                 )}
               </div>
 
@@ -421,52 +391,46 @@ export function ProspectFormModal({ isOpen, onClose, prospect, onDeleteRequest }
                 />
               </div>
 
-              <div className="md:col-span-2 space-y-2">
-                <label htmlFor="prospect-notes" className="block text-sm font-medium text-foreground">Note</label>
-                <textarea
-                  id="prospect-notes"
-                  value={form.notes}
-                  onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
-                  placeholder="Qualunque dettaglio utile prima della chiamata…"
-                  rows={3}
-                  className="w-full rounded-md border bg-card text-foreground placeholder:text-muted-foreground border-input focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none px-3 py-2 text-sm transition-[border-color,box-shadow] duration-200"
-                />
-              </div>
+              <TextArea
+                id="prospect-notes"
+                label="Note"
+                fieldClassName="md:col-span-2"
+                value={form.notes}
+                onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
+                placeholder="Qualunque dettaglio utile prima della chiamata…"
+                rows={3}
+              />
             </div>
             </div>
           )}
 
         </div>
 
-        <div className="flex flex-row flex-wrap items-center justify-between gap-3 p-6 border-t border-border shrink-0">
-          <div>
-            {isEdit && prospect && onDeleteRequest && (
-              <Button
-                variant="ghost"
-                leadingIcon={Trash2}
-                onClick={() => { onDeleteRequest(prospect); }}
-                className="text-[var(--lume-danger-fg)] hover:bg-[var(--lume-danger-bg)]"
-              >
-                Elimina
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-row flex-wrap items-center gap-3">
-            <ProspectStatusChip status={prospect?.status ?? 'not_contacted'} className={isEdit ? 'mr-2' : 'hidden'} />
-            <Button variant="secondary" leadingIcon={X} onClick={onClose}>
-              Annulla
-            </Button>
+        <DialogFooter
+          start={isEdit && prospect && onDeleteRequest ? (
             <Button
-              variant="primary"
-              leadingIcon={Check}
-              disabled={submitting || !!duplicateProspect}
-              onClick={handleSubmit}
+              variant="ghost-destructive"
+              leadingIcon={Trash2}
+              onClick={() => { onDeleteRequest(prospect); }}
             >
-              {isEdit ? 'Salva' : 'Aggiungi'}
+              Elimina
             </Button>
-          </div>
-        </div>
-      </div>
+          ) : undefined}
+        >
+          {isEdit && <ProspectStatusChip status={prospect?.status ?? 'not_contacted'} className="mr-2" />}
+          <Button variant="ghost" onClick={onClose}>
+            Annulla
+          </Button>
+          <Button
+            variant="primary"
+            leadingIcon={Check}
+            disabled={submitting || !!duplicateProspect}
+            onClick={handleSubmit}
+          >
+            {isEdit ? 'Salva' : 'Aggiungi'}
+          </Button>
+        </DialogFooter>
+      </>
     </Modal>
   );
 }

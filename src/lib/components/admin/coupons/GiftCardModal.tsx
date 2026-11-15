@@ -9,6 +9,10 @@ import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePop
 import { AddModal } from '@/lib/components/shared/ui/modals/AddModal';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { DateField } from '@/lib/components/shared/ui/forms/DateField';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { ToggleButton } from '@/lib/components/shared/ui/ToggleButton';
 import { CouponScopePicker, EMPTY_SCOPE, type CouponScopeValue } from './CouponScopePicker';
@@ -127,10 +131,6 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     }
   }
 
-  const inputClass =
-    'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50';
-  const labelClass =
-    'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
   const onConfirm = view === 'form' ? handleSubmit : onClose;
   const confirmText = view === 'form' ? (isSubmitting ? 'Vendita…' : 'Vendi gift card') : 'Chiudi';
@@ -142,9 +142,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
       onSubmit={onConfirm}
       title="Vendi gift card"
       subtitle="Registra la vendita di una gift card per un cliente"
-      icon={CreditCard}
       classes="max-w-2xl"
-      contentClasses="overflow-y-auto"
       confirmText={confirmText}
       confirmDisabled={isSubmitting}
       confirmDataTour="save-gift-card"
@@ -162,46 +160,45 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
       ) : (
         <div className="flex flex-col gap-5" data-tour="gift-card-form">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><UserPlus className="size-3.5" />Acquirente *</label>
-              <Select
-                options={clientOptions}
-                labelKey="fullName"
-                valueKey="id"
-                value={purchaserId}
-                onChange={(v) => {
-                  // Advances an interactive guide's "choose the buyer" step once the
-                  // user picks a client (no-op when no tour is running).
-                  if (v && v !== purchaserId) emitTourEvent('gift-card:purchaser-selected');
-                  setPurchaserId(v);
-                }}
-                placeholder="Cerca acquirente…"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><User className="size-3.5" />Destinatario *</label>
-              {forSelf ? (
-                <input
-                  type="text"
-                  className={`${inputClass} bg-zinc-50 dark:bg-zinc-700/30 cursor-not-allowed`}
-                  value="Stesso dell'acquirente"
-                  readOnly
-                />
-              ) : (
+            <Field label="Acquirente" labelIcon={UserPlus} required>
+              {({ id }) => (
                 <Select
+                  id={id}
                   options={clientOptions}
                   labelKey="fullName"
                   valueKey="id"
-                  value={recipientId}
+                  value={purchaserId}
                   onChange={(v) => {
-                    // Advances an interactive guide's "choose the recipient" step.
-                    if (v && v !== recipientId) emitTourEvent('gift-card:recipient-selected');
-                    setRecipientId(v);
+                    // Advances an interactive guide's "choose the buyer" step once the
+                    // user picks a client (no-op when no tour is running).
+                    if (v && v !== purchaserId) emitTourEvent('gift-card:purchaser-selected');
+                    setPurchaserId(v);
                   }}
-                  placeholder="Cerca destinatario…"
+                  placeholder="Cerca acquirente…"
                 />
               )}
-            </div>
+            </Field>
+            {forSelf ? (
+              <FormInput label="Destinatario" labelIcon={User} required value="Stesso dell'acquirente" readOnly disabled />
+            ) : (
+              <Field label="Destinatario" labelIcon={User} required>
+                {({ id }) => (
+                  <Select
+                    id={id}
+                    options={clientOptions}
+                    labelKey="fullName"
+                    valueKey="id"
+                    value={recipientId}
+                    onChange={(v) => {
+                      // Advances an interactive guide's "choose the recipient" step.
+                      if (v && v !== recipientId) emitTourEvent('gift-card:recipient-selected');
+                      setRecipientId(v);
+                    }}
+                    placeholder="Cerca destinatario…"
+                  />
+                )}
+              </Field>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -215,64 +212,59 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                 emitTourEvent('gift-card:recipient-selected');
               }
             }} />
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">L&apos;acquirente la usa per sé</span>
+            <span className="text-sm text-[var(--lume-text)]">L&apos;acquirente la usa per sé</span>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-amount">
-            <label className={labelClass}><Wallet className="size-3.5" />Valore della gift card *</label>
-            <NumberInput
-              value={amount}
-              onChange={setAmount}
-              min={0}
-              step={5}
-              decimals={2}
-              suffix="€"
-              size="lg"
-            />
+          <div data-tour="gift-card-field-amount">
+            <Field label="Valore della gift card" labelIcon={Wallet} required>
+              {({ id, describedBy, invalid }) => (
+                <NumberInput id={id} aria-describedby={describedBy} aria-invalid={invalid}
+                  value={amount}
+                  onChange={setAmount}
+                  min={0}
+                  step={5}
+                  decimals={2}
+                  suffix="€"
+                />
+              )}
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-payment">
-            <label className={labelClass}>Metodo di pagamento *</label>
-            <ToggleButton
-              options={['cash', 'card', 'transfer'] as CouponSalePaymentMethod[]}
-              labels={['Contanti', 'Carta', 'Bonifico']}
-              icons={[Banknote, CreditCard, Building2]}
-              value={salePaymentMethod}
-              onChange={(v) => setSalePaymentMethod(v as CouponSalePaymentMethod)}
-              className="w-full"
-            />
+          <div data-tour="gift-card-field-payment">
+            <Field label="Metodo di pagamento" required>
+              {() => (
+                <ToggleButton
+                  ariaLabel="Metodo di pagamento"
+                  options={['cash', 'card', 'transfer'] as CouponSalePaymentMethod[]}
+                  labels={['Contanti', 'Carta', 'Bonifico']}
+                  icons={[Banknote, CreditCard, Building2]}
+                  value={salePaymentMethod}
+                  onChange={(v) => setSalePaymentMethod(v as CouponSalePaymentMethod)}
+                  className="w-full"
+                />
+              )}
+            </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-4" data-tour="gift-card-field-validity">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Calendar className="size-3.5" />Valida dal *</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={validFrom}
-                onChange={(e) => setValidFrom(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}><Calendar className="size-3.5" />Valida fino al *</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
-            </div>
+            <Field label="Valida dal" labelIcon={Calendar} required>
+              {({ id }) => <DateField id={id} value={validFrom} onChange={setValidFrom} />}
+            </Field>
+            <Field label="Valida fino al" labelIcon={Calendar} required>
+              {({ id }) => <DateField id={id} value={validUntil} onChange={setValidUntil} />}
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-scope">
-            <label className={labelClass}>Ambito</label>
-            <CouponScopePicker value={scope} onChange={setScope} />
+          <div data-tour="gift-card-field-scope">
+            <Field label="Ambito">
+              {() => <CouponScopePicker value={scope} onChange={setScope} />}
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-1.5" data-tour="gift-card-field-notes">
-            <label className={labelClass}><FileText className="size-3.5" />Note</label>
-            <textarea
-              className={`${inputClass} resize-none`}
+          <div data-tour="gift-card-field-notes">
+            <TextArea
+              label="Note"
+              labelIcon={FileText}
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -280,7 +272,7 @@ export function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
             />
           </div>
 
-          {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+          {errorMessage && <p className="text-sm text-danger-strong">{errorMessage}</p>}
         </div>
       )}
     </AddModal>

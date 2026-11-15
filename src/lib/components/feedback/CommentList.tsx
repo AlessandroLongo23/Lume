@@ -30,15 +30,15 @@ export function CommentList({ feedbackId, currentUserId }: CommentListProps) {
   if (isLoading && comments.length === 0) {
     return (
       <div className="flex flex-col gap-2 py-4">
-        <div className="h-20 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 animate-pulse" />
-        <div className="h-20 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 animate-pulse" />
+        <div className="h-20 rounded-lg bg-active animate-pulse" />
+        <div className="h-20 rounded-lg bg-active animate-pulse" />
       </div>
     );
   }
 
   if (comments.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-8 text-zinc-400 dark:text-zinc-500">
+      <div className="flex flex-col items-center justify-center gap-2 py-8 text-[var(--lume-text-muted)]">
         <MessageSquare className="size-6" />
         <p className="text-sm">Nessun commento ancora. Sii il primo a condividere un pensiero.</p>
       </div>

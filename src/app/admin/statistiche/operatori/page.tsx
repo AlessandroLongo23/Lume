@@ -14,7 +14,7 @@ export default function OperatoriPage() {
   const summaryRows = useMemo(() => toOperatorSummary(data), [data]);
 
   if (isLoading) {
-    return <div className="h-64 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />;
+    return <div className="h-64 rounded-xl bg-hover animate-pulse motion-reduce:animate-none" />;
   }
 
   return (

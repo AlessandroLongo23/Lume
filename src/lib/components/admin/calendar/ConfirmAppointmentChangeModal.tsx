@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Mail, MessageCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { Mail, MessageCircle, ArrowRight } from 'lucide-react';
 import { Modal } from '@/lib/components/shared/ui/modals/Modal';
+import { DialogFooter, DialogHeader } from '@/lib/components/shared/ui/modals/dialogParts';
+import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
 import { useOperatorsStore } from '@/lib/stores/operators';
@@ -40,6 +42,7 @@ export function ConfirmAppointmentChangeModal({
   isPastMove = false,
 }: Props) {
   const operators = useOperatorsStore((s) => s.operators);
+  const titleId = useId();
   const [notifyEmail, setNotifyEmail] = useState(false);
   const [notifyWhatsApp, setNotifyWhatsApp] = useState(false);
 
@@ -71,36 +74,27 @@ export function ConfirmAppointmentChangeModal({
   const canWhatsapp = client?.hasPhone() ?? false;
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} classes="max-w-md" backgroundBlur="sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl ring-1 ring-zinc-500/15 overflow-hidden">
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <CalendarIcon className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Conferma modifica appuntamento
-              </h2>
-              {client && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {client.getFullName()}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-lg ring-1 ring-zinc-500/15 divide-y divide-zinc-500/10">
+    <Modal isOpen={isOpen} onClose={onCancel} classes="max-w-md" labelledBy={titleId}>
+      <>
+        <DialogHeader
+          title="Conferma modifica appuntamento"
+          titleId={titleId}
+          subtitle={client?.getFullName()}
+          onClose={onCancel}
+          closeDisabled={isSubmitting}
+        />
+        <div className="px-6 pt-2 pb-5">
+          <div className="surface-card divide-y divide-line">
             {rows.map((row, idx) => (
               <div key={row.before.ficheServiceId} className="px-3 py-2 flex items-center gap-2 text-sm">
-                <div className="text-zinc-500 dark:text-zinc-400 w-6 text-right shrink-0">{idx + 1}.</div>
+                <div className="tabular-nums text-xs text-[var(--lume-text-muted)] w-6 text-right shrink-0">{idx + 1}.</div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-500 dark:text-zinc-400 line-through">
+                  <div className="flex items-center gap-2 flex-wrap tabular-nums">
+                    <span className="text-[var(--lume-text-muted)] line-through">
                       {fmtDate(row.before.start)} · {fmtTime(row.before.start)}–{fmtTime(row.before.end)}
                     </span>
-                    <ArrowRight className="size-3.5 text-zinc-400 shrink-0" />
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    <ArrowRight className="size-3.5 text-[var(--lume-text-muted)] shrink-0" />
+                    <span className="font-medium text-[var(--lume-text)]">
                       {fmtDate(row.after.start)} · {fmtTime(row.after.start)}–{fmtTime(row.after.end)}
                     </span>
                   </div>
@@ -108,25 +102,25 @@ export function ConfirmAppointmentChangeModal({
               </div>
             ))}
             {operatorChanged && (
-              <div className="px-3 py-2 flex items-center gap-2 text-sm bg-zinc-50 dark:bg-zinc-800/40">
-                <div className="text-zinc-500 dark:text-zinc-400 w-6 text-right shrink-0">·</div>
+              <div className="px-3 py-2 flex items-center gap-2 text-sm text-[var(--lume-text)]">
+                <div className="text-[var(--lume-text-muted)] w-6 text-right shrink-0">·</div>
                 <div className="flex-1">
-                  Operatore: <span className="text-zinc-500 dark:text-zinc-400 line-through mr-1">{beforeOpName}</span>
-                  <ArrowRight className="inline size-3.5 text-zinc-400 mx-1" />
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{afterOpName}</span>
+                  Operatore: <span className="text-[var(--lume-text-muted)] line-through mr-1">{beforeOpName}</span>
+                  <ArrowRight className="inline size-3.5 text-[var(--lume-text-muted)] mx-1" />
+                  <span className="font-medium text-[var(--lume-text)]">{afterOpName}</span>
                 </div>
               </div>
             )}
           </div>
 
           {isPastMove ? (
-            <p className="mt-5 text-xs text-zinc-500 dark:text-zinc-400">
-              Spostamento retroattivo — nessuna notifica sarà inviata al cliente.
+            <p className="mt-5 text-xs text-[var(--lume-text-secondary)]">
+              Spostamento retroattivo: nessuna notifica sarà inviata al cliente.
             </p>
           ) : (
             <div className="mt-5">
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Notifica al cliente</p>
-              <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-[var(--lume-text-secondary)] mb-2">Notifica al cliente</p>
+              <ListBox role="list" aria-label="Notifica al cliente" className="surface-card">
                 <NotifyOption
                   icon={Mail}
                   label="Notifica via Email"
@@ -143,12 +137,12 @@ export function ConfirmAppointmentChangeModal({
                   onChange={setNotifyWhatsApp}
                   disabled={!canWhatsapp}
                 />
-              </div>
+              </ListBox>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50/60 dark:bg-zinc-950/40 border-t border-zinc-500/10">
+        <DialogFooter>
           <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
             Annulla
           </Button>
@@ -158,10 +152,10 @@ export function ConfirmAppointmentChangeModal({
             autoFocus
             onClick={() => onConfirm({ email: notifyEmail, whatsapp: notifyWhatsApp })}
           >
-            {isSubmitting ? 'Salvataggio…' : 'Conferma'}
+            Conferma
           </Button>
-        </div>
-      </div>
+        </DialogFooter>
+      </>
     </Modal>
   );
 }
@@ -177,26 +171,23 @@ interface NotifyOptionProps {
 
 function NotifyOption({ icon: Icon, label, description, checked, onChange, disabled = false }: NotifyOptionProps) {
   return (
-    <div
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg ring-1 ring-zinc-500/15 ${
-        disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 cursor-pointer'
-      }`}
-      onClick={() => !disabled && onChange(!checked)}
-    >
-      <div onClick={(e) => e.stopPropagation()}>
-        <Checkbox
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={disabled}
-        />
+    <ListRow asChild aria-disabled={disabled || undefined} onClick={() => !disabled && onChange(!checked)}>
+      <div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+            disabled={disabled}
+          />
+        </div>
+        <Icon className="size-4 text-[var(--lume-text-secondary)] shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-[var(--lume-text)]">{label}</p>
+          {description && (
+            <p className="text-xs text-[var(--lume-text-secondary)] truncate">{description}</p>
+          )}
+        </div>
       </div>
-      <Icon className="size-4 text-zinc-500 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-zinc-900 dark:text-zinc-100">{label}</p>
-        {description && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{description}</p>
-        )}
-      </div>
-    </div>
+    </ListRow>
   );
 }

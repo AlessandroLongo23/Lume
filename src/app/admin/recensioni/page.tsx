@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Star, Trash2 } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
 import { StarRating } from '@/lib/components/shared/ui/StarRating';
 import { TableSkeleton } from '@/lib/components/shared/ui/TableSkeleton';
@@ -100,36 +100,36 @@ export default function ReviewsPage() {
     <>
       <DeleteModal
         isOpen={showDelete}
-        onClose={() => (isDeleting ? null : setShowDelete(false))}
+        onClose={() => setShowDelete(false)}
         onConfirm={handleDelete}
+        busy={isDeleting}
         title="Elimina recensione"
         subtitle="La tua recensione verrà rimossa definitivamente."
-        confirmText={isDeleting ? 'Eliminazione…' : 'Elimina'}
       />
 
       <div className="flex flex-col gap-6">
         <PageHeader
           title="La tua recensione"
           subtitle="Raccontaci come stai trovando Lume. La tua recensione potrebbe apparire sulla landing page."
-          icon={Star}
         />
 
         {isLoading ? (
           <TableSkeleton />
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 max-w-3xl">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Voto</label>
+              {/* Not a <label>: neither control takes an id to point at. */}
+              <p className="text-sm font-medium text-[var(--lume-text)]">Voto</p>
               <StarRating value={rating} onChange={setRating} />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <p className="text-sm font-medium text-[var(--lume-text)]">
                 Messaggio{' '}
-                <span className={`font-normal ${messageLength > MAX_MESSAGE ? 'text-red-500' : 'text-zinc-400'}`}>
+                <span className={`tabular-nums text-xs font-normal ${messageLength > MAX_MESSAGE ? 'text-danger-strong' : 'text-[var(--lume-text-muted)]'}`}>
                   ({messageLength}/{MAX_MESSAGE})
                 </span>
-              </label>
+              </p>
               <RichTextEditor
                 value={message}
                 onChange={handleMessageChange}
@@ -139,7 +139,7 @@ export default function ReviewsPage() {
             </div>
 
             <div className="flex flex-row items-center justify-between gap-4 pt-2">
-              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="text-xs text-[var(--lume-text-secondary)]">
                 {isEdit && myReview
                   ? myReview.created_at === myReview.updated_at
                     ? `Pubblicata il ${formatDateDisplay(myReview.created_at, 'PPp')}`
@@ -149,7 +149,7 @@ export default function ReviewsPage() {
 
               <div className="flex flex-row items-center gap-3 shrink-0">
                 {isEdit && (
-                  <Button variant="ghost" leadingIcon={Trash2} onClick={() => setShowDelete(true)}>
+                  <Button variant="ghost-destructive" leadingIcon={Trash2} onClick={() => setShowDelete(true)}>
                     Elimina
                   </Button>
                 )}

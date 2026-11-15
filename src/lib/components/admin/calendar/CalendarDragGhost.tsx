@@ -111,12 +111,12 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
     : null;
 
   const warning = isWarningReason(conflict.reason);
-  const accent = !conflict.valid ? '#ef4444' : warning ? '#f59e0b' : '#6366F1';
-  const bg = !conflict.valid
-    ? 'rgba(239, 68, 68, 0.18)'
+  const accent = !conflict.valid
+    ? 'var(--lume-danger-fg)'
     : warning
-      ? 'rgba(245, 158, 11, 0.18)'
-      : 'rgba(99, 102, 241, 0.18)';
+      ? 'var(--lume-warning-fg)'
+      : 'var(--lume-accent)';
+  const bg = `color-mix(in oklab, ${accent} 16%, transparent)`;
 
   // Use tick to keep the linter happy / force the recompute.
   void tick;
@@ -124,26 +124,25 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
   return (
     <Portal>
       <div
-        className="fixed z-drag pointer-events-none rounded-md shadow-lg"
+        className="fixed z-drag pointer-events-none rounded-md"
         style={{
           left: rect.left + 2,
           top: topPx,
           width: rect.width - 4,
           height: heightPx,
           background: bg,
-          border: `2px solid ${accent}`,
+          boxShadow: `inset 0 0 0 2px ${accent}`,
         }}
       >
-        <div
-          className="absolute -top-7 left-0 px-2 py-1 rounded text-2xs font-semibold whitespace-nowrap shadow"
-          style={{
-            background: accent,
-            color: 'white',
-          }}
-        >
-          {format(first.start, 'HH:mm')}–{format(last.end, 'HH:mm')}
-          {operatorName && <> · {operatorName}</>}
-          {reasonLabel && <> · {reasonLabel}</>}
+        {/* Readout chip: neutral, with a dot carrying the state colour. */}
+        {/* ds-ignore: drag readout chip that rides on the ghost, an inverted label like Tooltip; surface-float is a panel and would change its look */}
+        <div className="absolute -top-7 left-0 flex items-center gap-1.5 px-2 py-1 rounded-md text-2xs font-medium whitespace-nowrap bg-[var(--lume-text)] text-[var(--lume-panel)] shadow-float">
+          <span className="size-1.5 rounded-full shrink-0" style={{ background: accent }} aria-hidden />
+          <span className="tabular-nums">
+            {format(first.start, 'HH:mm')}–{format(last.end, 'HH:mm')}
+          </span>
+          {operatorName && <span>· {operatorName}</span>}
+          {reasonLabel && <span>· {reasonLabel}</span>}
         </div>
       </div>
     </Portal>

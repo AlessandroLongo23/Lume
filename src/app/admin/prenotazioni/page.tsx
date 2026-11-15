@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Globe, Check, X, Loader2, ArrowRight, User, Clock, Scissors } from 'lucide-react';
+import { Check, X, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
+import { Button } from '@/lib/components/shared/ui/Button';
+import { StatusDot } from '@/lib/components/shared/ui/StatusDot';
 import { useFichesStore } from '@/lib/stores/fiches';
 import { useFicheServicesStore } from '@/lib/stores/fiche_services';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -92,52 +95,29 @@ export default function PrenotazioniPage() {
   return (
     <div className="flex flex-col gap-6" data-tour="prenotazioni-page">
       <PageHeader
-        icon={Globe}
         title="Prenotazioni online"
         subtitle="Approva, monitora e consulta lo storico delle richieste arrivate dal sito pubblico."
       />
 
-      <div role="tablist" data-tour="prenotazioni-tabs" className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+      <TabBar label="Prenotazioni online" data-tour="prenotazioni-tabs">
         {(['pending', 'upcoming', 'history'] as const).map((t) => {
           const active = t === tab;
           return (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(t)}
-              className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? 'text-primary border-b-2 border-primary -mb-px'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 border-b-2 border-transparent -mb-px'
-              }`}
-            >
+            <TabButton key={t} active={active} count={counts[t] > 0 ? counts[t] : undefined} onClick={() => setTab(t)}>
               {TAB_LABELS[t]}
-              {counts[t] > 0 && (
-                <span
-                  className={`ml-2 inline-flex items-center justify-center rounded-full px-1.5 min-w-5 h-5 text-2xs font-semibold ${
-                    active
-                      ? 'bg-primary text-white'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                  }`}
-                >
-                  {counts[t]}
-                </span>
-              )}
-            </button>
+            </TabButton>
           );
         })}
-      </div>
+      </TabBar>
 
       {fichesLoading && fiches.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-zinc-400" />
+          <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-[var(--lume-text-muted)]" />
         </div>
       ) : list.length === 0 ? (
         <EmptyTabState tab={tab} />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="surface-card divide-y divide-line">
           {list.map((fiche) => (
             <BookingRow key={fiche.id} fiche={fiche} tab={tab} />
           ))}
@@ -154,7 +134,7 @@ function EmptyTabState({ tab }: { tab: Tab }) {
     history: 'Lo storico è vuoto.',
   } satisfies Record<Tab, string>;
   return (
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-12">
+    <p className="text-sm text-[var(--lume-text-secondary)] text-center py-12 px-6 rounded-xl bg-hover">
       {copy[tab]}
     </p>
   );
@@ -225,83 +205,75 @@ function BookingRow({ fiche, tab }: { fiche: Fiche; tab: Tab }) {
   };
 
   return (
-    <li className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-      <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-[1.2fr_1.5fr_1fr] gap-3 sm:gap-5">
+    <li className="px-4 py-3 sm:px-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+      <div className="min-w-0 flex-1 grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1fr)] gap-x-5 gap-y-1 items-baseline">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1">
-            <User className="size-3" />
-            Cliente
-          </p>
-          <p className="mt-0.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+          <p className="text-sm font-medium text-[var(--lume-text)] truncate">
             {client ? client.getFullName() : 'Cliente sconosciuto'}
           </p>
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1">
-            <Scissors className="size-3" />
-            Servizio
-          </p>
-          <p className="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200 truncate">
-            {firstService?.name ?? 'Servizio'}
-          </p>
-          <p className="text-xs text-zinc-500 truncate">
-            {operator ? `con ${operator.getFullName()}` : 'Operatore non assegnato'}
-          </p>
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1">
-            <Clock className="size-3" />
-            Quando
-          </p>
-          <p className="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200 truncate">
-            {format(start, 'EEE d MMM', { locale: it })} · {format(start, 'HH:mm')}
-          </p>
           {tab === 'history' && (
-            <p className="text-xs text-zinc-500 truncate">
+            <p className="mt-0.5 text-xs truncate">
               <StatusLabel status={fiche.status} />
             </p>
           )}
+        </div>
+        <div className="min-w-0 col-span-2 sm:col-span-1 order-last sm:order-none">
+          <p className="text-sm text-[var(--lume-text)] truncate">
+            {firstService?.name ?? 'Servizio'}
+          </p>
+          <p className="text-xs text-[var(--lume-text-secondary)] truncate">
+            {operator ? `con ${operator.getFullName()}` : 'Operatore non assegnato'}
+          </p>
+        </div>
+        <div className="min-w-0 text-right sm:text-left">
+          <p className="text-sm text-[var(--lume-text-secondary)] truncate first-letter:uppercase">
+            {format(start, 'EEE d MMM', { locale: it })}
+            <span className="ml-2 tabular-nums text-compact text-[var(--lume-text)]">{format(start, 'HH:mm')}</span>
+          </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         {tab === 'pending' ? (
           <>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="md"
               onClick={() => act('decline')}
               disabled={submittingAction !== null}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="max-sm:flex-1"
             >
               {submittingAction === 'decline' ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
               ) : (
-                <X className="size-3.5" />
+                <X className="size-4" />
               )}
               Rifiuta
-            </button>
-            <button
-              type="button"
+            </Button>
+            {/* Secondary, not indigo: a list of requests would otherwise show
+                one primary button per row. The check carries the success hue. */}
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => act('approve')}
               disabled={submittingAction !== null}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover active:bg-primary-active text-white px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="max-sm:flex-1"
             >
               {submittingAction === 'approve' ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
               ) : (
-                <Check className="size-3.5" />
+                <Check className="size-4 text-success-strong" />
               )}
               Approva
-            </button>
+            </Button>
           </>
         ) : (
-          <Link
-            href={`/admin/fiches?edit=${fiche.id}`}
-            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-          >
-            Vedi fiche
-            <ArrowRight className="size-3.5" />
-          </Link>
+          <Button asChild variant="ghost" className="-mr-3">
+            <Link href={`/admin/fiches?edit=${fiche.id}`}>
+              Vedi fiche
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </Button>
         )}
       </div>
     </li>
@@ -312,13 +284,13 @@ function StatusLabel({ status }: { status: FicheStatus }) {
   switch (status) {
     case FicheStatus.CREATED:
     case FicheStatus.PENDING:
-      return <span className="text-zinc-600 dark:text-zinc-300">Confermata</span>;
+      return <StatusDot tone="info">Confermata</StatusDot>;
     case FicheStatus.COMPLETED:
-      return <span className="text-emerald-600 dark:text-emerald-400">Conclusa</span>;
+      return <StatusDot tone="success">Conclusa</StatusDot>;
     case FicheStatus.CANCELLED:
-      return <span className="text-red-600 dark:text-red-400">Annullata</span>;
+      return <StatusDot tone="danger">Annullata</StatusDot>;
     case FicheStatus.PENDING_APPROVAL:
-      return <span className="text-amber-600 dark:text-amber-400">In attesa</span>;
+      return <StatusDot tone="warning">In attesa</StatusDot>;
     default:
       return null;
   }

@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Check, AlertCircle, Sparkles, X, Loader2 } from 'lucide-react';
+import { Tag } from '@/lib/components/shared/ui/Tag';
+import { DURATION } from '@/lib/const/motion';
 import { FileIcon } from './fileIcons';
 import { EASE_OUT, ENTITY_LABELS_PLURAL, type ChildState } from './onboardingTypes';
 
@@ -48,8 +50,8 @@ export function FileFeed({ jobs }: FileFeedProps) {
   const completedCount = jobs.filter((c) => c.status === 'completed').length;
 
   return (
-    <div className="rounded-md border border-border bg-card overflow-hidden">
-      <div className="max-h-[28rem] overflow-y-auto divide-y divide-border">
+    <div className="surface-card overflow-hidden">
+      <div className="max-h-112 overflow-y-auto divide-y divide-line">
         <AnimatePresence initial={false}>
           {sortedJobs.map((job, idx) => (
             <motion.div
@@ -59,7 +61,7 @@ export function FileFeed({ jobs }: FileFeedProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
               transition={{
-                duration: 0.24,
+                duration: DURATION.base,
                 ease: EASE_OUT,
                 delay: reduceMotion ? 0 : Math.min(idx, 6) * 0.06,
               }}
@@ -69,9 +71,9 @@ export function FileFeed({ jobs }: FileFeedProps) {
           ))}
         </AnimatePresence>
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 border-t border-line bg-hover px-4 py-2.5 text-xs text-[var(--lume-text-muted)]">
         <span>File pronti</span>
-        <span className="tabular-nums text-foreground">
+        <span className="tabular-nums text-[var(--lume-text)]">
           {completedCount}/{jobs.length}
         </span>
       </div>
@@ -95,13 +97,17 @@ function FeedRow({ job, reduceMotion }: FeedRowProps) {
   const failureDetail = job.failure_reason ?? job.mapping_json?.classification?.reason ?? '';
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3" title={failureDetail || undefined}>
-      <FileIcon filename={job.source_filename} className="size-4.5 shrink-0 text-muted-foreground" />
+    <div
+      className="flex items-center gap-3 px-4 py-3"
+      // ds-ignore: hover hint over the whole feed row; Tooltip swaps the tree when the import reason arrives, remounting the row and skipping its status line animation
+      title={failureDetail || undefined}
+    >
+      <FileIcon filename={job.source_filename} className="size-4.5 shrink-0 text-[var(--lume-text-muted)]" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="truncate text-sm text-foreground">{job.source_filename}</span>
+          <span className="truncate text-sm text-[var(--lume-text)]">{job.source_filename}</span>
           {job.source_sheet_name && (
-            <span className="truncate text-xs text-muted-foreground">· {job.source_sheet_name}</span>
+            <span className="truncate text-xs text-[var(--lume-text-muted)]">· {job.source_sheet_name}</span>
           )}
         </div>
         <div className="mt-0.5 h-4 overflow-hidden">
@@ -111,20 +117,20 @@ function FeedRow({ job, reduceMotion }: FeedRowProps) {
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-              transition={{ duration: 0.2, ease: EASE_OUT }}
-              className="block text-xs text-muted-foreground"
+              transition={{ duration: DURATION.base, ease: EASE_OUT }}
+              className="block text-xs text-[var(--lume-text-muted)]"
             >
               {subline}
             </motion.span>
           </AnimatePresence>
         </div>
         {showRowProgress && (
-          <div className="mt-2 h-px overflow-hidden rounded-full bg-muted">
+          <div className="mt-2 h-px overflow-hidden rounded-full bg-active">
             <motion.div
-              className="h-full origin-left bg-primary"
+              className="h-full origin-left bg-[var(--lume-text)]"
               initial={false}
               animate={{ scaleX: progress }}
-              transition={{ duration: 0.32, ease: EASE_OUT }}
+              transition={{ duration: DURATION.slow, ease: EASE_OUT }}
               style={{ transformOrigin: 'left' }}
             />
           </div>
@@ -132,9 +138,7 @@ function FeedRow({ job, reduceMotion }: FeedRowProps) {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {entityLabel && (
-          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {entityLabel}
-          </span>
+          <Tag>{entityLabel}</Tag>
         )}
         <StatusIcon status={job.status} reduceMotion={reduceMotion} />
       </div>
@@ -146,20 +150,20 @@ function StatusIcon({ status, reduceMotion }: { status: string; reduceMotion: bo
   const iconClass = 'size-3.5 shrink-0';
   switch (status) {
     case 'completed':
-      return <Check className={`${iconClass} text-success`} strokeWidth={2.5} />;
+      return <Check className={`${iconClass} text-success-strong`} strokeWidth={2.5} />;
     case 'partial_failure':
-      return <AlertCircle className={`${iconClass} text-warning`} />;
+      return <AlertCircle className={`${iconClass} text-warning-strong`} />;
     case 'needs_concierge':
-      return <Sparkles className={`${iconClass} text-primary`} strokeWidth={2.25} />;
+      return <Sparkles className={`${iconClass} text-[var(--lume-text-secondary)]`} strokeWidth={2.25} />;
     case 'failed':
-      return <X className={`${iconClass} text-destructive`} strokeWidth={2.5} />;
+      return <X className={`${iconClass} text-danger-strong`} strokeWidth={2.5} />;
     case 'cancelled':
-      return <X className={`${iconClass} text-muted-foreground`} />;
+      return <X className={`${iconClass} text-[var(--lume-text-muted)]`} />;
     default:
       return reduceMotion ? (
-        <Loader2 className={`${iconClass} text-muted-foreground`} />
+        <Loader2 className={`${iconClass} text-[var(--lume-text-muted)]`} />
       ) : (
-        <Loader2 className={`${iconClass} animate-spin text-muted-foreground`} />
+        <Loader2 className={`${iconClass} animate-spin text-[var(--lume-text-muted)]`} />
       );
   }
 }

@@ -6,9 +6,7 @@ import { Ticket, TableProperties, LayoutGrid, Calendar, FileDown, ArrowDownToLin
 import { useFichesStore } from '@/lib/stores/fiches';
 import { initialLoadedFrom } from '@/lib/stores/ficheWindowStart';
 import { useEnsureFichesLoadedFrom } from '@/lib/stores/ficheWindow';
-import {
-  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/lib/components/shared/ui/forms/Select';
 
 import { loadFicheById } from '@/lib/stores/loadFicheById';
 import { useClientsStore } from '@/lib/stores/clients';
@@ -26,7 +24,7 @@ import { DropdownMenu } from '@/lib/components/shared/ui/DropdownMenu';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Searchbar } from '@/lib/components/shared/ui/Searchbar';
 import { PageHeader } from '@/lib/components/shared/ui/PageHeader';
-import { NumberBadge } from '@/lib/components/shared/ui/NumberBadge';
+import { TabBar, TabButton } from '@/lib/components/shared/ui/Tabs';
 import type { Fiche } from '@/lib/types/Fiche';
 import { useViewsStore } from '@/lib/stores/views';
 import { useOrderedTabs } from '@/lib/hooks/useOrderedTabs';
@@ -40,6 +38,7 @@ const PERIODO_LABELS: Record<Periodo, string> = {
   anno: 'Ultimo anno',
   tutto: 'Tutto lo storico',
 };
+const PERIODO_OPTIONS = (Object.keys(PERIODO_LABELS) as Periodo[]).map((value) => ({ value, label: PERIODO_LABELS[value] }));
 
 const DEFAULT_ORDER = TAB_DEFAULTS.fiches as readonly TabValue[];
 
@@ -193,14 +192,14 @@ export default function FichesPage() {
         onConfirm={deleteAllFiches}
       />
 
-      <div data-tour="fiches-page" className="flex-1 min-h-0 flex flex-col gap-8">
+      <div data-tour="fiches-page" className="flex-1 min-h-0 flex flex-col gap-6">
         <PageHeader
           title="Fiches"
           subtitle="La storia di ogni visita, dal check-in al saldo."
-          icon={Ticket}
           actions={
             <>
               <ToggleButton
+                ariaLabel="Vista"
                 value={view}
                 onChange={setView}
                 options={['table', 'grid']}
@@ -212,7 +211,6 @@ export default function FichesPage() {
                 variant="primary"
                 leadingIcon={Ticket}
                 onClick={() => setShowAdd(true)}
-                className="whitespace-nowrap"
               >
                 Nuova fiche
               </Button>
@@ -227,38 +225,30 @@ export default function FichesPage() {
           }
         />
 
-        <div className="flex-1 min-h-0 flex flex-col gap-6">
+        <div className="flex-1 min-h-0 flex flex-col gap-4">
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 border-b border-border">
-            {visible.map((id) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={[
-                  'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
-                  activeTab === id
-                    ? 'border-primary text-primary-hover dark:text-primary/70'
-                    : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200',
-                ].join(' ')}
-              >
-                {TAB_LABELS.fiches[id]}
-                <NumberBadge value={counts[id]} variant={activeTab === id ? 'primary' : 'neutral'} size="md" />
-              </button>
-            ))}
-            <div className="ml-auto mb-1.5 flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <TabBar label="Stato delle fiche">
+              {visible.map((id) => (
+                <TabButton key={id} active={activeTab === id} count={counts[id]} onClick={() => setActiveTab(id)}>
+                  {TAB_LABELS.fiches[id]}
+                </TabButton>
+              ))}
+            </TabBar>
+            <div className="ml-auto flex items-center gap-3">
               {isLoadingOlder && (
-                <span className="text-xs text-muted-foreground" aria-live="polite">Carico le fiche…</span>
+                <span className="text-xs text-[var(--lume-text-secondary)]" aria-live="polite">Carico le fiche…</span>
               )}
-              <Select value={periodo} onValueChange={(v) => v && setPeriodo(v as Periodo)} items={PERIODO_LABELS}>
-                <SelectTrigger aria-label="Periodo delle fiche" className="w-44 data-[size=default]:h-[var(--lume-control-h-md)]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  {(Object.keys(PERIODO_LABELS) as Periodo[]).map((p) => (
-                    <SelectItem key={p} value={p}>{PERIODO_LABELS[p]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Select
+                value={periodo}
+                onChange={(v: Periodo) => setPeriodo(v)}
+                options={PERIODO_OPTIONS}
+                labelKey="label"
+                valueKey="value"
+                searchable={false}
+                ariaLabel="Periodo delle fiche"
+                className="w-44"
+              />
             </div>
           </div>
 

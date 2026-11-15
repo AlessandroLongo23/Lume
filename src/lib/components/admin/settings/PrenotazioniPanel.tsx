@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Globe, Link as LinkIcon, Loader2, MessageSquare, ShieldCheck, Sliders, ToggleRight } from 'lucide-react';
+import { Link as LinkIcon, Loader2 } from 'lucide-react';
 import { SettingsCard } from './SettingsCard';
-import { Switch } from '@/lib/components/shared/ui/Switch';
+import { SwitchRow } from '@/lib/components/shared/ui/forms/SwitchRow';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
 import { Select } from '@/lib/components/shared/ui/forms/Select';
 import { NumberInput } from '@/lib/components/shared/ui/forms/NumberInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { TextArea } from '@/lib/components/shared/ui/forms/TextArea';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { PUBLIC_SITE_HOST } from '@/lib/const/site';
@@ -159,7 +162,7 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="size-5 animate-spin text-zinc-400" />
+        <Loader2 className="size-5 animate-spin text-[var(--lume-text-muted)]" />
       </div>
     );
   }
@@ -169,54 +172,44 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        icon={ToggleRight}
         title="Stato prenotazioni online"
         description="Quando attivo, il tuo salone è raggiungibile dal link pubblico e i clienti possono prenotare in autonomia."
-        rightSlot={
-          <Switch
-            checked={form.booking_enabled}
-            onChange={() => setForm((p) => ({ ...p, booking_enabled: !p.booking_enabled }))}
-            disabled={!slugIsValid && !form.booking_enabled}
-          />
-        }
+        toggle={{
+          checked: form.booking_enabled,
+          onChange: () => setForm((p) => ({ ...p, booking_enabled: !p.booking_enabled })),
+          disabled: !slugIsValid && !form.booking_enabled,
+        }}
       >
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="booking-slug" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-            URL pubblica <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-center gap-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 overflow-hidden focus-within:ring-2 focus-within:ring-primary/40 transition-shadow">
-            <span className="flex items-center gap-1.5 pl-3 pr-2 py-2 text-xs text-zinc-500 border-r border-zinc-200 dark:border-zinc-700 select-none">
-              <LinkIcon className="size-3.5" />
+        <FormInput
+          id="booking-slug"
+          label="URL pubblica"
+          required
+          error={slugError ?? undefined}
+          hint={`Comparirà ai tuoi clienti come ${PUBLIC_SITE_HOST}/${form.slug || 'il-mio-salone'}.`}
+          prefix={
+            <span className="flex items-center gap-1.5">
+              <LinkIcon className="size-3.5" aria-hidden />
               {PUBLIC_SITE_HOST}/
             </span>
-            <input
-              id="booking-slug"
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              spellCheck={false}
-              maxLength={63}
-              placeholder="il-mio-salone"
-              value={form.slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none"
-            />
-          </div>
-          {slugError ? (
-            <p className="text-xs text-red-500">{slugError}</p>
-          ) : (
-            <p className="text-xs text-zinc-500">Comparirà ai tuoi clienti come {PUBLIC_SITE_HOST}/{form.slug || 'il-mio-salone'}.</p>
-          )}
-        </div>
+          }
+          type="text"
+          inputMode="text"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={63}
+          placeholder="il-mio-salone"
+          value={form.slug}
+          onChange={(e) => setSlug(e.target.value)}
+        />
       </SettingsCard>
 
       <SettingsCard
-        icon={Globe}
         title="Chi può prenotare"
         description="Decide se il link è aperto al pubblico o riservato ai tuoi clienti."
       >
         <div className="flex flex-col gap-4">
           <Select
+            ariaLabel="Chi può prenotare"
             value={c.access_mode}
             onChange={(v) => setConfig('access_mode', (v ?? 'public') as BookingAccessMode)}
             options={ACCESS_OPTIONS}
@@ -224,148 +217,143 @@ export function PrenotazioniPanel({ ref, onDirtyChange, onValidityChange }: Prop
             valueKey="value"
             searchable={false}
           />
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-[var(--lume-text-secondary)]">
             {ACCESS_OPTIONS.find((o) => o.value === c.access_mode)?.hint}
           </p>
 
           {c.access_mode === 'public' && (
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
-              <div className="min-w-0">
-                <p className="text-sm text-zinc-700 dark:text-zinc-200">Richiedi anche l&apos;email agli ospiti</p>
-                <p className="text-xs text-zinc-500">Utile per inviare conferme e promemoria oltre al WhatsApp.</p>
-              </div>
-              <Switch
-                checked={c.guest_email_required}
-                onChange={() => setConfig('guest_email_required', !c.guest_email_required)}
-              />
-            </div>
+            <SwitchRow
+              className="border-t border-line pt-4"
+              label={<>Richiedi anche l&apos;email agli ospiti</>}
+              description="Utile per inviare conferme e promemoria oltre al WhatsApp."
+              checked={c.guest_email_required}
+              onChange={() => setConfig('guest_email_required', !c.guest_email_required)}
+            />
           )}
         </div>
       </SettingsCard>
 
       <SettingsCard
-        icon={ShieldCheck}
         title="Approvazione"
         description="Decidi se le prenotazioni sono confermate automaticamente o richiedono il tuo via libera."
       >
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-zinc-700 dark:text-zinc-200">
-              Richiedi approvazione manuale
-            </span>
-            <Switch
-              checked={c.require_approval}
-              onChange={() => setConfig('require_approval', !c.require_approval)}
-            />
-          </div>
+          <SwitchRow
+            label="Richiedi approvazione manuale"
+            checked={c.require_approval}
+            onChange={() => setConfig('require_approval', !c.require_approval)}
+          />
 
           {c.require_approval && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Chi riceve le richieste</label>
-              <Select
-                value={c.approval_scope}
-                onChange={(v) => setConfig('approval_scope', (v ?? 'chosen_operator') as BookingApprovalScope)}
-                options={SCOPE_OPTIONS}
-                labelKey="label"
-                valueKey="value"
-                searchable={false}
-              />
-            </div>
+            <Field label="Chi riceve le richieste">
+              {({ id }) => (
+                <Select
+                  id={id}
+                  value={c.approval_scope}
+                  onChange={(v) => setConfig('approval_scope', (v ?? 'chosen_operator') as BookingApprovalScope)}
+                  options={SCOPE_OPTIONS}
+                  labelKey="label"
+                  valueKey="value"
+                  searchable={false}
+                />
+              )}
+            </Field>
           )}
         </div>
       </SettingsCard>
 
       <SettingsCard
-        icon={Sliders}
         title="Regole della prenotazione"
         description="Limiti di tempo, anticipo minimo e finestra di disdetta."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Permetti al cliente di scegliere l&apos;operatore</label>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              <span className="text-xs text-zinc-500">
-                Se disattivato, assegni tu l&apos;operatore al momento dell&apos;approvazione (o lo fa l&apos;algoritmo se auto-confermato).
-              </span>
-              <Switch
-                checked={c.allow_operator_choice}
-                onChange={() => setConfig('allow_operator_choice', !c.allow_operator_choice)}
+          <SwitchRow
+            className="sm:col-span-2"
+            label={<>Permetti al cliente di scegliere l&apos;operatore</>}
+            description={<>Se disattivato, assegni tu l&apos;operatore al momento dell&apos;approvazione (o lo fa l&apos;algoritmo se auto-confermato).</>}
+            checked={c.allow_operator_choice}
+            onChange={() => setConfig('allow_operator_choice', !c.allow_operator_choice)}
+          />
+
+          <Field label="Anticipo minimo" hint={<>Minuti tra ora e il primo slot disponibile.</>}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput
+                id={id}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                value={c.min_lead_minutes}
+                onChange={(v) => setConfig('min_lead_minutes', v ?? 0)}
+                min={0}
+                max={43200}
+                step={15}
+                suffix="min"
               />
-            </div>
-          </div>
+            )}
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Anticipo minimo</label>
-            <NumberInput
-              value={c.min_lead_minutes}
-              onChange={(v) => setConfig('min_lead_minutes', v ?? 0)}
-              min={0}
-              max={43200}
-              step={15}
-              suffix="min"
-              size="md"
-            />
-            <p className="text-xs text-zinc-500">Minuti tra ora e il primo slot disponibile.</p>
-          </div>
+          <Field label="Anticipo massimo" hint={<>Quanto in avanti il cliente può guardare.</>}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput
+                id={id}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                value={c.max_lead_days}
+                onChange={(v) => setConfig('max_lead_days', v ?? 1)}
+                min={1}
+                max={365}
+                step={1}
+                suffix="giorni"
+              />
+            )}
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Anticipo massimo</label>
-            <NumberInput
-              value={c.max_lead_days}
-              onChange={(v) => setConfig('max_lead_days', v ?? 1)}
-              min={1}
-              max={365}
-              step={1}
-              suffix="giorni"
-              size="md"
-            />
-            <p className="text-xs text-zinc-500">Quanto in avanti il cliente può guardare.</p>
-          </div>
+          <Field label="Finestra di disdetta" hint={<>Entro quante ore prima dell&apos;appuntamento il cliente può disdire.</>}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput
+                id={id}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                value={c.cancel_window_hours}
+                onChange={(v) => setConfig('cancel_window_hours', v ?? 0)}
+                min={0}
+                max={720}
+                step={1}
+                suffix="ore"
+              />
+            )}
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Finestra di disdetta</label>
-            <NumberInput
-              value={c.cancel_window_hours}
-              onChange={(v) => setConfig('cancel_window_hours', v ?? 0)}
-              min={0}
-              max={720}
-              step={1}
-              suffix="ore"
-              size="md"
-            />
-            <p className="text-xs text-zinc-500">Entro quante ore prima dell&apos;appuntamento il cliente può disdire.</p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Buffer fra appuntamenti</label>
-            <NumberInput
-              value={c.buffer_between_minutes}
-              onChange={(v) => setConfig('buffer_between_minutes', v ?? 0)}
-              min={0}
-              max={240}
-              step={5}
-              suffix="min"
-              size="md"
-            />
-            <p className="text-xs text-zinc-500">Pausa minima fra una prenotazione e la successiva.</p>
-          </div>
+          <Field label="Buffer fra appuntamenti" hint={<>Pausa minima fra una prenotazione e la successiva.</>}>
+            {({ id, describedBy, invalid }) => (
+              <NumberInput
+                id={id}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                value={c.buffer_between_minutes}
+                onChange={(v) => setConfig('buffer_between_minutes', v ?? 0)}
+                min={0}
+                max={240}
+                step={5}
+                suffix="min"
+              />
+            )}
+          </Field>
         </div>
       </SettingsCard>
 
       <SettingsCard
-        icon={MessageSquare}
         title="Messaggio pubblico"
         description="Comunica una nota in cima alla pagina pubblica (orari speciali, festività, ecc.). Lascia vuoto per nasconderla."
       >
-        <textarea
+        <TextArea
+          aria-label="Messaggio pubblico"
           rows={3}
           maxLength={500}
           value={c.public_message}
           placeholder="Es. Domenica 18 maggio chiuso per ferie."
           onChange={(e) => setConfig('public_message', e.target.value)}
-          className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow resize-y"
         />
-        <p className="mt-1 text-xs text-zinc-500">{c.public_message.length}/500</p>
+        <p className="mt-1 text-xs tabular-nums text-[var(--lume-text-muted)]">{c.public_message.length}/500</p>
       </SettingsCard>
     </div>
   );

@@ -1,11 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarOff, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { SettingsCard } from './SettingsCard';
 import { Button } from '@/lib/components/shared/ui/Button';
+import { FormInput } from '@/lib/components/shared/ui/forms/FormInput';
+import { Field } from '@/lib/components/shared/ui/forms/Field';
+import { DateField } from '@/lib/components/shared/ui/forms/DateField';
 import { ConfirmDialog } from '@/lib/components/shared/ui/modals/ConfirmDialog';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { useSalonClosuresStore, type SalonClosure } from '@/lib/stores/salonClosures';
@@ -19,12 +22,6 @@ import { useSalonClosuresStore, type SalonClosure } from '@/lib/stores/salonClos
 //
 // Past closures stay in the DB (we don't auto-purge) but they're hidden
 // here to keep the panel quiet. The slot oracle ignores them anyway.
-
-const inputClass =
-  'w-full px-3 py-2 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50';
-
-const labelClass =
-  'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide';
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -101,120 +98,115 @@ export function ChiusurePanel() {
     }
   }
 
+  // Wrapped so the section is the first child and draws no hairline under the page title.
   return (
-    <SettingsCard
-      icon={CalendarOff}
-      title="Chiusure programmate"
-      description="Date in cui il salone è chiuso. Si applicano anche alla vetrina pubblica."
-      rightSlot={
-        <span className="text-xs text-zinc-500 tabular-nums">
-          {upcoming.length} {upcoming.length === 1 ? 'attiva' : 'attive'}
-        </span>
-      }
-    >
-      <div className="flex flex-col gap-6">
-        {/* Add form */}
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Dal</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={startsOn}
-                min={todayISO()}
-                onChange={(e) => {
-                  setStartsOn(e.target.value);
-                  // Keep ends_on >= starts_on so the form is always valid.
-                  if (endsOn && endsOn < e.target.value) setEndsOn(e.target.value);
-                }}
-              />
+    <div>
+      <SettingsCard
+        title="Chiusure programmate"
+        description="Date in cui il salone è chiuso. Si applicano anche alla vetrina pubblica."
+        rightSlot={
+          <span className="text-xs text-[var(--lume-text-secondary)] tabular-nums">
+            {upcoming.length} {upcoming.length === 1 ? 'attiva' : 'attive'}
+          </span>
+        }
+      >
+        <div className="flex flex-col gap-6">
+          {/* Add form */}
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Dal">
+                {({ id }) => (
+                  <DateField
+                    id={id}
+                    value={startsOn}
+                    min={todayISO()}
+                    onChange={(v) => {
+                      setStartsOn(v);
+                      // Keep ends_on >= starts_on so the form is always valid.
+                      if (v && endsOn && endsOn < v) setEndsOn(v);
+                    }}
+                  />
+                )}
+              </Field>
+              <Field label="Al">
+                {({ id }) => (
+                  <DateField id={id} value={endsOn} min={startsOn || todayISO()} onChange={setEndsOn} />
+                )}
+              </Field>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Al</label>
-              <input
-                type="date"
-                className={inputClass}
-                value={endsOn}
-                min={startsOn || todayISO()}
-                onChange={(e) => setEndsOn(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="mt-3 flex flex-col gap-1.5">
-            <label className={labelClass}>Nota (facoltativa)</label>
-            <input
-              type="text"
-              className={inputClass}
+            <FormInput
+              fieldClassName="mt-3"
+              label="Nota (facoltativa)"
               placeholder="Es. ferie d'agosto, formazione, lavori"
               maxLength={200}
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                leadingIcon={Plus}
+                onClick={handleAdd}
+                disabled={!canSubmit}
+              >
+                {saving ? 'Salvo…' : 'Aggiungi chiusura'}
+              </Button>
+            </div>
           </div>
-          <div className="mt-4 flex justify-end">
-            <Button
-              variant="primary"
-              size="sm"
-              leadingIcon={Plus}
-              onClick={handleAdd}
-              disabled={!canSubmit}
-            >
-              {saving ? 'Salvo…' : 'Aggiungi chiusura'}
-            </Button>
-          </div>
+
+          {/* List */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="size-4 animate-spin text-[var(--lume-text-muted)]" />
+            </div>
+          ) : upcoming.length === 0 ? (
+            <p className="text-sm text-[var(--lume-text-secondary)]">
+              Nessuna chiusura programmata. Aggiungi la prima quando ti serve.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line border-t border-line">
+              {upcoming.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[var(--lume-text)]">
+                      {formatRange(c.starts_on, c.ends_on)}
+                    </p>
+                    {c.note && (
+                      <p className="mt-0.5 text-xs text-[var(--lume-text-secondary)] truncate">{c.note}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost-destructive"
+                    size="sm"
+                    iconOnly
+                    aria-label="Elimina chiusura"
+                    onClick={() => setPendingDelete(c)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* List */}
-        {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <Loader2 className="size-4 animate-spin text-zinc-400" />
-          </div>
-        ) : upcoming.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            Nessuna chiusura programmata. Aggiungi la prima quando ti serve.
-          </p>
-        ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {upcoming.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {formatRange(c.starts_on, c.ends_on)}
-                  </p>
-                  {c.note && (
-                    <p className="mt-0.5 text-xs text-zinc-500 truncate">{c.note}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  aria-label="Elimina chiusura"
-                  onClick={() => setPendingDelete(c)}
-                  className="shrink-0 size-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <ConfirmDialog
-        isOpen={pendingDelete !== null}
-        onClose={() => setPendingDelete(null)}
-        onConfirm={handleDelete}
-        title="Eliminare questa chiusura?"
-        description={
-          pendingDelete
-            ? `${formatRange(pendingDelete.starts_on, pendingDelete.ends_on)}${
-                pendingDelete.note ? ` · ${pendingDelete.note}` : ''
-              }`
-            : ''
-        }
-        confirmLabel="Elimina"
-        tone="destructive"
-      />
-    </SettingsCard>
+        <ConfirmDialog
+          isOpen={pendingDelete !== null}
+          onClose={() => setPendingDelete(null)}
+          onConfirm={handleDelete}
+          title="Eliminare questa chiusura?"
+          description={
+            pendingDelete
+              ? `${formatRange(pendingDelete.starts_on, pendingDelete.ends_on)}${
+                  pendingDelete.note ? ` · ${pendingDelete.note}` : ''
+                }`
+              : ''
+          }
+          confirmLabel="Elimina"
+          tone="destructive"
+        />
+      </SettingsCard>
+    </div>
   );
 }

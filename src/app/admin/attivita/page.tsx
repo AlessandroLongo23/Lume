@@ -54,7 +54,6 @@ export default function AttivitaPage() {
       <PageHeader
         title="Attività"
         subtitle="Tutto ciò che succede nel salone: chi ha fatto cosa, e quando."
-        icon={History}
       />
 
       {isLoading && items.length === 0 ? (

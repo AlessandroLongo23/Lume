@@ -10,7 +10,6 @@ interface CommentFormProps {
   initialBody?: string;
   initialImagePaths?: string[];
   submitLabel?: string;
-  disabled?: boolean;
   onSubmit: (data: { body: string; image_paths: string[] }) => Promise<void>;
   onCancel?: () => void;
   placeholder?: string;
@@ -22,7 +21,6 @@ export function CommentForm({
   initialBody = '',
   initialImagePaths = [],
   submitLabel = 'Invia',
-  disabled = false,
   onSubmit,
   onCancel,
   placeholder = 'Scrivi un commento…',
@@ -32,7 +30,7 @@ export function CommentForm({
   const [imagePaths, setImagePaths] = useState<string[]>(initialImagePaths);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = plainLength >= 1 && plainLength <= MAX_LENGTH && !isSubmitting && !disabled;
+  const canSubmit = plainLength >= 1 && plainLength <= MAX_LENGTH && !isSubmitting;
 
   const handleEditorChange = (html: string, plainText: string) => {
     setBody(html);
@@ -55,9 +53,9 @@ export function CommentForm({
   };
 
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-lg border border-zinc-500/25 bg-white dark:bg-zinc-800">
+    <div className="surface-card flex flex-col gap-2 p-3">
       <div className="flex flex-row items-center justify-end">
-        <span className={`text-xs tabular-nums ${plainLength > MAX_LENGTH ? 'text-red-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
+        <span className={`text-xs tabular-nums ${plainLength > MAX_LENGTH ? 'text-danger-strong' : 'text-[var(--lume-text-muted)]'}`}>
           {plainLength}/{MAX_LENGTH}
         </span>
       </div>
@@ -66,10 +64,9 @@ export function CommentForm({
         value={body}
         onChange={handleEditorChange}
         placeholder={placeholder}
-        disabled={disabled}
       />
 
-      <ImageUploader kind="comments" paths={imagePaths} onChange={setImagePaths} disabled={disabled} />
+      <ImageUploader kind="comments" paths={imagePaths} onChange={setImagePaths} />
 
       <div className="flex flex-row items-center justify-end gap-2 pt-1">
         {onCancel && (
