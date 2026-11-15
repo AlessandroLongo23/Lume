@@ -46,6 +46,26 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse;
 }
 
+// Link prefetches skip the proxy: every full load of the admin prefetches all
+// sidebar pages, and running auth on each one was a Vercel function call apiece.
+// Prefetched admin pages are static shells with no salon data (stores read
+// through RLS), and the /platform layout repeats its own admin check.
+// The matcher must stay a literal: Next reads it statically at build time.
 export const config = {
-  matcher: ['/admin/:path*', '/platform/:path*'],
+  matcher: [
+    {
+      source: '/admin/:path*',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+    {
+      source: '/platform/:path*',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
 };
