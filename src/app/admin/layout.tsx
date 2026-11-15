@@ -254,12 +254,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         onSkip={(_step, name) => useTourQueueStore.getState().notifyFinished(name, 'skip')}
       >
         <TourBridge />
+        {/* Outside AppShell on purpose: AppShell keys its page content by
+            pathname to replay the enter animation, and a remount there would
+            refetch every store and resubscribe every realtime channel on
+            each navigation. */}
+        <StoreInitializer />
         <AppShell
           impersonationBanner={isImpersonating ? <ImpersonationBanner /> : null}
           sidebar={sidebar}
           topBar={topBar}
         >
-          <StoreInitializer />
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
               <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
