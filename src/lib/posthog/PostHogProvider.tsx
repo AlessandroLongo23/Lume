@@ -2,52 +2,74 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import posthog from 'posthog-js';
-import { PostHogProvider as PHProvider } from 'posthog-js/react';
+import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { useCookieConsentStore } from '@/lib/stores/cookieConsent';
+import {
+  capture,
+  identify,
+  resetIdentity,
+  startAnalytics,
+  stopAnalytics,
+} from '@/lib/posthog/analytics';
 
 const DEMO_EMAIL_REGEX = /^demo\+.+@lume\.app$/i;
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
-
-let initialized = false;
 
 function isDemoEmail(email: string | undefined | null): boolean {
   return !!email && DEMO_EMAIL_REGEX.test(email);
 }
 
+function identifySession(session: Session | null) {
+  const user = session?.user;
+  if (!user) return;
+  identify(user.id, { email: user.email, is_demo: isDemoEmail(user.email) });
+}
+
+/**
+ * PostHog runs only with analytics consent (lume-cookie-consent). It is
+ * loaded on demand when consent is given, and stopped if it is withdrawn.
+ */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  const analyticsConsent = useCookieConsentStore((s) => s.consent?.analytics === true);
+
   useEffect(() => {
-    if (!POSTHOG_KEY || initialized) return;
-    posthog.init(POSTHOG_KEY, {
-      api_host: POSTHOG_HOST,
-      person_profiles: 'identified_only',
-      capture_pageview: false,
-      capture_pageleave: true,
-      // Unmasked replay: demo salon contains only synthetic data — no real PII.
-      session_recording: { maskAllInputs: false },
+    if (!POSTHOG_KEY) return;
+    if (!analyticsConsent) {
+      stopAnalytics();
+      return;
+    }
+    let cancelled = false;
+    startAnalytics().then(async (posthog) => {
+      if (cancelled || !posthog) return;
+      // Events from before the load were dropped: record where we are now.
+      const { data: { session } } = await supabase.auth.getSession();
+      identifySession(session);
+      capture('$pageview', { $pathname: window.location.pathname });
     });
-    initialized = true;
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [analyticsConsent]);
 
   useEffect(() => {
     if (!POSTHOG_KEY) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        posthog.reset();
+        resetIdentity();
         return;
       }
       const user = session?.user;
       if (!user) return;
       const demo = isDemoEmail(user.email);
+      // Demo accounts hold only synthetic data: analytics is switched on for them.
       if (demo) {
         const consent = useCookieConsentStore.getState();
         if (!consent.consent?.analytics) consent.accept();
       }
-      posthog.identify(user.id, { email: user.email, is_demo: demo });
+      identifySession(session);
       if (event === 'SIGNED_IN') {
-        posthog.capture('user_logged_in', { is_demo: demo });
+        capture('user_logged_in', { is_demo: demo });
       }
     });
     return () => subscription.unsubscribe();
@@ -56,8 +78,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   useEffect(() => {
     if (!POSTHOG_KEY || !pathname) return;
-    posthog.capture('$pageview', { $pathname: pathname });
+    capture('$pageview', { $pathname: pathname });
   }, [pathname]);
 
-  return <PHProvider client={posthog}>{children}</PHProvider>;
+  return <>{children}</>;
 }

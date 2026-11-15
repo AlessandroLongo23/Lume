@@ -2,14 +2,10 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { LumeLogo } from '@/lib/components/shared/ui/LumeLogo';
 import { cn } from '@/lib/utils';
-import { DURATION } from '@/lib/const/motion';
-
-const ease = [0.2, 0, 0, 1] as const;
 
 /**
  * The page around every auth screen: a back link to the home, the logo, one
@@ -36,14 +32,11 @@ export function AuthShell({ children, backToHome = true }: { children: ReactNode
             <LumeLogo size="lg" />
           </div>
 
-          <motion.div
-            className="surface-card rounded-2xl p-6 sm:p-8"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DURATION.enter, ease }}
-          >
+          {/* CSS entrance (globals.css): it plays from the first paint, so the
+              card and its title show before the JavaScript bundle has run. */}
+          <div className="surface-card rounded-2xl p-6 sm:p-8 enter-rise [--enter-y:0.5rem]">
             {children}
-          </motion.div>
+          </div>
 
           <p className="text-center text-compact text-[var(--lume-text-muted)] mt-6">
             © {new Date().getFullYear()} Lume. Tutti i diritti riservati.
@@ -73,27 +66,17 @@ export function AuthCard({
 }) {
   return (
     <>
-      <motion.div
-        className={cn('mb-6', align === 'center' && 'text-center')}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: DURATION.enter, ease }}
-      >
+      <div className={cn('mb-6 enter-rise', align === 'center' && 'text-center')}>
         <h1 className="text-2xl font-medium tracking-tight text-[var(--lume-text)]">{title}</h1>
         {subtitle && <p className="text-sm text-[var(--lume-text-secondary)] mt-1">{subtitle}</p>}
-      </motion.div>
+      </div>
 
       {children}
 
       {footer && (
-        <motion.p
-          className="text-center text-sm text-[var(--lume-text-secondary)] mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: DURATION.enter, delay: 0.35 }}
-        >
+        <p className="text-center text-sm text-[var(--lume-text-secondary)] mt-6 enter-fade [--enter-delay:350ms]">
           {footer}
-        </motion.p>
+        </p>
       )}
     </>
   );

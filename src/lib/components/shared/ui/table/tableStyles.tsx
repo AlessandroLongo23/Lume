@@ -25,10 +25,12 @@ export const tableCardClass =
 export const tableClass = 'w-full text-sm text-[var(--lume-text-secondary)] border-separate border-spacing-0';
 
 /**
- * `<thead>`. Sticky headers stay on the panel colour; the hairline is an inset
- * shadow on the cells so it travels with them when they stick.
+ * `<thead>`: no fill of its own. The card behind it is already the panel
+ * colour, and the card's ring is an inset shadow, which paints beneath its
+ * children: an opaque header hid the ring along the whole header row. The
+ * hairline under the labels is an inset shadow on the cells.
  */
-export const theadClass = 'bg-[var(--lume-panel)]';
+export const theadClass = '';
 
 /** Header cell. 12px secondary label, sentence case, hairline under it. */
 export function thClass({ sortable = false, align = 'left' }: { sortable?: boolean; align?: 'left' | 'right' | 'center' } = {}) {
