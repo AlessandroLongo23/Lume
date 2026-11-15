@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import posthog from 'posthog-js';
+import { capture } from '@/lib/posthog/analytics';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Fiche } from '@/lib/types/Fiche';
@@ -134,7 +134,7 @@ export const useFichesStore = create<FichesState>((set, get) => ({
     if (error) throw new Error('Impossibile aggiungere la fiche.');
     const newFiche = new Fiche(data);
     set((s) => ({ fiches: [...s.fiches, newFiche] }));
-    posthog.capture('fiche_created', { fiche_id: newFiche.id });
+    capture('fiche_created', { fiche_id: newFiche.id });
     return newFiche;
   },
 

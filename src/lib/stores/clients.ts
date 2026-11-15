@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import posthog from 'posthog-js';
+import { capture } from '@/lib/posthog/analytics';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllPages } from '@/lib/supabase/paginate';
 import { Client } from '@/lib/types/Client';
@@ -74,7 +74,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
     if (!result.success) throw new Error(result.error);
     const newClient = new Client(result.client);
     set((s) => ({ clients: [...s.clients, newClient] }));
-    posthog.capture('client_created', {
+    capture('client_created', {
       client_id: newClient.id,
       ...(opts?.source ? { source: opts.source } : {}),
     });
