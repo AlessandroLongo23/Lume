@@ -27,17 +27,8 @@ function mapError(message: string): string {
   return 'Accesso non riuscito. Riprova.';
 }
 
-const ease = [0.2, 0, 0, 1] as const;
-
-const fieldVariants = {
-  hidden: { opacity: 0, y: 6 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: DURATION.enter, delay: i * 0.05, ease },
-  }),
-};
-
+// The fields enter in CSS (`enter-rise`, globals.css), staggered by 50ms, so
+// the form is visible from the first paint and not only after hydration.
 export default function LoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
@@ -83,7 +74,7 @@ export default function LoginPage() {
       footer={<>Non hai un account?{' '}<TextLink href="/register">Inizia la prova gratuita</TextLink></>}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
+        <div className="enter-rise [--enter-y:0.375rem]">
           <FormInput
             label="Email o telefono"
             type="text"
@@ -95,9 +86,9 @@ export default function LoginPage() {
             required
             autoComplete="username"
           />
-        </motion.div>
+        </div>
 
-        <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
+        <div className="enter-rise [--enter-y:0.375rem] [--enter-delay:50ms]">
           <FormInput
             label="Password"
             type="password"
@@ -109,7 +100,7 @@ export default function LoginPage() {
             required
             autoComplete="current-password"
           />
-        </motion.div>
+        </div>
 
         <AnimatePresence>
           {error && (
@@ -125,11 +116,11 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
-        <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+        <div className="enter-rise [--enter-y:0.375rem] [--enter-delay:100ms]">
           <Button type="submit" variant="primary" size="lg" loading={isLoading} className="mt-2 w-full">
             Accedi
           </Button>
-        </motion.div>
+        </div>
       </form>
     </AuthCard>
   );

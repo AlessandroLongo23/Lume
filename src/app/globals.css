@@ -213,6 +213,35 @@ button, a {
 	}
 }
 
+/* Staged entrance outside the admin app: the landing hero and the auth card.
+ * A CSS animation starts at the first paint. A motion `initial={{ opacity: 0 }}`
+ * keeps server-rendered content invisible until the JavaScript bundle has run,
+ * about 3s on a mid-range phone, and the hidden headline was the page's LCP.
+ * Stagger with --enter-delay, set the drift with --enter-y. The final state is
+ * the element's own style, so no transform lingers after the entrance.
+ * Reduced motion keeps only the fade. */
+@keyframes enterRise {
+	from { opacity: 0; transform: translateY(var(--enter-y, 0.75rem)); }
+}
+
+@keyframes enterFade {
+	from { opacity: 0; }
+}
+
+.enter-rise {
+	animation: enterRise var(--duration-enter) var(--ease-out) var(--enter-delay, 0ms) both;
+}
+
+.enter-fade {
+	animation: enterFade var(--duration-enter) var(--ease-out) var(--enter-delay, 0ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.enter-rise {
+		animation-name: enterFade;
+	}
+}
+
 /* Icon swap (<SwapIcon>): the new glyph pops in from a small blur when the
  * icon changes. Reduced motion keeps the fade and drops the scale. */
 @keyframes iconPop {
