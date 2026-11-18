@@ -14,6 +14,8 @@ export interface DropResult {
   ficheId: string;
   before: PreviewSegment[];
   after: PreviewSegment[];
+  /** The drop lands on an operator already booked in that time (allowed after confirm). */
+  operatorOverlap: boolean;
 }
 
 interface UseCalendarDragArgs {
@@ -265,7 +267,7 @@ export function useCalendarDrag({ getSchedule, pixelsPerSlot, timeStep, onDrop }
         cleanup();
         endStore();
         if (conflict.valid && !isNoOp(beforeSnapshot, preview)) {
-          onDrop({ kind, ficheId, before: beforeSnapshot, after: preview });
+          onDrop({ kind, ficheId, before: beforeSnapshot, after: preview, operatorOverlap: conflict.reason === 'overlap' });
         }
       };
 
@@ -331,7 +333,7 @@ export function useCalendarDrag({ getSchedule, pixelsPerSlot, timeStep, onDrop }
         cleanup();
         endStore();
         if (conflict.valid && !isNoOp(beforeSnapshot, preview)) {
-          onDrop({ kind, ficheId, before: beforeSnapshot, after: preview });
+          onDrop({ kind, ficheId, before: beforeSnapshot, after: preview, operatorOverlap: conflict.reason === 'overlap' });
         }
       };
       const onKey = (e: KeyboardEvent) => {

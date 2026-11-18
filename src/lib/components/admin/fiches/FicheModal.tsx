@@ -105,6 +105,9 @@ interface CategoryGroup<T> {
 /** Group id for catalogue items without a category (shown as "Altro"). */
 const UNCATEGORISED = 'uncategorised';
 
+/** Thrown by persistFiche when an operator is already booked; the modal asks to confirm. */
+class OperatorOverlapError extends Error {}
+
 interface CatalogSearchProps<T> {
   query: string;
   onQueryChange: (query: string) => void;
@@ -308,6 +311,11 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   const [treatmentTab, setTreatmentTab] = useState<'new' | 'last'>('new');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<'submit' | null>(null);
+  // An operator is already booked in the chosen time: the save waits for the
+  // user to confirm the double booking, then re-runs the same action.
+  const [overlapPrompt, setOverlapPrompt] = useState<
+    { message: string; action: 'submit'; reason?: string } | { message: string; action: 'pay' } | null
+  >(null);
 
   // Confirm dialog state for editing a CONCLUSA fiche
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -699,7 +707,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
   /** Persist all fiche fields + services + products. Returns the fiche id on success, throws on failure.
    *  `reason` is forwarded to the audit log and only consumed by the RPC when the patch
    *  contains whitelisted fiche-table fields (see `updateFiche` in the store). */
-  async function persistFiche(reason?: string): Promise<string> {
+  async function persistFiche(reason?: string, allowOperatorOverlap = false): Promise<string> {
     const validation = await callServerAction(() => validateFicheConflicts(
       clientId,
       servicesWithTimes.map((svc) => ({
@@ -709,8 +717,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
         end_time: svc.end_time.toISOString(),
       })),
       mode === 'edit' ? fiche?.id : undefined,
+      allowOperatorOverlap,
     ));
     if (validation.error) throw new Error(validation.error);
+    if (validation.operatorOverlap) throw new OperatorOverlapError(validation.operatorOverlap);
 
     if (mode === 'add') {
       const newFiche = await addFiche({ client_id: clientId, datetime: baseTime.toISOString(), status: FicheStatus.CREATED, note, total_override: totalOverride, miscela: miscela.trim() || null, tecnica: tecnica.trim() || null });
@@ -941,16 +951,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
 
   /** Persist the form. When invoked from the closed-fiche confirm dialog,
    *  `reason` flows through to fiche_edits.reason. */
-  async function runPersist(reason?: string) {
+  async function runPersist(reason?: string, allowOperatorOverlap = false) {
     setIsSubmitting(true);
     try {
-      await persistFiche(reason);
+      await persistFiche(reason, allowOperatorOverlap);
       setShowEditConfirm(false);
       onClose();
       messagePopup.getState().success(mode === 'add' ? 'Appuntamento creato con successo' : 'Appuntamento aggiornato con successo');
       // Advances the "salva" step of the booking guide (no-op without a tour).
       if (mode === 'add') emitTourEvent('fiche:created');
     } catch (err) {
+      if (err instanceof OperatorOverlapError) {
+        setShowEditConfirm(false);
+        setOverlapPrompt({ message: err.message, action: 'submit', reason });
+        return;
+      }
       setErrorMessage(err instanceof Error ? err.message : 'Si è verificato un errore sconosciuto');
     } finally {
       setIsSubmitting(false);
@@ -958,7 +973,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     }
   }
 
-  async function handlePay() {
+  async function handlePay(allowOperatorOverlap = false) {
     if (!validateForm()) {
       setActiveTopTab('edit');
       return;
@@ -968,7 +983,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const ficheId = await persistFiche();
+      const ficheId = await persistFiche(undefined, allowOperatorOverlap);
       const salonId = fiche?.salon_id;
       if (!salonId) throw new Error('Salone mancante');
 
@@ -985,6 +1000,10 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       onClose();
       messagePopup.getState().success('Fiche chiusa con successo');
     } catch (err) {
+      if (err instanceof OperatorOverlapError) {
+        setOverlapPrompt({ message: err.message, action: 'pay' });
+        return;
+      }
       messagePopup.getState().error(err instanceof Error ? err.message : 'Errore durante la chiusura della fiche');
     } finally {
       setIsSubmitting(false);
@@ -1026,7 +1045,7 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
       ? (isSubmitting ? 'Chiusura…' : 'Conferma pagamento')
       : 'Salva';
 
-  const onConfirm = isPaymentTab ? handlePay : handleSubmit;
+  const onConfirm = isPaymentTab ? () => handlePay() : handleSubmit;
   const confirmDisabled = isSubmitting || (isPaymentTab && !paymentValid);
 
   // On an editable Pagamento, "Torna alla modifica" is the explicit retreat
@@ -1831,6 +1850,21 @@ export function FicheModal({ mode, isOpen, onClose, fiche, datetime, operator, c
             : "L'appuntamento è fuori dagli orari configurati"
         }
         confirmLabel="Conferma comunque"
+      />
+
+      <ConfirmDialog
+        isOpen={overlapPrompt !== null}
+        onClose={() => setOverlapPrompt(null)}
+        onConfirm={() => {
+          const prompt = overlapPrompt;
+          setOverlapPrompt(null);
+          if (!prompt) return;
+          if (prompt.action === 'pay') void handlePay(true);
+          else void runPersist(prompt.reason, true);
+        }}
+        title="Operatore già occupato"
+        description={`${overlapPrompt?.message ?? ''} Vuoi salvare comunque? Sul calendario i due appuntamenti appariranno affiancati.`}
+        confirmLabel="Salva comunque"
       />
 
       <ConfirmEditClosedFicheDialog

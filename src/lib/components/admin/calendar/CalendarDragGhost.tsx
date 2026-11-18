@@ -100,14 +100,16 @@ export function CalendarDragGhost({ pixelsPerSlot, timeStep }: CalendarDragGhost
   const operatorName = operators.find((op) => op.id === first.operatorId)?.getFullName() ?? '';
   const reasonLabel = conflict.reason
     ? conflict.reason === 'overlap'
-      ? 'Sovrapposizione operatore'
+      ? 'Operatore già occupato'
       : conflict.reason === 'client-overlap'
         ? 'Cliente già impegnato'
-        : conflict.reason === 'outside-hours'
-          ? 'Fuori orari di apertura'
-          : conflict.reason === 'closed-day'
-            ? 'Giorno di chiusura'
-            : 'Intervallo non valido'
+        : conflict.reason === 'unavailability'
+          ? 'Operatore non disponibile'
+          : conflict.reason === 'outside-hours'
+            ? 'Fuori orari di apertura'
+            : conflict.reason === 'closed-day'
+              ? 'Giorno di chiusura'
+              : 'Intervallo non valido'
     : null;
 
   const warning = isWarningReason(conflict.reason);

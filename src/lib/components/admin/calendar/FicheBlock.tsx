@@ -16,6 +16,7 @@ import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 import { messagePopup } from '@/lib/components/shared/ui/messagePopup/messagePopup';
 import { DEFAULT_CATEGORY_COLOR } from '@/lib/const/category-colors';
 import { colorForClient } from '@/lib/utils/clientColor';
+import { laneStyle } from '@/lib/utils/calendar-lanes';
 import { ClientColorDot } from '@/lib/components/admin/clients/ClientColorDot';
 import type { Fiche } from '@/lib/types/Fiche';
 import { FicheStatus } from '@/lib/types/ficheStatus';
@@ -31,6 +32,9 @@ interface FicheBlockProps {
   /** Vertical offset (in rem) from the anchor slot's top — non-zero when the run
    *  starts at a time not aligned to the current granularity (e.g. 11:15 with 10-min slots). */
   topOffsetRem?: number;
+  /** Side-by-side placement when the operator is double booked (default: full width). */
+  lane?: number;
+  laneCount?: number;
   isPast: boolean;
   /** True when the operator-filtered services equal the entire fiche AND are contiguous. */
   isBlockDragEligible: boolean;
@@ -51,6 +55,8 @@ export function FicheBlock({
   totalMinutes,
   timeStep,
   topOffsetRem = 0,
+  lane = 0,
+  laneCount = 1,
   isPast,
   isBlockDragEligible,
   onSelectFiche,
@@ -163,7 +169,7 @@ export function FicheBlock({
 
   return (
     <div
-      className={`group/block absolute left-0.5 right-0.5 flex flex-col rounded-md z-raised overflow-hidden bg-[var(--lume-panel)] ${
+      className={`group/block absolute flex flex-col rounded-md z-raised overflow-hidden bg-[var(--lume-panel)] ${
         isPast ? 'opacity-70' : ''
       } ${
         isThisFicheDragging && (dragKind === 'move-block' || dragKind === 'move-service')
@@ -172,6 +178,7 @@ export function FicheBlock({
       }`}
       style={{
         top: `${topOffsetRem}rem`,
+        ...laneStyle({ lane, laneCount }),
         height: `${(totalMinutes / timeStep) * 2}rem`,
         boxShadow: blockEdge,
       }}

@@ -13,7 +13,7 @@ export type ConflictReason =
   | null;
 
 export interface ConflictResult {
-  /** True when the drop should be allowed. Warnings (outside-hours, closed-day) are still valid. */
+  /** True when the drop should be allowed. Warnings (overlap, outside-hours, closed-day) are still valid. */
   valid: boolean;
   reason: ConflictReason;
   conflictingFicheServiceIds: string[];
@@ -21,9 +21,9 @@ export interface ConflictResult {
 
 const OK: ConflictResult = { valid: true, reason: null, conflictingFicheServiceIds: [] };
 
-/** Reasons that hard-block the drop. Other reasons are soft warnings. */
+/** Reasons that hard-block the drop. Other reasons are soft warnings: an operator
+ *  overlap is allowed after the user confirms the double booking. */
 const HARD_REASONS: ReadonlySet<NonNullable<ConflictReason>> = new Set([
-  'overlap',
   'client-overlap',
   'unavailability',
   'invalid-range',
@@ -78,14 +78,6 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
     return fsStart < endMs && fsEnd > startMs;
   });
 
-  const operatorOverlaps = timeOverlapping
-    .filter((fs) => fs.operator_id === operatorId)
-    .map((fs) => fs.id);
-
-  if (operatorOverlaps.length > 0) {
-    return { valid: false, reason: 'overlap', conflictingFicheServiceIds: operatorOverlaps };
-  }
-
   if (clientId && ficheClientMap) {
     const clientOverlaps = timeOverlapping
       .filter((fs) => ficheClientMap.get(fs.fiche_id) === clientId)
@@ -102,6 +94,15 @@ export function wouldCollide(args: CollideArgs): ConflictResult {
     if (blocks) {
       return { valid: false, reason: 'unavailability', conflictingFicheServiceIds: [] };
     }
+  }
+
+  // Hard reasons are checked first so a soft overlap never hides them.
+  const operatorOverlaps = timeOverlapping
+    .filter((fs) => fs.operator_id === operatorId)
+    .map((fs) => fs.id);
+
+  if (operatorOverlaps.length > 0) {
+    return { valid: true, reason: 'overlap', conflictingFicheServiceIds: operatorOverlaps };
   }
 
   if (schedule.length > 0) {
@@ -141,7 +142,8 @@ interface BlockCollideArgs {
 
 /**
  * Aggregate validation across multiple segments (a fiche moved as a block).
- * Priority of returned reason: overlap > client-overlap > outside-hours > closed-day > invalid-range.
+ * Priority of returned reason: hard reasons (client-overlap > unavailability > invalid-range),
+ * then warnings (overlap > outside-hours > closed-day).
  */
 export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
   const allConflictingIds = new Set<string>();
@@ -178,10 +180,10 @@ export function wouldBlockCollide(args: BlockCollideArgs): ConflictResult {
   }
 
   const priorityOrder: NonNullable<ConflictReason>[] = [
-    'overlap',
     'client-overlap',
     'unavailability',
     'invalid-range',
+    'overlap',
     'outside-hours',
     'closed-day',
   ];

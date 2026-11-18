@@ -7,6 +7,7 @@ import { DialogFooter, DialogHeader } from '@/lib/components/shared/ui/modals/di
 import { ListBox, ListRow } from '@/lib/components/shared/ui/list/ListBox';
 import { Button } from '@/lib/components/shared/ui/Button';
 import { Checkbox } from '@/lib/components/shared/ui/forms/Checkbox';
+import { Callout } from '@/lib/components/shared/ui/Callout';
 import { useOperatorsStore } from '@/lib/stores/operators';
 import type { Client } from '@/lib/types/Client';
 import type { PreviewSegment } from '@/lib/stores/calendarDrag';
@@ -22,6 +23,8 @@ interface Props {
   /** True when the new datetime is in the past — suppress the client notify
    *  options since you can't usefully notify someone about a moved past slot. */
   isPastMove?: boolean;
+  /** The new slot overlaps another appointment of the same operator. */
+  operatorOverlap?: boolean;
 }
 
 function fmtTime(d: Date): string {
@@ -40,6 +43,7 @@ export function ConfirmAppointmentChangeModal({
   onCancel,
   isSubmitting = false,
   isPastMove = false,
+  operatorOverlap = false,
 }: Props) {
   const operators = useOperatorsStore((s) => s.operators);
   const titleId = useId();
@@ -69,6 +73,8 @@ export function ConfirmAppointmentChangeModal({
 
   const beforeOpName = operators.find((op) => op.id === before[0]?.operatorId)?.getFullName() ?? '—';
   const afterOpName = operators.find((op) => op.id === after[0]?.operatorId)?.getFullName() ?? '—';
+  // A fiche moved as a block can span several operators; name one only when it's unambiguous.
+  const overlapOpName = new Set(after.map((s) => s.operatorId)).size === 1 ? afterOpName : "Un operatore";
 
   const canEmail = !!client?.email;
   const canWhatsapp = client?.hasPhone() ?? false;
@@ -112,6 +118,12 @@ export function ConfirmAppointmentChangeModal({
               </div>
             )}
           </div>
+
+          {operatorOverlap && (
+            <Callout tone="warning" title="Operatore già occupato" className="mt-4">
+              {overlapOpName} ha già un appuntamento in questo orario. Confermando, i due appuntamenti appariranno affiancati.
+            </Callout>
+          )}
 
           {isPastMove ? (
             <p className="mt-5 text-xs text-[var(--lume-text-secondary)]">

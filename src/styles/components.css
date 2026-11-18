@@ -166,3 +166,19 @@
 	&[data-highlighted],
 	&:focus-visible { color: var(--lume-danger-fg); background-color: var(--lume-danger-bg); }
 }
+
+/* Calendar double-booking strip. Every cell of the column under the pointer
+   (TimeGrid sets data-cal-col-hover) opens a free strip on the right (fiche blocks narrow to make room), so a busy
+   slot can be clicked to book the operator again. Registered so it animates. */
+@property --cal-gutter {
+	syntax: "<length>";
+	inherits: true;
+	initial-value: 0rem;
+}
+[data-cal-col] {
+	transition: --cal-gutter var(--duration-base) var(--ease-out);
+	&[data-cal-col-hover] { --cal-gutter: 1rem; }
+	/* Touch screens have no hover: keep the strip open so it can be tapped. */
+	@media (hover: none) { --cal-gutter: 1rem; }
+	@media (prefers-reduced-motion: reduce) { transition: none; }
+}

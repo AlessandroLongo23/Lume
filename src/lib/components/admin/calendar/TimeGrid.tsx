@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react';
 import { generateTimeSlots, formatTimeSlot, CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { useSalonSettingsStore } from '@/lib/stores/salonSettings';
 import { remToPx } from '@/lib/utils/uiScale';
+import { useCalendarDragStore } from '@/lib/stores/calendarDrag';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
 
 export interface TimeGridColumn {
@@ -81,6 +82,29 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
+  // The column under the pointer opens its double-booking strip (--cal-gutter in
+  // components.css). Toggled on the DOM, not in state: one attribute flip per
+  // column change, without re-rendering the grid.
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const hoveredColRef = useRef<string | null>(null);
+  function setHoveredColumn(key: string | null) {
+    if (hoveredColRef.current === key) return;
+    hoveredColRef.current = key;
+    rowsRef.current?.querySelectorAll('[data-cal-col-hover]').forEach((el) => el.removeAttribute('data-cal-col-hover'));
+    if (key === null) return;
+    rowsRef.current
+      ?.querySelectorAll(`[data-cal-col="${CSS.escape(key)}"]`)
+      .forEach((el) => el.setAttribute('data-cal-col-hover', ''));
+  }
+  // Read on every move, so the open column corrects itself even if an enter or
+  // leave was missed (re-renders, portals). Blocks keep still during a drag.
+  function handleRowsPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (useCalendarDragStore.getState().active) return setHoveredColumn(null);
+    // No cell: the move bubbled from a portalled popover; keep the column open.
+    const cell = e.target instanceof Element ? e.target.closest('[data-cal-col]') : null;
+    if (cell) setHoveredColumn(cell.getAttribute('data-cal-col'));
+  }
+
   // Rows are as wide as the columns need, so on a phone the grid scrolls
   // sideways while the time gutter stays pinned on the left.
   const gridCols = {
@@ -113,7 +137,7 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
           {/* Time rows — `isolate` creates a stacking context so blocks and the
               now-line can layer relative to each other while staying below the
               sticky operator header above. */}
-          <div className="relative isolate">
+          <div ref={rowsRef} className="relative isolate" onPointerMove={handleRowsPointerMove} onPointerLeave={() => setHoveredColumn(null)}>
             {showNowLine && (
               <div
                 className="absolute inset-x-0 h-0 z-content-floating pointer-events-none flex items-center"
@@ -167,6 +191,7 @@ export function TimeGrid({ columns, date, renderSlot, startHour, endHour, schedu
                   {columns.map((col) => (
                     <div
                       key={col.key}
+                      data-cal-col={col.key}
                       className="border-l border-line"
                       onPointerEnter={onCellHover ? () => onCellHover(col.key, timeSlot) : undefined}
                     >
