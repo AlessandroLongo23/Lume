@@ -8,6 +8,7 @@ import { useUnavailabilityCreateStore } from '@/lib/stores/unavailabilityCreate'
 import { useOperatorUnavailabilitiesStore } from '@/lib/stores/operatorUnavailabilities';
 import { CALENDAR_CONFIG } from '@/lib/utils/calendar-config';
 import { remToPx } from '@/lib/utils/uiScale';
+import { computeLanes, type LaneItem } from '@/lib/utils/calendar-lanes';
 import { FicheBlock } from './FicheBlock';
 import { UnavailabilityBlock } from './UnavailabilityBlock';
 import { Tooltip } from '@/lib/components/shared/ui/Tooltip';
@@ -66,6 +67,21 @@ interface RunStartingHere {
   /** Vertical offset (in rem) of the run start relative to the anchor slot's top.
    *  Non-zero when the run starts at a time not aligned to the current granularity. */
   topOffsetRem: number;
+  /** Side-by-side placement when the operator is double booked. */
+  lane: number;
+  laneCount: number;
+}
+
+function runKey(fiche: Fiche, run: FicheService[]): string {
+  return `${fiche.id}-${run[0].id}`;
+}
+
+function operatorRuns(fiche: Fiche, operatorId: string): FicheService[][] {
+  const opServices = fiche
+    .getFicheServices()
+    .filter((fs) => fs.operator_id === operatorId)
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  return computeRuns(opServices);
 }
 
 export function DayViewSlot({
@@ -82,6 +98,8 @@ export function DayViewSlot({
   gridEndHour,
 }: DayViewSlotProps) {
   const [isHovered, setIsHovered] = useState(false);
+  // Pointer over the free strip beside the blocks of a busy cell (not over a block).
+  const [isGutterHovered, setIsGutterHovered] = useState(false);
   const timeStep =
     useSalonSettingsStore((s) => s.settings?.slot_granularity_min) ?? CALENDAR_CONFIG.daily.timeStep;
   const beginCreate = useUnavailabilityCreateStore((s) => s.begin);
@@ -113,24 +131,38 @@ export function DayViewSlot({
     });
   }, [fiches, operator.id, datetime, timeStep]);
 
+  // Lanes for every run of this operator in the column, so a double-booked
+  // operator shows the overlapping appointments side by side.
+  const laneByRun = useMemo(() => {
+    const items: LaneItem[] = [];
+    for (const fiche of fiches) {
+      for (const run of operatorRuns(fiche, operator.id)) {
+        items.push({
+          key: runKey(fiche, run),
+          start: new Date(run[0].start_time).getTime(),
+          end: new Date(run[run.length - 1].end_time).getTime(),
+        });
+      }
+    }
+    return computeLanes(items);
+  }, [fiches, operator.id]);
+
   // Runs (contiguous chains) of this operator's services for each fiche that
   // start within THIS slot. Each run renders as its own FicheBlock.
   const runsStartingHere = useMemo<RunStartingHere[]>(() => {
     const slotMinutes = getTimeAsMinutes(datetime);
     const out: RunStartingHere[] = [];
     for (const fiche of slotFiches) {
-      const opServices = fiche
-        .getFicheServices()
-        .filter((fs) => fs.operator_id === operator.id)
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-      const runs = computeRuns(opServices);
+      const runs = operatorRuns(fiche, operator.id);
       const totalServicesInFiche = fiche.getFicheServices().length;
       for (const run of runs) {
         const runStart = getTimeAsMinutes(new Date(run[0].start_time));
         if (runStart >= slotMinutes && runStart < slotMinutes + timeStep) {
           const startMs = new Date(run[0].start_time).getTime();
           const endMs = new Date(run[run.length - 1].end_time).getTime();
+          const placement = laneByRun.get(runKey(fiche, run)) ?? { lane: 0, laneCount: 1 };
           out.push({
+            ...placement,
             fiche,
             run,
             totalMinutes: Math.round((endMs - startMs) / 60_000),
@@ -141,7 +173,7 @@ export function DayViewSlot({
       }
     }
     return out;
-  }, [slotFiches, operator.id, datetime, timeStep]);
+  }, [slotFiches, operator.id, datetime, timeStep, laneByRun]);
 
   // Unavailabilities owned by this operator that overlap this slot.
   const allUnavailabilities = useOperatorUnavailabilitiesStore((s) => s.items);
@@ -189,6 +221,9 @@ export function DayViewSlot({
   const hasUnavailabilityHere = unavailabilitiesInSlot.length > 0;
 
   const isOccupied = slotFiches.length > 0 || hasUnavailabilityHere;
+  // A cell busy only with fiches can still be booked from its free strip on the
+  // right (a double booking, confirmed on save). Absences stay unbookable.
+  const canBookOverlap = isOccupied && !hasUnavailabilityHere;
   const isPast = datetime < new Date();
   const hasBlocksHere = runsStartingHere.length > 0;
 
@@ -214,12 +249,22 @@ export function DayViewSlot({
     createPreview.start.getTime() < datetime.getTime() + timeStep * 60_000 &&
     createPreview.end.getTime() > datetime.getTime();
 
-  function handleClick() {
+  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (draggedRef.current) {
       draggedRef.current = false;
       return;
     }
-    if (!isOccupied) onSlotSelected({ operator, datetime });
+    if (!isOccupied) {
+      onSlotSelected({ operator, datetime });
+      return;
+    }
+    // Busy cell: only a click on the cell itself (the free strip), never one
+    // bubbling up from a block or its portalled popover.
+    if (canBookOverlap && e.target === e.currentTarget) onSlotSelected({ operator, datetime });
+  }
+
+  function handleGutterHover(e: React.MouseEvent<HTMLDivElement>) {
+    setIsGutterHovered(e.target === e.currentTarget);
   }
 
   // An empty slot is a focusable button: Enter and Space book it, like a click.
@@ -362,12 +407,24 @@ export function DayViewSlot({
       <div
         // ds-ignore: calendar slot cell, a click-and-drag surface that also hosts fiche blocks, so it cannot be a button; keyboard users create a fiche with Nuova fiche in the command menu (Cmd+K) or on the Fiches page
         className={`w-full h-full flex flex-col items-center justify-center p-1 relative ${
-          isOccupied ? '' : 'cursor-pointer'
+          isOccupied && !canBookOverlap ? '' : 'cursor-pointer'
         }`}
-        onClick={isOccupied ? undefined : handleClick}
+        onClick={isOccupied && !canBookOverlap ? undefined : handleClick}
         onPointerDown={isOccupied ? undefined : handlePointerDown}
+        {...(canBookOverlap && {
+          onMouseMove: handleGutterHover,
+          onMouseLeave: () => setIsGutterHovered(false),
+        })}
       >
-        {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche, topOffsetRem }) => (
+        {canBookOverlap && isGutterHovered && (
+          <div
+            className="absolute inset-y-0 right-0 flex items-center justify-center overflow-hidden bg-hover pointer-events-none"
+            style={{ width: 'var(--cal-gutter)' }}
+          >
+            <Plus size={12} aria-hidden className="text-[var(--lume-text-muted)]" />
+          </div>
+        )}
+        {hasBlocksHere && runsStartingHere.map(({ fiche, run, totalMinutes, isWholeFiche, topOffsetRem, lane, laneCount }) => (
           <FicheBlock
             key={`${fiche.id}-${run[0].id}`}
             fiche={fiche}
@@ -375,6 +432,8 @@ export function DayViewSlot({
             totalMinutes={totalMinutes}
             timeStep={timeStep}
             topOffsetRem={topOffsetRem}
+            lane={lane}
+            laneCount={laneCount}
             isPast={isPast}
             isBlockDragEligible={isWholeFiche}
             onSelectFiche={() => onFicheSelected(fiche)}

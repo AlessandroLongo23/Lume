@@ -14,19 +14,29 @@ export interface ServiceConflictInput {
   end_time: string;   // ISO string
 }
 
+export interface FicheConflictResult {
+  /** A hard conflict: the fiche cannot be saved. */
+  error?: string;
+  /** An operator is already booked in that time. The fiche can still be saved
+   *  once the user confirms, by calling again with `allowOperatorOverlap`. */
+  operatorOverlap?: string;
+}
+
 /**
- * Validates that the proposed fiche does not cause scheduling conflicts:
- * 1. Client must not have another active appointment overlapping the total time range.
- * 2. Each operator must not be assigned to another active service overlapping their slot.
+ * Validates the proposed fiche against the calendar:
+ * 1. The client must not have another active appointment overlapping the total time range (hard).
+ * 2. No operator may be unavailable (ferie, assenza) during their service (hard).
+ * 3. No operator should already be booked on another active service in their slot (soft:
+ *    returned as `operatorOverlap` unless `allowOperatorOverlap` is set).
  *
- * Returns an empty object on success, or { error: string } on conflict.
  * Pass `excludeFicheId` when editing an existing fiche to exclude it from the check.
  */
 export async function validateFicheConflicts(
   clientId: string,
   services: ServiceConflictInput[],
   excludeFicheId?: string,
-): Promise<{ error?: string }> {
+  allowOperatorOverlap = false,
+): Promise<FicheConflictResult> {
   if (!services.length) return {};
 
   const supabase = await createClient();
@@ -58,7 +68,30 @@ export async function validateFicheConflicts(
     return { error: 'Il cliente ha già un appuntamento in questo orario.' };
   }
 
-  // ── 2. Operator conflicts (per service) ─────────────────────────────────────
+  // ── 2. Operator unavailability (per service) ────────────────────────────────
+  for (const service of services) {
+    if (!service.operator_id) continue;
+
+    const { data: unavailConflicts, error: unavailErr } = await supabase
+      .from('operator_unavailabilities')
+      .select('id')
+      .eq('operator_id', service.operator_id)
+      .lt('start_at', service.end_time)
+      .gt('end_at', service.start_time)
+      .limit(1);
+
+    if (unavailErr) throw new Error(unavailErr.message);
+
+    if (unavailConflicts && unavailConflicts.length > 0) {
+      return {
+        error: `L'operatore ${service.operator_name} risulta non disponibile in questo orario.`,
+      };
+    }
+  }
+
+  if (allowOperatorOverlap) return {};
+
+  // ── 3. Operator already booked (per service) ────────────────────────────────
   for (const service of services) {
     if (!service.operator_id) continue;
 
@@ -78,28 +111,10 @@ export async function validateFicheConflicts(
 
     if (opConflicts && opConflicts.length > 0) {
       const conflict = opConflicts[0];
-      const fmt = (iso: string) => {
-        const d = new Date(iso);
-        return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
-      };
+      const fmt = (iso: string) =>
+        new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
       return {
-        error: `L'operatore ${service.operator_name} è già occupato in questo orario (appuntamento esistente: ${fmt(conflict.start_time)} – ${fmt(conflict.end_time)}).`,
-      };
-    }
-
-    const { data: unavailConflicts, error: unavailErr } = await supabase
-      .from('operator_unavailabilities')
-      .select('id')
-      .eq('operator_id', service.operator_id)
-      .lt('start_at', service.end_time)
-      .gt('end_at', service.start_time)
-      .limit(1);
-
-    if (unavailErr) throw new Error(unavailErr.message);
-
-    if (unavailConflicts && unavailConflicts.length > 0) {
-      return {
-        error: `L'operatore ${service.operator_name} risulta non disponibile in questo orario.`,
+        operatorOverlap: `${service.operator_name} ha già un appuntamento dalle ${fmt(conflict.start_time)} alle ${fmt(conflict.end_time)}.`,
       };
     }
   }

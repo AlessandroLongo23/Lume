@@ -299,6 +299,7 @@ export function Calendar() {
         onConfirm={handleConfirmChange}
         onCancel={handleCancelChange}
         isSubmitting={isPersisting}
+        operatorOverlap={pendingDrop?.operatorOverlap ?? false}
         isPastMove={
           !!pendingDrop &&
           Math.min(...pendingDrop.after.map((s) => s.start.getTime())) < Date.now()
